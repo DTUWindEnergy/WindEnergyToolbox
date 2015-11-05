@@ -16,6 +16,9 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 - [gtsdf](wetb/gtsdf/gtsdf.py): read/write/append gtsdf files
 - [unix_time](wetb/gtsdf/unix_time.py): convert between datetime and unix time (seconds since 1/1/1970)
 
+### [FAST](wetb/fast)
+Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
+- [fast_io](wetb/fast/fast_io.py): Read binary and ascii result files
 
 ### [functions](wetb/functions)
 Other functions
