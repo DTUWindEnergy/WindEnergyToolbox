@@ -3,10 +3,10 @@
 ### [hawc2](wetb/hawc2) 
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
 - [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
-- [htcfile](wetb/hawc2/htcfile.py): Read/write/manipulate htc files
+- [htc_file](wetb/hawc2/htc_file.py): Read/write/manipulate htc files
 - [ae_file](wetb/hawc2/ae_file.py): Read AE (aerodynamic blade layout) files
 - [pc_file](wetb/hawc2/pc_file.py): Read PC (profile coefficient) files
-- [shearfile](wetb/hawc2/shearfile.py): Create user defined shear file
+- [shear_file](wetb/hawc2/shear_file.py): Create user defined shear file
 - [at_time_file](wetb/hawc2/at_time_file.py): read at output_at_time files
 
 
