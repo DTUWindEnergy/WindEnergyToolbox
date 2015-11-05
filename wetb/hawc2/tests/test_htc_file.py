@@ -7,7 +7,7 @@ import os
 import unittest
 
 from datetime import datetime
-from wetb.hawc2.htcfile import HTCFile
+from wetb.hawc2.htc_file import HTCFile
 
 os.chdir(os.path.relpath(".", __file__))
 
