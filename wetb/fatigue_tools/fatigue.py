@@ -1,6 +1,14 @@
 '''
 Created on 04/03/2013
 @author: mmpe
+
+'rainflow_windap' and 'rainflow_astm' are two different methods to for rainflow counting
+'eq_load' calculate equivalent loads using one of the two rain flow counting methods
+'cycle_matrix' calculates a matrix of cycles (binned on amplitude and mean value)
+'eq_load_and_cycles' is used to calculate eq_loads of multiple time series (e.g. life time equivalent load)
+
+
+
 '''
 
 #try:
