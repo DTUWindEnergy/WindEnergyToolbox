@@ -17,4 +17,5 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 
 ### [functions](wetb/functions)
 Other functions
+- [geometry](wetb/functions/geometry.py): Different kind of geometry conversion functions
 - [process_exec](wetb/functions/process_exec.py): Run system command in subprocess
