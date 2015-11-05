@@ -1,0 +1,114 @@
+________________________________________________________________________________________________________________________
+  Version ID : Pydap 0.1
+                                                            Time : 15:04:16
+                                                            Date : 01:08.2012
+________________________________________________________________________________________________________________________
+  Result file : unit_test/test_files/test.dat
+________________________________________________________________________________________________________________________
+   Scans    Channels    Time [sec]      Format
+       2440     50         61.000       BINARY
+
+  Channel   Variable Description               
+
+     1      Time                           s          Time
+     2      WSP gl. coo.,Vy                m/s        Free wind speed Vy, gl. coo, of gl. pos    0.75,   0.00, -40.75
+     3      WSP gl. coo.,Vy                m/s        Free wind speed Vy, gl. coo, of gl. pos    1.00,   0.00, -39.00
+     4      WSP gl. coo.,Vy                m/s        Free wind speed Vy, gl. coo, of gl. pos    7.00,   0.00, -33.00
+     5       Omega                         rad/s       Rotor speed
+     6      Ae pos x , glco, R= 20.5       m          Aero position x  of blade  1 at radius  20.50, global coo.
+     7      Ae pos y , glco, R= 20.5       m          Aero position y  of blade  1 at radius  20.50, global coo.
+     8      Ae pos z , glco, R= 20.5       m          Aero position z  of blade  1 at radius  20.50, global coo.
+     9      Ae pos x , glco, R= 20.5       m          Aero position x  of blade  2 at radius  20.50, global coo.
+    10      Ae pos y , glco, R= 20.5       m          Aero position y  of blade  2 at radius  20.50, global coo.
+    11      Ae pos z , glco, R= 20.5       m          Aero position z  of blade  2 at radius  20.50, global coo.
+    12      Ae pos x , glco, R= 20.5       m          Aero position x  of blade  3 at radius  20.50, global coo.
+    13      Ae pos y , glco, R= 20.5       m          Aero position y  of blade  3 at radius  20.50, global coo.
+    14      Ae pos z , glco, R= 20.5       m          Aero position z  of blade  3 at radius  20.50, global coo.
+    15      Ae pos x , glco, R= 16.5       m          Aero position x  of blade  1 at radius  16.49, global coo.
+    16      Ae pos y , glco, R= 16.5       m          Aero position y  of blade  1 at radius  16.49, global coo.
+    17      Ae pos z , glco, R= 16.5       m          Aero position z  of blade  1 at radius  16.49, global coo.
+    18      Ae pos x , glco, R= 16.5       m          Aero position x  of blade  2 at radius  16.49, global coo.
+    19      Ae pos y , glco, R= 16.5       m          Aero position y  of blade  2 at radius  16.49, global coo.
+    20      Ae pos z , glco, R= 16.5       m          Aero position z  of blade  2 at radius  16.49, global coo.
+    21      Ae pos x , glco, R= 16.5       m          Aero position x  of blade  3 at radius  16.49, global coo.
+    22      Ae pos y , glco, R= 16.5       m          Aero position y  of blade  3 at radius  16.49, global coo.
+    23      Ae pos z , glco, R= 16.5       m          Aero position z  of blade  3 at radius  16.49, global coo.
+    24      Ae pos x , glco, R= 11.6       m          Aero position x  of blade  1 at radius  11.59, global coo.
+    25      Ae pos y , glco, R= 11.6       m          Aero position y  of blade  1 at radius  11.59, global coo.
+    26      Ae pos z , glco, R= 11.6       m          Aero position z  of blade  1 at radius  11.59, global coo.
+    27      Ae pos x , glco, R= 11.6       m          Aero position x  of blade  2 at radius  11.59, global coo.
+    28      Ae pos y , glco, R= 11.6       m          Aero position y  of blade  2 at radius  11.59, global coo.
+    29      Ae pos z , glco, R= 11.6       m          Aero position z  of blade  2 at radius  11.59, global coo.
+    30      Ae pos x , glco, R= 11.6       m          Aero position x  of blade  3 at radius  11.59, global coo.
+    31      Ae pos y , glco, R= 11.6       m          Aero position y  of blade  3 at radius  11.59, global coo.
+    32      Ae pos z , glco, R= 11.6       m          Aero position z  of blade  3 at radius  11.59, global coo.
+    33      Ae pos x , glco, R=  7.6       m          Aero position x  of blade  1 at radius   7.60, global coo.
+    34      Ae pos y , glco, R=  7.6       m          Aero position y  of blade  1 at radius   7.60, global coo.
+    35      Ae pos z , glco, R=  7.6       m          Aero position z  of blade  1 at radius   7.60, global coo.
+    36      Ae pos x , glco, R=  7.6       m          Aero position x  of blade  2 at radius   7.60, global coo.
+    37      Ae pos y , glco, R=  7.6       m          Aero position y  of blade  2 at radius   7.60, global coo.
+    38      Ae pos z , glco, R=  7.6       m          Aero position z  of blade  2 at radius   7.60, global coo.
+    39      Ae pos x , glco, R=  7.6       m          Aero position x  of blade  3 at radius   7.60, global coo.
+    40      Ae pos y , glco, R=  7.6       m          Aero position y  of blade  3 at radius   7.60, global coo.
+    41      Ae pos z , glco, R=  7.6       m          Aero position z  of blade  3 at radius   7.60, global coo.
+    42      Ae pos x , glco, R=  4.0       m          Aero position x  of blade  1 at radius   4.01, global coo.
+    43      Ae pos y , glco, R=  4.0       m          Aero position y  of blade  1 at radius   4.01, global coo.
+    44      Ae pos z , glco, R=  4.0       m          Aero position z  of blade  1 at radius   4.01, global coo.
+    45      Ae pos x , glco, R=  4.0       m          Aero position x  of blade  2 at radius   4.01, global coo.
+    46      Ae pos y , glco, R=  4.0       m          Aero position y  of blade  2 at radius   4.01, global coo.
+    47      Ae pos z , glco, R=  4.0       m          Aero position z  of blade  2 at radius   4.01, global coo.
+    48      Ae pos x , glco, R=  4.0       m          Aero position x  of blade  3 at radius   4.01, global coo.
+    49      Ae pos y , glco, R=  4.0       m          Aero position y  of blade  3 at radius   4.01, global coo.
+    50      Ae pos z , glco, R=  4.0       m          Aero position z  of blade  3 at radius   4.01, global coo.
+________________________________________________________________________________________________________________________
+Scale factors:
+  1.90625E-03
+  3.86850E-04
+  3.93534E-04
+  3.63391E-04
+  1.56250E-05
+  6.40656E-04
+  0.00000E+00
+  1.89066E-03
+  6.40656E-04
+  0.00000E+00
+  1.89066E-03
+  6.40656E-04
+  0.00000E+00
+  1.89066E-03
+  5.15428E-04
+  6.87809E-07
+  1.76543E-03
+  5.15428E-04
+  6.87809E-07
+  1.76543E-03
+  5.15428E-04
+  6.87809E-07
+  1.76543E-03
+  3.62459E-04
+  1.85211E-06
+  1.61246E-03
+  3.62459E-04
+  1.85211E-06
+  1.61246E-03
+  3.62459E-04
+  1.85211E-06
+  1.61246E-03
+  2.38552E-04
+  5.23494E-06
+  1.48855E-03
+  2.38552E-04
+  5.23494E-06
+  1.48855E-03
+  2.38551E-04
+  5.23494E-06
+  1.48855E-03
+  1.29018E-04
+  1.14916E-05
+  1.37902E-03
+  1.29018E-04
+  1.14916E-05
+  1.37902E-03
+  1.29018E-04
+  1.14916E-05
+  1.37902E-03

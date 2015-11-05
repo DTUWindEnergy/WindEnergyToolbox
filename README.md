@@ -10,12 +10,13 @@
 - [at_time_file](wetb/hawc2/at_time_file.py): read at output_at_time files
 - [ascii2bin](wetb/hawc2/ascii2bin): Compress HAWC2 ascii result files to binary
 
-
-
 ### [gtsdf](wetb/gtsdf)
 General Time Series Data Format, a binary hdf5 data format for storing time series data.
 - [gtsdf](wetb/gtsdf/gtsdf.py): read/write/append gtsdf files
 - [unix_time](wetb/gtsdf/unix_time.py): convert between datetime and unix time (seconds since 1/1/1970)
+
+### [fatigue_tools](wetb/fatigue_tools)
+- [fatigue](wetb/fatigue_tools/fatigue.py): Rainflow counting, cycle matrix and equvivalent loads
 
 ### [FAST](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
