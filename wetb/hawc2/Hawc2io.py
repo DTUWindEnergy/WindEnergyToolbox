@@ -2,7 +2,7 @@
 """
 Author:
     Bjarne S. Kallesoee
-    bska@risoe.dtu.dk
+
 
 Description:
     Reads all HAWC2 output data formats, HAWC2 ascii, HAWC2 binary and FLEX
@@ -21,7 +21,7 @@ call ex.:
     file.t => time vector
 
 1. version: 19/4-2011
-2. version: 5/11-2015 fixed columns to get description right, fixed time vector (mmpe)
+2. version: 5/11-2015 fixed columns to get description right, fixed time vector (mmpe@dtu.dk)
 
 Need to be done:
     * add error handling for allmost every thing
