@@ -1,6 +1,11 @@
 # Contents of WindEnergyToolbox, [wetb](wetb)
 
 [hawc2](#hawc2)
+[gtsdf](#gtsdf)
+[fatigue_tools](#fatigue_tools)
+[wind](#wind)
+[fast](#fast)
+[functions](#functions)
 
 ### [hawc2](wetb/hawc2) 
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
