@@ -30,3 +30,4 @@ Other functions
 - [geometry](wetb/functions/geometry.py): Different kind of geometry conversion functions
 - [process_exec](wetb/functions/process_exec.py): Run system command in subprocess
 - [timing](wetb/functions/timing.py): Decorators for evaluating execution time of functions
+- [caching](wetb/functions/caching.py): Decorators to create cached (calculate once) functions and properties
