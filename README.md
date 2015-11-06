@@ -1,5 +1,7 @@
 # Contents of WindEnergyToolbox, [wetb](wetb)
 
+[hawc2](#hawc2)
+
 ### [hawc2](wetb/hawc2) 
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
 - [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
