@@ -2,6 +2,9 @@
 Created on 20/01/2014
 
 @author: MMPE
+
+See documentation of HTCFile below
+
 '''
 from collections import OrderedDict
 import os

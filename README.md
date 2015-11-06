@@ -29,3 +29,4 @@ Tools for working with NREL's FAST code (An aeroelastic computer-aided engineeri
 Other functions
 - [geometry](wetb/functions/geometry.py): Different kind of geometry conversion functions
 - [process_exec](wetb/functions/process_exec.py): Run system command in subprocess
+- [timing](wetb/functions/timing.py): Decorators for evaluating execution time of functions
