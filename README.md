@@ -21,7 +21,7 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 ### [wind](wetb/wind)
 - [shear](wetb/wind/shear.py): Calculate and fit wind shear 
 
-### [FAST](wetb/fast)
+### [fast](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
 - [fast_io](wetb/fast/fast_io.py): Read binary and ascii result files
 
