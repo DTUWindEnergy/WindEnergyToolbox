@@ -7,8 +7,6 @@ Created on 04/03/2013
 'cycle_matrix' calculates a matrix of cycles (binned on amplitude and mean value)
 'eq_load_and_cycles' is used to calculate eq_loads of multiple time series (e.g. life time equivalent load)
 
-
-
 '''
 
 #try:
