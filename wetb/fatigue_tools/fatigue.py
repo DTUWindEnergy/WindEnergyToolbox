@@ -174,7 +174,7 @@ if __name__ == "__main__":
     signal1 = np.array([-2.0, 0.0, 1.0, 0.0, -3.0, 0.0, 5.0, 0.0, -1.0, 0.0, 3.0, 0.0, -4.0, 0.0, 4.0, 0.0, -2.0])
     signal2 = signal1 * 1.1
 
-    # equivalent load for default wöhler slopes
+    # equivalent load for default wohler slopes
     print (eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_windap))
     print (eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_astm))
 
