@@ -4,9 +4,9 @@ Created on 09/10/2014
 @author: MMPE
 '''
 import unittest
-from wetb.dlc.high_level import DLCHighLevel
+from wetb.dlc.high_level import DLCHighLevel, Weibull
 import os
-
+import numpy as np
 
 class TestDLCHighLevel(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class TestDLCHighLevel(unittest.TestCase):
         self.assertEqual(os.path.realpath(self.dlc_hl.res_path), os.path.realpath(os.path.join(os.getcwd(), "test_files/res")))
 
     def test_sensor_info(self):
-        self.assertEqual(list(self.dlc_hl.sensor_info().name), ['MxTB', 'MyTB', 'MxBR', 'PyBT', 'Power', 'Pitch', 'PitchBearing', 'Tip1TowerDistance', 'TipTowerDistance'])
+        self.assertEqual(list(self.dlc_hl.sensor_info().name), ['MxTB', 'MyTB', 'MxBR', 'PyBT', 'Pitch', 'PitchBearing', 'Tip1TowerDistance', 'TipTowerDistance'])
 
     def test_sensor_info_filter(self):
         self.assertEqual(list(self.dlc_hl.sensor_info(['fatigue']).m), [4, 4, 10])
@@ -67,8 +67,31 @@ class TestDLCHighLevel(unittest.TestCase):
             self.assertTrue(k in self.dlc_hl.sensor_info().keys(), k)
 
 
-    def test_extremeload_sensors(self):
-        self.dlc_hl = DLCHighLevel('test_files/DLC_test2.xlsx')
+
+
+
+    def test_weibull_1(self):
+        Vin = 0.0
+        Vout = 100
+        Vref = 50
+        Vstep = .1
+        shape_k = 2
+        weibull = Weibull(Vref * 0.2, shape_k, Vin, Vout, Vstep)
+
+        # total probability needs to be 1!
+        p_tot = np.array([value for key, value in weibull.items()]).sum()
+        self.assertAlmostEqual(p_tot, 1.0, 3)
+
+    def test_weibull_2(self):
+        Vin = 1.0
+        Vout = 100
+        Vref = 50
+        Vstep = 2
+        shape_k = 2
+        weibull = Weibull(Vref * 0.2, shape_k, Vin, Vout, Vstep)
+        # total probability needs to be 1!
+        p_tot = np.array([value for key, value in weibull.items()]).sum()
+        self.assertTrue(np.allclose(p_tot, 1.0))
 
 
 
