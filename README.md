@@ -4,6 +4,7 @@
 - [gtsdf](#gtsdf)
 - [fatigue_tools](#fatigue_tools)
 - [wind](#wind)
+- [dlc](#dlc)
 - [fast](#fast)
 - [functions](#functions)
 
@@ -29,6 +30,11 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 
 ### [wind](wetb/wind)
 - [shear](wetb/wind/shear.py): Calculate and fit wind shear 
+
+### [dlc](wetb/dlc)
+Module for working with "Design load cases" (Code independent)
+- [high_level](wetb/dlc/high_level.py) Class for working with the highlevel dlc excell sheet
+
 
 ### [fast](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
