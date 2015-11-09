@@ -229,6 +229,6 @@ class ReadHawc2:
 ################################################################################
 
 if __name__ == '__main__':
-    res_file = Hawc2io.ReadHawc2('structure_wind')
+    res_file = ReadHawc2('structure_wind')
     results = res_file.ReadAscii()
     channelinfo = res_file.ChInfo
