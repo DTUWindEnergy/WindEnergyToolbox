@@ -25,6 +25,7 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 
 ### [fatigue_tools](wetb/fatigue_tools)
 - [fatigue](wetb/fatigue_tools/fatigue.py): Rainflow counting, cycle matrix and equvivalent loads
+- [bearing_damage](wetb/fatigue_tools/bearing_damage.py): Calculate a comparable measure of bearing damage
 
 ### [wind](wetb/wind)
 - [shear](wetb/wind/shear.py): Calculate and fit wind shear 
