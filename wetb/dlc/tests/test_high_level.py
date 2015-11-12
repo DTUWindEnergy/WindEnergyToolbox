@@ -27,7 +27,7 @@ class TestDLCHighLevel(unittest.TestCase):
 
     def test_fatigue_distribution_pct(self):
         dlc, wsp, wdir = self.dlc_hl.fatigue_distribution()['12']
-        self.assertEqual(dlc, 0.975)
+        self.assertEqual(dlc[12], 0.975)
         self.assertEqual(min(wsp.keys()), 4)
         self.assertEqual(max(wsp.keys()), 26)
         self.assertEqual(wsp[4], 0.11002961306549919)
@@ -66,6 +66,9 @@ class TestDLCHighLevel(unittest.TestCase):
         for k in ['name', 'nr', 'description', 'unit', 'statistic', 'ultimate', 'fatigue', 'm', 'neql', 'bearingdamage', 'mindistance', 'maxdistance', 'extremeload']:
             self.assertTrue(k in self.dlc_hl.sensor_info().keys(), k)
 
+    def test_fail_on_res_not_fount(self):
+        self.dlc_hl = DLCHighLevel('test_files/DLC_test.xlsx', fail_on_resfile_not_found=True)
+        self.assertRaisesRegex(FileNotFoundError, "Result files for dlc='12', wsp='6', wdir='-10' not found")
 
 
 
