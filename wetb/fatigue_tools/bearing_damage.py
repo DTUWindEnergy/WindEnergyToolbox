@@ -6,13 +6,13 @@ Created on 13/10/2014
 
 def bearing_damage(angle_moment_lst, m=3, thresshold=0.1):
     """Function ported from Matlab.
-    
+
     Parameters
     ----------
     angle_moment_lst : ((angle_A_vector, moment_A_vector),(angle_B_vector, moment_B_vector),...)
         Angles[deg] and momements (e.g. pitch angle and blade root moment for the blades of a wind turbine)
     m : int, optional
-        analogue to Wöhler exponent, should be 3
+        analogue to Wohler exponent, should be 3
     threeshold : float, optional
         Pitch noise. Pitch movement below this thresshold is ignored
 
