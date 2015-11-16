@@ -41,7 +41,7 @@ def power_shear(alpha, z_ref, u_ref, z):
 
 
 def fit_power_shear(z_u_lst):
-    """Estimate power shear parameter, alpha, from a mean wind of two heights
+    """Estimate power shear parameter, alpha, from the mean wind at hub height and one additional height
 
     Parameters
     ----------
@@ -67,17 +67,17 @@ def fit_power_shear(z_u_lst):
     return alpha
 
 def fit_power_shear_ref(z_u_lst, z_ref):
-    """Estimate power shear parameter, alpha, for specified reference height
+    """Estimate power shear parameter, alpha, from two or morea specific reference height using polynomial fit.
 
     Parameters
     ----------
     z_u_lst : [(z1, u_z1), (z2, u_z2),...]
         - z1: Some height
-        - z1_ref: Wind speeds or mean wind speed at z1
+        - u_z1: Wind speeds or mean wind speed at z1
         - z2: another height
-        - u_z2: Wind speeds or mean wind speeds at z1
+        - u_z2: Wind speeds or mean wind speeds at z2
     z_ref : float or int
-        Reference height
+        Reference height (hub height)
 
     Returns
     -------
@@ -94,7 +94,7 @@ def fit_power_shear_ref(z_u_lst, z_ref):
     def shear_error(x, z_u_lst, z_ref):
         alpha, u_ref = x
         return np.sum([(np.mean(u) - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
-    return fmin(shear_error, (.5, 10), (z_u_lst, z_ref), disp=False)
+    return fmin(shear_error, (.1, 10), (z_u_lst, z_ref), disp=False)
 
 
 
@@ -150,9 +150,9 @@ def fit_log_shear(z_u_lst):
     ----------
     z_u_lst : [(z1, u_z1), (z2, u_z2),...]
         - z1: Some height
-        - z1_ref: Wind speeds or mean wind speed at z1
+        - u_z1: Wind speeds or mean wind speed at z1
         - z2: another height
-        - u_z2: Wind speeds or mean wind speeds at z1
+        - u_z2: Wind speeds or mean wind speeds at z2
 
     Returns
     -------
@@ -166,9 +166,12 @@ def fit_log_shear(z_u_lst):
     >>> fit_log_shear([(85, 8.88131), (21, 4.41832)],  87.13333)
     [ 0.49938238  8.99192568]
     """
-    def shear_error(x, z_u_lst):
-        u_star, z0 = x
-        return np.sum([(np.mean(u) - log_shear(u_star, z0, z)) ** 2 for z, u in z_u_lst])
-    return fmin(shear_error, (1, 1), (z_u_lst,), disp=False)
-
+#    def shear_error(x, z_u_lst):
+#        u_star, z0 = x
+#        return np.sum([(np.mean(u) - log_shear(u_star, z0, z)) ** 2 for z, u in z_u_lst])
+#    return fmin(shear_error, (1, 1), (z_u_lst,), disp=False)
+    z, U = _z_u(z_u_lst)
+    a, b = np.polyfit(np.log(z), U, 1)
+    kappa = 0.4
+    return a * kappa, np.exp(-b / a)  #, sum((U - (a * np.log(z) + b)) ** 2)
 

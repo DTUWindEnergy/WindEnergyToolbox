@@ -143,7 +143,10 @@ class TestMannTurbulence(unittest.TestCase):
         if 0:
             for z, u in zu:
                 plt.plot(u, z, 'r.')
-        z = np.arange(10, 100)
+            z = np.arange(10, 100)
+            plt.plot(log_shear(u_star, z0, z), z)
+            show()
+
         for _zu, b in zip(zu, log_shear(u_star, z0, [85, 21])):
             self.assertAlmostEqual(_zu[1], b, 4)
 
