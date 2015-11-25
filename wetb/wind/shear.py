@@ -143,7 +143,7 @@ def stability_term(z, z0, L):
     return psi
 
 
-def fit_log_shear(z_u_lst):
+def fit_log_shear(z_u_lst, include_R=False):
     """Estimate log shear parameter, u_star and z0
 
     Parameters
@@ -173,5 +173,7 @@ def fit_log_shear(z_u_lst):
     z, U = _z_u(z_u_lst)
     a, b = np.polyfit(np.log(z), U, 1)
     kappa = 0.4
-    return a * kappa, np.exp(-b / a)  #, sum((U - (a * np.log(z) + b)) ** 2)
+    if include_R:
+        return a * kappa, np.exp(-b / a), sum((U - (a * np.log(z) + b)) ** 2)
+    return a * kappa, np.exp(-b / a)
 

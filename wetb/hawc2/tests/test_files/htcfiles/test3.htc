@@ -1,0 +1,27 @@
+begin simulation;
+  time_stop	200;
+end simulation;
+begin dll;
+; 
+  begin type2_dll; 
+    name risoe_controller;
+    begin output;
+      general time; [s]
+      constraint bearing1 shaft_rot 1 only 2; Drivetrain speed [rad/s]
+    end output;     
+  end type2_dll;
+   begin type2_dll; 
+    name risoe_controller2;
+    begin output;
+      general time; [s]
+      constraint bearing1 shaft_rot 1 only 2; Drivetrain speed [rad/s]
+    end output;     
+  end type2_dll;
+end dll;
+begin output;
+  filename ./res/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000;
+  time 100 200;
+  general time;
+end output;
+exit;
+
