@@ -1,15 +1,11 @@
 import os
 from wetb.hawc2.htc_file import HTCFile
 from wetb.hawc2.log_file import LogFile, SIMULATING
-import threading
-from wetb.hawc2 import dummy_simulator
 from threading import Timer, Thread
 import sys
-import multiprocessing
 from multiprocessing.process import Process
 import psutil
-from wetb.functions.process_exec import pexec, process, exec_process
-import time
+from wetb.functions.process_exec import process, exec_process
 import subprocess
 import shutil
 import json
@@ -178,8 +174,8 @@ class SimulationThread(Thread):
         p = psutil.Process(os.getpid())
         p.nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
         self.res = exec_process(self.process)
-        
-        
+
+
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
         self._timer = None
