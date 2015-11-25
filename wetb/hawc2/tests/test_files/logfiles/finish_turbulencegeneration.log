@@ -1,0 +1,129 @@
+________________________________________________________________________________________________________________________
+  Version ID : HAWC2MB 12.2
+  Log file output
+                                                            Time : 07:18:14
+                                                            Date : 20:11.2015
+________________________________________________________________________________________________________________________
+ Simulation commands read with succes
+ Orientation input commands read with succes
+ constraint input commands read with succes
+ Topologi commands read with succes
+ Mann commands read with succes
+ Wind commands read with succes
+ DLL commands read with succes
+ output commands read with succes
+ Output commands read
+ Initialization of structure
+ Initialization of wind
+ Initialization of Mann turbulence
+ Opening turbulence file ./turb/envisionpp2b_20150517_2310_s1004u.bin
+ Turbulence file ./turb/envisionpp2b_20150517_2310_s1004u.bin does not exist
+ Turbulence generation starts ...
+ Turbulence generation finished, output starts ...
+ Mann turb. box shorter than required - turbulence is reused after every    600.14 seconds
+ In Mann module:
+ Scale factor u=   1.00000000000000     
+ Scale factor v=   1.00000000000000     
+ Scale factor w=   1.00000000000000     
+ Starting simulation
+ Global time =   2.000000000000000E-002 Iter =            0
+ Global time =   4.000000000000000E-002 Iter =            0
+ Global time =   6.000000000000000E-002 Iter =            0
+ Global time =   8.000000000000000E-002 Iter =            0
+ Global time =   0.100000000000000      Iter =            0
+ Global time =   0.120000000000000      Iter =            0
+ Global time =   0.140000000000000      Iter =            0
+ Global time =   0.160000000000000      Iter =            0
+ Global time =   0.180000000000000      Iter =            0
+ Global time =   0.200000000000000      Iter =            0
+ Global time =   0.220000000000000      Iter =            0
+ Global time =   0.240000000000000      Iter =            0
+ Global time =   0.260000000000000      Iter =            0
+ Global time =   0.280000000000000      Iter =            0
+ Global time =   0.300000000000000      Iter =            0
+ Global time =   0.320000000000000      Iter =            0
+ Global time =   0.340000000000000      Iter =            0
+ Global time =   0.360000000000000      Iter =            0
+ Global time =   0.380000000000000      Iter =            0
+ Global time =   0.400000000000000      Iter =            0
+ Global time =   0.420000000000000      Iter =            0
+ Global time =   0.440000000000000      Iter =            0
+ Global time =   0.460000000000000      Iter =            0
+ Global time =   0.480000000000000      Iter =            0
+ Global time =   0.500000000000000      Iter =            0
+ Global time =   0.520000000000000      Iter =            0
+ Global time =   0.540000000000000      Iter =            0
+ Global time =   0.560000000000000      Iter =            0
+ Global time =   0.580000000000000      Iter =            0
+ Global time =   0.600000000000000      Iter =            0
+ Global time =   0.620000000000000      Iter =            0
+ Global time =   0.640000000000000      Iter =            0
+ Global time =   0.660000000000000      Iter =            0
+ Global time =   0.680000000000000      Iter =            0
+ Global time =   0.700000000000000      Iter =            0
+ Global time =   0.720000000000000      Iter =            0
+ Global time =   0.740000000000000      Iter =            0
+ Global time =   0.760000000000000      Iter =            0
+ Global time =   0.780000000000000      Iter =            0
+ Global time =   0.800000000000000      Iter =            0
+ Global time =   0.820000000000000      Iter =            0
+ Global time =   0.840000000000000      Iter =            0
+ Global time =   0.860000000000000      Iter =            0
+ Global time =   0.880000000000000      Iter =            0
+ Global time =   0.900000000000000      Iter =            0
+ Global time =   0.920000000000000      Iter =            0
+ Global time =   0.940000000000000      Iter =            0
+ Global time =   0.960000000000000      Iter =            0
+ Global time =   0.980000000000000      Iter =            0
+ Global time =    1.00000000000000      Iter =            0
+ Global time =    1.02000000000000      Iter =            0
+ Global time =    1.04000000000000      Iter =            0
+ Global time =    1.06000000000000      Iter =            0
+ Global time =    1.08000000000000      Iter =            0
+ Global time =    1.10000000000000      Iter =            0
+ Global time =    1.12000000000000      Iter =            0
+ Global time =    1.14000000000000      Iter =            0
+ Global time =    1.16000000000000      Iter =            0
+ Global time =    1.18000000000000      Iter =            0
+ Global time =    1.20000000000000      Iter =            0
+ Global time =    1.22000000000000      Iter =            0
+ Global time =    1.24000000000000      Iter =            0
+ Global time =    1.26000000000000      Iter =            0
+ Global time =    1.28000000000000      Iter =            0
+ Global time =    1.30000000000000      Iter =            0
+ Global time =    1.32000000000000      Iter =            0
+ Global time =    1.34000000000000      Iter =            0
+ Global time =    1.36000000000000      Iter =            0
+ Global time =    1.38000000000000      Iter =            0
+ Global time =    1.40000000000000      Iter =            0
+ Global time =    1.42000000000000      Iter =            0
+ Global time =    1.44000000000000      Iter =            0
+ Global time =    1.46000000000000      Iter =            0
+ Global time =    1.48000000000000      Iter =            0
+ Global time =    1.50000000000000      Iter =            0
+ Global time =    1.52000000000000      Iter =            0
+ Global time =    1.54000000000000      Iter =            0
+ Global time =    1.56000000000000      Iter =            0
+ Global time =    1.58000000000000      Iter =            0
+ Global time =    1.60000000000000      Iter =            0
+ Global time =    1.62000000000000      Iter =            0
+ Global time =    1.64000000000000      Iter =            0
+ Global time =    1.66000000000000      Iter =            0
+ Global time =    1.68000000000000      Iter =            0
+ Global time =    1.70000000000000      Iter =            0
+ Global time =    1.72000000000000      Iter =            0
+ Global time =    1.74000000000000      Iter =            0
+ Global time =    1.76000000000000      Iter =            0
+ Global time =    1.78000000000000      Iter =            0
+ Global time =    1.80000000000000      Iter =            0
+ Global time =    1.82000000000000      Iter =            0
+ Global time =    1.84000000000000      Iter =            0
+ Global time =    1.86000000000000      Iter =            0
+ Global time =    1.88000000000000      Iter =            0
+ Global time =    1.90000000000000      Iter =            0
+ Global time =    1.92000000000000      Iter =            0
+ Global time =    1.94000000000000      Iter =            0
+ Global time =    1.96000000000000      Iter =            0
+ Global time =    1.98000000000000      Iter =            0
+ Global time =    2.00000000000000      Iter =            0
+ Elapsed time :   0.8062344    

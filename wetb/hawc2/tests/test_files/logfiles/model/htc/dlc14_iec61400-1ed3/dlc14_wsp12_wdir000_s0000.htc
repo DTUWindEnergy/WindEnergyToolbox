@@ -1,0 +1,778 @@
+begin simulation;
+  time_stop    200.0;
+  solvertype   1 ;
+  on_no_convergence continue ;
+  convergence_limits 1E3 1.0 1E-7 ;
+  logfile ./logfiles/dlc14_iec61400-1ed3/dlc14_wsp12_wdir000_s0000.log ;
+;
+  begin newmark;
+    deltat    0.02;  
+  end newmark;
+end simulation;
+;
+begin new_htc_structure;
+;-------------------------------------------------------------------------------------------------------------------------------
+  begin main_body;         tower 90m
+    name        tower ;            
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef   0.0 0.0 0.0 3.62e-03 3.62e-03 3.30e-03 ; Mx My Mz Kx Ky Kz , M΄s raises overall level, K΄s raises high freguency level 
+     begin timoschenko_input;
+      filename ./data/NREL_5MW_st.txt ;
+      set 1 1 ; 
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 8;
+      sec 1 0.0 0.0 0.0    0.0 ;  x,y,z,twist
+      sec 2 0.0 0.0 -10.0  0.0 ;
+      sec 3 0.0 0.0 -20.0  0.0 ;
+      sec 4 0.0 0.0 -30.0  0.0 ;
+      sec 5 0.0 0.0 -45.0  0.0 ;
+      sec 6 0.0 0.0 -60.0  0.0 ;
+      sec 7 0.0 0.0 -70.0 0.0 ;
+      sec 8 0.0 0.0 -87.6 0.0 ; 
+     end c2_def ;
+    end main_body;
+;
+  begin main_body;
+    name        towertop ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef  0.0  0.0  0.0  3.00E-05  3.00E-05  2.00E-04  ;	
+    concentrated_mass 2 0.0  1.9 0.21256 2.4E5 1741490.0  1.7E5 1741490.0 ;  Nacelle mass and inertia    	
+	begin timoschenko_input;
+      filename ./data/NREL_5MW_st.txt ;
+      set 2 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 2;
+      sec 1 0.0 0.0 0.0       0.0 ; x,y,z,twist
+      sec 2 0.0 0.0 -1.96256  0.0 ; 
+    end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name        shaft ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+	damping_posdef  0.0 0.0 0.0 4.65E-04  4.65E-04  7.0725E-03 ; "tuned by Anyd 23/5/13 to 31.45 log decr. damping for free free with stiff rotor and tower"
+   	concentrated_mass 1 0.0 0.0 0.0 0.0 0.0 0.0 5025497.444 ;generator equivalent slow shaft
+    concentrated_mass 5 0.0 0.0 0.0 56780 0.0 0.0 115926 ; hub mass and inertia;    	
+	begin timoschenko_input;
+      filename ./data/NREL_5MW_st.txt ;
+      set 3 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 5;
+      sec 1 0.0 0.0 0.0     0.0 ; Tower top x,y,z,twist
+      sec 2 0.0 0.0 1.0     0.0 ; 
+      sec 3 0.0 0.0 2.0     0.0 ; 
+      sec 4 0.0 0.0 3.1071  0.0 ; Main bearing
+      sec 5 0.0 0.0 5.0191  0.0 ; Rotor centre
+    end c2_def ;
+  end main_body;	
+;
+  begin main_body;
+    name        hub1 ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef  0.0  0.0  0.0  3.00E-06  3.00E-06  2.00E-05;    	
+	begin timoschenko_input;
+      filename ./data/NREL_5MW_st.txt ;
+      set 4 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 2;
+      sec 1 0.0 0.0 0.0     0.0 ; x,y,z,twist
+      sec 2 0.0 0.0 1.5   0.0 ; 
+    end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name           hub2 ;
+    copy_main_body hub1;
+  end main_body;
+;
+  begin main_body;
+    name           hub3 ;
+    copy_main_body hub1 ;
+  end main_body;
+;
+  begin main_body;
+    name        blade1 ;        
+    type        timoschenko ;
+    nbodies     9 ;
+    node_distribution    c2_def;
+    damping_posdef   0.0 0.0 0.0 1.41E-03 2.39E-03 4.5E-05 ;  
+   begin timoschenko_input ;
+      filename ./data/NREL_5MW_st.txt ;
+      set 5 1 ;                set subset
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 19 ;
+	sec 1		 0.0000		0.0000		0.000		0.000		;	x.y.z. twist
+	sec 2		-0.0027		0.0006		1.367		-13.308		;	
+	sec 3		-0.1057		0.0250		4.100		-13.308		;	
+	sec 4		-0.2501		0.0592		6.833		-13.308		;	
+	sec 5		-0.4592		0.1086		10.250		-13.308		;
+	sec 6		-0.5699		0.1157		14.350		-11.480		;	
+	sec 7		-0.5485		0.0983		18.450		-10.162		;	
+	sec 8		-0.5246		0.0832		22.550		-9.011		;	
+	sec 9		-0.4962		0.0679		26.650		-7.795		;	
+	sec 10		-0.4654		0.0534		30.750		-6.544		;	50% blade radius
+	sec 11		-0.4358		0.0409		34.850		-5.361		;	
+	sec 12		-0.4059		0.0297		38.950		-4.188		;	
+	sec 13		-0.3757		0.0205		43.050		-3.125		;	
+	sec 14		-0.3452		0.0140		47.150		-2.319		;	
+	sec 15		-0.3146		0.0084		51.250		-1.526		;	
+	sec 16		-0.2891		0.0044		54.667		-0.863		;	
+	sec 17		-0.2607		0.0017		57.400		-0.370		;	
+	sec 18		-0.1774		0.0003		60.133		-0.106		;	
+	sec 19		-0.1201		0.0000		61.500		-0.000		;
+   end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name           blade2 ;
+    copy_main_body blade1;
+  end main_body;
+;
+  begin main_body;
+    name           blade3 ;
+    copy_main_body blade1 ;
+  end main_body;
+;-------------------------------------------------------------------------------------------------------------------------------                   
+;
+  begin orientation;
+    begin base;
+      body   tower;
+      inipos        0.0 0.0 0.0 ;         initial position of node 1
+      body_eulerang 0.0 0.0 0.0;
+    end base;
+; 
+    begin relative;
+      body1  tower last;
+      body2  towertop 1;
+      body2_eulerang 0.0 0.0 0.0; 
+    end relative;
+;
+    begin relative;
+      body1  towertop last;
+      body2  shaft 1;
+      body2_eulerang 90.0 0.0 0.0; 
+      body2_eulerang 5.0 0.0 0.0;    5 deg tilt angle
+      body2_eulerang 0.0 0.0 0.0;
+      mbdy2_ini_rotvec_d1 0.0 0.0 -1.0 0.2 ; mbdy2_ini_rotvec_d1 0.0 0.0 -1.0 0.7; 
+    end relative;
+;
+    begin relative;
+      body1  shaft last;         
+      body2  hub1 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 180.0 0.0;    
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  shaft last;         
+      body2  hub2 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 60.0 0.0;   
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  shaft last;         
+      body2  hub3 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 -60.0 0.0;    
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  hub1 last;         
+      body2  blade1 1;
+      body2_eulerang 0.0 0.0 0.0 ;    
+    end relative;
+;
+    begin relative;
+      body1  hub2 last;         
+      body2  blade2 1;
+      body2_eulerang 0.0 0.0  0.5 ;    
+    end relative;
+;
+    begin relative;
+      body1  hub3 last;         
+      body2  blade3 1;
+      body2_eulerang 0.0 0.0 -0.5 ;    
+    end relative;
+;
+ 	end orientation;
+;-------------------------------------------------------------------------------------------------------------------------------
+begin constraint;   
+;
+    begin fix0;  fixed to ground in translation and rotation of node 1
+      body tower;
+    end fix0;
+;
+    begin fix1;
+	  body1 tower last ;
+	  body2 towertop 1;
+	end fix1;
+;
+    begin bearing1;                       free bearing
+      name  shaft_rot;
+      body1 towertop last;
+      body2 shaft 1;
+      bearing_vector 2 0.0 0.0 -1.0;        x=coo (0=global.1=body1.2=body2) vector in body2 coordinates where the free rotation is present
+   end bearing1; 
+;
+;    begin bearing3;                       free bearing
+;      name  shaft_rot;
+;      body1 towertop last;
+;      body2 shaft 1;
+;      bearing_vector 2 0.0 0.0 -1.0;        x=coo (0=global.1=body1.2=body2) vector in body2 coordinates where the free rotation is present
+;      omegas 0.0 ;
+;   end bearing3; 
+;
+    begin fix1;
+	  body1 shaft last ;
+	  body2 hub1 1;
+	end fix1;
+;
+    begin fix1;
+	  body1 shaft last ;
+	  body2 hub2 1;
+	end fix1;
+;
+     begin fix1;
+	  body1 shaft last ;
+	  body2 hub3 1;
+	end fix1; 
+;	
+   begin bearing2;
+     name pitch1;		
+     body1 hub1 last;
+     body2 blade1 1;
+	  bearing_vector 2 0.0 0.0 -1.0;
+   end bearing2;
+;
+    begin bearing2;
+      name pitch2;		
+      body1 hub2 last;
+      body2 blade2 1;
+	  bearing_vector 2 0.0 0.0 -1.0;
+    end bearing2;
+;
+    begin bearing2;
+      name pitch3;		
+      body1 hub3 last;
+      body2 blade3 1;
+	  bearing_vector 2 0.0 0.0 -1.0;
+    end bearing2;
+end constraint;
+;
+end new_htc_structure;
+;---------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+begin wind ;
+  density                 1.225 ;
+  wsp                     12.0   ;
+  tint                    0.297386666667   ;
+  horizontal_input        1     ;
+  windfield_rotations     0.0 0.0 0.0 ;    yaw, tilt, rotation
+  center_pos0             0.0 0.0 -90 ; hub heigth
+  shear_format            3 0.2 ; 
+  turb_format             0.0     ;  0=none, 1=mann,2=flex
+  tower_shadow_method     3     ;  0=none, 1=potential flow, 2=jet
+  scale_time_start       100.0 ; 
+  wind_ramp_factor   0.0 100.0 0.666666666667 1.0 ;
+   iec_gust ecd 15.0 60.0 100.0 10.0 ;
+;
+  begin mann ;
+    create_turb_parameters 29.4 1.0 3.7 0.0 1.0 ;      L, alfaeps, gamma, seed, highfrq compensation
+    filename_u    ./turb/turb_wsp12_s0000u.bin ; 
+    filename_v    ./turb/turb_wsp12_s0000v.bin ; 
+    filename_w    ./turb/turb_wsp12_s0000w.bin ; 
+    box_dim_u    8192 0.29296875 ; 
+    box_dim_v    32 4.0 ; 
+    box_dim_w    32 4.0 ; 
+    std_scaling  1.0 0.7 0.5 ; 
+  end mann ; 
+;
+  begin tower_shadow_potential_2;
+    tower_mbdy_link tower;
+    nsec  2;
+    radius      0.0   3.0 ;
+    radius      87.6  1.935 ;
+  end tower_shadow_potential_2;
+end wind;
+;
+begin aero ;
+  nblades  3;
+  hub_vec shaft -3 ;         rotor rotation vector (normally shaft composant directed from pressure to sustion side)
+  link 1 mbdy_c2_def blade1;
+  link 2 mbdy_c2_def blade2;
+  link 3 mbdy_c2_def blade3;
+  ae_filename		 ./data/AeDist_Flap_01.dat ; Distribute points to preserve effective flap length, use same setup for baseline
+  pc_filename        ./data/NREL_5MW_pc.txt;
+  induction_method   1.0 ;     0=none, 1=normal
+  aerocalc_method    1 ;     0=ingen aerodynamic, 1=med aerodynamic
+  aero_distribution ae_file 1 ;
+  ae_sets            1 1 1;
+  tiploss_method     1 ;     0=none, 1=prandtl
+  dynstall_method    3.0 ;     0=none, 1=stig øye method,2=mhh method
+  ; --- Flaps --- ;
+  begin dynstall_ateflap ; 
+    Ais  0.165  0.335  0.0 ; 
+    Bis  0.0455  0.30  0.30 ; 
+      flap  43.05   60.885   ./data/FlapInp_NacaThk17.ds  ;  Flap Sec: 1 
+   end dynstall_ateflap; 
+end aero ;
+;
+begin aerodrag ;
+  begin aerodrag_element ;
+    mbdy_name tower;
+    aerodrag_sections uniform 10 ;
+    nsec 2 ;
+    sec 0.0 0.6 6.0 ;  tower bottom
+    sec 87.6 0.6 3.87 ;  tower top
+  end aerodrag_element;
+;
+  begin aerodrag_element ;        Nacelle drag side
+    mbdy_name shaft;
+    aerodrag_sections uniform 2 ;
+    nsec 2 ;
+    sec 0.0   0.8 10.0 ;  
+    sec 5.02  0.8 10.0 ;  
+  end aerodrag_element;
+end aerodrag;
+;
+;-------------------------------------------------------------------------------------------------  
+begin dll;
+;
+  begin type2_dll;
+    name risoe_controller ;
+    filename  ./control/risoe_controller.dll ;
+    dll_subroutine_init init_regulation ;
+    dll_subroutine_update update_regulation ;
+    arraysizes_init  52 1 ;
+    arraysizes_update 12 100 ;
+	begin init ;
+       ; Overall parameters
+      constant   1 5000.0   ; Rated power [kW]                         
+      constant   2  0.72257 ; Minimum rotor speed [rad/s] - NREL report
+      constant   3  1.2671  ; Rated rotor speed [rad/s] - NREL report
+      constant   4  4.6e6   ; Maximum allowable generator torque [Nm] - NREL rep.
+      constant   5  0.0     ; Minimum pitch angle, theta_min [deg], - NREL rep. keeps to 0.0
+                            ; if |theta_min|>90, then a table of <wsp,theta_min> is read ;
+                            ; from a file named 'wptable.n', where n=int(theta_min)
+      constant   6  84.0    ; Maximum pitch angle [deg]
+      constant   7   8.0    ; Maximum pitch velocity operation [deg/s] - NREL rep.
+      constant   8   0.4    ; Frequency of generator speed filter [Hz] - NREL rep.
+      constant   9   0.7    ; Damping ratio of speed filter [-] - NREL rep.
+      constant  10   0.0    ; Frequency of free-free DT torsion mode [Hz], 0.0 no notch filter used 
+      ; Partial load control parameters
+      constant  11   0.216828E+07 ; Optimal Cp tracking K factor [kNm/(rad/s)^2], ; - HS2 tune, lambda opt. 7.55
+                            ; Qg=K*Omega^2, K=eta*0.5*rho*A*Cp_opt*R^3/lambda_opt^3                     
+      constant  12   0.193160E+08 ; Proportional gain of torque controller [Nm/(rad/s)] - HS2 tune
+      constant  13   0.433451E+07 ; Integral gain of torque controller [Nm/rad]			- HS2 tune
+      constant  14   0.0    ; Differential gain of torque controller [Nm/(rad/s^2)]
+;     Full load control parameters
+      constant  15   1    ; Generator control switch [1=constant power, 2=constant torque]
+      constant  16   0.81 ; Proportional gain of pitch controller [rad/(rad/s)]
+      constant  17   0.16 ; Integral gain of pitch controller [rad/rad]	
+      constant  18   0.0  ; Differential gain of pitch controller [rad/(rad/s^2)]
+      constant  19   0.4e-8 ; Proportional power error gain [rad/W]
+      constant  20   0.4e-8 ; Integral power error gain [rad/(Ws)]
+      constant  21  10.6  ; Coefficient of linear term in aerodynamic gain scheduling, KK1 [deg] - HS2 tune
+      constant  22 583.4  ; Coefficient of quadratic term in aerodynamic gain scheduling, KK2 [deg^2] &
+                          ; (if zero, KK1 = pitch angle at double gain) - HS2 tune
+      constant  23   1.3  ; Relative speed for double nonlinear gain [-]
+;     Cut-in simulation parameters
+      constant  24  -1.0  ; Cut-in time [s]
+      constant  25  1.0   ; Time delay for soft start of torque [1/1P]
+;     Cut-out simulation parameters
+      constant  26  -1.0  ; Cut-out time [s]
+      constant  27   5.0  ; Time constant for linear torque cut-out [s]
+      constant  28  1.0    ; Stop type [1=normal, 2=emergency]
+      constant  29   0.0  ; Time delay for pitch stop after shut-down commenced [s]
+      constant  30  4.0  ; Maximum pitch velocity during initial period of stop [deg/s]
+      constant  31   3.0  ; Time period of initial pitch stop phase [s]
+      constant  32  6.0  ; Maximum pitch velocity during final phase of stop [deg/s]
+;     Expert parameters (keep default values unless otherwise given)
+      constant  33   2.0  ; Lower angle above lowest minimum pitch angle for switch [deg]
+      constant  34   2.0  ; Upper angle above lowest minimum pitch angle for switch [deg], if equal then hard switch
+      constant  35  95.0  ; Ratio between filtered speed and reference speed for fully open torque limits [%]
+      constant  36   5.0  ; Time constant of 1st order filter on wind speed used for minimum pitch [1/1P]
+      constant  37   5.0  ; Time constant of 1st order filter on pitch angle used for gain scheduling [1/1P]
+;     Drivetrain damper
+      constant  38   0.0  ; Proportional gain of active DT damper [Nm/(rad/s)], requires frequency in input 10
+;	  Over speed
+	  constant  39  25.0  ; Over speed percentage before initiating shut-down
+;     Additional non-linear pitch control term (not used when all zero)
+	  constant  40  25.0  ; Err0 [rad/s] 
+	  constant  41  10.0  ; ErrDot0 [rad/s^2]
+	  constant  42   0.15 ; PitNonLin1 [rad/s]
+;     Storm control command (from MHHA ctrl rev.)
+	  constant 43   28.0  ; Wind speed 'Vstorm' above which derating of rotor speed is used [m/s]
+	  constant 44   28.0  ; Cut-out wind speed (only used for derating of rotor speed in storm) [m/s]	  
+;     Safety system parameters
+	  constant 45   30.0  ; Percent maximum overspeed of generator speed before emergency pitch stop [%]
+	  constant 46    1.5  ; Max low-pass filtered tower top acceleration level [m/s^2]
+	  constant 47  126.0  ; Nominal rotor diameter [m]
+;     Parameters for rotor inertia reduction in variable speed region
+      constant 48    0.0  ; Proportional gain on rotor acceleration in variable speed region [Nm/(rad/s^2)]
+;     Parameters for alternative partial load controller with PI regulated TSR tracking
+      constant 49    0.0  ; Optimal tip speed ratio [-]
+;     Parameters for adding aerodynamic drivetrain damping on gain scheduling
+      constant 50    0.0  ; Proportional gain of aerodynamic DT damping [Nm/(rad/s)]
+      constant 51    5.0  ; Coefficient of linear term in aerodynamic DT damping scheduling, KK1 [deg]
+      constant 52    5.0  ; Coefficient of quadratic term in aerodynamic DT damping scheduling, KK2 [deg^2]
+	end init ;
+;
+    begin output ;
+      general time ; [s]     
+      constraint bearing1 shaft_rot 1 only 2 ; Drivetrain speed [rad/s]
+      constraint bearing2 pitch1 1 only 1; [rad]         
+      constraint bearing2 pitch2 1 only 1; [rad]                               
+      constraint bearing2 pitch3 1 only 1; [rad]                               
+      wind free_wind 1 0.0 0.0 -90 ; global coords at hub height
+	  dll inpvec 3 2 ; Elec. power
+	  dll inpvec 3 8 ; Grid flag
+	  mbdy state acc towertop   1 1.0 global only 1 ;
+	  mbdy state acc towertop   1 1.0 global only 2 ;
+    end output;     
+  end type2_dll;
+;
+  begin type2_dll; 
+    name cyclic_pitch_controller ; 
+    filename  ./control/cyclic_pitch_controller.dll ; 
+    dll_subroutine_init init_cyclic_pitch_controller ; 
+    dll_subroutine_update update_cyclic_pitch_controller ; 
+    arraysizes_init    11  1 ; 
+    arraysizes_update  11 10 ; 
+    begin init ; 
+      constant 1   47.2  ; Lead angle [deg] 
+      constant 2    1.26 ; Proportional gain at zero pitch [deg/MNm] 
+      constant 3    0.28 ; Integral gain at zero pitch [deg/(MNm*s)]   
+      constant 4    0.0  ; Differential gain at zero pitch [deg*s/MNm]   
+      constant 5   10.6  ; Coefficient of linear term in aerodynamic gain scheduling, KK1 [deg]
+      constant 6  583.4  ; Coefficient of quadratic term in aerodynamic gain scheduling, KK2 [deg^2] 
+      constant 7    0.2  ; Low-pass filter frequency [Hz] 
+      constant 8    0.7  ; Low-pass filter damping ratio [-] 
+      constant 9   10.0  ; Low-pass filter time constant for gain scheduling [s] 
+      constant 10   4.0  ; Maximum amplitude on cyclic pitch [deg] 
+      constant 11   0.99  ; Thresshold for full power switch [-]
+    end init ; 
+    ; 
+    begin output; 
+      general time                            ;   1: general time [s]       
+      constraint bearing1 shaft_rot 1         ; 2-3: Azimuth angle and speed of blade 1  (zero = blade up) [rad]  
+      mbdy momentvec blade1 3 1 blade1 only 1 ;   4: Flap BRM of blade 1 (pos. bend. forward) [kNm]      
+      mbdy momentvec blade2 3 1 blade2 only 1 ;   5: Flap BRM of blade 2 (pos. bend. forward) [kNm]      
+      mbdy momentvec blade3 3 1 blade3 only 1 ;   6: Flap BRM of blade 3 (pos. bend. forward) [kNm]      
+      dll inpvec 1  2                         ;   7: Pitch angle reference of blade 1 from collective pitch controller [rad]  
+      dll inpvec 1  3                         ;   8: Pitch angle reference of blade 2 from collective pitch controller [rad]  
+      dll inpvec 1  4                         ;   9: Pitch angle reference of blade 3 from collective pitch controller [rad]  
+      dll inpvec 1 22                         ;  10: Status flag from collective pitch controller [0=normal operation]  
+      dll inpvec 1 14                         ;  11: Torque limit switch based on pitch    [-]  
+    end output; 
+  end type2_dll; 
+;
+   begin type2_dll;
+     name generator_servo ;
+     filename  ./control/generator_servo.dll ;
+     dll_subroutine_init init_generator_servo ;
+     dll_subroutine_update update_generator_servo ;
+     arraysizes_init  7 1 ;
+     arraysizes_update  4 8 ;
+ 	begin init ;
+       constant 1  20.0    ; Frequency of genertor 2nd order control model [Hz]   
+       constant 2   0.9    ; Damping ratio of genertor 2nd order control model [-]
+       constant 3 4.6e6    ; Maximum allowable LSS torque (pull-out torque) [Nm]
+       constant 4 0.944    ; Generator efficiency [-]
+       constant 5 97.0     ; Gearratio [-]
+       constant 6  0.0     ; Time for half value in softstart of torque [s]
+       constant 7 1000.0    ; Time for grid loss
+     end init ;
+;
+     begin output;
+       general time                          ;   Time [s]    
+       dll inpvec 1 1                        ;   Electrical torque reference [Nm]  
+       constraint bearing1 shaft_rot 1 only 2;   Generator LSS speed [rad/s]   
+       mbdy momentvec shaft 1 1 shaft only 3 ;   Shaft moment [kNm] (Qshaft)
+     end output;
+;
+     begin actions;    
+        mbdy moment_int shaft 1 -3 shaft towertop 2 ;   Generator LSS torque [Nm]
+     end actions;
+   end type2_dll;
+;
+   begin type2_dll;
+     name mech_brake ;
+     filename  ./control/mech_brake.dll ;
+     dll_subroutine_init init_mech_brake ;
+     dll_subroutine_update update_mech_brake ;
+     arraysizes_init    4 1 ;
+     arraysizes_update  3 6 ;
+ 	begin init ;
+      constant 1 2727252.0 ; Fully deployed maximum brake torque [Nm]
+      constant 2     100.0 ; alpha, used in Q = tanh(omega*alpha), typically 1e2/Omega_nom
+      constant 3       0.5 ; Delay time for before brake starts to deploy [s]
+      constant 4       0.6 ; Time for brake to become fully deployed [s]
+     end init ;
+;
+     begin output;
+	   general time                           ; Time [s]
+	   constraint bearing1 shaft_rot 1 only 2 ; Generator LSS speed [rad/s]
+	   dll inpvec 1 25                        ; Command to deploy mechanical disc brake [0,1]
+     end output;
+;
+     begin actions;    
+        mbdy moment_int shaft 1 -3 shaft towertop 2 ;   Generator LSS torque [Nm]
+     end actions;
+   end type2_dll;
+;
+  begin type2_dll;
+    name servo_with_limits ;
+    filename  ./control/servo_with_limits.dll ;
+    dll_subroutine_init init_servo_with_limits ;
+    dll_subroutine_update update_servo_with_limits ;
+    arraysizes_init  10 1 ;
+    arraysizes_update  5 9 ;
+	begin init ;
+      constant  1  3     ; Number of blades [-]
+      constant  2  1.0   ; Filter frequency [Hz]  
+      constant  3  0.7   ; Filter damping ratio [-]
+      constant  4  8.0   ; Max. pitch speed [deg/s]
+      constant  5  8.0   ; Max. pitch acceleration [deg/s^2]
+      constant  6  0.0   ; Min. pitch angle [deg] 
+      constant  7 84.0   ; Max. pitch angle [deg] 	  
+	  constant  8 1000.0   ; Time for pitch runaway [s]
+	  constant  9 -1.0    ; Time for stuck blade 1 [s]
+	  constant 10 0.0       ; Angle of stuck blade 1 [deg]
+	end init ;
+    begin output;
+      general time        ;  Time                         [s]     
+	  ; ; - For Cyclic Pitch: - ;
+       ; dll inpvec 2 1     ;  Pitch1 demand angle          [rad] 
+       ; dll inpvec 2 2     ;  Pitch2 demand angle          [rad] 
+       ; dll inpvec 2 3     ;  Pitch3 demand angle          [rad] 
+	  ; - For Collective Pitch Only: - ;
+       dll inpvec 1 2     ;  Pitch1 demand angle          [rad] 
+       dll inpvec 1 3     ;  Pitch2 demand angle          [rad] 
+       dll inpvec 1 4     ;  Pitch3 demand angle          [rad] 
+       dll inpvec 1 26    ;  Flag for emergency pitch stop         [0=off/1=on]
+    end output;           
+;
+    begin actions;    
+      constraint bearing2 angle pitch1 ; Angle pitch1 bearing    [rad]
+      constraint bearing2 angle pitch2 ; Angle pitch2 bearing    [rad]
+      constraint bearing2 angle pitch3 ; Angle pitch3 bearing    [rad]
+    end actions;                      
+  end type2_dll;
+;	--- DLL for tower-blade tip distance -- ;
+  begin type2_dll;
+    name disttowtip ;
+    filename  ./control/towclearsens.dll ;
+    dll_subroutine_init initialize ;
+    dll_subroutine_update update ;
+    arraysizes_init  1 1 ;
+    arraysizes_update  12 4 ;
+	begin init ;
+	  constant  1  2.66  ; Tower radius close to downward blade tip [m] 
+	end init ;
+    begin output;
+	  mbdy state pos tower    3 0.75 global ; [1,2,3]. Tower position: 27.5 m
+	  mbdy state pos blade1  18 1.0 global  ; [4,5,6]
+	  mbdy state pos blade2  18 1.0 global  ; [7,8,9]
+	  mbdy state pos blade3  18 1.0 global  ; [10,11,12]
+    end output;           
+  end type2_dll;
+;
+; ------------------------------------- Flap Control ------------------------------------------------------------------------------------------------------------
+; 1 individual flap per blade with PID on HPF Mx with rate and range limits
+begin type2_dll;
+	name flap_ctrl ;
+    filename  ./control/flap_dll_type2.dll ;
+	dll_subroutine_init initialize ;
+	dll_subroutine_update update ;	
+    arraysizes_init  15 1 ;
+	arraysizes_update  15 15 ;
+	begin init ;
+		constant 1 1 ;  Case 1: PID , Case 0: All shut to 0.0
+		constant 2 1.9374E-3 ;                                 [2]  linear factor for P gain scheduling [-]	
+		constant 3 0 ;                                         [3]  linear factor for I gain scheduling [-]	
+		constant 4 1.1029E-4 ;                                 [4]  linear factor for D gain scheduling [-]	
+		constant 5 6.6017E-2 ;                                 [5]  reference pitch angle for gain scheduling [rad]
+		constant 6 0.01745 ;                                   [6]  Min. pitch angle, below min gain is kept [rad]
+		constant 7 0.419 ;                                     [7]  Max. pitch angle, above max gain is kept [rad]
+		constant 8 0.1 ;									   [8]  Threshold of "rated power indicator" above which flaps are fully on [-]
+		; - Operating Times:
+		constant 9  90.0 ;                              [9]  time for controller to be active [s]
+		constant 10 1000.0;                              [10]  time for flap to run away: each flap follows given prescribed signals [s]
+		; - Flap angle when overspeed is detected
+		constant 11 0.0 ;                         			   [11]  Flap angle to take when over-speed is detected [deg]
+		; - Flap servo Parameters: - ;
+        constant 12  10 ;	                               [12]  max flap angle [deg]  
+        constant 13  -10 ;	                               [13]  min flap angle [deg]
+        constant 14  100 ;	                               [14]  max flap angle rate [deg/s]  
+        constant 15 0.1 ;	                       [15]  flap actuator dynamics time constant [s]  
+	end init ;
+	begin output;
+		; - Time - ;
+        general time ;                                               [1]  current simulation time [s]
+        general deltat ;                                             [2]   time step [s]
+		; - Blade root moments - ;
+		mbdy momentvec  blade1 3 1 blade1 only 1 ; # blade 1 root ;  [3]   Blade 1 flapwise root moment [kNm]
+		mbdy momentvec  blade2 3 1 blade2 only 1 ; # blade 2 root ;  [4]   Blade 2 flapwise root moment [kNm]
+		mbdy momentvec  blade3 3 1 blade3 only 1 ; # blade 3 root ;  [5]   Blade 3 flapwise root moment [kNm]
+		; - Input from main controller ;
+        dll inpvec 1 24 ;                                            [6]  filtered mean pitch angle [rad]
+		dll inpvec 1 22 ;											 [7]  Main power control status: 0. normal operation [-]
+		dll inpvec 1 14 ;											 [8]  Power rating status: 0. below rated power operation 1. above rated power operation[-]
+		; - Filter setup and PID gains - ;
+        general constant 0.05 ;	                                     [9]   corner frequency for blade flapwise moments high-pass filter [rad/s]
+        general constant 0.00375 ;                                   [10]   Proportional gain
+        general constant 0.0  ;	                                     [11]   Integral gain
+        general constant 0.00027688 ;                                [12]   Derivative gain
+		; -Prescribed signals - ;
+		general constant 0.0 ;  				                         [13]  Blade 1 prescribed fixed flap angle [deg]
+		general constant 0.0 ;                				         [14]  Blade 2 prescribed fixed flap angle [deg]
+		general constant 0.0 ;                            			 [15]  Blade 3 prescribed fixed flap angle [deg]
+end output;
+begin actions;		
+		aero beta 1 1 ; [1]
+		aero beta 2 1 ; [2]
+		aero beta 3 1 ; [3]
+end actions ;
+end type2_dll;
+end dll;
+;
+;---------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+;
+begin output ;
+  filename ./res/dlc14_iec61400-1ed3/dlc14_wsp12_wdir000_s0000 ;
+  time 100.0 200.0 ;
+  data_format  hawc_binary;
+  buffer 1 ;
+  general time;
+;  
+  constraint bearing1 shaft_rot 2; angle and angle velocity 
+  constraint bearing2 pitch1 5;    angle and angle velocity 
+  constraint bearing2 pitch2 5;    angle and angle velocity 
+  constraint bearing2 pitch3 5;    angle and angle velocity 
+  aero omega ;
+  aero torque;
+  aero power;
+  aero thrust;
+  wind free_wind 1 0.0 0.0 -90.0; local wind at fixed position: coo (1=global,2=non-rotation rotor coo.), pos x, pos y, pos z
+;
+  mbdy momentvec tower  1 1 tower # tower base ;
+  mbdy momentvec tower  7 2 tower # yaw bearing ;
+  mbdy momentvec shaft  4 1 shaft # main bearing ;
+  mbdy momentvec blade1 2 2 blade1 # blade 1 root ;
+  mbdy momentvec blade1 9 2 local  # blade 1 50% local e coo ;
+  mbdy momentvec blade2 2 2 blade2 # blade 2 root ;
+  mbdy momentvec blade2 9 2 local  # blade 2 50% local e coo ;
+  mbdy momentvec blade3 2 2 blade3 # blade 3 root ;
+  mbdy momentvec blade3 9 2 local  # blade 3 50% local e coo ;
+  mbdy state pos tower  7 1.0 global # tower top flange position ;
+  mbdy state acc tower  7 1.0 global # tower top flange position ;
+  mbdy state pos tower  3 1.0 global # tower approx tip height ;
+  mbdy state pos blade1  18 1.0 blade1 # blade 1 tip pos ;
+  mbdy state pos blade2  18 1.0 blade2 # blade 2 tip pos ;
+  mbdy state pos blade3  18 1.0 blade3 # blade 3 tip pos ;
+  mbdy state pos blade1  18 1.0 global # blade 1 tip pos ;
+  mbdy state pos blade2  18 1.0 global # blade 2 tip pos ;
+  mbdy state pos blade3  18 1.0 global # blade 3 tip pos ;
+;
+  aero windspeed 3 1 1 63.0;   wind seen from the blade: coo(1=local ae,2=blade,3=global,4=rotor polar), blade number, component xyz, blade radius
+  aero windspeed 3 1 2 63.0;  
+  aero windspeed 3 1 3 63.0;
+  aero alfa 1 45.0;
+  aero alfa 2 45.0;
+  aero alfa 3 45.0;
+  aero cl 1 45.0 ;
+  aero cl 2 45.0 ;
+  aero cl 3 45.0 ;  
+;
+; Input to controller
+  ; dll outvec 1 1 # time;
+  ; dll outvec 1 2 # slow speed shaft rad/s;
+  ; dll outvec 1 3 # pitch angle 1;
+  ; dll outvec 1 4 # pitch angle 2;
+  ; dll outvec 1 5 # pitch angle 3;
+  ; dll outvec 1 6 # WSP_x_global;
+  ; dll outvec 1 7 # WSP_y_global;
+  ; dll outvec 1 8 # WSP_z_global;
+  ; dll outvec 1 9 # Elec. pwr ;
+  ; dll outvec 1 10 # Grid flag ;
+; Output from controller
+  dll inpvec 1  1 # Generator torque reference            [Nm]   ;
+  dll inpvec 1  2 # Pitch angle reference of blade 1      [rad]  ;
+  dll inpvec 1  3 # Pitch angle reference of blade 2      [rad]  ;
+  dll inpvec 1  4 # Pitch angle reference of blade 3      [rad]  ;
+  ; dll inpvec 1  5 # Power reference                       [W]    ;
+  ; dll inpvec 1  6 # Filtered wind speed                   [m/s]  ;
+  ; dll inpvec 1  7 # Filtered rotor speed                  [rad/s];
+  ; dll inpvec 1  8 # Filtered rotor speed error for torque [rad/s];
+  ; dll inpvec 1  9 # Bandpass filtered rotor speed         [rad/s];
+  ; dll inpvec 1 10 # Proportional term of torque contr.    [Nm]   ;
+  ; dll inpvec 1 11 # Integral term of torque controller    [Nm]   ;
+  ; dll inpvec 1 12 # Minimum limit of torque               [Nm]   ;
+  ; dll inpvec 1 13 # Maximum limit of torque               [Nm]   ;
+  dll inpvec 1 14 # Torque limit switch based on pitch    [-]    ;
+  ; dll inpvec 1 15 # Filtered rotor speed error for pitch  [rad/s];
+  ; dll inpvec 1 16 # Power error for pitch                 [W]    ;
+  ; dll inpvec 1 17 # Proportional term of pitch controller [rad]  ;
+  ; dll inpvec 1 18 # Integral term of pitch controller     [rad]  ;
+  ; dll inpvec 1 19 # Minimum limit of pitch                [rad]  ;
+  ; dll inpvec 1 20 # Maximum limit of pitch                [rad]  ;
+  dll inpvec 1 21 # Torque reference from DT dammper      [Nm]  ;
+  dll inpvec 1 22 # Status signal                         [-]  ;
+  ; dll inpvec 1 23 # Total added pitch rate                [rad/s]  ;  
+  dll inpvec 1 25 # Flag for mechnical brake              [0=off/1=on] ;
+  dll inpvec 1 26 # Flag for emergency pitch stop         [0=off/1=on] ;
+; ; Output to generator model
+   ; dll outvec 2 1  # time ;
+   ; dll outvec 2 2  # Electrical torque reference [Nm] ;
+   ; dll outvec 2 3  # omega LSS ;
+; Input from generator model
+  dll inpvec 3 1  # Mgen LSS [Nm]; 
+  dll inpvec 3 2  # Pelec W ; 
+  dll inpvec 3 3  # Mframe ; 
+  dll inpvec 3 4  # Mgen HSS ; 
+  dll inpvec 3 5  # Generator Pmech kW ; 
+  dll inpvec 3 6  # Filtered Gen speed ; 
+  dll inpvec 3 7  # Elec. pwr ; 
+  dll inpvec 3 8  # Grid flag ; 
+; Output to mechanical brake
+  dll inpvec 4 1 # Brake torque [Nm] ; 
+; ; Input to mechanical brake
+   ; dll outvec 3 1 # Time [s] ;
+   ; dll outvec 3 2 # Generator LSS speed [rad/s] ;
+   ; dll outvec 3 3 # Deploy brake ;
+; ; Output to pitch servo
+   ; dll outvec 4 1 # time;
+   ; dll outvec 4 2 # pitchref 1;
+   ; dll outvec 4 3 # pitchref 2;
+   ; dll outvec 4 4 # pitchref 3;
+   ; dll outvec 4 5 # Emerg. stop;
+; Input from pitch servo
+  dll inpvec 5 1 # pitch 1; 
+  dll inpvec 5 2 # pitch 2; 
+  dll inpvec 5 3 # pitch 3; 
+; Check tower clearence
+  dll inpvec 6 1 # Bltip tow min d [m]; 
+; - Check on flap control:
+  aero beta 1 1 ;
+  aero beta 2 1 ;
+  aero beta 3 1 ;
+end output;
+;
+exit;

@@ -1,0 +1,21 @@
+________________________________________________________________________________________________________________________
+  Version ID : HAWC2MB 12.2
+  Log file output
+                                                            Time : 07:18:14
+                                                            Date : 20:11.2015
+________________________________________________________________________________________________________________________
+ Simulation commands read with succes
+ Orientation input commands read with succes
+ constraint input commands read with succes
+ Topologi commands read with succes
+ Mann commands read with succes
+ Wind commands read with succes
+ DLL commands read with succes
+ output commands read with succes
+ Output commands read
+ Initialization of structure
+ Initialization of wind
+ Initialization of Mann turbulence
+ Opening turbulence file ./turb/envisionpp2b_20150517_2310_s1004u.bin
+ Turbulence file ./turb/envisionpp2b_20150517_2310_s1004u.bin does not exist
+ Turbulence generation starts ...
