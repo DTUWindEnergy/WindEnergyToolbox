@@ -15,7 +15,7 @@ def cosd(dir_deg):
 def tand(dir_deg):
     return np.tan(rad(dir_deg))
 
-def mean_deg(dir):
+def mean_deg(dir, axis=0):
     """Mean of angles in degrees
 
     Parameters
@@ -28,7 +28,7 @@ def mean_deg(dir):
     mean_deg : float
         Mean angle
     """
-    return deg(np.arctan2(np.mean(sind(dir[:])), np.mean(cosd(dir[:]))))
+    return deg(np.arctan2(np.mean(sind(dir[:]), axis), np.mean(cosd(dir[:]), axis)))
 
 def std_deg(dir):
     """Standard deviation of angles in degrees

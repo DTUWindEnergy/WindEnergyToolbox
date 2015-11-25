@@ -41,6 +41,13 @@ class Test(unittest.TestCase):
         self.assertEqual(mean_deg(np.array([0, 90])), 45)
         self.assertAlmostEqual(mean_deg(np.array([350, 10])), 0)
 
+
+    def test_mean_deg_array(self):
+        a = np.array([[0, 90], [350, 10], [0, -90]])
+        np.testing.assert_array_almost_equal(mean_deg(a, 1), [45, 0, -45])
+        np.testing.assert_array_almost_equal(mean_deg(a.T, 0), [45, 0, -45])
+
+
     def test_std_deg(self):
         self.assertEqual(std_deg(np.array([0, 0, 0])), 0)
         self.assertAlmostEqual(std_deg(np.array([0, 90, 180, 270])), 57.296, 2)
