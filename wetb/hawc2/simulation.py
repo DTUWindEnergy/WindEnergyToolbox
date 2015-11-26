@@ -160,10 +160,8 @@ class SimulationThread(Thread):
 
 
     def start(self):
-        print (self.getName(), self.htcfile, self.modelpath, self.hawc2exe)
         si = subprocess.STARTUPINFO()
         si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        #self.hawc2exe = r'C:\mmpe\programming\python\MMPE\programs\getcwd\getcwd_dist\exe.win-amd64-3.3/getcwd.exe'
         CREATE_NO_WINDOW = 0x08000000
         self.process = subprocess.Popen([self.hawc2exe, self.htcfile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, cwd=self.modelpath, creationflags=CREATE_NO_WINDOW)
 

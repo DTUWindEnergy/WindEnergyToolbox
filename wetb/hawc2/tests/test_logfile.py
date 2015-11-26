@@ -5,12 +5,13 @@ Created on 18/11/2015
 '''
 import unittest
 from wetb.hawc2.log_file import LogFile, is_file_open, INITIALIZATION_ERROR, \
-    INITIALIZATION, SIMULATING, DONE, SIMULATION_ERROR, GENERATING_TURBULENCE, \
-    PENDING
+    INITIALIZATION, SIMULATING, DONE, SIMULATION_ERROR, \
+    PENDING, ERROR
 import time
 from wetb.hawc2 import log_file
 import threading
 import os
+from wetb.hawc2.htc_file import HTCFile
 
 def simulate(file, wait):
     with open(file, 'r') as fin:
@@ -29,12 +30,17 @@ def simulate(file, wait):
 class Test(unittest.TestCase):
 
 
+    def test_from_htcfile(self):
+        htcfile = HTCFile('test_files/logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc')
+        logfile = LogFile.from_htcfile(htcfile, 'test_files/logfiles/model/')
+        self.assertEqual(logfile.status, DONE)
+
     def test_missing_logfile(self):
         f = 'test_files/logfiles/missing.log'
         logfile = LogFile(f, 200)
-        status = logfile.status()
-        self.assertEqual(status[0], 0)
-        self.assertEqual(status[1], log_file.MISSING)
+        logfile.update_status()
+        self.assertEqual(logfile.pct, 0)
+        self.assertEqual(logfile.status, log_file.MISSING)
 
 
     def test_is_file_open(self):
@@ -48,81 +54,85 @@ class Test(unittest.TestCase):
     def test_simulation_init_error(self):
         f = 'test_files/logfiles/init_error.log'
         logfile = LogFile(f, 2)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 100)
-        self.assertEqual(txt, DONE)
-        self.assertEqual(err, [' *** ERROR *** No line termination in command line            8'])
+        logfile.update_status()
+        self.assertEqual(logfile.pct, 100)
+        self.assertEqual(logfile.status, DONE)
+        self.assertEqual(logfile.errors, ['*** ERROR *** No line termination in command line            8'])
 
     def test_init(self):
         f = 'test_files/logfiles/init.log'
         logfile = LogFile(f, 200)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 0)
-        self.assertEqual(txt, INITIALIZATION)
-        self.assertEqual(err, [])
+        logfile.update_status()
+        self.assertEqual(logfile.pct, 0)
+        self.assertEqual(logfile.status, INITIALIZATION)
+        self.assertEqual(logfile.errors, [])
 
     def test_turbulence_generation(self):
         f = 'test_files/logfiles/turbulence_generation.log'
         logfile = LogFile(f, 200)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 0)
-        self.assertEqual(txt, GENERATING_TURBULENCE)
-        self.assertEqual(err, [])
+        logfile.update_status()
+        self.assertEqual(logfile.pct, 0)
+        self.assertEqual(logfile.status, INITIALIZATION)
+        self.assertEqual(logfile.errors, [])
+        self.assertEqual(logfile.lastline, "Turbulence generation starts ...")
 
     def test_simulation(self):
         f = 'test_files/logfiles/simulating.log'
         logfile = LogFile(f, 2)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 25)
-        self.assertEqual(txt, SIMULATING)
-        self.assertEqual(err, [])
+        logfile.update_status()
+        self.assertEqual(logfile.pct, 25)
+        self.assertEqual(logfile.status, SIMULATING)
+        self.assertEqual(logfile.errors, [])
+
 
 
     def test_finish(self):
         f = 'test_files/logfiles/finish.log'
         logfile = LogFile(f, 200)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 100)
-        self.assertEqual(txt, DONE)
-        self.assertEqual(err, [])
+        self.assertEqual(logfile.pct, 100)
+        self.assertEqual(logfile.status, DONE)
+        self.assertEqual(logfile.errors, [])
+        self.assertEqual(logfile.elapsed_time, 0.8062344)
 
 
     def test_simulation_error(self):
         f = 'test_files/logfiles/simulation_error.log'
         logfile = LogFile(f, 2)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 100)
-        self.assertEqual(txt, DONE)
-        self.assertEqual(err, [' *** ERROR *** Error opening out .dat file'])
+        self.assertEqual(logfile.pct, 100)
+        self.assertEqual(logfile.status, DONE)
+        self.assertEqual(logfile.errors, ['*** ERROR *** Error opening out .dat file'])
 
     def test_simulation_error2(self):
         f = 'test_files/logfiles/simulation_error2.log'
         logfile = LogFile(f, 2)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, 100)
-        self.assertEqual(txt, DONE)
-        self.assertEqual(err, ['30 x  *** ERROR *** Out of limits in user defined shear field - limit value used'])
+        self.assertEqual(logfile.pct, 100)
+        self.assertEqual(logfile.status, DONE)
+        self.assertEqual(logfile.errors[0], '*** ERROR *** Out of limits in user defined shear field - limit value used')
+        self.assertEqual(logfile.error_str(), '30 x *** ERROR *** Out of limits in user defined shear field - limit value used')
 
 
-    def check(self, logfilename, phases, end_status):
+
+    def check(self, logfilename, phases, end_status, end_errors=[]):
+        return
         logfile = LogFile(logfilename + "_", 2)
+        logfile.clear()
         if os.path.isfile(logfile.filename):
             os.remove(logfile.filename)
-        status = logfile.status()
         t = threading.Thread(target=simulate, args=(logfilename, 0.0001))
         t.start()
-        while status[0] >= 0 and status[1] != DONE:
-            new_status = logfile.status()
-            if new_status[1] != status[1] or new_status[0] != status[0]:
-                status = new_status
-                #print(status)
-            if status[1] in phases:
-                phases.remove(status[1])
+        last_status = None
+        last_pct = 0
+        while logfile.pct >= 0 and logfile.status != DONE:
+            logfile.update_status()
+            if logfile.status != last_status or logfile.pct != last_pct:
+                last_status = logfile.status
+                last_pct = logfile.pct
+                if logfile.status in phases:
+                    phases.remove(logfile.status)
             time.sleep(0.01)
-        code, txt, err = logfile.status()
-        self.assertEqual(code, end_status[0])
-        self.assertEqual(txt, end_status[1])
-        self.assertEqual(err, end_status[2])
+        self.assertEqual(logfile.pct, 100)
+        self.assertEqual(logfile.status, end_status)
+        self.assertEqual(logfile.errors, end_errors)
         self.assertFalse(phases)
         t.join()
         os.remove(logfile.filename)
@@ -131,22 +141,69 @@ class Test(unittest.TestCase):
     def test_realtime_test(self):
         self.check('test_files/logfiles/finish.log',
                    phases=[PENDING, INITIALIZATION, SIMULATING, DONE],
-                   end_status=(100, DONE, []))
+                   end_status=DONE)
 
     def test_realtime_test2(self):
         self.check('test_files/logfiles/init_error.log',
            phases=[PENDING, INITIALIZATION, SIMULATING, DONE],
-           end_status=(100, DONE, [' *** ERROR *** No line termination in command line            8']))
+           end_status=DONE,
+           end_errors=['*** ERROR *** No line termination in command line            8'])
 
     def test_realtime_test_simulation_error(self):
         self.check('test_files/logfiles/simulation_error.log',
                    [PENDING, INITIALIZATION, SIMULATING, DONE],
-                   (100, DONE, [' *** ERROR *** Error opening out .dat file']))
+                   DONE, ['*** ERROR *** Error opening out .dat file'])
 
     def test_realtime_test_turbulence(self):
         self.check('test_files/logfiles/finish_turbulencegeneration.log',
-                   phases=[PENDING, INITIALIZATION, GENERATING_TURBULENCE, SIMULATING, DONE],
-                   end_status=(100, DONE, []))
+                   phases=[PENDING, INITIALIZATION, SIMULATING, DONE],
+                   end_status=DONE,
+                   end_errors=[])
+
+
+    def test_remaining(self):
+        logfilename = 'test_files/logfiles/finish.log'
+        logfile = LogFile(logfilename + "_", 2)
+        logfile.clear()
+        if os.path.isfile(logfile.filename):
+            os.remove(logfile.filename)
+        t = threading.Thread(target=simulate, args=(logfilename, 0.01))
+        t.start()
+        last_status = None
+        last_pct = 0
+        estimated_simulation_time = None
+        while logfile.pct >= 0 and logfile.status != DONE:
+            if estimated_simulation_time is None and logfile.remaining_time is not None:
+                endtime = time.time() + logfile.remaining_time
+            #print (logfile.pct, logfile.remaining_time, logfile.lastline)
+            logfile.update_status()
+            if logfile.status != last_status or logfile.pct != last_pct:
+                last_status = logfile.status
+                last_pct = logfile.pct
+            time.sleep(0.1)
+        t.join()
+        self.assertLess(abs(time.time() - endtime), 0.1)
+        os.remove(logfile.filename)
+
+
+    def test_remaining_str(self):
+        logfile = LogFile("f", 2)
+        logfile.remaining_time = 5
+        self.assertEqual(logfile.remaining_time_str(), "00:05")
+        logfile.remaining_time = 60 + 5
+        self.assertEqual(logfile.remaining_time_str(), "01:05")
+        logfile.remaining_time = 3600 + 120 + 5
+        self.assertEqual(logfile.remaining_time_str(), "1:02:05")
+
+    def test_add_hawc2errors(self):
+        f = 'test_files/logfiles/simulating.log'
+        logfile = LogFile(f, 2)
+        logfile.update_status()
+        logfile.add_HAWC2_errors(['program error'])
+        self.assertEqual(logfile.pct, 25)
+        self.assertEqual(logfile.status, ERROR)
+        self.assertEqual(logfile.errors, ['program error'])
+
 
 
 if __name__ == "__main__":

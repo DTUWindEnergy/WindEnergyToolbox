@@ -6,10 +6,12 @@ Created on 18/11/2015
 import os
 from wetb.hawc2.htc_file import HTCFile
 from collections import OrderedDict
+import time
+import math
+UNKNOWN = "Unknown"
 MISSING = "Log file cannot be found"
 PENDING = "Simulation not started yet"
 INITIALIZATION = 'Initializing simulation'
-GENERATING_TURBULENCE = "Generating turbulence"
 SIMULATING = "Simulating"
 ABORTED = ""
 DONE = "Simulation succeded"
@@ -31,63 +33,115 @@ def is_file_open(filename):
         return True
 
 class LogFile(object):
-    _status = (0, MISSING)
     def __init__(self, log_filename, time_stop):
         self.filename = log_filename
         self.time_stop = time_stop
+        self.reset()
+        self.update_status()
+
+    @staticmethod
+    def from_htcfile(htcfile, modelpath):
+        logfilename = htcfile.simulation.logfile[0]
+        if not os.path.isabs(logfilename):
+            logfilename = os.path.join(modelpath, logfilename)
+        return LogFile(logfilename, htcfile.simulation.time_stop[0])
+
+    def reset(self):
         self.position = 0
+        self.lastline = ""
+        self.status = UNKNOWN
+        self.pct = 0
+        self.errors = []
+        self.info = []
+        self.start_time = None
+        self.current_time = 0
+        self.remaining_time = None
+
 
     def clear(self):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w'):
             pass
-        self.position = 0
+        self.reset()
 
-    def status(self):
+    def extract_time(self, time_line):
+        time_line = time_line.strip()
+        if 'Starting simulation' == time_line:
+            return 0
+        if time_line == "":
+            return self.current_time
+        try:
+            return float(time_line[time_line.index('=') + 1:time_line.index('Iter')])
+        except:
+            print ("#" + time_line + "#")
+            pass
+
+    def update_status(self):
         if not os.path.isfile(self.filename):
-            self._status = (0, MISSING, [])
+            self.status = MISSING
         else:
-            if self._status[1] == MISSING:
-                self._status = (0, PENDING, [])
-            with open(self.filename) as fid:
+            if self.status == UNKNOWN or self.status == MISSING:
+                self.status = PENDING
+            with open(self.filename, 'rb') as fid:
                 fid.seek(self.position)
                 txt = fid.read()
             self.position += len(txt)
-            if self._status[1] == PENDING and self.position > 0:
-                self._status = (0, INITIALIZATION, [])
-            error_lst = self._status[2]
+            txt = txt.decode(encoding='utf_8', errors='strict')
+            if self.status == PENDING and self.position > 0:
+                self.status = INITIALIZATION
+
             if len(txt) > 0:
-                if self._status[1] == INITIALIZATION or self._status[1] == GENERATING_TURBULENCE:
+                self.lastline = (txt.strip()[max(0, txt.strip().rfind("\n")):]).strip()
+                if self.status == INITIALIZATION:
                     init_txt, *rest = txt.split("Starting simulation")
                     if "*** ERROR ***" in init_txt:
-                        error_lst.extend([l for l in init_txt.strip().split("\n") if "ERROR" in l])
-                    if "Turbulence generation starts" in init_txt[init_txt.strip().rfind("\n"):]:
-                        self._status = (0, GENERATING_TURBULENCE, error_lst)
+                        self.errors.extend([l.strip() for l in init_txt.strip().split("\n") if "error" in l.lower()])
                     if rest:
                         txt = rest[0]
-                        self._status = (0, SIMULATING, error_lst)
-                if self._status[1] == SIMULATING:
+                        self.status = SIMULATING
+                        if not 'Elapsed time' in self.lastline:
+                            self.start_time = (self.extract_time(self.lastline), time.time())
 
+                if self.status == SIMULATING:
                     simulation_txt, *rest = txt.split('Elapsed time')
                     if "*** ERROR ***" in simulation_txt:
-                        error_lst.extend([l for l in simulation_txt.strip().split("\n") if "ERROR" in l])
+                        self.errors.extend([l.strip() for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
                     i1 = simulation_txt.rfind("Global time")
                     i2 = simulation_txt[:i1].rfind('Global time')
-                    time_line = simulation_txt[i1:]
-                    try:
-                        time = float(time_line[time_line.index('=') + 1:time_line.index('Iter')])
-                        self._status = (int(100 * time // self.time_stop), SIMULATING, error_lst)
-                    except:
-                        self._status = (self._status[0], SIMULATING, error_lst)
+                    self.current_time = self.extract_time(simulation_txt[i1:])
+                    self.pct = int(100 * self.current_time // self.time_stop)
+                    if self.current_time is not None and self.start_time is not None and (self.current_time - self.start_time[0]) > 0:
+                        self.remaining_time = (time.time() - self.start_time[1]) / (self.current_time - self.start_time[0]) * (self.time_stop - self.current_time)
                     if rest:
-                        self._status = (100, DONE, error_lst)
-            #return self._status
+                        self.status = DONE
+                        self.pct = 100
+                        self.elapsed_time = float(rest[0].replace(":", "").strip())
 
-        error_lst = self._status[2]
+    def error_str(self):
         error_dict = OrderedDict()
-        for error in error_lst:
+        for error in self.errors:
             error_dict[error] = error_dict.get(error, 0) + 1
-        error_lst = [("%d x %s" % (v, k), k)[v == 1] for k, v in error_dict.items()]
+        return "\n".join([("%d x %s" % (v, k), k)[v == 1] for k, v in error_dict.items()])
 
-        return (self._status[0], self._status[1], error_lst)
+
+    def remaining_time_str(self):
+        if self.remaining_time:
+            if self.remaining_time < 3600:
+                m, s = divmod(self.remaining_time, 60)
+                return "%02d:%02d" % (m, math.ceil(s))
+            else:
+                h, ms = divmod(self.remaining_time, 3600)
+                m, s = divmod(ms, 60)
+                return "%d:%02d:%02d" % (h, m, math.ceil(s))
+        else:
+            return "--:--"
+
+    def add_HAWC2_errors(self, errors):
+        if errors:
+            self.status = ERROR
+            self.errors.extend(errors)
+
+
+
+
 
