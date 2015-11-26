@@ -151,6 +151,7 @@ class Test(unittest.TestCase):
                   './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_struct.dat',
                   './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_body_eigen.dat',
                   './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_strc_eigen.dat',
+                  './launcher_test/ssystem_eigenanalysis.dat', './launcher_test\\mode*.dat',
                   './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.sel',
                   './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.dat',
                   './res/rotor_check_inipos',

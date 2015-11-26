@@ -110,14 +110,17 @@ class HTCFile(HTCContents, HTCDefaults):
                          ('new_htc_structure/body_eigenanalysis_file_name', 0),
                          ('new_htc_structure/constraint_output_file_name', 0),
                          ('new_htc_structure/structure_eigenanalysis_file_name', 0),
-                         ('new_htc_structure/system_eigenanalysis', 0),
-                         ('output_at_time/filename', 0),
                          ('turb_export/filename_u', 0),
                          ('turb_export/filename_v', 0),
                          ('turb_export/filename_w', 0)]:
             line = self.get(k)
             if line:
                 files.append(line[index])
+
+        if 'system_eigenanalysis' in self.new_htc_structure:
+            f = self.new_htc_structure.system_eigenanalysis[0]
+            files.append(f)
+            files.append(os.path.join(os.path.dirname(f), 'mode*.dat'))
         dataformat = self.output.get('data_format', 'hawc_ascii')
         res_filename = self.output.filename[0]
         if dataformat == "gtsdf" or dataformat == "gtsdf64":
