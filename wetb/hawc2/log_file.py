@@ -13,11 +13,7 @@ MISSING = "Log file cannot be found"
 PENDING = "Simulation not started yet"
 INITIALIZATION = 'Initializing simulation'
 SIMULATING = "Simulating"
-ABORTED = ""
 DONE = "Simulation succeded"
-INITIALIZATION_ERROR = "Initialization error"
-SIMULATION_ERROR = "Simulation error"
-ERROR = "Error"
 
 def is_file_open(filename):
     try:
@@ -64,16 +60,19 @@ class LogFile(object):
             pass
         self.reset()
 
-    def extract_time(self, time_line):
-        time_line = time_line.strip()
-        if 'Starting simulation' == time_line:
-            return 0
+    def extract_time(self, txt):
+        i1 = txt.rfind("Global time")
+        if i1 == -1:
+            return self.current_time
+        else:
+            time_line = txt[i1:].strip()
+
         if time_line == "":
             return self.current_time
         try:
             return float(time_line[time_line.index('=') + 1:time_line.index('Iter')])
         except:
-            print ("#" + time_line + "#")
+            print ("Cannot extract time from #" + time_line + "#")
             pass
 
     def update_status(self):
@@ -91,7 +90,8 @@ class LogFile(object):
                 self.status = INITIALIZATION
 
             if len(txt) > 0:
-                self.lastline = (txt.strip()[max(0, txt.strip().rfind("\n")):]).strip()
+                if len(txt.strip()):
+                    self.lastline = (txt.strip()[max(0, txt.strip().rfind("\n")):]).strip()
                 if self.status == INITIALIZATION:
                     init_txt, *rest = txt.split("Starting simulation")
                     if "*** ERROR ***" in init_txt:
@@ -100,18 +100,23 @@ class LogFile(object):
                         txt = rest[0]
                         self.status = SIMULATING
                         if not 'Elapsed time' in self.lastline:
-                            self.start_time = (self.extract_time(self.lastline), time.time())
+                            i1 = txt.rfind("Global time")
+                            if i1 > -1:
+                                self.start_time = (self.extract_time(txt[i1:]), time.time())
 
                 if self.status == SIMULATING:
                     simulation_txt, *rest = txt.split('Elapsed time')
                     if "*** ERROR ***" in simulation_txt:
                         self.errors.extend([l.strip() for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
                     i1 = simulation_txt.rfind("Global time")
-                    i2 = simulation_txt[:i1].rfind('Global time')
-                    self.current_time = self.extract_time(simulation_txt[i1:])
-                    self.pct = int(100 * self.current_time // self.time_stop)
-                    if self.current_time is not None and self.start_time is not None and (self.current_time - self.start_time[0]) > 0:
+                    if i1 > -1:
+                        self.current_time = self.extract_time(simulation_txt[i1:])
+                    if self.time_stop > 0:
+                        self.pct = int(100 * self.current_time // self.time_stop)
+                    try:
                         self.remaining_time = (time.time() - self.start_time[1]) / (self.current_time - self.start_time[0]) * (self.time_stop - self.current_time)
+                    except:
+                        pass
                     if rest:
                         self.status = DONE
                         self.pct = 100

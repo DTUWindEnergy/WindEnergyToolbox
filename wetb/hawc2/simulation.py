@@ -1,6 +1,6 @@
 import os
 from wetb.hawc2.htc_file import HTCFile
-from wetb.hawc2.log_file import LogFile, SIMULATING
+from wetb.hawc2.log_file import LogFile
 from threading import Timer, Thread
 import sys
 from multiprocessing.process import Process
@@ -10,10 +10,17 @@ import subprocess
 import shutil
 import json
 import glob
+from wetb.hawc2 import log_file
 
 
 
-
+QUEUED = "queued"  #until start
+INITIALIZING = "initializing"  #when starting
+SIMULATING = "SIMULATING"  # when logfile.status=simulating
+FINISH = "finish"  # when finish
+ERROR = "error"  # when hawc2 returns error
+ABORTED = "aborted"  # when stopped and logfile.status != Done
+CLEANED = "cleaned"  # after copy back
 
 class Simulation(object):
     is_simulating = False
@@ -22,24 +29,35 @@ class Simulation(object):
         self.folder = os.path.dirname(htcfilename)
         if not os.path.isabs(htcfilename):
             htcfilename = os.path.join(modelpath, htcfilename)
-
+        self.htcfilename = htcfilename
         self.filename = os.path.basename(htcfilename)
         self.htcFile = HTCFile(htcfilename)
         self.time_stop = self.htcFile.simulation.time_stop[0]
-
+        self.copy_turbulence = True
         self.log_filename = self.htcFile.simulation.logfile[0]
         if os.path.isabs(self.log_filename):
             self.log_filename = os.path.relpath(self.log_filename, self.modelpath)
 
         self.logFile = LogFile(os.path.join(self.modelpath, self.log_filename), self.time_stop)
         self.logFile.clear()
-        self.last_status = (0, "Pending", [])
+        self._status = QUEUED
         self.thread = Thread(target=self.simulate)
         self.simulationThread = SimulationThread(self.modelpath, self.htcFile.filename, hawc2exe)
         self.timer = RepeatedTimer(1, self.update_status)
 
+    def __str__(self):
+        return "Simulation(%s)" % self.filename
 
     def update_status(self, *args, **kwargs):
+        if self.status in [INITIALIZING, SIMULATING]:
+            self.logFile.update_status()
+
+            if self.logFile.status == log_file.SIMULATING:
+                self._status = SIMULATING
+            if self.logFile.status == log_file.DONE:
+                self._status = FINISH
+
+    def show_status(self):
         status = self.logFile.status()
         if status[1] == SIMULATING:
             if self.last_status[1] != SIMULATING:
@@ -83,54 +101,66 @@ class Simulation(object):
 
 
 
-    def finish_simulation(self, copy_turbulence):
+    def finish_simulation(self):
+        if self.status == CLEANED: return
         files = self.htcFile.output_files()
-        if copy_turbulence:
+        if self.copy_turbulence:
             files.extend(self.htcFile.turbulence_files())
         for dst in files:
             if not os.path.isabs(dst):
                 dst = os.path.join(self.modelpath, dst)
-
             src = os.path.join(self.tmp_modelpath, os.path.relpath(dst, self.modelpath))
-            if os.path.isfile(src):
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
-                if not os.path.isfile(dst) or os.path.getmtime(dst) != os.path.getmtime(src):
-                    shutil.copy(src, dst)
+
+            for src_file in glob.glob(src):
+                dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
+                os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+                if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
+                    shutil.copy(src_file, dst_file)
 
         self.logFile.filename = os.path.join(self.modelpath, self.log_filename)
 
 
+        try:
+            shutil.rmtree(self.tmp_modelpath)
+        except (PermissionError, OSError) as e:
+            raise Warning(str(e))
 
-        shutil.rmtree(self.tmp_modelpath)
+        self.status = CLEANED
 
 
 
     def simulate(self):
-
         self.is_simulating = True
-        self.timer.start()
+        self.logFile.clear()
+        self.status = INITIALIZING
+
         self.simulationThread.start()
         self.simulationThread.join()
-
-        errorcode, stdout, stderr, cmd = self.simulationThread.res
-        if errorcode:
-            print (errorcode)
-            print (stdout)
-            print (stderr)
-            print (cmd)
-        self.timer.stop()
+        self.returncode, self.stderr, self.stdout = self.simulationThread.res
+        if self.returncode or 'error' in self.stderr.lower() or 'error' in self.stdout.lower():
+            print (self.returncode)
+            print ("stdout:\n", self.stdout)
+            print ("-"*50)
+            print ("stderr:\n", self.stderr)
+            print ("#"*50)
+            self.logFile.errors(list(set([l for l in self.stderr.split("\n") if 'error' in l.lower()])))
+            self.status = ERROR
+#        else:
+#            self.stop()
+#            self.finish_simulation()
+#            self.controller.update_queues()
         self.is_simulating = False
-        self.update_status()
 
 
     def start(self):
-
         self.thread.start()
 
-    def terminate(self):
+    def stop(self):
         self.timer.stop()
         self.simulationThread.process.kill()
-        self.simulationThread.join()
+        self.finish_simulation()
+        if self.logFile.status not in [log_file.DONE]:
+            self.logFile.status = ABORTED
 
 class SimulationProcess(Process):
 
