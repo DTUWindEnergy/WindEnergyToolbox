@@ -143,7 +143,7 @@ class Simulation(object):
             print ("-"*50)
             print ("stderr:\n", self.stderr)
             print ("#"*50)
-            self.logFile.errors(list(set([l for l in self.stderr.split("\n") if 'error' in l.lower()])))
+            self.errors = (list(set([l for l in self.stderr.split("\n") if 'error' in l.lower()])))
             self.status = ERROR
 #        else:
 #            self.stop()
@@ -162,21 +162,21 @@ class Simulation(object):
         if self.logFile.status not in [log_file.DONE]:
             self.logFile.status = ABORTED
 
-class SimulationProcess(Process):
-
-    def __init__(self, modelpath, htcfile, hawc2exe="HAWC2MB.exe"):
-        Process.__init__(self)
-        self.modelpath = modelpath
-        self.htcfile = os.path.abspath(htcfile)
-        self.hawc2exe = hawc2exe
-        self.res = [0, "", "", ""]
-        self.process = process([self.hawc2exe, self.htcfile] , self.modelpath)
-
-
-    def run(self):
-        p = psutil.Process(os.getpid())
-        p.nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
-        exec_process(self.process)
+#class SimulationProcess(Process):
+#
+#    def __init__(self, modelpath, htcfile, hawc2exe="HAWC2MB.exe"):
+#        Process.__init__(self)
+#        self.modelpath = modelpath
+#        self.htcfile = os.path.abspath(htcfile)
+#        self.hawc2exe = hawc2exe
+#        self.res = [0, "", "", ""]
+#        self.process = process([self.hawc2exe, self.htcfile] , self.modelpath)
+#
+#
+#    def run(self):
+#        p = psutil.Process(os.getpid())
+#        p.nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
+#        exec_process(self.process)
 
 
 class SimulationThread(Thread):

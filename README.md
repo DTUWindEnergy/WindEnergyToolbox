@@ -16,7 +16,8 @@
 - [ae_file](wetb/hawc2/ae_file.py): Read AE (aerodynamic blade layout) files
 - [pc_file](wetb/hawc2/pc_file.py): Read PC (profile coefficient) files
 - [shear_file](wetb/hawc2/shear_file.py): Create user defined shear file
-- [at_time_file](wetb/hawc2/at_time_file.py): read at output_at_time files
+- [at_time_file](wetb/hawc2/at_time_file.py): Read at output_at_time files
+- [log_file](wetb/hawc2/log_file.py): Read and interpret log files
 - [ascii2bin](wetb/hawc2/ascii2bin): Compress HAWC2 ascii result files to binary
 
 ### [gtsdf](wetb/gtsdf)
