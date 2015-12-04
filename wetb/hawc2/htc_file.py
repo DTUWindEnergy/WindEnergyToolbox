@@ -121,16 +121,7 @@ class HTCFile(HTCContents, HTCDefaults):
             f = self.new_htc_structure.system_eigenanalysis[0]
             files.append(f)
             files.append(os.path.join(os.path.dirname(f), 'mode*.dat'))
-        dataformat = self.output.get('data_format', 'hawc_ascii')
-        res_filename = self.output.filename[0]
-        if dataformat == "gtsdf" or dataformat == "gtsdf64":
-            files.append(res_filename + ".hdf5")
-        elif dataformat == "flex_int":
-            files.append(res_filename + ".int")
-            files.append(os.path.join(os.path.dirname(res_filename), 'sensor'))
-        else:
-            files.append(res_filename + ".sel")
-            files.append(res_filename + ".dat")
+        files.extend(self.res_file_lst())
 
         for key in [k for k in self.contents.keys() if k.startswith("output_at_time")]:
             files.append(self[key]['filename'][0])
@@ -140,6 +131,18 @@ class HTCFile(HTCContents, HTCDefaults):
         files = [self.get('wind.%s.filename_%s' % (type, comp), [None])[0] for type in ['mann', 'flex'] for comp in ['u', 'v', 'w']]
         return [f for f in files if f]
 
+
+    def res_file_lst(self):
+        if 'output' not in self:
+            return []
+        dataformat = self.output.get('data_format', 'hawc_ascii')
+        res_filename = self.output.filename[0]
+        if dataformat == "gtsdf" or dataformat == "gtsdf64":
+            return [res_filename + ".hdf5"]
+        elif dataformat == "flex_int":
+            return [res_filename + ".int", os.path.join(os.path.dirname(res_filename), 'sensor')]
+        else:
+            return [res_filename + ".sel", res_filename + ".dat"]
 
 
 
