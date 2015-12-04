@@ -1,8 +1,11 @@
 from datetime import datetime, date
 import numpy as np
+timestamp0 = datetime.utcfromtimestamp(0)
 
 def to_unix(dateTime):
-    return (dateTime - datetime.utcfromtimestamp(0)).total_seconds()
+    #return dateTime.timestamp() + 3600
+    return (dateTime - timestamp0).total_seconds()
+    #return (dateTime - datetime.utcfromtimestamp(0)).total_seconds()
 
 
 def from_unix_old(sec):
