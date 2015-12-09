@@ -5,6 +5,9 @@ Created on Sun Jan 20 18:14:02 2013
 @author: dave
 """
 
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 import scipy as sp
 

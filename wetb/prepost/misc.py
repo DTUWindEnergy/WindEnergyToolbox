@@ -7,6 +7,7 @@ Library for general stuff
 @author: dave
 """
 
+from __future__ import division
 from __future__ import print_function
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 import os
