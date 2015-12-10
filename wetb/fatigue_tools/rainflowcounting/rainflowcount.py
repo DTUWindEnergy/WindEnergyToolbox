@@ -1,4 +1,7 @@
 import numpy as np
+from wetb.utils.cython_compile.cython_compile import cython_import
+
+
 def check_signal(signal):
     # check input data validity
     if not type(signal).__name__ == 'ndarray':
@@ -61,13 +64,18 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
         signal = signal / gain
         signal = np.round(signal).astype(np.int)
 
+
+        # If possible the module is compiled using cython otherwise the python implementation is used
+        cython_import('wetb.fatigue_tools.rainflowcounting.peak_trough')
+        cython_import('wetb.fatigue_tools.rainflowcounting.pair_range')
+
         from wetb.fatigue_tools.rainflowcounting.peak_trough import peak_trough
+        from wetb.fatigue_tools.rainflowcounting.pair_range import pair_range_amplitude_mean
 
 
         #Convert to list of local minima/maxima where difference > thresshold
         sig_ext = peak_trough(signal, thresshold)
 
-        from wetb.fatigue_tools.rainflowcounting.pair_range import pair_range_amplitude_mean
 
         #rainflow count
         ampl_mean = pair_range_amplitude_mean(sig_ext)
@@ -114,7 +122,7 @@ def rainflow_astm(signal):
 
     # Import find extremes and rainflow.
     # If possible the module is compiled using cython otherwise the python implementation is used
-    #cython_import('fatigue_tools.rainflowcount_astm')
+    cython_import('wetb.fatigue_tools.rainflowcounting.rainflowcount_astm')
     from wetb.fatigue_tools.rainflowcounting.rainflowcount_astm import find_extremes, rainflowcount
 
     # Remove points which is not local minimum/maximum
