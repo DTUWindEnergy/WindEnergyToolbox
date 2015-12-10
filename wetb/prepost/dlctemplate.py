@@ -4,8 +4,8 @@ Created on Thu Sep 18 13:00:25 2014
 
 @author: dave
 """
-from __future__ import division
-from __future__ import print_function
+
+
 
 import os
 import socket
@@ -16,11 +16,11 @@ from argparse import ArgumentParser
 from matplotlib import pyplot as plt
 #import matplotlib as mpl
 
-import Simulations as sim
+from . import Simulations as sim
 #import misc
 #import windIO
-import dlcdefs
-import dlcplots
+from . import dlcdefs
+from . import dlcplots
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -147,7 +147,7 @@ def variable_tag_func(master, case_id_short=False):
         mt['[eigenfreq_dir]'] = 'res_eigen/%s/' % rpl
     mt['[duration]'] = str(float(mt['[time_stop]']) - float(mt['[t0]']))
     # replace nan with empty
-    for ii, jj in mt.iteritems():
+    for ii, jj in mt.items():
         if jj == 'nan':
             mt[ii] = ''
 
@@ -326,7 +326,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                           'hub3-blade3-node-%03i-momentvec-y' % nn_blr]]
         i0, i1 = 0, -1
 
-        tags = cc.cases[cc.cases.keys()[0]].keys()
+        tags = list(cc.cases[list(cc.cases.keys())[0]].keys())
         add = None
         # general statistics for all channels channel
         df_stats = cc.statistics(calc_mech_power=True, i0=i0, i1=i1,

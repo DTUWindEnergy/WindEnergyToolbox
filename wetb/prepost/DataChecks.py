@@ -5,8 +5,8 @@ Created on Mon Mar  5 16:00:02 2012
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 # time and data should be 1 dimensional arrays
 def array_1d(array):
@@ -21,7 +21,7 @@ def array_1d(array):
             if (array.shape[0] == 1) or (array.shape[1] == 1):
                 return True
             else:
-                raise ValueError, 'only 1D arrays are accepted'
+                raise ValueError('only 1D arrays are accepted')
     else:
         return True
 

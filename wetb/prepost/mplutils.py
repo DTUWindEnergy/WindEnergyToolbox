@@ -5,8 +5,8 @@ Created on Wed Nov 23 11:22:50 2011
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 # external libraries
 import numpy as np

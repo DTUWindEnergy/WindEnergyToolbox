@@ -5,8 +5,8 @@ Created on Mon Nov  2 15:23:15 2015
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 import os
 
@@ -15,10 +15,10 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-import Simulations as sim
-import dlcdefs
-import hawcstab2 as hs2
-import mplutils
+from . import Simulations as sim
+from . import dlcdefs
+from . import hawcstab2 as hs2
+from . import mplutils
 
 
 class Configurations:
@@ -453,7 +453,7 @@ class Sims(object):
             self.p_root = '/mnt/hawc2sim/h2_vs_hs2'
         else:
             msg='unsupported runmethod, options: none, local, gorm or opt'
-            raise ValueError, msg
+            raise ValueError(msg)
 
         if not runmethod == 'here':
             self.P_RUN = os.path.join(self.p_root, self.PROJECT, self.sim_id)
@@ -747,7 +747,7 @@ class MappingsH2HS2(object):
         df_mean = pd.DataFrame()
         df_std = pd.DataFrame()
 
-        for key, value in mappings.iteritems():
+        for key, value in mappings.items():
             tmp = df_stats[df_stats['channel']==key]
             df_mean[value] = tmp['mean'].values.copy()
             df_std[value] = tmp['std'].values.copy()
@@ -762,14 +762,14 @@ class MappingsH2HS2(object):
 
     def _powercurve_hs2(self, fname):
 
-        mappings = {u'P [kW]'  :'P_aero',
-                    u'T [kN]'  :'T_aero',
-                    u'V [m/s]' :'windspeed'}
+        mappings = {'P [kW]'  :'P_aero',
+                    'T [kN]'  :'T_aero',
+                    'V [m/s]' :'windspeed'}
 
         df_pwr, units = self.hs2_res.load_pwr_df(fname)
 
         self.pwr_hs = pd.DataFrame()
-        for key, value in mappings.iteritems():
+        for key, value in mappings.items():
             self.pwr_hs[value] = df_pwr[key].values.copy()
 
     def blade_distribution(self, fname_h2, fname_hs2, h2_df_stats=None,
@@ -788,28 +788,28 @@ class MappingsH2HS2(object):
         """Read a HAWCStab2 *.ind file (blade distribution loading)
         """
 
-        mapping_hs2 =  {u's [m]'       :'curved_s',
-                        u'CL0 [-]'     :'Cl',
-                        u'CD0 [-]'     :'Cd',
-                        u'CT [-]'      :'Ct',
-                        u'CP [-]'      :'Cp',
-                        u'A [-]'       :'ax_ind',
-                        u'AP [-]'      :'tan_ind',
-                        u'U0 [m/s]'    :'vrel',
-                        u'PHI0 [rad]'  :'inflow_angle',
-                        u'ALPHA0 [rad]':'AoA',
-                        u'X_AC0 [m]'   :'pos_x',
-                        u'Y_AC0 [m]'   :'pos_y',
-                        u'Z_AC0 [m]'   :'pos_z',
-                        u'UX0 [m]'     :'def_x',
-                        u'UY0 [m]'     :'def_y',
-                        u'Tors. [rad]' :'torsion',
-                        u'Twist[rad]'  :'twist',
-                        u'V_a [m/s]'   :'ax_ind_vel',
-                        u'V_t [m/s]'   :'tan_ind_vel',
-                        u'FX0 [N/m]'   :'F_x',
-                        u'FY0 [N/m]'   :'F_y',
-                        u'M0 [Nm/m]'   :'M'}
+        mapping_hs2 =  {'s [m]'       :'curved_s',
+                        'CL0 [-]'     :'Cl',
+                        'CD0 [-]'     :'Cd',
+                        'CT [-]'      :'Ct',
+                        'CP [-]'      :'Cp',
+                        'A [-]'       :'ax_ind',
+                        'AP [-]'      :'tan_ind',
+                        'U0 [m/s]'    :'vrel',
+                        'PHI0 [rad]'  :'inflow_angle',
+                        'ALPHA0 [rad]':'AoA',
+                        'X_AC0 [m]'   :'pos_x',
+                        'Y_AC0 [m]'   :'pos_y',
+                        'Z_AC0 [m]'   :'pos_z',
+                        'UX0 [m]'     :'def_x',
+                        'UY0 [m]'     :'def_y',
+                        'Tors. [rad]' :'torsion',
+                        'Twist[rad]'  :'twist',
+                        'V_a [m/s]'   :'ax_ind_vel',
+                        'V_t [m/s]'   :'tan_ind_vel',
+                        'FX0 [N/m]'   :'F_x',
+                        'FY0 [N/m]'   :'F_y',
+                        'M0 [Nm/m]'   :'M'}
 
         try:
             hs2_cols = [k for k in mapping_hs2]
@@ -819,8 +819,8 @@ class MappingsH2HS2(object):
         except KeyError:
             # some results have been created with older HAWCStab2 that did not
             # include CT and CP columns
-            mapping_hs2.pop(u'CT [-]')
-            mapping_hs2.pop(u'CP [-]')
+            mapping_hs2.pop('CT [-]')
+            mapping_hs2.pop('CP [-]')
             hs2_cols = [k for k in mapping_hs2]
             std_cols = [mapping_hs2[k] for k in hs2_cols]
             # select only the HS channels that will be used for the mapping
@@ -834,22 +834,22 @@ class MappingsH2HS2(object):
 #        self.hs_aero['pos_x'] = (-1.0) # self.chord_length / 4.0
 
     def _distribution_h2(self):
-        mapping_h2 =  { u'Radius_s'  :'curved_s',
-                        u'Cl'        :'Cl',
-                        u'Cd'        :'Cd',
-                        u'Ct_local'  :'Ct',
-                        u'Cq_local'  :'Cq',
-                        u'Induc_RPy' :'ax_ind_vel',
-                        u'Induc_RPx' :'tan_ind_vel',
-                        u'Vrel'      :'vrel',
-                        u'Inflow_ang':'inflow_angle',
-                        u'alfa'      :'AoA',
-                        u'pos_RP_x'  :'pos_x',
-                        u'pos_RP_y'  :'pos_y',
-                        u'pos_RP_z'  :'pos_z',
-                        u'Secfrc_RPx':'F_x',
-                        u'Secfrc_RPy':'F_y',
-                        u'Secmom_RPz':'M'}
+        mapping_h2 =  { 'Radius_s'  :'curved_s',
+                        'Cl'        :'Cl',
+                        'Cd'        :'Cd',
+                        'Ct_local'  :'Ct',
+                        'Cq_local'  :'Cq',
+                        'Induc_RPy' :'ax_ind_vel',
+                        'Induc_RPx' :'tan_ind_vel',
+                        'Vrel'      :'vrel',
+                        'Inflow_ang':'inflow_angle',
+                        'alfa'      :'AoA',
+                        'pos_RP_x'  :'pos_x',
+                        'pos_RP_y'  :'pos_y',
+                        'pos_RP_z'  :'pos_z',
+                        'Secfrc_RPx':'F_x',
+                        'Secfrc_RPy':'F_y',
+                        'Secmom_RPz':'M'}
         h2_cols = [k for k in mapping_h2]
         std_cols = [mapping_h2[k] for k in h2_cols]
 
@@ -1086,7 +1086,7 @@ class Plots(object):
     def all_h2_channels(self, results, labels, fpath, channels=None):
         """Results is a list of res (=HAWC2 results object)"""
 
-        for chan, details in results[0].ch_dict.iteritems():
+        for chan, details in results[0].ch_dict.items():
             if channels is None or chan not in channels:
                 continue
             resp = []

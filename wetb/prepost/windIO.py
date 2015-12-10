@@ -5,8 +5,8 @@ Created on Thu Apr  3 19:53:59 2014
 @author: dave
 """
 
-from __future__ import division # always devide as floats
-from __future__ import print_function
+ # always devide as floats
+
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 __author__ = 'David Verelst'
@@ -32,7 +32,7 @@ import pandas as pd
 
 # misc is part of prepost, which is available on the dtu wind gitlab server:
 # https://gitlab.windenergy.dtu.dk/dave/prepost
-import misc
+from . import misc
 # wind energy python toolbox, available on the dtu wind redmine server:
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 import fatigue
@@ -252,7 +252,7 @@ class LoadResults:
 
     def read_bin(self, scale_factors, usecols=False):
         if not usecols:
-            usecols = range(0, self.Nch)
+            usecols = list(range(0, self.Nch))
         fid = open(os.path.join(self.file_path, self.file_name) + '.dat', 'rb')
         self.sig = np.zeros( (self.N, len(usecols)) )
         for j, i in enumerate(usecols):
@@ -901,12 +901,12 @@ class LoadResults:
         """
         # identify all the different columns
         cols = set()
-        for ch_name, channelinfo in self.ch_dict.iteritems():
+        for ch_name, channelinfo in self.ch_dict.items():
             cols.update(set(channelinfo.keys()))
 
         df_dict = {col:[] for col in cols}
         df_dict['ch_name'] = []
-        for ch_name, channelinfo in self.ch_dict.iteritems():
+        for ch_name, channelinfo in self.ch_dict.items():
             cols_ch = set(channelinfo.keys())
             for col in cols_ch:
                 df_dict[col].append(channelinfo[col])
@@ -1071,7 +1071,7 @@ class LoadResults:
         """
         map_sorting = {}
         # first, sort on channel index
-        for ch_key, ch in self.ch_dict.iteritems():
+        for ch_key, ch in self.ch_dict.items():
             map_sorting[ch['chi']] = ch_key
 
         header = []
@@ -1085,7 +1085,7 @@ class LoadResults:
 
         # and save
         print('saving...', end='')
-        np.savetxt(fname, self.sig[:,map_sorting.keys()], fmt=fmt,
+        np.savetxt(fname, self.sig[:,list(map_sorting.keys())], fmt=fmt,
                    delimiter=delimiter, header=delimiter.join(header))
         print(fname)
 
@@ -1860,9 +1860,9 @@ class Tests(unittest.TestCase):
         fid.close()
         u = np.zeros((8192,32,32))
 
-        for i in xrange(8192):
-            for j in xrange(32):
-                for k in xrange(32):
+        for i in range(8192):
+            for j in range(32):
+                for k in range(32):
                     u[i,j,k] = turb[ i*1024 + j*32 + k]
 
         u2 = np.reshape(turb, (8192, 32, 32))
@@ -1939,7 +1939,7 @@ class Tests(unittest.TestCase):
         print(struct.unpack("f",fid.read(4))[0])
         # save in a list using struct
         items = (os.path.getsize(fpath + basename + '.wnd')-104)/2
-        data_list = [struct.unpack("h",fid.read(2))[0] for k in xrange(items)]
+        data_list = [struct.unpack("h",fid.read(2))[0] for k in range(items)]
 
 
         fid.seek(104)
@@ -1977,9 +1977,9 @@ class Tests(unittest.TestCase):
         fid.close()
 
         check = []
-        for i in xrange(8192):
-            for j in xrange(32):
-                for k in xrange(32):
+        for i in range(8192):
+            for j in range(32):
+                for k in range(32):
                     check.append(i*1024 + j*32 + k)
 
         qq = np.array(check)

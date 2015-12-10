@@ -5,8 +5,8 @@ Created on Tue Jan 14 14:12:58 2014
 @author: dave
 """
 
-from __future__ import print_function
-from __future__ import division
+
+
 import unittest
 import os
 import re
@@ -14,7 +14,7 @@ import re
 import numpy as np
 import pandas as pd
 
-import mplutils
+from . import mplutils
 
 
 class dummy:

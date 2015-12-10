@@ -5,8 +5,8 @@ Created on Tue Sep 16 10:21:11 2014
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 import os
@@ -31,9 +31,9 @@ import pandas as pd
 #import numpy as np
 
 #import windIO
-import mplutils
-import Simulations as sim
-import dlcdefs
+from . import mplutils
+from . import Simulations as sim
+from . import dlcdefs
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -390,7 +390,7 @@ def plot_stats2(sim_ids, post_dirs, fig_dir_base=None, labels=None,
         if dlc_name in dlc_ignore:
             continue
         # cycle through all the target plot channels
-        for ch_dscr, ch_names in plot_chans.iteritems():
+        for ch_dscr, ch_names in plot_chans.items():
             # second, group per channel. Note that when the channel names are not
             # identical, we need to manually pick them.
             # figure file name will be the first channel
@@ -744,7 +744,7 @@ class PlotStats(object):
         df.sort(columns=3, inplace=True)
         assert set(df[1].unique()) == set(['blade3', 'blade2', 'blade1'])
 
-        leqs = df.keys()[1:10]
+        leqs = list(df.keys())[1:10]
         df_ext = {leq:[] for leq in leqs}
         df_ext['node'] = []
         df_ext['comp'] = []
@@ -789,7 +789,7 @@ class PlotPerf(object):
         self.t0, self.t1 = time[0], time[-1]
 
         # find the wind speed
-        for channame, chan in res.ch_dict.iteritems():
+        for channame, chan in res.ch_dict.items():
             if channame.startswith('windspeed-global-Vy-0.00-0.00'):
                 break
         wind = res.sig[:,chan['chi']]
@@ -980,7 +980,7 @@ def plot_staircase(sim_ids, post_dirs, run_dirs, fig_dir_base=None,
         t0, t1 = time[0], time[-1]
 
         # find the wind speed
-        for channame, chan in res.ch_dict.iteritems():
+        for channame, chan in res.ch_dict.items():
             if channame.startswith('windspeed-global-Vy-0.00-0.00'):
                 break
         wind = res.sig[:,chan['chi']]

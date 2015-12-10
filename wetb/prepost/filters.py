@@ -5,15 +5,15 @@ Created on Sun Jan 20 18:14:02 2013
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 import numpy as np
 import scipy as sp
 
-import DataChecks as chk
-from misc import calc_sample_rate
-import mplutils
+from . import DataChecks as chk
+from .misc import calc_sample_rate
+from . import mplutils
 
 
 class Filters:
@@ -61,11 +61,11 @@ class Filters:
         """
 
         if x.ndim != 1:
-            raise ValueError, "smooth only accepts 1 dimension arrays."
+            raise ValueError("smooth only accepts 1 dimension arrays.")
 
         if x.size < window_len:
             msg = "Input vector needs to be bigger than window size."
-            raise ValueError, msg
+            raise ValueError(msg)
 
         if window_len<3:
             return x
@@ -74,7 +74,7 @@ class Filters:
         if not window in windowlist:
             msg = "Window should be 'flat', 'hanning', 'hamming', 'bartlett',"
             msg += " or 'blackman'"
-            raise ValueError, msg
+            raise ValueError(msg)
 
         s = np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
         #print(len(s))

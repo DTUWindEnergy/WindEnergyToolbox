@@ -7,8 +7,8 @@ __author__ = "David Verelst <dave@dtu.dk>"
 __license__ = "GPL-2+"
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 # standard python library
@@ -39,9 +39,9 @@ import pandas as pd
 import tables as tbl
 
 # custom libraries
-import misc
-import windIO
-import prepost
+from . import misc
+from . import windIO
+from . import prepost
 try:
     import fatigue_tools.dlc_fatigue as dlc_ft
 except ImportError:
@@ -127,7 +127,7 @@ def create_multiloop_list(iter_dict, debug=False):
     iter_list = []
 
     # fix the order of the keys
-    key_order = iter_dict.keys()
+    key_order = list(iter_dict.keys())
     nr_keys = len(key_order)
     nr_values,indices = [],[]
     # determine how many items on each key
@@ -250,7 +250,7 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
 
     stop = False
 
-    for i_case, (cname, case) in enumerate(cases.iteritems()):
+    for i_case, (cname, case) in enumerate(cases.items()):
 #    for i_case, case in enumerate(sorted(cases.keys())):
 
         shellscript += 'rem\nrem\n'
@@ -428,7 +428,7 @@ def run_local(cases, silent=False, check_log=True):
         print('')
         print('='*79)
         print('Be advised, launching %i HAWC2 simulation(s) sequentially' % nr)
-        print('run dir: %s' % cases[cases.keys()[0]]['[run_dir]'])
+        print('run dir: %s' % cases[list(cases.keys())[0]]['[run_dir]'])
         print('')
 
     if check_log:
@@ -711,17 +711,17 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
             # make sure the current cases is unique!
             if not ignore_non_unique:
-                if htc.keys()[0] in cases:
-                    msg = 'non unique case in cases: %s' % htc.keys()[0]
+                if list(htc.keys())[0] in cases:
+                    msg = 'non unique case in cases: %s' % list(htc.keys())[0]
                     raise KeyError(msg)
 
             # save in the big cases. Note that values() gives a copy!
-            cases[htc.keys()[0]] = htc.values()[0]
+            cases[list(htc.keys())[0]] = list(htc.values())[0]
             # if we have an update scenario, keep track of the cases we want
             # to run again. This prevents us from running all cases on every
             # update
             if run_only_new:
-                cases_to_run[htc.keys()[0]] = htc.values()[0]
+                cases_to_run[list(htc.keys())[0]] = list(htc.values())[0]
 
             if verbose:
                 print('created cases for: %s.htc\n' % master.tags['[case_id]'])
@@ -756,7 +756,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     tagfile += '='*79 + '\n'
     tagfile += 'iter_dict\n'.rjust(30)
     tagfile += '='*79 + '\n'
-    iter_dict_list = sorted(iter_dict.iteritems(), key=itemgetter(0))
+    iter_dict_list = sorted(iter(iter_dict.items()), key=itemgetter(0))
     for k in iter_dict_list:
         tagfile += str(k[0]).rjust(30) + ' : ' + str(k[1]).ljust(20) + '\n'
 
@@ -769,7 +769,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
         tagfile += '-'*79 + '\n'
         tagfile += 'opt_tags set\n'.rjust(30)
         tagfile += '-'*79 + '\n'
-        opt_dict = sorted(k.iteritems(), key=itemgetter(0), reverse=False)
+        opt_dict = sorted(iter(k.items()), key=itemgetter(0), reverse=False)
         for kk in opt_dict:
             tagfile += str(kk[0]).rjust(30)+' : '+str(kk[1]).ljust(20) + '\n'
     if update_cases:
@@ -805,7 +805,7 @@ def prepare_relaunch(cases, runmethod='gorm', verbose=False, write_htc=True,
     master = HtcMaster()
     # for invariant tags, load random case. Necessary before we can load
     # the master file, otherwise we don't know which master to load
-    master.tags = cases[cases.keys()[0]]
+    master.tags = cases[list(cases.keys())[0]]
     master.loadmaster()
 
     # load the original cases dict
@@ -816,7 +816,7 @@ def prepare_relaunch(cases, runmethod='gorm', verbose=False, write_htc=True,
 
     sim_nr = 0
     sim_total = len(cases)
-    for case, casedict in cases.iteritems():
+    for case, casedict in cases.items():
         sim_nr += 1
 
         # set all the tags in the HtcMaster file
@@ -842,7 +842,7 @@ def prepare_relaunch(cases, runmethod='gorm', verbose=False, write_htc=True,
         # save in the big cases. Note that values() gives a copy!
         # remark, what about the copying done at the end of master.createcase?
         # is that redundant then?
-        cases[htc.keys()[0]] = htc.values()[0]
+        cases[list(htc.keys())[0]] = list(htc.values())[0]
 
         if verbose:
             print('created cases for: %s.htc\n' % master.tags['[case_id]'])
@@ -880,7 +880,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
     master = HtcMaster()
     # for invariant tags, load random case. Necessary before we can load
     # the master file, otherwise we don't know which master to load
-    master.tags = cases[cases.keys()[0]]
+    master.tags = cases[list(cases.keys())[0]]
     # load the master htc file as a string under the master.tags
     master.loadmaster()
     # create the execution folder structure and copy all data to it
@@ -910,7 +910,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
     cases_new = {}
 
     # cycle thourgh all the combinations
-    for case, casedict in cases.iteritems():
+    for case, casedict in cases.items():
         sim_nr += 1
 
         sim_id = casedict['[sim_id]']
@@ -950,13 +950,13 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
             print('===master.tags===\n', master.tags)
 
         # make sure the current cases is unique!
-        if htc.keys()[0] in cases_new:
-            msg = 'non unique case in cases: %s' % htc.keys()[0]
+        if list(htc.keys())[0] in cases_new:
+            msg = 'non unique case in cases: %s' % list(htc.keys())[0]
             raise KeyError(msg)
         # save in the big cases. Note that values() gives a copy!
         # remark, what about the copying done at the end of master.createcase?
         # is that redundant then?
-        cases_new[htc.keys()[0]] = htc.values()[0]
+        cases_new[list(htc.keys())[0]] = list(htc.values())[0]
 
         if verbose:
             print('created cases for: %s.htc\n' % master.tags['[case_id]'])
@@ -1008,7 +1008,7 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
         'thyra' or 'gorm', PBS scripts are written to the respective server.
     """
 
-    random_case = cases.keys()[0]
+    random_case = list(cases.keys())[0]
     sim_id = cases[random_case]['[sim_id]']
     pbs_out_dir = cases[random_case]['[pbs_out_dir]']
 
@@ -1063,7 +1063,7 @@ def post_launch(cases, save_iter=False):
     # load one case dictionary from the cases to get data that is the same
     # over all simulations in the cases
     try:
-        master = cases.keys()[0]
+        master = list(cases.keys())[0]
     except IndexError:
         print('there are no cases, aborting...')
         return None
@@ -1089,7 +1089,7 @@ def post_launch(cases, save_iter=False):
     nr = 1
     nr_tot = len(cases)
 
-    tmp = cases.keys()[0]
+    tmp = list(cases.keys())[0]
     print('checking logs, path (from a random item in cases):')
     print(os.path.join(run_dir, log_dir))
 
@@ -1124,7 +1124,7 @@ def post_launch(cases, save_iter=False):
     # now see how many cases resulted in an error and add to the general LOG
     # determine how long the first case name is
     try:
-        spacing = len(errorlogs.MsgListLog2.keys()[0]) + 9
+        spacing = len(list(errorlogs.MsgListLog2.keys())[0]) + 9
     except Exception as e:
         print('nr of OK cases: %i' % (len(cases) - len(cases_fail)))
         raise(e)
@@ -1745,7 +1745,7 @@ class HtcMaster:
             print('checking if following case is in htc_dict_repo: ')
             print(self.tags['[case_id]'] + '.htc')
 
-        if htc_dict_repo.has_key(self.tags['[case_id]'] + '.htc'):
+        if self.tags['[case_id]'] + '.htc' in htc_dict_repo:
             # if the new case_id already exists in the htc_dict_repo
             # do not add it again!
             # print('case_id key is not unique in the given htc_dict_repo!'
@@ -1966,7 +1966,7 @@ class PBS:
         # first check if the pbs_out_dir exists, this dir is considered to be
         # the same for all cases present in cases
         # self.tags['[run_dir]']
-        case0 = self.cases.keys()[0]
+        case0 = list(self.cases.keys())[0]
         path = self.cases[case0]['[run_dir]'] + self.pbs_out_dir
         if not os.path.exists(path):
             os.makedirs(path)
@@ -2427,7 +2427,7 @@ class PBS:
         print('checking if all log and result files are present...', end='')
 
         # check for each case if we have results and a log file
-        for cname, case in cases.iteritems():
+        for cname, case in cases.items():
             run_dir = case['[run_dir]']
             res_dir = case['[res_dir]']
             log_dir = case['[log_dir]']
@@ -2509,77 +2509,77 @@ class ErrorLogs:
 
         # error messages that appear during initialisation
         self.err_init = {}
-        self.err_init[' *** ERROR *** Error in com'] = len(self.err_init.keys())
-        self.err_init[' *** ERROR ***  in command '] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Error in com'] = len(self.err_init)
+        self.err_init[' *** ERROR ***  in command '] = len(self.err_init)
         #  *** WARNING *** A comma "," is written within the command line
-        self.err_init[' *** WARNING *** A comma ",'] = len(self.err_init.keys())
+        self.err_init[' *** WARNING *** A comma ",'] = len(self.err_init)
         #  *** ERROR *** Not correct number of parameters
-        self.err_init[' *** ERROR *** Not correct '] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Not correct '] = len(self.err_init)
         #  *** INFO *** End of file reached
-        self.err_init[' *** INFO *** End of file r'] = len(self.err_init.keys())
+        self.err_init[' *** INFO *** End of file r'] = len(self.err_init)
         #  *** ERROR *** No line termination in command line
-        self.err_init[' *** ERROR *** No line term'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** No line term'] = len(self.err_init)
         #  *** ERROR *** MATRIX IS NOT DEFINITE
-        self.err_init[' *** ERROR *** MATRIX IS NO'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** MATRIX IS NO'] = len(self.err_init)
         #  *** ERROR *** There are unused relative
-        self.err_init[' *** ERROR *** There are un'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** There are un'] = len(self.err_init)
         #  *** ERROR *** Error finding body based
-        self.err_init[' *** ERROR *** Error findin'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
         #  *** ERROR *** In body actions
-        self.err_init[' *** ERROR *** In body acti'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
         #  *** ERROR *** Command unknown
-        self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
         #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
-        self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
         #  *** ERROR *** The program will stop
-        self.err_init[' *** ERROR *** The program '] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** The program '] = len(self.err_init)
         #  *** ERROR *** Unknown begin command in topologi.
-        self.err_init[' *** ERROR *** Unknown begi'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Unknown begi'] = len(self.err_init)
         #  *** ERROR *** Not all needed topologi main body commands present
-        self.err_init[' *** ERROR *** Not all need'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Not all need'] = len(self.err_init)
         #  *** ERROR ***  opening timoschenko data file
-        self.err_init[' *** ERROR ***  opening tim'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR ***  opening tim'] = len(self.err_init)
         #  *** ERROR *** Error opening AE data file
-        self.err_init[' *** ERROR *** Error openin'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Error openin'] = len(self.err_init)
         #  *** ERROR *** Requested blade _ae set number not found in _ae file
-        self.err_init[' *** ERROR *** Requested bl'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** Requested bl'] = len(self.err_init)
         #  Error opening PC data file
-        self.err_init[' Error opening PC data file'] = len(self.err_init.keys())
+        self.err_init[' Error opening PC data file'] = len(self.err_init)
         #  *** ERROR *** error reading mann turbulence
-        self.err_init[' *** ERROR *** error readin'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** error readin'] = len(self.err_init)
         #  *** INFO *** The DLL subroutine
-        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init.keys())
+        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
         #  ** WARNING: FROM ESYS ELASTICBAR: No keyword
-        self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init.keys())
+        self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init)
         #  *** ERROR *** DLL ./control/killtrans.dll could not be loaded - error!
-        self.err_init[' *** ERROR *** DLL'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
         # *** ERROR *** The DLL subroutine
-        self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init.keys())
+        self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
         # *** WARNING *** Shear center x location not in elastic center, set to zero
-        self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init.keys())
-        self.err_init[' *** WARNING ***'] = len(self.err_init.keys())
-        self.err_init[' *** ERROR ***'] = len(self.err_init.keys())
-        self.err_init[' WARNING'] = len(self.err_init.keys())
-        self.err_init[' ERROR'] = len(self.err_init.keys())
+        self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
+        self.err_init[' *** WARNING ***'] = len(self.err_init)
+        self.err_init[' *** ERROR ***'] = len(self.err_init)
+        self.err_init[' WARNING'] = len(self.err_init)
+        self.err_init[' ERROR'] = len(self.err_init)
 
         # error messages that appear during simulation
         self.err_sim = {}
         #  *** ERROR *** Wind speed requested inside
-        self.err_sim[' *** ERROR *** Wind speed r'] = len(self.err_sim.keys())
+        self.err_sim[' *** ERROR *** Wind speed r'] = len(self.err_sim)
         #  Maximum iterations exceeded at time step:
-        self.err_sim[' Maximum iterations exceede'] = len(self.err_sim.keys())
+        self.err_sim[' Maximum iterations exceede'] = len(self.err_sim)
         #  Solver seems not to converge:
-        self.err_sim[' Solver seems not to conver'] = len(self.err_sim.keys())
+        self.err_sim[' Solver seems not to conver'] = len(self.err_sim)
         #  *** ERROR *** Out of x bounds:
-        self.err_sim[' *** ERROR *** Out of x bou'] = len(self.err_sim.keys())
+        self.err_sim[' *** ERROR *** Out of x bou'] = len(self.err_sim)
         #  *** ERROR *** Out of limits in user defined shear field - limit value used
-        self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim.keys())
+        self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim)
 
         # TODO: error message from a non existing channel output/input
         # add more messages if required...
 
-        self.init_cols = len(self.err_init.keys())
-        self.sim_cols = len(self.err_sim.keys())
+        self.init_cols = len(self.err_init)
+        self.sim_cols = len(self.err_sim)
 
     # TODO: save this not a csv text string but a df_dict, and save as excel
     # and DataFrame!
@@ -2953,7 +2953,7 @@ class ModelData:
                 # it is possible that the NSET line is not defined
                 parts = line.split(' ')
                 try:
-                    for k in xrange(10):
+                    for k in range(10):
                         parts.remove(' ') # throws error when can't find
                 except ValueError:
                     pass
@@ -3005,7 +3005,7 @@ class ModelData:
                 #if subset_nr > 0 :
                 key = '%03i-%03i-a' % (set_nr, subset_nr+1)
                 # in case it is not the first comment line
-                if st_dict.has_key(key): st_dict[key] += line
+                if key in st_dict: st_dict[key] += line
                 else: st_dict[key]  = line
                 ## otherwise we have the set comments
                 #else:
@@ -3083,7 +3083,7 @@ class ModelData:
         content = ''
 
         # sort the key list
-        keysort = self.st_dict.keys()
+        keysort = list(self.st_dict.keys())
         keysort.sort()
 
         for key in keysort:
@@ -3134,7 +3134,7 @@ class ModelData:
                 'x_e [m]', 'y_e [m]', 'k_x [-]', 'k_y [-]', 'pitch [deg]']
 
         if len(selection) < 1:
-            for key in self.st_dict.keys():
+            for key in self.st_dict:
                 # but now only take the ones that hold data
                 if key[-1] == 'd':
                     selection.append([int(key[:3]), int(key[4:7])])
@@ -3153,43 +3153,43 @@ class ModelData:
             # build the latex table header
 #            textable = u"\\begin{table}[b!]\n"
 #            textable += u"\\begin{center}\n"
-            textable_p1 = u"\\centering\n"
-            textable_p1 += u"\\begin{tabular}"
+            textable_p1 = "\\centering\n"
+            textable_p1 += "\\begin{tabular}"
             # configure the column properties
-            tmp = [u'C{2.0 cm}' for k in cols_p1]
-            tmp = u"|".join(tmp)
-            textable_p1 += u'{|' + tmp + u'|}'
-            textable_p1 += u'\hline\n'
+            tmp = ['C{2.0 cm}' for k in cols_p1]
+            tmp = "|".join(tmp)
+            textable_p1 += '{|' + tmp + '|}'
+            textable_p1 += '\hline\n'
             # add formula mode for the headers
             tmp = []
             for k in cols_p1:
                 k1, k2 = k.split(' ')
-                tmp.append(u'$%s$ $%s$' % (k1,k2) )
+                tmp.append('$%s$ $%s$' % (k1,k2) )
 #            tmp = [u'$%s$' % k for k in cols_p1]
-            textable_p1 += u' & '.join(tmp)
-            textable_p1 += u'\\\\ \n'
-            textable_p1 += u'\hline\n'
+            textable_p1 += ' & '.join(tmp)
+            textable_p1 += '\\\\ \n'
+            textable_p1 += '\hline\n'
 
-            textable_p2 = u"\\centering\n"
-            textable_p2 += u"\\begin{tabular}"
+            textable_p2 = "\\centering\n"
+            textable_p2 += "\\begin{tabular}"
             # configure the column properties
-            tmp = [u'C{1.5 cm}' for k in cols_p2]
-            tmp = u"|".join(tmp)
-            textable_p2 += u'{|' + tmp + u'|}'
-            textable_p2 += u'\hline\n'
+            tmp = ['C{1.5 cm}' for k in cols_p2]
+            tmp = "|".join(tmp)
+            textable_p2 += '{|' + tmp + '|}'
+            textable_p2 += '\hline\n'
             # add formula mode for the headers
             tmp = []
             for k in cols_p2:
                 k1, k2 = k.split(' ')
-                tmp.append(u'$%s$ $%s$' % (k1,k2) )
+                tmp.append('$%s$ $%s$' % (k1,k2) )
 #            tmp = [u'$%s$ $%s$' % (k1, k2) for k in cols_p2]
             # hack: spread the last element over two lines
 #            tmp[-1] = '$pitch$ $[deg]$'
-            textable_p2 += u' & '.join(tmp)
-            textable_p2 += u'\\\\ \n'
-            textable_p2 += u'\hline\n'
+            textable_p2 += ' & '.join(tmp)
+            textable_p2 += '\\\\ \n'
+            textable_p2 += '\hline\n'
 
-            for row in xrange(st_arr.shape[0]):
+            for row in range(st_arr.shape[0]):
                 r    = st_arr[row, self.st_headers.r]
                 m    = st_arr[row,self.st_headers.m]
                 x_cg = st_arr[row,self.st_headers.x_cg]
@@ -3213,19 +3213,19 @@ class ModelData:
                 p1 = [r, m, m*ri_x*ri_x, m*ri_y*ri_y, E*Ixx, E*Iyy, E*A,I_p*G]
                 p2 = [r, x_cg, y_cg, x_sh, y_sh, x_e, y_e, k_x, k_y, pitch]
 
-                textable_p1 += u" & ".join([self._format_nr(k) for k in p1])
-                textable_p1 += u'\\\\ \n'
+                textable_p1 += " & ".join([self._format_nr(k) for k in p1])
+                textable_p1 += '\\\\ \n'
 
-                textable_p2 += u" & ".join([self._format_nr(k) for k in p2])
-                textable_p2 += u'\\\\ \n'
+                textable_p2 += " & ".join([self._format_nr(k) for k in p2])
+                textable_p2 += '\\\\ \n'
 
             # default caption
             if caption == '':
                 caption = 'HAWC2 cross sectional parameters for body: %s' % set_comment
 
-            textable_p1 += u"\hline\n"
-            textable_p1 += u"\end{tabular}\n"
-            textable_p1 += u"\caption{%s}\n" % caption
+            textable_p1 += "\hline\n"
+            textable_p1 += "\end{tabular}\n"
+            textable_p1 += "\caption{%s}\n" % caption
 #            textable += u"\end{center}\n"
 #            textable += u"\end{table}\n"
 
@@ -3234,9 +3234,9 @@ class ModelData:
             with open(fpath + fname, 'w') as f:
                 f.write(textable_p1)
 
-            textable_p2 += u"\hline\n"
-            textable_p2 += u"\end{tabular}\n"
-            textable_p2 += u"\caption{%s}\n" % caption
+            textable_p2 += "\hline\n"
+            textable_p2 += "\end{tabular}\n"
+            textable_p2 += "\caption{%s}\n" % caption
 #            textable += u"\end{center}\n"
 #            textable += u"\end{table}\n"
 
@@ -3540,7 +3540,7 @@ class Cases:
 
     def force_lower_case_id(self):
         tmp_cases = {}
-        for cname, case in self.cases.iteritems():
+        for cname, case in self.cases.items():
             tmp_cases[cname.lower()] = case.copy()
         self.cases = tmp_cases
 
@@ -3580,8 +3580,8 @@ class Cases:
 
         # maybe some cases have tags that others don't, create a set with
         # all the tags that occur
-        for cname, tags in self.cases.iteritems():
-            tag_set.extend(tags.keys())
+        for cname, tags in self.cases.items():
+            tag_set.extend(list(tags.keys()))
         # also add cname as a tag
         tag_set.append('cname')
         # only unique tags
@@ -3589,9 +3589,9 @@ class Cases:
         # and build the df_dict with all the tags
         df_dict = {tag:[] for tag in tag_set}
 
-        for cname, tags in self.cases.iteritems():
+        for cname, tags in self.cases.items():
             current_tags = set(tags.keys())
-            for tag, value in tags.iteritems():
+            for tag, value in tags.items():
                 df_dict[tag].append(value)
             # and the missing ones
             for tag in (tag_set - current_tags):
@@ -3665,7 +3665,7 @@ class Cases:
             return ValueError, 'Only one case allowed in refcase dict'
 
         # take an arbritrary case as baseline for comparison
-        refcase = refcase_dict[refcase_dict.keys()[0]]
+        refcase = refcase_dict[list(refcase_dict.keys())[0]]
         #reftags = sim_dict[refcase]
 
         diffdict = dict()
@@ -3862,7 +3862,7 @@ class Cases:
             """
             add a new channel to the df_dict format of ch_df
             """
-            for col, value in kwargs.iteritems():
+            for col, value in kwargs.items():
                 df_dict[col].append(value)
             for col in (self.res.cols - set(kwargs.keys())):
                 df_dict[col].append('')
@@ -3894,7 +3894,7 @@ class Cases:
 
         # get some basic parameters required to calculate statistics
         try:
-            case = self.cases.keys()[0]
+            case = list(self.cases.keys())[0]
         except IndexError:
             print('no cases to select so no statistics, aborting ...')
             return None
@@ -3914,7 +3914,7 @@ class Cases:
         df_dict = None
         add_stats = True
 
-        for ii, (cname, case) in enumerate(self.cases.iteritems()):
+        for ii, (cname, case) in enumerate(self.cases.items()):
 
             # build the basic df_dict if not defined
             if df_dict is None:
@@ -4080,7 +4080,7 @@ class Cases:
 
             if save_new_sigs and new_sigs.shape[1] > 0:
                 chis, keys = [], []
-                for key, value in ch_dict_new.iteritems():
+                for key, value in ch_dict_new.items():
                     chis.append(value['chi'])
                     keys.append(key)
                 # sort on channel number, so it agrees with the new_sigs array
@@ -4113,7 +4113,7 @@ class Cases:
             # when different cases have a different number of output channels
             # By default, just take all channels in the result file.
             if ch_sel_init is None:
-                ch_sel = ch_dict.keys()
+                ch_sel = list(ch_dict.keys())
 #                ch_sel = ch_df.ch_name.tolist()
 #                ch_sel = [str(k) for k in ch_sel]
                 print('    selecting all channels for statistics')
@@ -4159,7 +4159,7 @@ class Cases:
             # statistics, fatigue and htc tags will not change
             if add_stats:
                 # statistical parameters
-                for statparam in stats.keys():
+                for statparam in list(stats.keys()):
                     df_dict[statparam] = []
 #                # additional tags
 #                for tag in tags:
@@ -4205,7 +4205,7 @@ class Cases:
 
                 # for all the statistics keys, save the values for the
                 # current channel
-                for statparam in stats.keys():
+                for statparam in list(stats.keys()):
                     df_dict[statparam].append(stats[statparam][chi])
                 # and save the tags from the input htc file in order to
                 # label each different case properly
@@ -4213,7 +4213,7 @@ class Cases:
                     df_dict[tag].append(case[tag])
                 # append any fatigue channels if applicable, otherwise nan
                 if ch_id in fatigue:
-                    for m_fatigue, eq_ in fatigue[ch_id].iteritems():
+                    for m_fatigue, eq_ in fatigue[ch_id].items():
                         df_dict[m_fatigue].append(eq_)
                 else:
                     for tag in tags_fatigue:
@@ -4337,7 +4337,7 @@ class Cases:
         # FIXME: this approach will result in twice the memory useage though...
         # we can not pop/delete items from a dict while iterating over it
         df_dict2 = {}
-        for colkey, col in df_dict.iteritems():
+        for colkey, col in df_dict.items():
             # if we have a list, convert to string
             if type(col[0]).__name__ == 'list':
                 for ii, item in enumerate(col):
@@ -4438,7 +4438,7 @@ class Cases:
 
         # get some basic parameters required to calculate statistics
         try:
-            case = self.cases.keys()[0]
+            case = list(self.cases.keys())[0]
         except IndexError:
             print('no cases to select so no statistics, aborting ...')
             return None
@@ -4449,13 +4449,13 @@ class Cases:
         else:
             sim_id = new_sim_id
         # we assume the run_dir (root) is the same every where
-        run_dir = self.cases[self.cases.keys()[0]]['[run_dir]']
+        run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
         path = os.path.join(run_dir, res_dir)
 
         if fh_lst is None:
             wb = WeibullParameters()
-            if 'Weibull' in self.config.keys():
-                for key in self.config['Weibull'].keys():
+            if 'Weibull' in self.config:
+                for key in self.config['Weibull']:
                     setattr(wb, key, self.config['Weibull'][key])
 
             dlc_dict = dlc_ft.dlc_dict(Vin=wb.Vin, Vr=wb.Vr, Vout=wb.Vout,
@@ -4474,7 +4474,7 @@ class Cases:
         # ---------------------------------------------------------------------
         # available material constants
         ms, cols = [], []
-        for key in dfs.keys():
+        for key in dfs:
             if key[:2] == 'm=':
                 ms.append(key)
         # when multiple DLC cases are included, add extra cols to identify each
@@ -4581,7 +4581,7 @@ class Cases:
 
         # get some basic parameters required to calculate statistics
         try:
-            case = self.cases.keys()[0]
+            case = list(self.cases.keys())[0]
         except IndexError:
             print('no cases to select so no statistics, aborting ...')
             return None
@@ -4592,13 +4592,13 @@ class Cases:
         else:
             sim_id = new_sim_id
         # we assume the run_dir (root) is the same every where
-        run_dir = self.cases[self.cases.keys()[0]]['[run_dir]']
+        run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
         path = os.path.join(run_dir, res_dir)
 
         if fh_lst is None:
             wb = WeibullParameters()
-            if 'Weibull' in self.config.keys():
-                for key in self.config['Weibull'].keys():
+            if 'Weibull' in self.config:
+                for key in self.config['Weibull']:
                     setattr(wb, key, self.config['Weibull'][key])
             dlc_dict = dlc_ft.dlc_dict(Vin=wb.Vin, Vr=wb.Vr, Vout=wb.Vout,
                                        Vref=wb.Vref, Vstep=wb.Vstep,
@@ -4694,7 +4694,7 @@ class Cases:
 
         df_dict = {}
 
-        for cname, case in self.cases.iteritems():
+        for cname, case in self.cases.items():
 
             # make sure the selected tags exist
             if len(tags) != len(set(case) and tags):
@@ -4704,9 +4704,9 @@ class Cases:
             ch_dict = self.stats_dict[cname]['ch_dict']
 
             if ch_sel is None:
-                ch_sel = { (i, i) for i in ch_dict.keys() }
+                ch_sel = { (i, i) for i in ch_dict }
 
-            for ch_short, ch_name in ch_sel.iteritems():
+            for ch_short, ch_name in ch_sel.items():
 
                 chi = ch_dict[ch_name]['chi']
                 # sig_stat = [(0=value,1=index),statistic parameter, channel]
@@ -4736,7 +4736,7 @@ class Cases:
 
         # and create for each channel a dataframe
         dfs = {}
-        for ch_short, df_values in df_dict.iteritems():
+        for ch_short, df_values in df_dict.items():
             dfs[ch_short] = pd.DataFrame(df_values)
 
         return dfs
@@ -4896,7 +4896,7 @@ class Cases:
         """
         # get some basic parameters required to calculate statistics
         try:
-            case = self.cases.keys()[0]
+            case = list(self.cases.keys())[0]
         except IndexError:
             print('no cases to select so no statistics, aborting ...')
             return None
@@ -4914,7 +4914,7 @@ class Cases:
                            filters=tbl.Filters(complevel=9))
 
         # Create a new group under "/" (root)
-        for ii, (cname, case) in enumerate(self.cases.iteritems()):
+        for ii, (cname, case) in enumerate(self.cases.items()):
 
             groupname = str(cname[:-4])
             groupname = groupname.replace('-', '_')
@@ -5065,7 +5065,7 @@ class ManTurb64(object):
 
     def gen_pbs(cases):
 
-        case0 = cases[cases.keys()[0]]
+        case0 = cases[list(cases.keys())[0]]
         pbs = prepost.PBSScript()
         # make sure the path's end with a trailing separator
         pbs.pbsworkdir = os.path.join(case0['[run_dir]'], '')
@@ -5073,7 +5073,7 @@ class ManTurb64(object):
         pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
         pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
         pbs.check_dirs()
-        for cname, case in cases.iteritems():
+        for cname, case in cases.items():
             base = case['[case_id]']
             pbs.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
             pbs.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')

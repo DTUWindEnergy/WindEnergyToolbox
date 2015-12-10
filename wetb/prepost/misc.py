@@ -7,8 +7,8 @@ Library for general stuff
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 import os
 import sys
@@ -104,7 +104,7 @@ def unique(s):
     except TypeError:
         del u  # move on to the next method
     else:
-        return u.keys()
+        return list(u.keys())
 
     # We can't hash all the elements.  Second fastest is to sort,
     # which brings the equal elements together; then duplicates are
@@ -273,7 +273,7 @@ def find0(array, xi=0, yi=1, verbose=False, zerovalue=0.0):
     neg0i = isort[0]
     sign = int(np.sign(array[neg0i,xi]))
     # only search for ten points
-    for i in xrange(1,20):
+    for i in range(1,20):
         # first time we switch sign, we have it
         if int(np.sign(array[isort[i],xi])) is not sign:
             pos0i = isort[i]
@@ -335,7 +335,7 @@ def remove_items(list, value):
     """
     # remove list entries who are equal to value
     ind_del = []
-    for i in xrange(len(list)):
+    for i in range(len(list)):
         if list[i] == value:
             # add item at the beginning of the list
             ind_del.insert(0, i)
@@ -393,7 +393,7 @@ class DictDB(object):
             # column value
             init = True
             alltrue = True
-            for col_search, val_search in dict_search.items():
+            for col_search, val_search in list(dict_search.items()):
                 # for backwards compatibility, convert val_search to list
                 if not type(val_search).__name__ in ['set', 'list']:
                     # conversion to set is more costly than what you gain
@@ -441,7 +441,7 @@ class DictDB(object):
             # and see for each row if its name contains the search strings
             init = True
             alltrue = True
-            for col_search, inc_exc in dict_search.iteritems():
+            for col_search, inc_exc in dict_search.items():
                 # is it inclusive the search string or exclusive?
                 if (row.find(col_search) > -1) == inc_exc:
                     if init:
@@ -747,7 +747,7 @@ def check_df_dict(df_dict):
     makes sense
     """
     collens = {}
-    for col, values in df_dict.iteritems():
+    for col, values in df_dict.items():
         print('%6i : %s' % (len(values), col))
         collens[col] = len(values)
     return collens
@@ -870,10 +870,10 @@ def rebin(hist, bins, nrbins):
     bins_ = np.linspace(bins[0], bins[-1], num=nrbins+1)
 
     if width_ < width:
-        raise(ValueError, 'you can only rebin to larger bins')
+        raise ValueError('you can only rebin to larger bins')
 
     if not len(hist)+1 == len(bins):
-        raise(ValueError, 'bins should contain the bin edges')
+        raise ValueError('bins should contain the bin edges')
 
     window, j = width, 0
 #    print('width:', width)
@@ -964,7 +964,7 @@ def df_dict_check_datatypes(df_dict):
     # FIXME: this approach will result in twice the memory useage though...
     # we can not pop/delete items from a dict while iterating over it
     df_dict2 = {}
-    for colkey, col in df_dict.iteritems():
+    for colkey, col in df_dict.items():
         # if we have a list, convert to string
         if type(col[0]).__name__ == 'list':
             for ii, item in enumerate(col):

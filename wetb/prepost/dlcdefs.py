@@ -4,15 +4,15 @@ Created on Wed Nov  5 14:01:25 2014
 
 @author: dave
 """
-from __future__ import division
-from __future__ import print_function
+
+
 
 import os
 import unittest
 
 import pandas as pd
 
-import misc
+from . import misc
 
 def casedict2xlsx():
     """
@@ -129,7 +129,7 @@ def vartags_dlcs(master):
         mt['[eigenfreq_dir]'] = 'res_eigen/%s/%s/' % rpl
     mt['[duration]'] = str(float(mt['[time_stop]']) - float(mt['[t0]']))
     # replace nan with empty
-    for ii, jj in mt.iteritems():
+    for ii, jj in mt.items():
         if jj == 'nan':
             mt[ii] = ''
 
@@ -277,7 +277,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
 
     opt_tags = []
 
-    for dlc, df in df_list.iteritems():
+    for dlc, df in df_list.items():
         # replace ';' with False, and Nan(='') with True
         # this is more easy when testing for the presence of stuff compared
         # to checking if a value is either True/False or ''/';'
@@ -291,8 +291,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
         for count, row in df2.iterrows():
             tags_dict = {}
             # construct to dict, convert unicode keys/values to strings
-            for key, value in row.iteritems():
-                if isinstance(value, unicode):
+            for key, value in row.items():
+                if isinstance(value, str):
                     tags_dict[str(key)] = str(value)
                 else:
                     tags_dict[str(key)] = value
@@ -349,8 +349,8 @@ def read_tags_spreadsheet(fname):
     for count, row in df2.iterrows():
         tags_dict = {}
         # construct to dict, convert unicode keys/values to strings
-        for key, value in row.iteritems():
-            if isinstance(value, unicode):
+        for key, value in row.items():
+            if isinstance(value, str):
                 tags_dict[str(key)] = str(value)
             else:
                 tags_dict[str(key)] = value
@@ -378,7 +378,7 @@ class Tests(unittest.TestCase):
         df_list = misc.read_excel_files(self.fpath, fext='xlsx', pignore=None,
                                         sheet=0, pinclude=None)
 
-        df = df_list[df_list.keys()[0]]
+        df = df_list[list(df_list.keys())[0]]
 #        df.fillna('', inplace=True)
 #        df.replace(';', False, inplace=True)
 

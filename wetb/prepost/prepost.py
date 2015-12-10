@@ -5,8 +5,8 @@ Created on Tue Mar 10 18:47:32 2015
 @author: dave
 """
 
-from __future__ import division
-from __future__ import print_function
+
+
 
 import os
 import copy
