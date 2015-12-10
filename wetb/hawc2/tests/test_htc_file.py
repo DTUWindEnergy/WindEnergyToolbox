@@ -190,6 +190,13 @@ class Test(unittest.TestCase):
                 raise ValueError(f + " is not in list")
         self.assertFalse(input_files)
 
+    def test_continue_in_files(self):
+        htcfile = HTCFile(self.testfilepath + "continue_in_file.htc", ".")
+        self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
+        self.assertIn('tests/test_files/htcfiles\\.\\./orientation.dat', htcfile.input_files())
+        self.assertIn('tests/test_files/htcfiles\\.\\./orientation.dat', htcfile.input_files())
+        self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -11,7 +11,7 @@ import os
 import functools
 
 from wetb.hawc2.sel_file import SelFile
-from wetb.functions.caching import cache_function
+from wetb.utils.caching import cache_function
 from collections import OrderedDict
 HOURS_PR_20YEAR = 20 * 365 * 24
 

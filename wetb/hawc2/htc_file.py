@@ -14,22 +14,25 @@ import os
 
 
 class HTCFile(HTCContents, HTCDefaults):
-    filename = None
-    level = 0
 
+    filename = None
+    htc_inputfiles = []
+    level = 0
+    modelpath = "../"
     initial_comments = None
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, modelpath="../"):
+        self.modelpath = modelpath
         self.contents = OrderedDict()
         self.initial_comments = []
-
+        self.htc_inputfiles = []
         if filename is None:
             self.filename = 'empty.htc'
             self.lines = self.empty_htc.split("\n")
         else:
             self.filename = filename
-
-            with open(filename) as fid:
-                self.lines = fid.readlines()
+            self.lines = self.readlines(filename)
+#            with open(filename) as fid:
+#                self.lines = fid.readlines()
         self.lines = [l.strip() for l in self.lines]
 
         lines = self.lines.copy()
@@ -43,6 +46,20 @@ class HTCFile(HTCContents, HTCDefaults):
                 self._add_contents(line)
                 if line.name_ == "exit":
                     break
+
+    def readlines(self, filename):
+        self.htc_inputfiles.append(filename)
+        htc_lines = []
+        with open(filename) as fid:
+            lines = fid.readlines()
+        for l in lines:
+            if l.lower().lstrip().startswith('continue_in_file'):
+                filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()
+                filename = os.path.join(os.path.dirname(self.filename), self.modelpath, filename)
+                htc_lines.extend(self.readlines(filename))
+            else:
+                htc_lines.append(l)
+        return htc_lines
 
 
     def __setitem__(self, key, value):
@@ -65,7 +82,7 @@ class HTCFile(HTCContents, HTCDefaults):
         self.output.filename = "./res/%s" % name
 
     def input_files(self):
-        files = [self.filename]
+        files = self.htc_inputfiles
         for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
             if "timoschenko_input" in mb:
                 files.append(mb.timoschenko_input.filename[0])

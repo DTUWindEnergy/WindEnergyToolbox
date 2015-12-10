@@ -4,9 +4,8 @@ Created on 18/11/2015
 @author: MMPE
 '''
 import unittest
-from wetb.hawc2.log_file import LogFile, is_file_open, INITIALIZATION_ERROR, \
-    INITIALIZATION, SIMULATING, DONE, SIMULATION_ERROR, \
-    PENDING, ERROR
+from wetb.hawc2.log_file import LogFile, is_file_open, \
+    INITIALIZATION, SIMULATING, DONE, PENDING
 import time
 from wetb.hawc2 import log_file
 import threading
@@ -93,6 +92,11 @@ class Test(unittest.TestCase):
         self.assertEqual(logfile.status, DONE)
         self.assertEqual(logfile.errors, [])
         self.assertEqual(logfile.elapsed_time, 0.8062344)
+
+    def test_HAWC2Version(self):
+        f = 'test_files/logfiles/finish.log'
+        logfile = LogFile(f, 200)
+        self.assertEqual(logfile.hawc2version, "HAWC2MB 11.8")
 
 
     def test_simulation_error(self):
@@ -195,14 +199,6 @@ class Test(unittest.TestCase):
         logfile.remaining_time = 3600 + 120 + 5
         self.assertEqual(logfile.remaining_time_str(), "1:02:05")
 
-    def test_add_hawc2errors(self):
-        f = 'test_files/logfiles/simulating.log'
-        logfile = LogFile(f, 2)
-        logfile.update_status()
-        logfile.add_HAWC2_errors(['program error'])
-        self.assertEqual(logfile.pct, 25)
-        self.assertEqual(logfile.status, ERROR)
-        self.assertEqual(logfile.errors, ['program error'])
 
 
 

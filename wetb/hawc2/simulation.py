@@ -5,7 +5,7 @@ from threading import Timer, Thread
 import sys
 from multiprocessing.process import Process
 import psutil
-from wetb.functions.process_exec import process, exec_process
+from wetb.utils.process_exec import process, exec_process
 import subprocess
 import shutil
 import json
@@ -94,6 +94,11 @@ class Simulation(object):
                 dst = os.path.join(self.tmp_modelpath, os.path.relpath(src_file, self.modelpath))
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy(src_file, dst)
+                if not os.path.isfile(dst) or os.stat(dst).st_size != os.stat(src_file).st_size:
+                    print ("error copy ", dst)
+                else:
+                    #print (dst)
+                    pass
 
 
         self.logFile.filename = os.path.join(self.tmp_modelpath, self.log_filename)
@@ -124,8 +129,8 @@ class Simulation(object):
             shutil.rmtree(self.tmp_modelpath)
         except (PermissionError, OSError) as e:
             raise Warning(str(e))
-
-        self.status = CLEANED
+        if self.status != ERROR:
+            self.status = CLEANED
 
 
 
@@ -158,7 +163,10 @@ class Simulation(object):
     def stop(self):
         self.timer.stop()
         self.simulationThread.process.kill()
-        self.finish_simulation()
+        try:
+            self.finish_simulation()
+        except:
+            pass
         if self.logFile.status not in [log_file.DONE]:
             self.logFile.status = ABORTED
 

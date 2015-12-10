@@ -4,7 +4,7 @@ Created on 05/06/2012
 @author: Mads
 '''
 import os
-from wetb.functions.geometry import xyz2uvw
+from wetb.utils.geometry import xyz2uvw
 import wetb.gtsdf
 from wetb.wind.shear import power_shear, fit_power_shear, fit_power_shear_ref, \
     log_shear, fit_log_shear, stability_term

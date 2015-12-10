@@ -6,7 +6,7 @@
 - [wind](#wind)
 - [dlc](#dlc)
 - [fast](#fast)
-- [functions](#functions)
+- [utils](#utils)
 
 ------------------------------------------------------------------------------------
 ### [hawc2](wetb/hawc2) 
@@ -41,9 +41,9 @@ Module for working with "Design load cases" (Code independent)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
 - [fast_io](wetb/fast/fast_io.py): Read binary and ascii result files
 
-### [functions](wetb/functions)
+### [utils](wetb/utils)
 Other functions
-- [geometry](wetb/functions/geometry.py): Different kind of geometry conversion functions
-- [process_exec](wetb/functions/process_exec.py): Run system command in subprocess
-- [timing](wetb/functions/timing.py): Decorators for evaluating execution time of functions
-- [caching](wetb/functions/caching.py): Decorators to create cached (calculate once) functions and properties
+- [geometry](wetb/utils/geometry.py): Different kind of geometry conversion functions
+- [process_exec](wetb/utils/process_exec.py): Run system command in subprocess
+- [timing](wetb/utils/timing.py): Decorators for evaluating execution time of functions
+- [caching](wetb/utils/caching.py): Decorators to create cached (calculate once) functions and properties

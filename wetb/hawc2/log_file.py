@@ -32,6 +32,7 @@ class LogFile(object):
     def __init__(self, log_filename, time_stop):
         self.filename = log_filename
         self.time_stop = time_stop
+        self.hawc2version = "Unknown"
         self.reset()
         self.update_status()
 
@@ -94,17 +95,20 @@ class LogFile(object):
                     self.lastline = (txt.strip()[max(0, txt.strip().rfind("\n")):]).strip()
                 if self.status == INITIALIZATION:
                     init_txt, *rest = txt.split("Starting simulation")
+                    if self.hawc2version == "Unknown" and "Version ID" in init_txt:
+                        self.hawc2version = txt.split("Version ID : ")[1].split("\n", 1)[0].strip()
                     if "*** ERROR ***" in init_txt:
                         self.errors.extend([l.strip() for l in init_txt.strip().split("\n") if "error" in l.lower()])
                     if rest:
                         txt = rest[0]
                         self.status = SIMULATING
-                        if not 'Elapsed time' in self.lastline:
-                            i1 = txt.rfind("Global time")
-                            if i1 > -1:
-                                self.start_time = (self.extract_time(txt[i1:]), time.time())
 
                 if self.status == SIMULATING:
+                    if self.start_time is None and not 'Elapsed time' in self.lastline:
+                        i1 = txt.rfind("Global time")
+                        if i1 > -1:
+                            self.start_time = (self.extract_time(txt[i1:]), time.time())
+
                     simulation_txt, *rest = txt.split('Elapsed time')
                     if "*** ERROR ***" in simulation_txt:
                         self.errors.extend([l.strip() for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
@@ -141,10 +145,6 @@ class LogFile(object):
         else:
             return "--:--"
 
-    def add_HAWC2_errors(self, errors):
-        if errors:
-            self.status = ERROR
-            self.errors.extend(errors)
 
 
 
