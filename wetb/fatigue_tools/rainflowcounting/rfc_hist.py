@@ -1,8 +1,6 @@
 import numpy as np
 def rfc_hist(sig_rf, nrbins=46):
-    """
-    Histogram of rainflow counted cycles
-    ====================================
+    """Histogram of rainflow counted cycles
 
     hist, bin_edges, bin_avg = rfc_hist(sig, nrbins=46)
 

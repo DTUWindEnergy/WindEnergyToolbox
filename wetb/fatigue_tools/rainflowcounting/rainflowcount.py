@@ -48,8 +48,8 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
         Mean values of the half cycles
 
 
-    Example
-    -------
+    Examples
+    --------
     >>> signal = np.array([-2.0, 0.0, 1.0, 0.0, -3.0, 0.0, 5.0, 0.0, -1.0, 0.0, 3.0, 0.0, -4.0, 0.0, 4.0, 0.0, -2.0])
     >>> ampl, mean = rainflow_windap(signal)
     """
