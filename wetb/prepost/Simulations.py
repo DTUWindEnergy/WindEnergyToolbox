@@ -2648,12 +2648,16 @@ class ErrorLogs:
             for j, line in enumerate(lines):
                 # all id's of errors are 27 characters long
                 msg = line[:27]
+                # remove the line terminator, this seems to take 2 characters
+                # on PY2, but only one in PY3
+                line = line.replace('\n', '')
 
                 # keep track of the number of iterations
                 if line[:12] == ' Global time':
                     time_step += 1
                     iterations[time_step,0] = float(line[14:40])
-                    iterations[time_step,1] = int(line[-6:-2])
+                    # for PY2, new line is 2 characters, for PY3 it is one char
+                    iterations[time_step,1] = int(line[-6:])
                     # time step is the first time stamp
                     if not dt:
                         dt = float(line[15:40])
@@ -2670,7 +2674,7 @@ class ErrorLogs:
                     if msg in self.err_init:
                         col_nr = self.err_init[msg]
                         # 2nd item is the column position of the message
-                        tempLog[2*(col_nr+1)] = line[:-2]
+                        tempLog[2*(col_nr+1)] = line
                         # line number of the message
                         tempLog[2*col_nr+1] += '%i, ' % j
                         found_error = True
@@ -2679,7 +2683,7 @@ class ErrorLogs:
                 elif msg in self.err_sim:
                     col_nr = self.err_sim[msg] + self.init_cols
                     # 2nd item is the column position of the message
-                    tempLog[2*(col_nr+1)] = line[:-2]
+                    tempLog[2*(col_nr+1)] = line
                     # in case stuff already goes wrong on the first time step
                     if time_step == -1:
                         time_step = 0
@@ -2690,7 +2694,7 @@ class ErrorLogs:
 
                 # method of last resort, we have no idea what message
                 elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
-                    tempLog[-2] = line[:-2]
+                    tempLog[-2] = line
                     # line number of the message
                     tempLog[-1] = j
                     found_error = True
@@ -2710,7 +2714,7 @@ class ErrorLogs:
             # see if the last line holds the sim time
             if line[:15] ==  ' Elapsed time :':
                 exit_correct = True
-                elapsed_time = float(line[15:-3])
+                elapsed_time = float(line[15:-1])
                 tempLog.append( elapsed_time )
             # in some cases, Elapsed time is not given, and the last message
             # might be: " Closing of external type2 DLL"
@@ -3968,7 +3972,7 @@ class Cases:
                 # add a new channel description for the mechanical power
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, {'chi':i_new_chans,
+                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
                                                    'ch_name':name})
                 i_new_chans += 1
                 new_sigs = np.append(new_sigs, sig_add, axis=1)
@@ -4007,7 +4011,7 @@ class Cases:
                 # add a new channel description for this resultant
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, {'chi':i_new_chans,
+                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
                                                    'ch_name':name})
                 i_new_chans += 1
                 # and append to all the statistics types
@@ -4028,7 +4032,7 @@ class Cases:
                 # add a new channel description for the mechanical power
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, {'chi':i_new_chans,
+                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
                                                    'ch_name':name})
                 i_new_chans += 1
                 new_sigs = np.append(new_sigs, sig_pmech, axis=1)
@@ -4046,7 +4050,7 @@ class Cases:
                     # add a new channel description for the mechanical power
                     ch_dict_new[name] = {}
                     ch_dict_new[name]['chi'] = i_new_chans
-                    ch_df_new = add_df_row(ch_df_new, {'chi':i_new_chans,
+                    ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
                                                        'ch_name':name})
                     i_new_chans += 1
                     new_sigs = np.append(new_sigs, cp, axis=1)
@@ -4065,7 +4069,7 @@ class Cases:
                         ct[:,0] = self.ct(thrust, wind, A)
                         ch_dict_new[name] = {}
                         ch_dict_new[name]['chi'] = i_new_chans
-                        ch_df_new = add_df_row(ch_df_new, {'chi':i_new_chans,
+                        ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
                                                            'ch_name':name})
                         i_new_chans += 1
                         new_sigs = np.append(new_sigs, ct, axis=1)
