@@ -4447,8 +4447,7 @@ class Cases:
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
-            htc_dir = self.cases[case]['[htc_dir]']
-            fname = os.path.join(run_dir, htc_dir, 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
@@ -4583,8 +4582,7 @@ class Cases:
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-            htc_dir = self.cases[case]['[htc_dir]']
-            fname = os.path.join(run_dir, htc_dir, 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
