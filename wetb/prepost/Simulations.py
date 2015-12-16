@@ -39,13 +39,11 @@ import pandas as pd
 import tables as tbl
 
 # custom libraries
-from . import misc
-from . import windIO
-from . import prepost
-try:
-    import fatigue_tools.dlc_fatigue as dlc_ft
-except ImportError:
-    print('can not import fatigue_tools.dlc_fatigue')
+from wetb.prepost import misc
+from wetb.prepost import windIO
+from wetb.prepost import prepost
+from wetb.dlc import high_level as dlc
+
 
 def load_pickled_file(source):
     FILE = open(source, 'rb')
@@ -4371,10 +4369,9 @@ class Cases:
                 raise(e)
         return df_dict2
 
-    def fatigue_lifetime(self, dfs, neq, res_dir='res/', fh_lst=None,
+    def fatigue_lifetime(self, dfs, neq, res_dir='res/', fh_lst=None, years=20.,
                          dlc_folder="dlc%s_iec61400-1ed3/", extra_cols=[],
-                         dlc_name="dlc%s_wsp%02d_wdir%03d_s*.sel", save=False,
-                         update=False, csv=False, new_sim_id=False, years=20.):
+                         save=False, update=False, csv=False, new_sim_id=False):
         """
         Cacluate the fatigue over a selection of cases and indicate how many
         hours each case contributes to its life time.
@@ -4402,13 +4399,6 @@ class Cases:
             String with the DLC subfolder names. One string substitution is
             required (%s), and should represent the DLC number (withouth comma
             or point). Not relevant when fh_lst is defined.
-
-        dlc_name : str, default="dlc%s_wsp%02d_wdir%03d_s*.sel"
-            String with the DLC names. One string, and two integer substitutions
-            are required (%s, %02d, %03d), indicating the DLC number (e.g. '12'),
-            the windspeed (e.g. int(6)), and wind speed direction (e.g. int(10))
-            respectively. Notice that different seed numbers are covered with the
-            wildcard *. Not relevant when fh_lst is defined.
 
         extra_cols : list, default=[]
             The included columns are the material constants, and each row is
@@ -4448,9 +4438,6 @@ class Cases:
             sim_id = self.cases[case]['[sim_id]']
         else:
             sim_id = new_sim_id
-        # we assume the run_dir (root) is the same every where
-        run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-        path = os.path.join(run_dir, res_dir)
 
         if fh_lst is None:
             wb = WeibullParameters()
@@ -4458,11 +4445,15 @@ class Cases:
                 for key in self.config['Weibull']:
                     setattr(wb, key, self.config['Weibull'][key])
 
-            dlc_dict = dlc_ft.dlc_dict(Vin=wb.Vin, Vr=wb.Vr, Vout=wb.Vout,
-                                       Vref=wb.Vref, Vstep=wb.Vstep,
-                                       shape_k=wb.shape_k)
-            fh_lst = dlc_ft.file_hour_lst(path, dlc_dict, dlc_folder=dlc_folder,
-                                          dlc_name=dlc_name, years=years)
+            # we assume the run_dir (root) is the same every where
+            run_dir = self.cases[case]['[run_dir]']
+            htc_dir = self.cases[case]['[htc_dir]']
+            fname = os.path.join(run_dir, htc_dir, 'DLCs', 'dlc_config.xlsx')
+            dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
+            # if you need all DLCs, make sure to have %s in the file name
+            dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
+            fh_lst = dlc_cfg.file_hour_lst(years=years)
+
         # now we have a full path to the result files, but we only need the
         # the case_id to indentify the corresponding entry from the statistics
         # DataFrame (exluciding the .sel extension)
@@ -4533,8 +4524,7 @@ class Cases:
 
     def AEP(self, dfs, fh_lst=None, ch_powe=None, extra_cols=[], update=False,
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
-            dlc_name="dlc%s_wsp%02d_wdir%03d_s*.sel", new_sim_id=False,
-            save=False):
+            new_sim_id=False, save=False, years=20.0):
 
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.
@@ -4570,13 +4560,6 @@ class Cases:
             String with the DLC subfolder names. One string substitution is
             required (%s), and should represent the DLC number (withouth comma
             or point). Not relevant when fh_lst is defined.
-
-        dlc_name : str, default="dlc%s_wsp%02d_wdir%03d_s*.sel"
-            String with the DLC names. One string, and two integer substitutions
-            are required (%s, %02d, %03d), indicating the DLC number (e.g. '12'),
-            the windspeed (e.g. int(6)), and wind speed direction (e.g. int(10))
-            respectively. Notice that different seed numbers are covered with the
-            wildcard *. Not relevant when fh_lst is defined.
         """
 
         # get some basic parameters required to calculate statistics
@@ -4591,20 +4574,22 @@ class Cases:
             sim_id = self.cases[case]['[sim_id]']
         else:
             sim_id = new_sim_id
-        # we assume the run_dir (root) is the same every where
-        run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-        path = os.path.join(run_dir, res_dir)
 
         if fh_lst is None:
             wb = WeibullParameters()
             if 'Weibull' in self.config:
                 for key in self.config['Weibull']:
                     setattr(wb, key, self.config['Weibull'][key])
-            dlc_dict = dlc_ft.dlc_dict(Vin=wb.Vin, Vr=wb.Vr, Vout=wb.Vout,
-                                       Vref=wb.Vref, Vstep=wb.Vstep,
-                                       shape_k=wb.shape_k)
-            fh_lst = dlc_ft.file_hour_lst(path, dlc_dict, dlc_folder=dlc_folder,
-                                          dlc_name=dlc_name, years=1.0)
+
+            # we assume the run_dir (root) is the same every where
+            run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
+            htc_dir = self.cases[case]['[htc_dir]']
+            fname = os.path.join(run_dir, htc_dir, 'DLCs', 'dlc_config.xlsx')
+            dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
+            # if you need all DLCs, make sure to have %s in the file name
+            dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
+            fh_lst = dlc_cfg.file_hour_lst(years=1.0)
+
         # now we have a full path to the result files, but we only need the
         # the case_id to indentify the corresponding entry from the statistics
         # DataFrame (exluciding the .sel extension)
