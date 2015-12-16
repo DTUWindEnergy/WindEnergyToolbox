@@ -35,7 +35,8 @@ import pandas as pd
 from wetb.prepost import misc
 # wind energy python toolbox, available on the dtu wind redmine server:
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
-import fatigue
+from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_astm as rainflow_astm
+from wetb.fatigue_tools.rainflowcounting.rfc_hist import rfc_hist as rfc_hist
 
 
 class LoadResults:
@@ -1003,14 +1004,14 @@ class LoadResults:
         """
 
         try:
-            sig_rf = fatigue.rainflow_astm(signal)
+            sig_rf = rainflow_astm(signal)
         except:
             return []
 
         if len(sig_rf) < 1 and not sig_rf:
             return []
 
-        hist_data, x, bin_avg =  fatigue.rfc_hist(sig_rf, no_bins)
+        hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
 
         m = np.atleast_1d(m)
 
@@ -1031,14 +1032,14 @@ class LoadResults:
 #        return [np.sum(cycles * ampl_bin_mean ** _m) for _m in m]
 
         try:
-            sig_rf = fatigue.rainflow_astm(signal)
+            sig_rf = rainflow_astm(signal)
         except:
             return []
 
         if len(sig_rf) < 1 and not sig_rf:
             return []
 
-        hist_data, x, bin_avg =  fatigue.rfc_hist(sig_rf, no_bins)
+        hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
         m = np.atleast_1d(m)
         return [np.sum(0.5 * hist_data * bin_avg ** _m) for _m in m]
 
