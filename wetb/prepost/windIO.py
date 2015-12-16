@@ -100,7 +100,8 @@ class LoadResults:
     # ch_df columns, these are created by LoadResults._unified_channel_names
     cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi', 'component',
                 'pos', 'coord', 'sensortype', 'radius', 'blade_nr', 'units',
-                'output_type', 'io_nr', 'io', 'dll', 'azimuth', 'flap_nr'])
+                'output_type', 'io_nr', 'io', 'dll', 'azimuth', 'flap_nr',
+                'direction'])
 
     # start with reading the .sel file, containing the info regarding
     # how to read the binary file and the channel information
