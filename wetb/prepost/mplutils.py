@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib as mpl
 # use a headless backend
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
-import wafo
+#import wafo
 
 
 def make_fig(nrows=1, ncols=1, figsize=(12,8), dpi=120):
