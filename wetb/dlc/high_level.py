@@ -76,11 +76,11 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        self.sensor_df2 = pd.read_excel(self.filename, sheetname='Sensors', skiprows=[1])
+        self.sensor_df = pd.read_excel(self.filename, sheetname='Sensors', skiprows=[1])
         # empty strings are now nans, convert back to empty strings
-        self.sensor_df2.fillna('', inplace=True)
+        self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
-        self.sensor_df2.columns = [k.lower() for k in self.sensor_df2.columns]
+        self.sensor_df.columns = [k.lower() for k in self.sensor_df.columns]
 
         for k in ['Name', 'Nr']:
             assert k.lower() in self.sensor_df.keys(), "Sensor sheet must have a '%s' column" % k
