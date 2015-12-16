@@ -16,11 +16,11 @@ from argparse import ArgumentParser
 from matplotlib import pyplot as plt
 #import matplotlib as mpl
 
-from . import Simulations as sim
+from wetb import Simulations as sim
 #import misc
 #import windIO
-from . import dlcdefs
-from . import dlcplots
+from wetb import dlcdefs
+from wetb import dlcplots
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)

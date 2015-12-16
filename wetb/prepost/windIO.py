@@ -32,7 +32,7 @@ import pandas as pd
 
 # misc is part of prepost, which is available on the dtu wind gitlab server:
 # https://gitlab.windenergy.dtu.dk/dave/prepost
-from . import misc
+from wetb import misc
 # wind energy python toolbox, available on the dtu wind redmine server:
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 import fatigue

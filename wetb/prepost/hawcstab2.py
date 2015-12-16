@@ -14,7 +14,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from . import mplutils
+from wetb import mplutils
 
 
 class dummy:

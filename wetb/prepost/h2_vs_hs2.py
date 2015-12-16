@@ -15,10 +15,10 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from . import Simulations as sim
-from . import dlcdefs
-from . import hawcstab2 as hs2
-from . import mplutils
+from wetb import Simulations as sim
+from wetb import dlcdefs
+from wetb import hawcstab2 as hs2
+from wetb import mplutils
 
 
 class Configurations:

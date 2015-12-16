@@ -11,9 +11,9 @@ Created on Sun Jan 20 18:14:02 2013
 import numpy as np
 import scipy as sp
 
-from . import DataChecks as chk
-from .misc import calc_sample_rate
-from . import mplutils
+from wetb import DataChecks as chk
+from wetb.misc import calc_sample_rate
+from wetb import mplutils
 
 
 class Filters:
