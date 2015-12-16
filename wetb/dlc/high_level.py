@@ -38,9 +38,9 @@ class DLCHighLevel(object):
 
         # Variables
         df_vars = pd.read_excel(self.filename, sheetname='Variables',
-                                index='Name')
+                                index_col='Name')
         for name, value in zip(df_vars.index, df_vars.Value.values):
-            setattr(self, name, value)
+            setattr(self, name.lower(), value)
         if not hasattr(self, "res_path"):
             raise Warning("The 'Variables' sheet of '%s' must contain the "
                           "variable 'res_path' specifying the path to the "
