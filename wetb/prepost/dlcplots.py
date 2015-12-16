@@ -31,9 +31,9 @@ import pandas as pd
 #import numpy as np
 
 #import windIO
-from wetb import mplutils
-from wetb import Simulations as sim
-from wetb import dlcdefs
+from wetb.prepost import mplutils
+from wetb.prepost import Simulations as sim
+from wetb.prepost import dlcdefs
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)

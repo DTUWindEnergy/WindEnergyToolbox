@@ -12,7 +12,7 @@ import unittest
 
 import pandas as pd
 
-from wetb import misc
+from wetb.prepost import misc
 
 def casedict2xlsx():
     """
