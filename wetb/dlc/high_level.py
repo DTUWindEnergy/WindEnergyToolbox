@@ -3,7 +3,6 @@ Created on 01/10/2014
 
 @author: MMPE
 '''
-import xlrd
 import pandas as pd
 import numpy as np
 import glob
@@ -13,7 +12,7 @@ import functools
 from wetb.hawc2.sel_file import SelFile
 from wetb.utils.caching import cache_function
 from collections import OrderedDict
-HOURS_PR_20YEAR = 20 * 365 * 24
+#HOURS_PR_20YEAR = 20 * 365 * 24
 
 def Weibull(u, k, start, stop, step):
     C = 2 * u / np.sqrt(np.pi)
@@ -29,31 +28,43 @@ def Weibull2(u, k, wsp_lst):
 
 
 class DLCHighLevel(object):
-    def __init__(self, filename, fail_on_resfile_not_found=False):
+
+    def __init__(self, filename, fail_on_resfile_not_found=False, shape_k=2.0):
         self.filename = filename
         self.fail_on_resfile_not_found = fail_on_resfile_not_found
-        wb = xlrd.open_workbook(self.filename)
+
+        # Weibul distribution shape parameter
+        self.shape_k = shape_k
 
         # Variables
-        sheet = wb.sheet_by_name("Variables")
-        for row_index in range(1, sheet.nrows):
-            name = str(sheet.cell(row_index, 0).value).lower()
-            value = sheet.cell(row_index, 1).value
-            setattr(self, name, value)
+        df_vars = pd.read_excel(self.filename, sheetname='Variables',
+                                index_col='Name')
+        for name, value in zip(df_vars.index, df_vars.Value.values):
+            setattr(self, name.lower(), value)
         if not hasattr(self, "res_path"):
-            raise Warning("The 'Variables' sheet of '%s' must contain the variable 'res_path' specifying the path to the result folder" % self.filename)
+            raise Warning("The 'Variables' sheet of '%s' must contain the "
+                          "variable 'res_path' specifying the path to the "
+                          "result folder" % self.filename)
         self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
 
         #DLC sheet
-        sheet = wb.sheet_by_name("DLC")
-        self.dlc_df = pd.DataFrame({sheet.cell(0, col_index).value.lower(): [sheet.cell(row_index, col_index).value for row_index in range(2, sheet.nrows) if sheet.cell(row_index, 0).value != ""] for col_index in range(sheet.ncols)})
+        self.dlc_df = pd.read_excel(self.filename, sheetname='DLC', skiprows=[1])
+        # empty strings are now nans, convert back to empty strings
+        self.dlc_df.fillna('', inplace=True)
+        # force headers to lower case
+        self.dlc_df.columns = [k.lower() for k in self.dlc_df.columns]
+        # ignore rows where column dlc is empty
+        self.dlc_df = self.dlc_df[self.dlc_df['name'] != '']
         for k in ['load', 'dlc_dist', 'wsp_dist']:
             assert k.lower() in self.dlc_df.keys(), "DLC sheet must have a '%s' column" % k
         self.dist_value_keys = [('dlc_dist', 'dlc'), ('wsp_dist', 'wsp')]
-        self.dist_value_keys.extend([(k, k.replace("_dist", "")) for k in self.dlc_df.keys() if k.endswith("_dist") and k not in ('dlc_dist', 'wsp_dist')])
+        self.dist_value_keys.extend([(k, k.replace("_dist", ""))
+                                     for k in self.dlc_df.keys()
+                                     if k.endswith("_dist") and k not in ('dlc_dist', 'wsp_dist')])
         for i, (dk, vk) in enumerate(self.dist_value_keys):
             try:
-                assert vk in self.dlc_df.keys(), "DLC sheet must have a '%s'-column when having a '%s'-column" % (vk, dk)
+                msg = "DLC sheet must have a '%s'-column when having a '%s'-column"
+                assert vk in self.dlc_df.keys(), msg % (vk, dk)
             except AssertionError as e:
                 if vk == "dlc" and 'name' in self.dlc_df.keys():
                     columns = list(self.dlc_df.columns)
@@ -66,9 +77,12 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        sheet = wb.sheet_by_name("Sensors")
-        name_col_index = [sheet.cell(0, col_index).value.lower() for col_index in range(0, sheet.ncols)].index("name")
-        self.sensor_df = pd.DataFrame({sheet.cell(0, col_index).value.lower(): [sheet.cell(row_index, col_index).value for row_index in range(1, sheet.nrows) if sheet.cell(row_index, name_col_index).value != ""] for col_index in range(sheet.ncols)})
+        self.sensor_df = pd.read_excel(self.filename, sheetname='Sensors', skiprows=[1])
+        # empty strings are now nans, convert back to empty strings
+        self.sensor_df.fillna('', inplace=True)
+        # force headers to lower case
+        self.sensor_df.columns = [k.lower() for k in self.sensor_df.columns]
+
         for k in ['Name', 'Nr']:
             assert k.lower() in self.sensor_df.keys(), "Sensor sheet must have a '%s' column" % k
         assert not any(self.sensor_df['name'].duplicated()), "Duplicate sensor names: %s" % ",".join(self.sensor_df['name'][self.sensor_df['name'].duplicated()].values)
@@ -76,15 +90,16 @@ class DLCHighLevel(object):
             if k not in self.sensor_df.keys():
                 self.sensor_df[k] = ""
         for _, row in self.sensor_df[self.sensor_df['fatigue'] != ""].iterrows():
-            assert isinstance(row['m'], (int, float)), "Invalid m-value for %s (m='%s')" % (row['name'], row['m'])
-            assert isinstance(row['neql'], (int, float)), "Invalid NeqL-value for %s (NeqL='%s')" % (row['name'], row['neql'])
+            msg = "Invalid m-value for %s (m='%s')" % (row['name'], row['m'])
+            assert isinstance(row['m'], (int, float)), msg
+            msg = "Invalid NeqL-value for %s (NeqL='%s')" % (row['name'], row['neql'])
+            assert isinstance(row['neql'], (int, float)), msg
         for name, nrs in zip(self.sensor_info("extremeload").name, self.sensor_info("extremeload").nr):
-            assert (np.atleast_1d((eval(str(nrs)))).shape[0] == 6), "'Nr' for Extremeload-sensor '%s' must contain 6 sensors (Fx,Fy,Fz,Mx,My,Mz)" % name
-
+            msg = "'Nr' for Extremeload-sensor '%s' must contain 6 sensors (Fx,Fy,Fz,Mx,My,Mz)" % name
+            assert (np.atleast_1d((eval(str(nrs)))).shape[0] == 6), msg
 
     def __str__(self):
         return self.filename
-
 
     def sensor_info(self, sensors=[]):
         if sensors != []:
@@ -116,7 +131,7 @@ class DLCHighLevel(object):
 
         dist = self.dlc_df[dist_key][row]
         if str(dist).lower() == "weibull" or str(dist).lower() == "rayleigh":
-            dist = Weibull2(self.vref * .2, 2, values)
+            dist = Weibull2(self.vref * .2, self.shape_k, values)
         else:
             def fmt(v):
                 if "#" in str(v):
@@ -138,8 +153,6 @@ class DLCHighLevel(object):
             dlc = self.dlc_df[self.dist_value_keys[0][1]][row]
             fatigue_dist[str(dlc)] = [self.distribution(value_key, dist_key, row) for dist_key, value_key in self.dist_value_keys]
         return fatigue_dist
-
-
 
     def files_dict(self):
         if not hasattr(self, "res_folder") or self.res_folder == "":
@@ -189,8 +202,7 @@ class DLCHighLevel(object):
                 total_prop *= prop
         return total_prop
 
-
-    def file_hour_lst(self):
+    def file_hour_lst(self, years=20):
         """Create a list of (filename, hours_pr_year) that can be used as input for LifeTimeEqLoad
 
         Returns
@@ -204,8 +216,6 @@ class DLCHighLevel(object):
         fh_lst = []
         dist_dict = self.fatigue_distribution()
         files_dict = self.files_dict()
-
-
 
         for dlc_id in sorted(dist_dict.keys()):
             dlc_id = str(dlc_id)
@@ -240,12 +250,10 @@ class DLCHighLevel(object):
                         continue
                 if files:
                     f_prob = self.probability(props, files[0], files) / len(files)
-                    f_hours_pr_20year = HOURS_PR_20YEAR * f_prob
+                    f_hours_pr_20year = 365 * 24 * years * f_prob
                     for f in files:
                         fh_lst.append((f, f_hours_pr_20year))
         return fh_lst
-
-
 
     def dlc_lst(self, load='all'):
         dlc_lst = np.array(self.dlc_df['dlc'])[np.array([load == 'all' or load.lower() in d.lower() for d in self.dlc_df['load']])]
@@ -254,6 +262,7 @@ class DLCHighLevel(object):
     @cache_function
     def psf(self):
         return {dlc: float((psf, 1)[psf == ""]) for dlc, psf in zip(self.dlc_df['dlc'], self.dlc_df['psf']) if dlc != ""}
+
 
 if __name__ == "__main__":
     dlc_hl = DLCHighLevel(r'X:\NREL5MW\dlc.xlsx')
