@@ -1,3 +1,47 @@
+
+# Introduction
+
+The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection
+of Python scripts that facilitate working with (potentially a lot) of HAWC2,
+HAWCStab2, FAST or other text input based simulation tools.
+
+Note that this toolbox is very much a WIP (work in progress). For example,
+some of the functions in the [prepost](#prepost) module have a similar functions
+in [Hawc2io](wetb/hawc2/Hawc2io.py). These different implementations will be
+merged in due time.
+
+
+# Python 3
+
+This module currently only works under Python 3. If you are working in Python 2,
+this could be a good moment to consider switching. If you are bound to Python 2
+due to critical 3th party dependencies you are encouraged to cast your vote for
+Python 2 compatibility in
+[issue 1](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/1).
+
+Switching to Python 3 is in general a very good idea especially since Python 3.5
+was released. Some even dare to say it
+[is like eating your vegetables](http://nothingbutsnark.svbtle.com/porting-to-python-3-is-like-eating-your-vegetables).
+
+You can automatically convert you code from Python 2 to 3 using the
+[2to3](https://docs.python.org/2/library/2to3.html) utility which is included
+in Python 2.7 by default. You can also write code that is compatible with both
+2 and 3 at the same time (you can find additional resources in
+[issue 1](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/1)).
+
+
+# Installation
+
+```
+python setup.py
+```
+
+# Tests
+
+Only a small part of the code is covered by unittests currently. More tests are
+forthcoming.
+
+
 # Contents of WindEnergyToolbox, [wetb](wetb)
 
 - [hawc2](#hawc2)
@@ -8,13 +52,6 @@
 - [prepost](#prepost)
 - [fast](#fast)
 - [utils](#utils)
-
-Note that this toolbox is very much a WIP (work in progress). Some of the functions
-in the [prepost](#prepost) module have a similar functions in [Hawc2io](wetb/hawc2/Hawc2io.py).
-These different implementations will be merged in due time.
-
-Only a small part of the code is covered by unittests currently. More tests are
-forthcoming.
 
 ------------------------------------------------------------------------------------
 ### [hawc2](wetb/hawc2)
