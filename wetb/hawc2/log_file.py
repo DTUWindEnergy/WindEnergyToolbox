@@ -36,6 +36,7 @@ class LogFile(object):
         self.reset()
         self.update_status()
 
+
     @staticmethod
     def from_htcfile(htcfile, modelpath):
         logfilename = htcfile.simulation.logfile[0]
@@ -46,6 +47,7 @@ class LogFile(object):
     def reset(self):
         self.position = 0
         self.lastline = ""
+        self.txt = ""
         self.status = UNKNOWN
         self.pct = 0
         self.errors = []
@@ -54,7 +56,8 @@ class LogFile(object):
         self.current_time = 0
         self.remaining_time = None
 
-
+    def __str__(self):
+        return self.txt
     def clear(self):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w'):
@@ -87,6 +90,7 @@ class LogFile(object):
                 txt = fid.read()
             self.position += len(txt)
             txt = txt.decode(encoding='utf_8', errors='strict')
+            self.txt += txt
             if self.status == PENDING and self.position > 0:
                 self.status = INITIALIZATION
 

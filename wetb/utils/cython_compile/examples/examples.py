@@ -37,18 +37,18 @@ def cycheck_compile_autodeclare(p):
                 return False
     return True
 
+if __name__ == "__main__":
+    p = 17
 
-p = 17
+    print (pycheck(p))
 
-print (pycheck(p))
+    cython_import('cycheck')
+    print (cycheck.cycheck(p))
+    print (cycheck.cycheck_pure(p))
+    print (cycheck.cycheck_cdef(p))
 
-cython_import('cycheck')
-print (cycheck.cycheck(p))
-print (cycheck.cycheck_pure(p))
-print (cycheck.cycheck_cdef(p))
+    print (cycheck_compile(p))
 
-print (cycheck_compile(p))
-
-print (cycheck_compile_autodeclare(p))
+    print (cycheck_compile_autodeclare(p))
 
 
