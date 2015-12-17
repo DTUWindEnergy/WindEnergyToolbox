@@ -1,0 +1,6 @@
+# Add your requirements here like:
+six
+numpy>=1.4
+scipy>=0.9
+matplotlib
+
