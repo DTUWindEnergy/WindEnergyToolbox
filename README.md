@@ -5,11 +5,19 @@
 - [fatigue_tools](#fatigue_tools)
 - [wind](#wind)
 - [dlc](#dlc)
+- [prepost](#prepost)
 - [fast](#fast)
 - [utils](#utils)
 
+Note that this toolbox is very much a WIP (work in progress). Some of the functions
+in the [prepost](#prepost) module have a similar functions in [Hawc2io](wetb/hawc2/Hawc2io.py).
+These different implementations will be merged in due time.
+
+Only a small part of the code is covered by unittests currently. More tests are
+forthcoming.
+
 ------------------------------------------------------------------------------------
-### [hawc2](wetb/hawc2) 
+### [hawc2](wetb/hawc2)
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
 - [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
 - [htc_file](wetb/hawc2/htc_file.py): Read/write/manipulate htc files
@@ -26,7 +34,7 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 - [unix_time](wetb/gtsdf/unix_time.py): convert between datetime and unix time (seconds since 1/1/1970)
 
 ### [fatigue_tools](wetb/fatigue_tools)
-- [fatigue](wetb/fatigue_tools/fatigue.py): Rainflow counting, cycle matrix and equvivalent loads
+- [fatigue](wetb/fatigue_tools/fatigue.py): Rainflow counting, cycle matrix and equivalent loads
 - [bearing_damage](wetb/fatigue_tools/bearing_damage.py): Calculate a comparable measure of bearing damage
 
 ### [wind](wetb/wind)
@@ -36,6 +44,12 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 Module for working with "Design load cases" (Code independent)
 - [high_level](wetb/dlc/high_level.py) Class for working with the highlevel dlc excell sheet
 
+### [prepost](wetb/prepost)
+Module for creating an arbitrary number of HAWC2 simulations, and optionally
+corresponding execution scripts for a PBS Torque cluster (Linux), simple bash
+(Linux), or Windows batch scripts. A post-processing module is also included
+that calculates statistical parameters, performs rainflow counting for fatigue
+load calculations, and create load envelopes.
 
 ### [fast](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
@@ -47,3 +61,4 @@ Other functions
 - [process_exec](wetb/utils/process_exec.py): Run system command in subprocess
 - [timing](wetb/utils/timing.py): Decorators for evaluating execution time of functions
 - [caching](wetb/utils/caching.py): Decorators to create cached (calculate once) functions and properties
+
