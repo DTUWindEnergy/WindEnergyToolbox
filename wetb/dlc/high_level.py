@@ -29,7 +29,7 @@ def Weibull2(u, k, wsp_lst):
 
 class DLCHighLevel(object):
 
-    def __init__(self, filename, fail_on_resfile_not_found=False, shape_k=0.2):
+    def __init__(self, filename, fail_on_resfile_not_found=False, shape_k=2.0):
         self.filename = filename
         self.fail_on_resfile_not_found = fail_on_resfile_not_found
 
@@ -53,13 +53,14 @@ class DLCHighLevel(object):
         self.dlc_df.fillna('', inplace=True)
         # force headers to lower case
         self.dlc_df.columns = [k.lower() for k in self.dlc_df.columns]
+        # ignore rows where column dlc is empty
+        self.dlc_df = self.dlc_df[self.dlc_df['name'] != '']
         for k in ['load', 'dlc_dist', 'wsp_dist']:
             assert k.lower() in self.dlc_df.keys(), "DLC sheet must have a '%s' column" % k
         self.dist_value_keys = [('dlc_dist', 'dlc'), ('wsp_dist', 'wsp')]
         self.dist_value_keys.extend([(k, k.replace("_dist", ""))
                                      for k in self.dlc_df.keys()
-                                     if k.endswith("_dist")
-                                     and k not in ('dlc_dist', 'wsp_dist')])
+                                     if k.endswith("_dist") and k not in ('dlc_dist', 'wsp_dist')])
         for i, (dk, vk) in enumerate(self.dist_value_keys):
             try:
                 msg = "DLC sheet must have a '%s'-column when having a '%s'-column"
