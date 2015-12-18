@@ -11,6 +11,7 @@ import shutil
 import json
 import glob
 from wetb.hawc2 import log_file
+import re
 
 
 
@@ -39,8 +40,8 @@ class Simulation(object):
             self.log_filename = os.path.relpath(self.log_filename, self.modelpath)
 
         self.logFile = LogFile(os.path.join(self.modelpath, self.log_filename), self.time_stop)
-        self.logFile.clear()
         self._status = QUEUED
+        self.errors = []
         self.thread = Thread(target=self.simulate)
         self.simulationThread = SimulationThread(self.modelpath, self.htcFile.filename, hawc2exe)
         self.timer = RepeatedTimer(1, self.update_status)
@@ -79,15 +80,26 @@ class Simulation(object):
         self.last_status = status
 
 
-    def prepare_simulation(self, id):
-        self.tmp_modelpath = os.path.join(self.modelpath, id + "/")
+    def additional_files(self):
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
-        additional_files = []
+        additional_files = {}
         if os.path.isfile(additional_files_file):
             with open(additional_files_file) as fid:
-                additional_files = json.load(fid).get('input', [])
+                additional_files = json.load(fid)
+        return additional_files
 
-        for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + additional_files:
+    def add_additional_input_file(self, file):
+        additional_files = self.additional_files()
+        additional_files['input'] = additional_files.get('input', []) + [file]
+        additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
+        with open(additional_files_file, 'w') as fid:
+                json.dump(additional_files, fid)
+
+    def prepare_simulation(self, id):
+        self.tmp_modelpath = os.path.join(self.modelpath, id + "/")
+
+
+        for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + self.additional_files().get('input', []):
             if not os.path.isabs(src):
                 src = os.path.join(self.modelpath, src)
             for src_file in glob.glob(src):
@@ -136,28 +148,54 @@ class Simulation(object):
 
     def simulate(self):
         self.is_simulating = True
+        self.errors = []
         self.logFile.clear()
         self.status = INITIALIZING
 
         self.simulationThread.start()
         self.simulationThread.join()
-        self.returncode, self.stderr, self.stdout = self.simulationThread.res
-        if self.returncode or 'error' in self.stderr.lower() or 'error' in self.stdout.lower():
-            print (self.returncode)
-            print ("stdout:\n", self.stdout)
-            print ("-"*50)
-            print ("stderr:\n", self.stderr)
-            print ("#"*50)
-            self.errors = (list(set([l for l in self.stderr.split("\n") if 'error' in l.lower()])))
+        self.returncode, self.stdout = self.simulationThread.res
+        if self.returncode or 'error' in self.stdout.lower():
+            self.errors = (list(set([l for l in self.stdout.split("\n") if 'error' in l.lower()])))
             self.status = ERROR
-#        else:
-#            self.stop()
-#            self.finish_simulation()
-#            self.controller.update_queues()
         self.is_simulating = False
+        self.logFile.update_status()
+        if self.returncode or self.errors:
+            raise Exception("Simulation error:\n" + "\n".join(self.errors))
+        if self.logFile.status != log_file.DONE or self.logFile.errors:
+            raise Warning("Simulation succeded with errors:\nLog status:%s\n" % self.logFile.status + "\n".join(self.logFile.errors))
 
+
+
+    def fix_errors(self):
+        def confirm_add_additional_file(folder, file):
+            if os.path.isfile(os.path.join(self.modelpath, folder, file)):
+                filename = os.path.join(folder, file).replace(os.path.sep, "/")
+                if self.get_confirmation("File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
+                    self.add_additional_input_file(filename)
+                    self.show_message("'%s' is not added to additional_files.txt.\n\nPlease restart the simulation" % filename)
+        for error in self.errors:
+            m = re.compile(r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the (.*) folder").match(error.strip())
+            if m is not None:
+                file, folder = m.groups()
+                confirm_add_additional_file(folder, file)
+                continue
+            m = re.compile(r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the working directory").match(error.strip())
+            if m is not None:
+                file = m.groups()[0]
+                for root, folder, files in os.walk(self.modelpath):
+                    if "__Thread" not in root and file in files:
+                        folder = os.path.relpath(root, self.modelpath)
+                        confirm_add_additional_file(folder, file)
+                continue
+
+    def get_confirmation(self, title, msg):
+        return True
+    def show_message(self, msg, title="Information"):
+        print (msg)
 
     def start(self):
+        """Start non blocking simulation"""
         self.thread.start()
 
     def stop(self):
@@ -168,7 +206,7 @@ class Simulation(object):
         except:
             pass
         if self.logFile.status not in [log_file.DONE]:
-            self.logFile.status = ABORTED
+            self.status = ABORTED
 
 #class SimulationProcess(Process):
 #
@@ -194,14 +232,14 @@ class SimulationThread(Thread):
         self.modelpath = modelpath
         self.htcfile = os.path.relpath(htcfile, self.modelpath)
         self.hawc2exe = hawc2exe
-        self.res = [0, "", "", ""]
+        self.res = [0, "", ""]
 
 
     def start(self):
         si = subprocess.STARTUPINFO()
         si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         CREATE_NO_WINDOW = 0x08000000
-        self.process = subprocess.Popen([self.hawc2exe, self.htcfile], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, cwd=self.modelpath, creationflags=CREATE_NO_WINDOW)
+        self.process = subprocess.Popen([self.hawc2exe, self.htcfile], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=self.modelpath, creationflags=CREATE_NO_WINDOW)
 
         Thread.start(self)
 
@@ -209,7 +247,10 @@ class SimulationThread(Thread):
     def run(self):
         p = psutil.Process(os.getpid())
         p.nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
-        self.res = exec_process(self.process)
+        stdout, _ = self.process.communicate()
+        errorcode = self.process.returncode
+        self.res = errorcode, stdout.decode()
+
 
 
 class RepeatedTimer(object):

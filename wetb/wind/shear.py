@@ -32,7 +32,7 @@ def power_shear(alpha, z_ref, u_ref, z):
     power_shear : array-like
         Wind speeds at height z
 
-    Excample
+    Example
     --------
     >>> power_shear(.5, 70, [20,50,70], 9)
     [ 4.81070235  7.60638829  9.        ]
@@ -56,7 +56,7 @@ def fit_power_shear(z_u_lst):
     alpha : float
         power shear parameter
 
-    Excample
+    Example
     --------
     >>> fit_power_shear([(85, 9.0), (21, 4.47118)])
     0.50036320835
@@ -86,7 +86,7 @@ def fit_power_shear_ref(z_u_lst, z_ref):
     u_ref : float
         Wind speed at reference height
 
-    Excample
+    Example
     --------
     >>> fit_power_shear_ref([(85, 8.88131), (21, 4.41832)],  87.13333)
     [ 0.49938238  8.99192568]
@@ -115,7 +115,7 @@ def log_shear(u_star, z0, z, Obukhov_length=None):
     log_shear : array-like
         Wind speeds at height z
 
-    Excample
+    Example
     --------
     >>> log_shear(1, 10, [20, 50, 70])
     [ 1.73286795  4.02359478  4.86477537]
@@ -161,7 +161,7 @@ def fit_log_shear(z_u_lst, include_R=False):
     z0 : float
         Surface roughness [m]
 
-    Excample
+    Example
     --------
     >>> fit_log_shear([(85, 8.88131), (21, 4.41832)],  87.13333)
     [ 0.49938238  8.99192568]

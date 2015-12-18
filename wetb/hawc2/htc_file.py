@@ -38,7 +38,7 @@ class HTCFile(HTCContents, HTCDefaults):
         lines = self.lines.copy()
         while lines:
             if lines[0].startswith(";"):
-                self.initial_comments.append(lines.pop(0).strip())
+                self.initial_comments.append(lines.pop(0).strip() + "\n")
             elif lines[0].lower().startswith("begin"):
                 self._add_contents(HTCSection.from_lines(lines))
             else:

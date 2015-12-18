@@ -9,7 +9,7 @@ import numpy as np
 import os
 import shutil
 testfilepath = 'test_files/'
-class Test(unittest.TestCase):
+class TestShearFile(unittest.TestCase):
 
 
     def test_shearfile(self):

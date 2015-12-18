@@ -12,7 +12,7 @@ import unittest
 import os
 import shutil
 
-class Test(unittest.TestCase):
+class Test_gsdf(unittest.TestCase):
     f = "tmp/"
     def setUp(self):
         unittest.TestCase.setUp(self)

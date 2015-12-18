@@ -9,10 +9,14 @@ import wetb.gtsdf
 import numpy as np
 from wetb.utils.geometry import rad, deg, mean_deg, sind, cosd, std_deg, xyz2uvw, \
     wsp_dir2uv, wsp_dir_tilt2uvw, tand
+import os
 
 
-class Test(unittest.TestCase):
+class TestGeometry(unittest.TestCase):
 
+    def setUp(self):
+        unittest.TestCase.setUp(self)
+        self.tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
     def test_rad(self):
         self.assertEqual(rad(45), np.pi / 4)
@@ -89,18 +93,18 @@ class Test(unittest.TestCase):
 
 
     def test_wspdir2uv2(self):
-        time, data, info = wetb.gtsdf.load("test_files/SonicDataset.hdf5")
+        time, data, info = wetb.gtsdf.load(self.tfp + "SonicDataset.hdf5")
         stat, x, y, z, temp, wsp, dir, tilt = data[2:3].T  #xyz is left handed
         np.testing.assert_array_almost_equal(xyz2uvw(*wsp_dir2uv(wsp, dir), z=0), xyz2uvw(x, y, 0))
 
     def test_wspdirtil2uvw(self):
-        time, data, info = wetb.gtsdf.load("test_files/SonicDataset.hdf5")
+        time, data, info = wetb.gtsdf.load(self.tfp + "SonicDataset.hdf5")
         stat, x, y, z, temp, wsp, dir, tilt = data[3:6].T  #xyz is left handed
         wsp = np.sqrt(wsp ** 2 + z ** 2)
         np.testing.assert_array_almost_equal(xyz2uvw(*wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal=False), left_handed=False), xyz2uvw(x, y, z))
 
     def test_wspdirtil2uvw_horizontal_wsp(self):
-        time, data, info = wetb.gtsdf.load("test_files/SonicDataset.hdf5")
+        time, data, info = wetb.gtsdf.load(self.tfp + "SonicDataset.hdf5")
         stat, x, y, z, temp, wsp, dir, tilt = data[:].T  #xyz is left handed
         np.testing.assert_array_almost_equal(xyz2uvw(*wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal=True), left_handed=False), xyz2uvw(x, y, z))
 

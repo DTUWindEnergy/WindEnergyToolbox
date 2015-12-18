@@ -8,15 +8,16 @@ from wetb.dlc.high_level import DLCHighLevel, Weibull
 import os
 import numpy as np
 
+testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 class TestDLCHighLevel(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.dlc_hl = DLCHighLevel('test_files/DLC_test.xlsx')
+        self.dlc_hl = DLCHighLevel(testfilepath + 'DLC_test.xlsx')
 
     def test_variables(self):
         self.assertEqual(self.dlc_hl.vref, 50)
-        self.assertEqual(os.path.realpath(self.dlc_hl.res_path), os.path.realpath(os.path.join(os.getcwd(), "test_files/res")))
+        self.assertEqual(os.path.realpath(self.dlc_hl.res_path), os.path.realpath(testfilepath + "res"))
 
     def test_sensor_info(self):
         self.assertEqual(list(self.dlc_hl.sensor_info().name), ['MxTB', 'MyTB', 'MxBR', 'PyBT', 'Pitch', 'PitchBearing', 'Tip1TowerDistance', 'TipTowerDistance'])
@@ -41,12 +42,12 @@ class TestDLCHighLevel(unittest.TestCase):
 
     def test_file_hour_lst(self):
         f, h = self.dlc_hl.file_hour_lst()[0]
-        self.assertEqual(f, 'test_files\\res\\DLC12_IEC61400-1ed3\\dlc12_wsp04_wdir350_s3001.sel')
+        self.assertEqual(f, os.path.abspath(testfilepath + 'res\\DLC12_IEC61400-1ed3\\dlc12_wsp04_wdir350_s3001.sel'))
         self.assertEqual(h, .975 * .25 * 0.11002961306549919 / 2 * 20 * 365 * 24)
 
     def test_file_hour_lst_count(self):
         f, h = self.dlc_hl.file_hour_lst()[-1]
-        self.assertEqual(f, 'test_files\\res\\DLC31_IEC61400-1ed3\\dlc31_wsp25_wdir000_s0000.sel')
+        self.assertEqual(f, os.path.abspath(testfilepath + 'res\\DLC31_IEC61400-1ed3\\dlc31_wsp25_wdir000_s0000.sel'))
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
 
@@ -67,7 +68,7 @@ class TestDLCHighLevel(unittest.TestCase):
             self.assertTrue(k in self.dlc_hl.sensor_info().keys(), k)
 
     def test_fail_on_res_not_fount(self):
-        self.dlc_hl = DLCHighLevel('test_files/DLC_test.xlsx', fail_on_resfile_not_found=True)
+        self.dlc_hl = DLCHighLevel(testfilepath + 'DLC_test.xlsx', fail_on_resfile_not_found=True)
         self.assertRaisesRegex(FileNotFoundError, "Result files for dlc='12', wsp='6', wdir='-10' not found")
 
 

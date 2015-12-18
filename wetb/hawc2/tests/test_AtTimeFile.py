@@ -6,14 +6,15 @@ Created on 17/07/2014
 import unittest
 from wetb.hawc2.at_time_file import AtTimeFile
 import numpy as np
+import os
 
 
 
-class Test(unittest.TestCase):
+class TestAtTimeFile(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.testfilepath = "test_files/"
+        self.testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
 
     def test_doc_examples(self):

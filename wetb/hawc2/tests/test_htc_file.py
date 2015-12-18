@@ -9,18 +9,17 @@ import unittest
 from datetime import datetime
 from wetb.hawc2.htc_file import HTCFile, HTCLine
 
-os.chdir(os.path.relpath(".", __file__))
 
 
 import numpy as np
 
 
 
-class Test(unittest.TestCase):
+class TestHtcFile(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.testfilepath = "tests/test_files/htcfiles/"
+        self.testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/htcfiles/')  # test file path
 
 
     def check_htc_file(self, f):
@@ -182,7 +181,7 @@ class Test(unittest.TestCase):
                   './control/mech_brake.dll',
                   './control/servo_with_limits.dll',
                   './control/towclearsens.dll',
-                  'tests/test_files/htcfiles/test.htc'
+                  self.testfilepath + 'test.htc'
                   ]:
             try:
                 input_files.remove(f)
@@ -193,8 +192,7 @@ class Test(unittest.TestCase):
     def test_continue_in_files(self):
         htcfile = HTCFile(self.testfilepath + "continue_in_file.htc", ".")
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
-        self.assertIn('tests/test_files/htcfiles\\.\\./orientation.dat', htcfile.input_files())
-        self.assertIn('tests/test_files/htcfiles\\.\\./orientation.dat', htcfile.input_files())
+        self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
 
 

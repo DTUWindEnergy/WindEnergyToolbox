@@ -9,9 +9,9 @@ import datetime
 from wetb.utils.timing import print_time
 from wetb.gtsdf.unix_time import to_unix
 
-class Test(unittest.TestCase):
+class TestUnixTime(unittest.TestCase):
 
-    @print_time
+    #@print_time
     def r(self, dt):
         return [to_unix(dt) for dt in dt]
 

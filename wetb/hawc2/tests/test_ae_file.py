@@ -5,9 +5,10 @@ Created on 05/11/2015
 '''
 import unittest
 from wetb.hawc2.ae_file import AEFile
+import os
 
-testfilepath = 'test_files/'
-class Test(unittest.TestCase):
+testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
+class TestAEFile(unittest.TestCase):
 
 
     def test_aefile(self):
@@ -23,9 +24,6 @@ class Test(unittest.TestCase):
         self.assertEqual(ae.pc_set_nr(32), 1)
 
 
-        print (ae.thickness(32))
-        print (ae.chord(32))
-        print (ae.pc_set_nr(32))
 
 
 if __name__ == "__main__":
