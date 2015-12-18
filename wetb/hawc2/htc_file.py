@@ -66,7 +66,7 @@ class HTCFile(HTCContents, HTCDefaults):
         self.contents[key] = value
 
     def __str__(self):
-        return "".join(self.initial_comments + [c.__str__(1) for c in self])
+        return "\n".join(self.initial_comments) + "\n" + "".join([c.__str__(1) for c in self])
 
     def save(self, filename=None):
         if filename is None:
