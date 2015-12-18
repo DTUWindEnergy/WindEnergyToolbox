@@ -39,6 +39,7 @@ class DLCHighLevel(object):
         # Variables
         df_vars = pd.read_excel(self.filename, sheetname='Variables',
                                 index_col='Name')
+        df_vars.fillna('', inplace=True)
         for name, value in zip(df_vars.index, df_vars.Value.values):
             setattr(self, name.lower(), value)
         if not hasattr(self, "res_path"):
@@ -53,9 +54,12 @@ class DLCHighLevel(object):
         self.dlc_df.fillna('', inplace=True)
         # force headers to lower case
         self.dlc_df.columns = [k.lower() for k in self.dlc_df.columns]
+        if 'dlc' not in self.dlc_df.columns and 'name' in self.dlc_df.columns:
+            # rename old style "name" column to "dlc"
+            self.dlc_df = self.dlc_df.rename(columns={'name': 'dlc'})
         # ignore rows where column dlc is empty
-        self.dlc_df = self.dlc_df[self.dlc_df['name'] != '']
-        for k in ['load', 'dlc_dist', 'wsp_dist']:
+        self.dlc_df = self.dlc_df[self.dlc_df['dlc'] != '']
+        for k in ['load', 'dlc', 'dlc_dist', 'wsp', 'wsp_dist']:
             assert k.lower() in self.dlc_df.keys(), "DLC sheet must have a '%s' column" % k
         self.dist_value_keys = [('dlc_dist', 'dlc'), ('wsp_dist', 'wsp')]
         self.dist_value_keys.extend([(k, k.replace("_dist", ""))
@@ -77,7 +81,7 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        self.sensor_df = pd.read_excel(self.filename, sheetname='Sensors', skiprows=[1])
+        self.sensor_df = pd.read_excel(self.filename, sheetname='Sensors')
         # empty strings are now nans, convert back to empty strings
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
