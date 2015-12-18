@@ -30,6 +30,16 @@ in Python 2.7 by default. You can also write code that is compatible with both
 [issue 1](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/1)).
 
 
+# Dependencies
+
+[numpy](http://www.numpy.org/)
+[scipy](http://scipy.org/scipylib/)
+[pandas](http://pandas.pydata.org/)
+[matplotlib](http://matplotlib.org/)
+[pytables](http://www.pytables.org/)
+[pyscaffold](http://pyscaffold.readthedocs.org/en/)
+
+
 # Installation
 
 ```
