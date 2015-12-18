@@ -4,3 +4,13 @@ dist/*
 *.pyd
 *egg-info*
 
+.eggs
+doctrees
+/docs/_build
+/.project
+/.pydevproject
+/.settings/org.eclipse.core.resources.prefs
+/wetb/gtsdf/tests/tmp
+/wetb/dlc/tests/test_files/res_all
+/wetb/dlc/tests/test_files/res2_all
+/wetb/hawc2/ascii2bin/ascii2bin_dist
