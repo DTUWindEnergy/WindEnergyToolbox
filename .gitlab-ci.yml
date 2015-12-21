@@ -1,0 +1,8 @@
+before_script:
+  - apt-get update
+
+test-3.4:
+  image: python:3.4
+  script:
+  - pip install -e .
+  - py.test .
