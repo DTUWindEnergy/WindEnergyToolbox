@@ -1,6 +1,6 @@
 before_script:
   - apt-get update
-  - apt-get install gfortan
+  - apt-get install gfortran-4.7
 
 test-3.4:
   image: python:3.4
