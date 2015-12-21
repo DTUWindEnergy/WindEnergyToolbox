@@ -5,4 +5,5 @@ before_script:
 test-3.4:
   image: python:3.4
   script:
-  - python
+  - pip install -e .
+  - python tests/testsuite.py
