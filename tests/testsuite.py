@@ -2,8 +2,6 @@ import glob
 import unittest
 import os
 
-os.environ['QT_API'] = "pyqt"
-
 def module_strings():
     test_file_paths = glob.glob('test_*.py')
     #test_file_strings.extend(glob.glob('../wetb/**/test_*.py'))

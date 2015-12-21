@@ -8,7 +8,7 @@ from wetb.utils.geometry import xyz2uvw
 import wetb.gtsdf
 from wetb.wind.shear import power_shear, fit_power_shear, fit_power_shear_ref, \
     log_shear, fit_log_shear, stability_term
-from pylab import *
+
 
 
 import unittest
@@ -145,7 +145,7 @@ class TestShear(unittest.TestCase):
                 plt.plot(u, z, 'r.')
             z = np.arange(10, 100)
             plt.plot(log_shear(u_star, z0, z), z)
-            show()
+            plt.show()
 
         for _zu, b in zip(zu, log_shear(u_star, z0, [85, 21])):
             self.assertAlmostEqual(_zu[1], b, 4)
@@ -156,10 +156,10 @@ class TestShear(unittest.TestCase):
             for ustar in [1, 2]:
                 for z0 in [1, 10]:
                     z = np.arange(z0, 200)
-                    plot(log_shear(ustar, z0, z), z, label="z0=%d, u*=%d" % (z0, ustar))
-            yscale('log')
-            legend()
-            show()
+                    plt.plot(log_shear(ustar, z0, z), z, label="z0=%d, u*=%d" % (z0, ustar))
+            plt.yscale('log')
+            plt.legend()
+            plt.show()
 
     def test_show_log_shear_stability(self):
         if 0:
@@ -167,10 +167,10 @@ class TestShear(unittest.TestCase):
             ustar = 1
             z = np.arange(z0, 200)
             for L in [-2000, -100, 100, 2000]:
-                plot(log_shear(ustar, z0, z, L), z, label="L=%d" % (L))
+                plt.plot(log_shear(ustar, z0, z, L), z, label="L=%d" % (L))
             #yscale('log')
-            legend()
-            show()
+            plt.legend()
+            plt.show()
 
 
 

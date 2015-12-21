@@ -76,7 +76,7 @@ class DLCHighLevel(object):
                     self.dlc_df.columns = columns
                 else:
                     raise e
-            self.dlc_df[vk] = [str(n).lower().replace(vk, "") for n in self.dlc_df[vk]]
+            self.dlc_df[vk].values[:] = [str(n).lower().replace(vk, "") for n in self.dlc_df[vk]]
         if 'psf' not in self.dlc_df:
             self.dlc_df['psf'] = 1
 
