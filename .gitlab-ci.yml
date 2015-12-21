@@ -6,4 +6,3 @@ test-3.4:
   image: python:3.4
   script:
   - pip install -e .
-  - pip install pytest
