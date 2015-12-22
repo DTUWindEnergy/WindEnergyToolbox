@@ -1,15 +1,15 @@
 import glob
 import unittest
 import os
-
+from os.path import dirname, relpath, abspath
 def module_strings():
-    test_file_paths = glob.glob('test_*.py')
+    test_file_paths = []
     #test_file_strings.extend(glob.glob('../wetb/**/test_*.py'))
     #for root,_,_ in os.walk("../wetb/"):
 
-    for folder, _, _ in os.walk(os.path.join(os.path.dirname(__file__), '../wetb')):
-        test_file_paths.extend(glob.glob(os.path.join(folder, "tests/test_*.py")))
-    return [s[3:len(s) - 3].replace(os.path.sep, ".") for s in test_file_paths]
+    for folder, _, _ in os.walk(os.path.abspath(dirname(__file__) + '/../wetb/')):
+        test_file_paths.extend(glob.glob(folder + "/tests/test_*.py"))
+    return [relpath(s, abspath(dirname(__file__) + "/../")).replace(".py", "").replace(os.path.sep, ".") for s in test_file_paths]
 
 
 def suite():
