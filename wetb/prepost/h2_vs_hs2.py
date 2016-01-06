@@ -50,7 +50,9 @@ class Configurations:
     # when induction is on, especially the low wind speeds will need more time
     # to reach steady state in HAWC2 compared to when there is no induction.
     aero_full = {'[aerocalc]':1, '[Induction]':1, '[tip_loss]':1,
-                 '[Dyn stall]':1, '[t0]':500, '[time stop]':550}
+                 '[Dyn stall]':0, '[t0]':700, '[time stop]':750}
+    aero_ind = {'[aerocalc]':1, '[Induction]':1, '[tip_loss]':0,
+                '[Dyn stall]':0, '[t0]':700, '[time stop]':750}
 
     blade_stiff_pitchC4 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
                            '[blade_damp_z]':0.01, '[blade_set]':4,
@@ -158,7 +160,7 @@ class Configurations:
                             '[c12]':False, '[c14]':True,
                             '[ae_tolrel]': 1e-7,
                             '[ae_itmax]' : 2000,
-                            '[ae_1relax]': 0.2}
+                            '[ae_1relax]': 0.0}
     # B0002
     flex_tstiff_pc14_cgsheac14 = {'[blade_damp_x]':0.13, '[blade_damp_y]':0.13,
                                   '[blade_damp_z]':0.15, '[blade_set]':1,
@@ -168,7 +170,7 @@ class Configurations:
                                   '[c12]':False, '[c14]':True,
                                   '[ae_tolrel]': 1e-7,
                                   '[ae_itmax]' : 2000,
-                                  '[ae_1relax]': 0.7}
+                                  '[ae_1relax]': 0.0}
     # B0003
     flex_pc14_cgsheac14 = {'[blade_damp_x]':0.13, '[blade_damp_y]':0.13,
                            '[blade_damp_z]':0.15, '[blade_set]':1,
@@ -178,7 +180,7 @@ class Configurations:
                            '[c12]':False, '[c14]':True,
                            '[ae_tolrel]': 1e-7,
                            '[ae_itmax]' : 2000,
-                           '[ae_1relax]': 0.7}
+                           '[ae_1relax]': 0.0}
     # B0004
     flex_pc12_cgsheac12 = {'[blade_damp_x]':0.15, '[blade_damp_y]':0.15,
                            '[blade_damp_z]':0.17, '[blade_set]':1,
@@ -188,8 +190,8 @@ class Configurations:
                            '[c12]':True, '[c14]':False,
                            '[ae_tolrel]': 1e-7,
                            '[ae_itmax]' : 2000,
-                           '[ae_1relax]': 0.7}
-    # B0005, B0006
+                           '[ae_1relax]': 0.0}
+    # B0005, B0006, B0007, B0008
     flex_pc12_cgshc14_eac12 = {'[blade_damp_x]':0.15, '[blade_damp_y]':0.15,
                                '[blade_damp_z]':0.17, '[blade_set]':1,
                                '[blade_subset]':8,    '[blade_posx]':0.00,
@@ -198,8 +200,17 @@ class Configurations:
                                '[c12]':True, '[c14]':False,
                                '[ae_tolrel]': 1e-7,
                                '[ae_itmax]' : 2000,
-                               '[ae_1relax]': 0.98}
-
+                               '[ae_1relax]': 0.0}
+    # B0009
+    stiff_pc12_cgsheac14 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
+                            '[blade_damp_z]':0.01, '[blade_set]':1,
+                            '[blade_subset]':2,    '[blade_posx]':0.00,
+                            '[blade_nbodies]': 17,
+                            '[st_file]'     :'blade_flex_rect.st',
+                            '[c12]':True, '[c14]':False,
+                            '[ae_tolrel]': 1e-7,
+                            '[ae_itmax]' : 2000,
+                            '[ae_1relax]': 0.0}
 
     def __init__(self):
         pass
@@ -865,6 +876,7 @@ class MappingsH2HS2(object):
         h2_aero['F_x'] *= (1e3)
         h2_aero['F_y'] *= (1e3)
         h2_aero['M'] *= (1e3)
+        h2_aero['M'] -= (h2_aero['F_y']*1.5)
 #        # HAWC2 includes root and tip nodes, while HAWC2 doesn't. Remove them
 #        h2_aero = h2_aero[1:-1]
         self.h2_aero = h2_aero
@@ -951,13 +963,17 @@ class Plots(object):
         self.hsls = '--'
         self.errls = '-'
         self.errc = 'k'
-        self.errlab = 'diff [\\%]'
+        self.errms = 'x'
+#        self.errlab = 'diff [\\%]'
+        self.errlab = 'diff'
         self.interactive = False
 
         self.dist_size = (16, 11)
+        self.dist_nrows = 3
+        self.dist_ncols = 4
         self.dist_channels = ['pos_x', 'pos_y', 'AoA', 'inflow_angle',
                               'Cl', 'Cd', 'vrel', 'ax_ind_vel',
-                              'F_x', 'F_y', 'M']
+                              'F_x', 'F_y', 'M', 'torsion']
 
     def load_h2(self, fname_h2, h2_df_stats=None, fname_h2_tors=None):
 
@@ -1009,7 +1025,8 @@ class Plots(object):
         print('saved:', fname)
 
     def distribution(self, results, labels, title, channels, x_ax='pos_z',
-                     xlabel='Z-coordinate [m]', nrows=2, ncols=4, size=(16, 5)):
+                     xlabel='Z-coordinate [m]', nrows=2, ncols=4, size=(16, 5),
+                     i0=1):
         """
         Compare blade distribution results
         """
@@ -1030,6 +1047,8 @@ class Plots(object):
             ax.plot(radius2, res2[chan].values, color=self.hsc,
                     label=lab2, alpha=0.7, marker=self.hsms, ls=self.hsls)
             ax.set_ylabel(chan.replace('_', '\\_'))
+            xlim = max(radius1.max(), radius2.max())
+            ax.set_xlim([0, xlim])
 
 #            if len(radius1) > len(radius2):
 #                radius = res1.hs_aero['pos_z'].values[n0:]
@@ -1055,27 +1074,23 @@ class Plots(object):
 #                    qq1 = res1.hs_aero[chan].values[n0:]
 #                    qq2 = interpolate.griddata(x, y, radius)
 
-            # calculate moment arm
-            if chan == 'M':
-                arm = res1.M / res1.F_y
-                axr = ax.twinx()
-                labr = lab1 + ' moment arm'
-                axr.plot(radius1, arm, color=self.errc, label=labr, alpha=0.6,
-                         ls=self.errls, marker=self.h2ms)
-            else:
-                # relative errors on the right axes
-                err = np.abs(1.0 - (res1[chan].values / res2[chan].values))*100.0
-                axr = ax.twinx()
-                axr.plot(radius1, err, color=self.errc, ls=self.errls,
-                         alpha=0.6, label=self.errlab)
-                if err.max() > 50:
-                    axr.set_ylim([0, 35])
+            # relative errors on the right axes
+#            err = np.abs(1.0 - (res1[chan].values / res2[chan].values))*100.0
+            # absolute errors on the right axes
+            err = res1[chan].values[i0:] - res2[chan].values[i0:]
+            axr = ax.twinx()
+            axr.plot(radius1[i0:], err, color=self.errc, ls=self.errls,
+                     alpha=0.6, label=self.errlab, marker=self.errms)
+#            if err.max() > 50:
+#                axr.set_ylim([0, 35])
 
-            # use axr for the legend
-            lines = ax.lines + axr.lines
-            labels = [l.get_label() for l in lines]
-            leg = axr.legend(lines, labels, loc='best')
-            leg.get_frame().set_alpha(0.5)
+            # use axr for the legend, but only for the first plot
+            if i == 0:
+                lines = ax.lines + axr.lines
+                labels = [l.get_label() for l in lines]
+                leg = axr.legend(lines, labels, loc='best')
+                leg.get_frame().set_alpha(0.5)
+
         # x-label only on the last row
         for k in range(ncols):
             axesflat[-k-1].set_xlabel(xlabel)
@@ -1121,7 +1136,9 @@ class Plots(object):
 
         fig, axes = self.distribution(results, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1136,7 +1153,9 @@ class Plots(object):
 
         fig, axes = self.distribution(results, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1158,7 +1177,9 @@ class Plots(object):
 
         fig, axes = self.distribution(res, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1197,11 +1218,12 @@ class Plots(object):
         ax = axes[0]
         key = 'P_aero'
         # HAWC2
-        yerr = results.pwr_h2_std[key]
-        ax.errorbar(wind_h2, results.pwr_h2_mean[key], color=self.h2c, yerr=yerr,
-                    marker=self.h2ms, ls=self.h2ls, label='HAWC2', alpha=0.9)
+        yerr = results.pwr_h2_std[key].values
+        ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=self.h2c,
+                    yerr=yerr, marker=self.h2ms, ls=self.h2ls, label='HAWC2',
+                    alpha=0.9)
         # HAWCSTAB2
-        ax.plot(wind_hs, results.pwr_hs[key], label='HAWCStab2',
+        ax.plot(wind_hs, results.pwr_hs[key].values, label='HAWCStab2',
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
         ax.set_title('Power [kW]')
         # relative errors on the right axes
@@ -1222,12 +1244,13 @@ class Plots(object):
         # HAWC2
         for key, ls in zip(keys, lss):
             label = 'HAWC2 %s' % (key.replace('_', '$_{') + '}$')
-            yerr = results.pwr_h2_std[key]
+            yerr = results.pwr_h2_std[key].values
             c = self.h2c
-            ax.errorbar(wind_h2, results.pwr_h2_mean[key], color=c, ls=ls,
+#            print(label)
+            ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
         # HAWCStab2
-        ax.plot(wind_hs, results.pwr_hs['T_aero'], color=self.hsc, alpha=0.7,
+        ax.plot(wind_hs, results.pwr_hs['T_aero'].values, color=self.hsc, alpha=0.7,
                 label='HAWCStab2 T$_{aero}$', marker=self.hsms, ls=self.hsls)
         # relative errors on the right axes
         axr = ax.twinx()
@@ -1240,8 +1263,9 @@ class Plots(object):
 
         axes = self.set_axes_label_grid(axes, setlegend=True)
 #        # use axr for the legend
+#        keys_tex = [kk.replace('_', '$_{') + '}$' for kk in keys]
 #        lines = [ax.lines[2]] + [ax.lines[5]] + [ax.lines[6]] + axr.lines
-#        labels = keys + ['HAWCStab2 T$_{aero}$', self.errlab]
+#        labels = keys_tex + ['HAWCStab2 T$_{aero}$', self.errlab]
 #        leg = axr.legend(lines, labels, loc='best')
 #        leg.get_frame().set_alpha(0.5)
 
@@ -1263,11 +1287,11 @@ class Plots(object):
         ax = axes[0]
         key = 'P_aero'
         # HAWC2
-        yerr1 = res1.pwr_h2_std[key]
-        ax.errorbar(wind1, res1.pwr_h2_mean[key], color=self.h2c, yerr=yerr1,
+        yerr1 = res1.pwr_h2_std[key].values
+        ax.errorbar(wind1, res1.pwr_h2_mean[key].values, color=self.h2c, yerr=yerr1,
                     marker=self.h2ms, ls=self.h2ls, label=labels[0], alpha=0.9)
         yerr2 = res2.pwr_h2_std[key]
-        ax.errorbar(wind2, res2.pwr_h2_mean[key], color=self.hsc, yerr=yerr2,
+        ax.errorbar(wind2, res2.pwr_h2_mean[key].values, color=self.hsc, yerr=yerr2,
                     marker=self.hsms, ls=self.hsls, label=labels[1], alpha=0.7)
         ax.set_title('Power [kW]')
         # relative errors on the right axes
@@ -1285,15 +1309,15 @@ class Plots(object):
         lss = [self.h2ls, '--', ':']
         for key, ls in zip(keys, lss):
             label = '%s %s' % (labels[0], key.replace('_', '$_{') + '}$')
-            yerr = res1.pwr_h2_std[key]
+            yerr = res1.pwr_h2_std[key].values
             c = self.h2c
-            ax.errorbar(wind1, res1.pwr_h2_mean[key], color=c, ls=ls,
+            ax.errorbar(wind1, res1.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
         for key, ls in zip(keys, lss):
             label = '%s %s' % (labels[1], key.replace('_', '$_{') + '}$')
-            yerr = res2.pwr_h2_std[key]
+            yerr = res2.pwr_h2_std[key].values
             c = self.hsc
-            ax.errorbar(wind2, res2.pwr_h2_mean[key], color=c, ls=ls,
+            ax.errorbar(wind2, res2.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.hsms)
         # relative errors on the right axes
         axr = ax.twinx()
@@ -1328,9 +1352,9 @@ class Plots(object):
         # POWER
         ax = axes[0]
         key = 'P_aero'
-        ax.plot(wind1, res1.pwr_hs['P_aero'], label=labels[0],
+        ax.plot(wind1, res1.pwr_hs['P_aero'].values, label=labels[0],
                 alpha=0.9, color=self.h2c, ls=self.h2ls, marker=self.h2ms)
-        ax.plot(wind2, res2.pwr_hs['P_aero'], label=labels[1],
+        ax.plot(wind2, res2.pwr_hs['P_aero'].values, label=labels[1],
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
         ax.set_title('Power [kW]')
         # relative errors on the right axes
@@ -1345,9 +1369,9 @@ class Plots(object):
 
         # THRUST
         ax = axes[1]
-        ax.plot(wind1, res1.pwr_hs['T_aero'], color=self.h2c, alpha=0.9,
+        ax.plot(wind1, res1.pwr_hs['T_aero'].values, color=self.h2c, alpha=0.9,
                 label=labels[0], marker=self.h2ms, ls=self.h2ls)
-        ax.plot(wind2, res2.pwr_hs['T_aero'], color=self.hsc, alpha=0.7,
+        ax.plot(wind2, res2.pwr_hs['T_aero'].values, color=self.hsc, alpha=0.7,
                 label=labels[1], marker=self.hsms, ls=self.hsls)
         # relative errors on the right axes
         axr = ax.twinx()
