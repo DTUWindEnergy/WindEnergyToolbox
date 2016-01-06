@@ -8,7 +8,7 @@ from wetb.utils.geometry import xyz2uvw
 import wetb.gtsdf
 from wetb.wind.shear import power_shear, fit_power_shear, fit_power_shear_ref, \
     log_shear, fit_log_shear, stability_term
-from pylab import *
+
 
 
 import unittest
@@ -18,10 +18,10 @@ import matplotlib.pyplot as plt
 
 
 all = True
-class TestMannTurbulence(unittest.TestCase):
+class TestShear(unittest.TestCase):
 
     def setUp(self):
-        self.testfilepath = "test_files/"
+        self.tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
         """
         Sensor list of hdf5 files
@@ -45,7 +45,7 @@ class TestMannTurbulence(unittest.TestCase):
 
     def test_power_shear(self):
         if all:
-            _, data, _ = wetb.gtsdf.load(self.testfilepath + 'wind3.hdf5')
+            _, data, _ = wetb.gtsdf.load(self.tfp + 'wind3.hdf5')
             u20 = data[:, 4]
             u70 = data[:, 6]
             z_u_lst1 = [(70, u70), (20, u20)]
@@ -71,7 +71,7 @@ class TestMannTurbulence(unittest.TestCase):
 
     def test_fit_power_shear1(self):
 
-        time, data, info = wetb.gtsdf.load(self.testfilepath + 'shear_noturb_85.hdf5')  #shear, alpha = 0.5
+        time, data, info = wetb.gtsdf.load(self.tfp + 'shear_noturb_85.hdf5')  #shear, alpha = 0.5
 
         wsp85 = data[:, 0]
         wsp53 = data[:, 2]
@@ -85,7 +85,7 @@ class TestMannTurbulence(unittest.TestCase):
 
     def test_fit_power_shear_ref(self):
 
-        time, data, info = wetb.gtsdf.load(self.testfilepath + 'shear_noturb.hdf5')  #shear, alpha = 0.5
+        time, data, info = wetb.gtsdf.load(self.tfp + 'shear_noturb.hdf5')  #shear, alpha = 0.5
 
         wsp85 = data[:, 0]
         wsp53 = data[:, 2]
@@ -103,7 +103,7 @@ class TestMannTurbulence(unittest.TestCase):
 
     def test_fit_power_shear3(self):
 
-        time, data, info = wetb.gtsdf.load(self.testfilepath + 'shear.hdf5')  #shear, alpha = 0.5
+        time, data, info = wetb.gtsdf.load(self.tfp + 'shear.hdf5')  #shear, alpha = 0.5
         #print "\n".join(["%d: %s" % (i, n) for i, n in enumerate(info['attribute_names'])])
         """
         0: WSP gl. coo.,Abs_vhor 85
@@ -145,7 +145,7 @@ class TestMannTurbulence(unittest.TestCase):
                 plt.plot(u, z, 'r.')
             z = np.arange(10, 100)
             plt.plot(log_shear(u_star, z0, z), z)
-            show()
+            plt.show()
 
         for _zu, b in zip(zu, log_shear(u_star, z0, [85, 21])):
             self.assertAlmostEqual(_zu[1], b, 4)
@@ -156,10 +156,10 @@ class TestMannTurbulence(unittest.TestCase):
             for ustar in [1, 2]:
                 for z0 in [1, 10]:
                     z = np.arange(z0, 200)
-                    plot(log_shear(ustar, z0, z), z, label="z0=%d, u*=%d" % (z0, ustar))
-            yscale('log')
-            legend()
-            show()
+                    plt.plot(log_shear(ustar, z0, z), z, label="z0=%d, u*=%d" % (z0, ustar))
+            plt.yscale('log')
+            plt.legend()
+            plt.show()
 
     def test_show_log_shear_stability(self):
         if 0:
@@ -167,10 +167,10 @@ class TestMannTurbulence(unittest.TestCase):
             ustar = 1
             z = np.arange(z0, 200)
             for L in [-2000, -100, 100, 2000]:
-                plot(log_shear(ustar, z0, z, L), z, label="L=%d" % (L))
+                plt.plot(log_shear(ustar, z0, z, L), z, label="L=%d" % (L))
             #yscale('log')
-            legend()
-            show()
+            plt.legend()
+            plt.show()
 
 
 

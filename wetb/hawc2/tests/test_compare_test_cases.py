@@ -6,13 +6,15 @@ Created on 17/07/2014
 import unittest
 from wetb.hawc2.cmp_test_cases import CompareTestCases
 import numpy as np
+import os
 
-class Test(CompareTestCases):
+class TestCmpTestCases(CompareTestCases):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.ref_path = r'test_files/cmp_test_cases/ref/'
-        self.test_path = r'test_files/cmp_test_cases/test1/'
+        tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
+        self.ref_path = tfp + 'cmp_test_cases/ref/'
+        self.test_path = tfp + 'cmp_test_cases/test1/'
 
     def test_compare_sel(self):
         self.compare_sel(self.ref_path + 'test1.sel', self.test_path + 'test1.sel')

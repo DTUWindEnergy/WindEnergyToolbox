@@ -43,14 +43,14 @@ class TestCacheProperty(unittest.TestCase):
 
     def testcache_property_test(self):
         e = Example()
-        self.assertAlmostEqual(e.prop("test")[1], 1, 2)
+        self.assertAlmostEqual(e.prop("test")[1], 1, 1)
         self.assertAlmostEqual(e.prop("test")[1], 0, 2)
 
     def testcache_property_pool(self):
         e = Example()
-        print (e.prop("pool"))
+        e.prop("pool")  #load pool
         self.assertAlmostEqual(e.prop("pool")[1], 0, places=4)
-        print (get_time(e.pool.map)(f, range(10)))
+        #print (get_time(e.pool.map)(f, range(10)))
 
 
     def test_cache_function(self):

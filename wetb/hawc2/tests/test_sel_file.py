@@ -6,16 +6,17 @@ Created on 17/07/2014
 import unittest
 from wetb.hawc2.sel_file import SelFile, BINARY, ASCII
 from datetime import datetime
+import os
+testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/hawc2io/')  # test file path
 
-
-class Test(unittest.TestCase):
+class TestSelFile(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.testfilepath = "test_files/hawc2io/"
+
 
     def test_sel_file_ascii(self):
-        sf = SelFile(self.testfilepath + "Hawc2ascii.sel")
+        sf = SelFile(testfilepath + "Hawc2ascii.sel")
         self.assertEqual(sf.version_id, "HAWC2AERO 2.4w")
         self.assertEqual(sf.created, datetime(2013, 1, 24, 10, 2, 19))
         self.assertEqual(sf.result_file, "Hawc2ascii.dat")
@@ -30,7 +31,7 @@ class Test(unittest.TestCase):
 
 
     def test_sel_file_bin(self):
-        sf = SelFile(self.testfilepath + "Hawc2bin.sel")
+        sf = SelFile(testfilepath + "Hawc2bin.sel")
         self.assertEqual(sf.version_id, "HAWC2AERO 2.4w")
         self.assertEqual(sf.created, datetime(2013, 1, 24, 10, 4, 37))
         self.assertEqual(sf.result_file, "Hawc2bin.dat")

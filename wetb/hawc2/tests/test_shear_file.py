@@ -9,11 +9,11 @@ import numpy as np
 import os
 import shutil
 testfilepath = 'test_files/'
-class Test(unittest.TestCase):
+class TestShearFile(unittest.TestCase):
 
 
     def test_shearfile(self):
-        f = testfilepath + "tmp_shearfile.dat"
+        f = testfilepath + "tmp_shearfile1.dat"
         shear_file.save(f, [-55, 55], [30, 100, 160] , u=np.array([[0.7, 1, 1.3], [0.7, 1, 1.3]]).T)
         with open(f) as fid:
             self.assertEqual(fid.read(),
@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
 
 
     def test_shearfile2(self):
-        f = testfilepath + "tmp_shearfile.dat"
+        f = testfilepath + "tmp_shearfile2.dat"
         shear_file.save(f, [-55, 55], [30, 100, 160] , u=np.array([0.7, 1, 1.3]).T)
         with open(f) as fid:
             self.assertEqual(fid.read(),

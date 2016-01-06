@@ -10,9 +10,11 @@ import numpy as np
 from wetb.fatigue_tools.fatigue import eq_load, rainflow_astm, rainflow_windap, \
     cycle_matrix
 from wetb.hawc2 import Hawc2io
+import os
 
+testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
-class Test(unittest.TestCase):
+class TestFatigueTools(unittest.TestCase):
 
 
     def test_astm1(self):
@@ -38,17 +40,17 @@ class Test(unittest.TestCase):
                                                                                        [ 0., 0., 2., 1.]]))
 
     def test_windap2(self):
-        data = Hawc2io.ReadHawc2("test_files/test").ReadBinary([2]).flatten()
+        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
         np.testing.assert_allclose(eq_load(data, neq=61), np.array([[1.356, 1.758, 2.370, 2.784, 3.077, 3.296]]), 0.01)
 
 
     def test_astm2(self):
-        data = Hawc2io.ReadHawc2("test_files/test").ReadBinary([2]).flatten()
+        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
         np.testing.assert_allclose(eq_load(data, neq=61, rainflow_func=rainflow_astm), np.array([[1.356, 1.758, 2.370, 2.784, 3.077, 3.296]]), 0.01)
 
 
     def test_windap3(self):
-        data = Hawc2io.ReadHawc2("test_files/test").ReadBinary([2]).flatten()
+        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
         np.testing.assert_array_equal(cycle_matrix(data, 4, 4, rainflow_func=rainflow_windap)[0], np.array([[  14., 65., 39., 24.],
                                                                    [  0., 1., 4., 0.],
                                                                    [  0., 0., 0., 0.],
@@ -56,7 +58,7 @@ class Test(unittest.TestCase):
 
 
     def test_astm3(self):
-        data = Hawc2io.ReadHawc2("test_files/test").ReadBinary([2]).flatten()
+        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
         np.testing.assert_allclose(cycle_matrix(data, 4, 4, rainflow_func=rainflow_astm)[0], np.array([[ 24., 83., 53., 26.],
                                                                                                            [  0., 1., 4., 0.],
                                                                                                            [  0., 0., 0., 0.],

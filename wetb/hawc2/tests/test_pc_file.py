@@ -12,11 +12,11 @@ import numpy as np
 
 
 
-class Test(unittest.TestCase):
+class TestPCFile(unittest.TestCase):
 
     def setUp(self):
         unittest.TestCase.setUp(self)
-        self.testfilepath = "test_files/"
+        self.testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
 
     def test_PCFile_ae(self):

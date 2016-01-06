@@ -6,10 +6,12 @@ Created on 05/11/2015
 import unittest
 import numpy as np
 from wetb.hawc2.Hawc2io import ReadHawc2
+import os
 
 
-testfilepath = "test_files/hawc2io/"
-class Test(unittest.TestCase):
+testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/hawc2io/')  # test file path
+
+class TestHAWC2IO(unittest.TestCase):
 
 
     def test_doc_example(self):
