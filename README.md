@@ -23,7 +23,7 @@ Switching to Python 3 is in general a very good idea especially since Python 3.5
 was released. Some even dare to say it
 [is like eating your vegetables](http://nothingbutsnark.svbtle.com/porting-to-python-3-is-like-eating-your-vegetables).
 
-You can automatically convert you code from Python 2 to 3 using the
+You can automatically convert your code from Python 2 to 3 using the
 [2to3](https://docs.python.org/2/library/2to3.html) utility which is included
 in Python 2.7 by default. You can also write code that is compatible with both
 2 and 3 at the same time (you can find additional resources in
