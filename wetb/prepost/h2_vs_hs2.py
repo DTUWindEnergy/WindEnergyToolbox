@@ -177,7 +177,7 @@ class Configurations:
                 tmp = '%s_%02.0fms_%04.01fdeg_%04.02frads_hawc2' % rpl
                 opt_dict['[Case id.]'] = tmp
             opt_dict['[Windspeed]'] = wind
-            opt_dict['[pitch_angle]'] = pitch
+            opt_dict['[blade_pitch_deg]'] = pitch
             opt_dict['[fixspeed_rotor_rads]'] = omega
             opt_dict['[initspeed_rotor_rads]'] = omega
 #            opt_dict['[t0]'] = int(2000.0/opt_dict['[Windspeed]']) # or 2000?
