@@ -34,7 +34,7 @@ class Configurations:
         opt_tags[0]['[blade_damp_z]'] = 0.0
         opt_tags[0]['[blade_nbodies]'] = 1
         opt_tags[0]['[Windspeed]'] = 0.0
-        opt_tags[0]['[init_wr]'] = 0.0
+        opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
         opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
 
         return opt_tags
@@ -50,8 +50,8 @@ class Configurations:
         opt_tags[0]['[blade_damp_z]'] = 0.0
         opt_tags[0]['[blade_nbodies]'] = 1
         opt_tags[0]['[Windspeed]'] = 0.0
-        opt_tags[0]['[init_wr]'] = 0.0
-        opt_tags[0]['[fixed_omega]'] = 0.0
+        opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
+        opt_tags[0]['[fixspeed_rotor_rads]'] = 0.0
         opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
 
         return opt_tags
@@ -118,8 +118,8 @@ class Configurations:
                 opt_dict['[Case id.]'] = tmp
             opt_dict['[Windspeed]'] = wind
             opt_dict['[pitch_angle]'] = pitch
-            opt_dict['[fixed_omega]'] = omega
-            opt_dict['[init_wr]'] = omega
+            opt_dict['[fixspeed_rotor_rads]'] = omega
+            opt_dict['[initspeed_rotor_rads]'] = omega
 #            opt_dict['[t0]'] = int(2000.0/opt_dict['[Windspeed]']) # or 2000?
 #            opt_dict['[time stop]'] = opt_dict['[t0]']+100
 #            opt_dict['[time_stop]'] = opt_dict['[t0]']+100
@@ -365,8 +365,8 @@ class Sims(object):
         mt['[shear_exp]'] = 0
         mt['[tower_shadow]'] = 0
         mt['[TI]'] = 1
-        mt['[fixed_omega]'] = 1.0
-        mt['[init_wr]'] = 0
+        mt['[fixspeed_rotor_rads]'] = 1.0
+        mt['[initspeed_rotor_rads]'] = 0
         mt['[pc_file_name]'] = 'hawc_pc.mhh'
         mt['[ae_file_name]'] = 'hawc2_ae.mhh'
         mt['[nr_ae_sections]'] = 30
