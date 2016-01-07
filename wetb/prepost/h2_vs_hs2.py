@@ -23,6 +23,66 @@ class Configurations:
     def __init__(self):
         pass
 
+    def set_master_defaults(self):
+        """Create a set of default master tags that are required for proper
+        compatibility with Simulations.py
+        """
+        mt = {}
+        # =====================================================================
+        # required tags and their defaults
+        # =====================================================================
+        mt['[dt_sim]'] = 0.01
+        mt['[hawc2_exe]'] = 'hawc2-latest'
+        # convergence_limits  0.001  0.005  0.005 ;
+        # critical one, risidual on the forces: 0.0001 = 1e-4
+        mt['[epsresq]'] = '1.0' # default=10.0
+        # increment residual
+        mt['[epsresd]'] = '0.5' # default= 1.0
+        # constraint equation residual
+        mt['[epsresg]'] = '1e-8' # default= 1e-7
+        # folder names for the saved results, htc, data, zip files
+        # Following dirs are relative to the model_dir_server and they specify
+        # the location of where the results, logfiles, animation files that where
+        # run on the server should be copied to after the simulation has finished.
+        # on the node, it will try to copy the turbulence files from these dirs
+        mt['[animation_dir]'] = 'animation/'
+        mt['[control_dir]']   = 'control/'
+        mt['[data_dir]']      = 'data/'
+        mt['[eigen_analysis]'] = False
+        mt['[eigenfreq_dir]'] = False
+        mt['[htc_dir]']       = 'htc/'
+        mt['[log_dir]']       = 'logfiles/'
+        mt['[meander_dir]']   = False
+        mt['[opt_dir]']       = False
+        mt['[pbs_out_dir]']   = 'pbs_out/'
+        mt['[res_dir]']       = 'res/'
+        mt['[iter_dir]']      = 'iter/'
+        mt['[turb_dir]']      = 'turb/'
+        mt['[turb_db_dir]']   = '../turb/'
+        mt['[wake_dir]']      = False
+        mt['[hydro_dir]']     = False
+        mt['[mooring_dir]']   = False
+        mt['[externalforce]'] = False
+        mt['[Case folder]']   = 'NoCaseFolder'
+        # zip_root_files only is used when copy to run_dir and zip creation, define
+        # in the HtcMaster object
+        mt['[zip_root_files]'] = []
+        # only active on PBS level, so files have to be present in the run_dir
+        mt['[copyback_files]'] = []   # copyback_resultfile
+        mt['[copyback_frename]'] = [] # copyback_resultrename
+        mt['[copyto_files]'] = []     # copyto_inputfile
+        mt['[copyto_generic]'] = []   # copyto_input_required_defaultname
+        # =====================================================================
+        # required tags by HtcMaster and PBS in order to function properly
+        # =====================================================================
+        # the express queue ('#PBS -q xpresq') has a maximum walltime of 1h
+        mt['[pbs_queue_command]'] = '#PBS -q workq'
+        # walltime should have following format: hh:mm:ss
+        mt['[walltime]'] = '04:00:00'
+        mt['[auto_walltime]'] = False
+
+        return mt
+
     def opt_tags_h2_eigenanalysis(self, basename):
         """Return opt_tags suitable for a standstill HAWC2 eigen analysis.
         """
@@ -130,7 +190,7 @@ class Configurations:
 class Sims(object):
 
     def __init__(self, sim_id, P_MASTERFILE, MASTERFILE, P_SOURCE, P_RUN,
-                 PROJECT, POST_DIR):
+                 PROJECT, POST_DIR, master_tags_default):
         """
         Create HtcMaster() object
         =========================
@@ -144,6 +204,27 @@ class Sims(object):
 
         It is considered as good practice to define the default values for all
         the variable tags in the master_tags
+
+        Parameters
+        ----------
+
+        sim_id : str
+
+        P_MASTERFILE : str
+
+        MASTERFILE : str
+
+        P_SOURCE : str
+
+        P_RUN : str
+
+        PROJECT : str
+
+        POST_DIR : str
+
+        master_tags_default : dict
+            Dictionary with the default master tag values. Should be created
+            by the turbine specific class Configurations.set_master_defaults()
 
         Members
         -------
@@ -166,7 +247,7 @@ class Sims(object):
         # FIXME: some tags are still variable! Only static tags here that do
         # not depent on any other variable that can change
         self.master = sim.HtcMaster()
-        self.set_tag_defaults()
+        self.master.tags.update(master_tags_default)
 
     def _var_tag_func(self, master, case_id_short=False):
         """
@@ -294,130 +375,6 @@ class Sims(object):
         # set the model_zip tag to include the sim_id
         rpl = (self.PROJECT, self.master.tags['[sim_id]'])
         self.master.tags['[model_zip]'] = '%s_%s.zip' % rpl
-
-    def set_tag_defaults(self):
-        """
-        Set the default values of the required master tags
-        """
-        mt = self.master.tags
-
-        # other required tags and their defaults
-        mt['[dt_sim]'] = 0.01
-        mt['[hawc2_exe]'] = 'hawc2-latest'
-        # convergence_limits  0.001  0.005  0.005 ;
-        # critical one, risidual on the forces: 0.0001 = 1e-4
-        mt['[epsresq]'] = '1.0' # default=10.0
-        # increment residual
-        mt['[epsresd]'] = '0.5' # default= 1.0
-        # constraint equation residual
-        mt['[epsresg]'] = '1e-8' # default= 1e-7
-        # folder names for the saved results, htc, data, zip files
-        # Following dirs are relative to the model_dir_server and they specify
-        # the location of where the results, logfiles, animation files that where
-        # run on the server should be copied to after the simulation has finished.
-        # on the node, it will try to copy the turbulence files from these dirs
-        mt['[animation_dir]'] = 'animation/'
-        mt['[control_dir]']   = 'control/'
-        mt['[data_dir]']      = 'data/'
-        mt['[eigen_analysis]'] = False
-        mt['[eigenfreq_dir]'] = False
-        mt['[htc_dir]']       = 'htc/'
-        mt['[log_dir]']       = 'logfiles/'
-        mt['[meander_dir]']   = False
-        mt['[opt_dir]']       = False
-        mt['[pbs_out_dir]']   = 'pbs_out/'
-        mt['[res_dir]']       = 'res/'
-        mt['[iter_dir]']      = 'iter/'
-        mt['[turb_dir]']      = 'turb/'
-        mt['[turb_db_dir]']   = '../turb/'
-        mt['[wake_dir]']      = False
-        mt['[hydro_dir]']     = False
-        mt['[mooring_dir]']   = False
-        mt['[externalforce]'] = False
-        mt['[Case folder]']   = 'NoCaseFolder'
-        # zip_root_files only is used when copy to run_dir and zip creation, define
-        # in the HtcMaster object
-        mt['[zip_root_files]'] = []
-        # only active on PBS level, so files have to be present in the run_dir
-        mt['[copyback_files]'] = []   # copyback_resultfile
-        mt['[copyback_frename]'] = [] # copyback_resultrename
-        mt['[copyto_files]'] = []     # copyto_inputfile
-        mt['[copyto_generic]'] = []   # copyto_input_required_defaultname
-
-        # In master file tags within the HAWC2 vs HAWCStab2 context
-        mt['[hawc2]'] = False
-        mt['[output]'] = False
-        mt['[eigen_analysis]'] = False
-        mt['[system_eigen_analysis]'] = False
-        mt['[operational_data]'] = 'case_name.opt'
-
-        mt['[gravity]'] = 0.0
-        mt['[shaft_tilt]'] = 0.0 # 5.0
-        mt['[coning]'] = 0.0 # 2.5
-        mt['[Windspeed]'] = 1.0
-        mt['[wtilt]'] = 0.0
-        mt['[wdir]'] = 0.0
-        mt['[aerocalc]'] = 1
-        mt['[Induction]'] = 0
-        mt['[tip_loss]'] = 0
-        mt['[Dyn stall]'] = 0
-        mt['[tu_model]'] = 0
-        mt['[shear_exp]'] = 0
-        mt['[tower_shadow]'] = 0
-        mt['[TI]'] = 1
-        mt['[fixspeed_rotor_rads]'] = 1.0
-        mt['[initspeed_rotor_rads]'] = 0
-        mt['[pc_file_name]'] = 'hawc_pc.mhh'
-        mt['[ae_file_name]'] = 'hawc2_ae.mhh'
-        mt['[nr_ae_sections]'] = 30
-        mt['[use_nr_ae_sections]'] = True
-        mt['[use_ae_distrb_file]'] = False
-        mt['[ae_set_nr]'] = 1
-        # tors_e output depends on the pitch axis configuration
-        mt['[c12]'] = False
-        mt['[c14]'] = False
-
-        mt['[t0]'] = 500
-        mt['[time stop]'] = 600
-
-        mt['[hs2]'] = False
-        mt['[nr_blade_modes_hs2]'] = 10
-        mt['[stab_analysis]'] = False
-        mt['[steady_states]'] = True
-        mt['[hs2_bladedeform_switch]'] = True
-        mt['[hs2_gradients_switch]'] = False
-        # by default take the stiff set
-        mt['[st_file]'] = 'hawc2_st.mhh'
-        mt['[tower_set]'] = 4 # 1
-        mt['[shaft_set]'] = 4 # 2
-        mt['[blade_set]'] = 4 # 3
-        mt['[tower_subset]'] = 1
-        mt['[shaft_subset]'] = 1
-        mt['[blade_subset]'] = 1
-        mt['[blade_nbodies]'] = 1
-        mt['[blade_posx]'] = -0.75
-        mt['[blade_damp_x]'] = 0.01
-        mt['[blade_damp_y]'] = 0.01
-        mt['[blade_damp_z]'] = 0.01
-        # HAWCStab2 convergence criteria
-        mt['[bem_tol]'] = 1e-12
-        mt['[bem_itmax]'] = 10000
-        mt['[bem_1relax]'] = 0.02
-        mt['[ae_tolrel]'] = 1e-7
-        mt['[ae_itmax]'] = 2000
-        mt['[ae_1relax]'] = 0.5
-        mt['[tol_7]'] = 10
-        mt['[tol_8]'] = 5
-        mt['[tol_9]'] = 1e-8
-
-        # =========================================================================
-        # basic required tags by HtcMaster and PBS in order to function properly
-        # =========================================================================
-        # the express queue ('#PBS -q xpresq') has a maximum walltime of 1h
-        mt['[pbs_queue_command]'] = '#PBS -q workq'
-        # walltime should have following format: hh:mm:ss
-        mt['[walltime]'] = '04:00:00'
-        mt['[auto_walltime]'] = False
 
     def get_dlc_casedefs(self):
         """
@@ -972,6 +929,18 @@ class Plots(object):
         """Compare aerodynamics, blade deflections between HAWC2 and HAWCStab2.
         This is based on HAWCSTab2 *.ind files, and an HAWC2 output_at_time
         output file.
+
+        Parameters
+        ----------
+
+        fname_h2
+
+        fname_hs2
+
+        title
+
+        n0 : int, default=0
+            Number of nodes to ignore at the blade root section
         """
 
         results = MappingsH2HS2()
