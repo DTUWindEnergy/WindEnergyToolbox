@@ -1007,9 +1007,9 @@ class Plots(object):
         wind_h2 = results.pwr_h2_mean['windspeed'].values
         wind_hs = results.pwr_hs['windspeed'].values
 
-        # POWER
+        # POWER ---------------------------------------------------------------
         ax = axes[0]
-
+        ax.set_title('Power [kW]')
         # HAWC2
         keys = ['P_aero', 'P_mech']
         lss = [self.h2ls, '--', ':']
@@ -1023,25 +1023,30 @@ class Plots(object):
             c = self.h2c
             ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
-
         # HAWCSTAB2
         key = 'P_aero'
         ax.plot(wind_hs, results.pwr_hs[key].values, label='HAWCStab2',
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
-        ax.set_title('Power [kW]')
-        # relative errors on the right axes
+
+        # errors on the right axes
         axr = ax.twinx()
         assert np.allclose(wind_h2, wind_hs)
         qq1 = results.pwr_h2_mean[key].values
         qq2 = results.pwr_hs[key].values
-        err = np.abs(1.0 - qq1 / qq2)*100.0
+        err = qq1 - qq2
         axr.plot(wind_hs, err, color=self.errc, ls=self.errls, alpha=0.6,
-                 label=self.errlab)
-#        axr.set_ylabel('absolute error []')
-#        axr.set_ylim([])
+                 label=self.errlab + ' P$_{aero}$')
+        ax.set_xlim([wind_h2.min(), wind_h2.max()])
 
-        # THRUST
+        # legends
+        lines, labels = ax.get_legend_handles_labels()
+        linesr, labelsr = axr.get_legend_handles_labels()
+        leg = axr.legend(lines + linesr, labels + labelsr, loc='lower right')
+        leg.get_frame().set_alpha(0.5)
+
+        # THRUST --------------------------------------------------------------
         ax = axes[1]
+        ax.set_title('Thrust [kN]')
         keys = ['T_aero', 'T_shafttip']
         lss = [self.h2ls, '--', ':']
         # HAWC2
@@ -1054,22 +1059,23 @@ class Plots(object):
         # HAWCStab2
         ax.plot(wind_hs, results.pwr_hs['T_aero'].values, color=self.hsc, alpha=0.7,
                 label='HAWCStab2 T$_{aero}$', marker=self.hsms, ls=self.hsls)
-        # relative errors on the right axes
+
+        # errors on the right axes
         axr = ax.twinx()
         qq1 = results.pwr_h2_mean['T_aero'].values
         qq2 = results.pwr_hs['T_aero'].values
-        err = np.abs(1.0 - (qq1 / qq2))*100.0
+        err = qq1 - qq2
         axr.plot(wind_hs, err, color=self.errc, ls=self.errls, alpha=0.6,
-                 label=self.errlab)
-        ax.set_title('Thrust [kN]')
+                 label=self.errlab + ' T$_{aero}$')
+        ax.set_xlim([wind_h2.min(), wind_h2.max()])
 
-        axes = self.set_axes_label_grid(axes, setlegend=True)
-#        # use axr for the legend
-#        keys_tex = [kk.replace('_', '$_{') + '}$' for kk in keys]
-#        lines = [ax.lines[2]] + [ax.lines[5]] + [ax.lines[6]] + axr.lines
-#        labels = keys_tex + ['HAWCStab2 T$_{aero}$', self.errlab]
-#        leg = axr.legend(lines, labels, loc='best')
-#        leg.get_frame().set_alpha(0.5)
+        # legends
+        lines, labels = ax.get_legend_handles_labels()
+        linesr, labelsr = axr.get_legend_handles_labels()
+        leg = axr.legend(lines + linesr, labels + labelsr, loc='lower right')
+        leg.get_frame().set_alpha(0.5)
+
+        axes = self.set_axes_label_grid(axes, setlegend=False)
 
         return fig, axes
 
