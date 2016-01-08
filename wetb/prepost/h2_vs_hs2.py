@@ -510,7 +510,6 @@ class MappingsH2HS2(object):
 
         """
         self.hs2_res = hs2.results()
-        self.chord_length = config.chord_length
         self.h2_maps = config.h2_maps
 
     def powercurve(self, h2_df_stats, fname_hs):
@@ -590,10 +589,11 @@ class MappingsH2HS2(object):
                         'V_t [m/s]'   :'tan_ind_vel',
                         'FX0 [N/m]'   :'F_x',
                         'FY0 [N/m]'   :'F_y',
-                        'M0 [Nm/m]'   :'M'}
+                        'M0 [Nm/m]'   :'M',
+                        'chord [m]'   :'chord'}
 
         try:
-            hs2_cols = [k for k in mapping_hs2]
+            hs2_cols = list(mapping_hs2)
             # select only the HS channels that will be used for the mapping
             std_cols = [mapping_hs2[k] for k in hs2_cols]
             self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
@@ -612,7 +612,6 @@ class MappingsH2HS2(object):
         self.hs_aero['AoA'] *= (180.0/np.pi)
         self.hs_aero['inflow_angle'] *= (180.0/np.pi)
         self.hs_aero['torsion'] *= (180.0/np.pi)
-#        self.hs_aero['pos_x'] = (-1.0) # self.chord_length / 4.0
 
     def _distribution_h2(self):
         mapping_h2 =  { 'Radius_s'  :'curved_s',
@@ -628,10 +627,11 @@ class MappingsH2HS2(object):
                         'pos_RP_x'  :'pos_x',
                         'pos_RP_y'  :'pos_y',
                         'pos_RP_z'  :'pos_z',
+                        'Chord'     :'chord',
                         'Secfrc_RPx':'F_x',
                         'Secfrc_RPy':'F_y',
                         'Secmom_RPz':'M'}
-        h2_cols = [k for k in mapping_h2]
+        h2_cols = list(mapping_h2)
         std_cols = [mapping_h2[k] for k in h2_cols]
 
         # select only the h2 channels that will be used for the mapping
@@ -642,7 +642,7 @@ class MappingsH2HS2(object):
         h2_aero['def_y'] = self.h2_res['Pos_B_y'] - self.h2_res['Inipos_y_y']
         h2_aero['def_z'] = self.h2_res['Pos_B_z'] - self.h2_res['Inipos_z_z']
         h2_aero['ax_ind_vel'] *= (-1.0)
-        h2_aero['pos_x'] += (self.chord_length / 2.0)
+        h2_aero['pos_x'] += (self.h2_res['Chord'] / 2.0)
         h2_aero['F_x'] *= (1e3)
         h2_aero['F_y'] *= (1e3)
         h2_aero['M'] *= (1e3)
