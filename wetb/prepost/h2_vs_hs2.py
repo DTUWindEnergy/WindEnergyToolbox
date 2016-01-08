@@ -18,7 +18,7 @@ from wetb.prepost import hawcstab2 as hs2
 from wetb.prepost import mplutils
 
 
-class Configurations:
+class ConfigBase:
 
     def __init__(self):
         pass
@@ -499,11 +499,18 @@ class Sims(object):
 
 class MappingsH2HS2(object):
 
-    def __init__(self, chord_length=3.0):
+    def __init__(self, config):
         """
+
+        Parameters
+        ----------
+
+        config : Config class based on ConfigBase
+
         """
         self.hs2_res = hs2.results()
-        self.chord_length = chord_length
+        self.chord_length = config.chord_length
+        self.h2_maps = config.h2_maps
 
     def powercurve(self, h2_df_stats, fname_hs):
 
@@ -512,19 +519,15 @@ class MappingsH2HS2(object):
 
     def _powercurve_h2(self, df_stats):
 
-        mappings = {'Ae rot. power' : 'P_aero',
-                    'Ae rot. thrust': 'T_aero',
-                    'Vrel-1-39.03'  : 'vrel_39',
-                    'Omega'         : 'rotorspeed',
-                    'tower-tower-node-010-forcevec-y' : 'T_towertop',
-                    'tower-shaft-node-003-forcevec-y' : 'T_shafttip'}
-
         df_stats.sort_values('[windspeed]', inplace=True)
         df_mean = pd.DataFrame()
         df_std = pd.DataFrame()
 
-        for key, value in mappings.items():
+        for key, value in self.h2_maps.items():
             tmp = df_stats[df_stats['channel']==key]
+            if len(tmp) == 0:
+                msg = 'channel %s is required for %s but not found' % (key, value)
+                raise ValueError(msg)
             df_mean[value] = tmp['mean'].values.copy()
             df_std[value] = tmp['std'].values.copy()
 
@@ -718,7 +721,13 @@ class Plots(object):
     the HAWC2 output output_at_time, and HAWCStab2 output *.ind
     """
 
-    def __init__(self):
+    def __init__(self, config):
+        """
+        Parameters
+        ----------
+
+        config : Config class based on ConfigBase
+        """
 
         self.h2c = 'b'
         self.h2ms = '+'
@@ -733,6 +742,8 @@ class Plots(object):
         self.errlab = 'diff'
         self.interactive = False
 
+        self.config = config
+
         self.dist_size = (16, 11)
         self.dist_nrows = 3
         self.dist_ncols = 4
@@ -742,7 +753,7 @@ class Plots(object):
 
     def load_h2(self, fname_h2, h2_df_stats=None, fname_h2_tors=None):
 
-        res = MappingsH2HS2()
+        res = MappingsH2HS2(self.config)
         res.h2_res = sim.windIO.ReadOutputAtTime(fname_h2)
         res._distribution_h2()
         if h2_df_stats is not None:
@@ -754,7 +765,7 @@ class Plots(object):
 
     def load_hs(self, fname_hs):
 
-        res = MappingsH2HS2()
+        res = MappingsH2HS2(self.config)
         res.hs2_res.load_ind(fname_hs)
         res._distribution_hs2()
 
@@ -943,7 +954,7 @@ class Plots(object):
             Number of nodes to ignore at the blade root section
         """
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.blade_distribution(fname_h2, fname_hs2, h2_df_stats=h2_df_stats,
                                    fname_h2_tors=fname_h2_tors)
         res = [results.h2_aero[n0+1:-1], results.hs_aero[n0:]]
@@ -966,7 +977,7 @@ class Plots(object):
         output file.
         """
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.blade_distribution(fname_h2, fname_hs2)
         res = [results.h2_aero[n0+1:-1], results.hs_aero[n0:]]
 
@@ -983,7 +994,7 @@ class Plots(object):
 
     def powercurve(self, h2_df_stats, fname_hs, title, size=(8.6, 4)):
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.powercurve(h2_df_stats, fname_hs)
 
         fig, axes = self.new_fig(title=title, nrows=1, ncols=2, size=size)
@@ -1050,11 +1061,11 @@ class Plots(object):
 
     def h2_powercurve(self, h2_df_stats1, h2_df_stats2, title, labels,
                       size=(8.6,4)):
-        res1 = MappingsH2HS2()
+        res1 = MappingsH2HS2(self.config)
         res1._powercurve_h2(h2_df_stats1)
         wind1 = res1.pwr_h2_mean['windspeed'].values
 
-        res2 = MappingsH2HS2()
+        res2 = MappingsH2HS2(self.config)
         res2._powercurve_h2(h2_df_stats2)
         wind2 = res2.pwr_h2_mean['windspeed'].values
 
@@ -1116,11 +1127,11 @@ class Plots(object):
 
     def hs_powercurve(self, fname1, fname2, title, labels, size=(8.6, 4)):
 
-        res1 = MappingsH2HS2()
+        res1 = MappingsH2HS2(self.config)
         res1._powercurve_hs2(fname1)
         wind1 = res1.pwr_hs['windspeed'].values
 
-        res2 = MappingsH2HS2()
+        res2 = MappingsH2HS2(self.config)
         res2._powercurve_hs2(fname2)
         wind2 = res2.pwr_hs['windspeed'].values
 
