@@ -136,7 +136,7 @@ class ConfigBase:
         hs2_res.load_operation(fpath)
         omegas = hs2_res.operation.rotorspeed_rpm.values*np.pi/30.0
         winds = hs2_res.operation.windspeed.values
-        pitchs = hs2_res.operation.pitch_deg.values
+        pitchs = -1.0*hs2_res.operation.pitch_deg.values
 
         return self.set_opdata(winds, pitchs, omegas, basename=basename)
 
@@ -447,7 +447,8 @@ class Sims(object):
 
         return tune_tags
 
-    def post_processing(self, statistics=True, resdir=None):
+    def post_processing(self, statistics=True, resdir=None,
+                        calc_mech_power=False):
         """
         Parameters
         ----------
@@ -491,8 +492,8 @@ class Sims(object):
 
         if statistics:
             tags=['[windspeed]']
-            stats_df = cc.statistics(calc_mech_power=False, ch_fatigue=[],
-                                     tags=tags, update=False)
+            stats_df = cc.statistics(calc_mech_power=calc_mech_power,
+                                     ch_fatigue=[], tags=tags, update=False)
             ftarget = os.path.join(self.POST_DIR, '%s_statistics.xlsx')
             stats_df.to_excel(ftarget % self.sim_id)
 
@@ -526,7 +527,8 @@ class MappingsH2HS2(object):
         for key, value in self.h2_maps.items():
             tmp = df_stats[df_stats['channel']==key]
             if len(tmp) == 0:
-                msg = 'channel %s is required for %s but not found' % (key, value)
+                rpl = (key, value)
+                msg = 'HAWC2 channel %s is needed for %s but is missing' % rpl
                 raise ValueError(msg)
             df_mean[value] = tmp['mean'].values.copy()
             df_std[value] = tmp['std'].values.copy()
@@ -661,6 +663,9 @@ class MappingsH2HS2(object):
         fname = os.path.basename(fname_h2)
         res = sim.windIO.LoadResults(fpath, fname, readdata=False)
         sel = res.ch_df[res.ch_df.sensortype == 'Tors_e'].copy()
+        if len(sel) == 0:
+            msg = 'HAWC2 torsion sensors seem to be missing, are they defined?'
+            raise ValueError(msg)
         sel.sort_values(['radius'], inplace=True)
         self.h2_aero['Radius_s_tors'] = sel.radius.values.copy()
         self.h2_aero['tors_e'] = sel.radius.values.copy()
@@ -1004,13 +1009,23 @@ class Plots(object):
 
         # POWER
         ax = axes[0]
-        key = 'P_aero'
+
         # HAWC2
-        yerr = results.pwr_h2_std[key].values
-        ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=self.h2c,
-                    yerr=yerr, marker=self.h2ms, ls=self.h2ls, label='HAWC2',
-                    alpha=0.9)
+        keys = ['P_aero', 'P_mech']
+        lss = [self.h2ls, '--', ':']
+        # HAWC2
+        for key, ls in zip(keys, lss):
+            # it is possible the mechanical power has not been calculated
+            if key not in results.pwr_h2_mean:
+                continue
+            label = 'HAWC2 %s' % (key.replace('_', '$_{') + '}$')
+            yerr = results.pwr_h2_std[key].values
+            c = self.h2c
+            ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
+                        label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
+
         # HAWCSTAB2
+        key = 'P_aero'
         ax.plot(wind_hs, results.pwr_hs[key].values, label='HAWCStab2',
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
         ax.set_title('Power [kW]')
@@ -1034,7 +1049,6 @@ class Plots(object):
             label = 'HAWC2 %s' % (key.replace('_', '$_{') + '}$')
             yerr = results.pwr_h2_std[key].values
             c = self.h2c
-#            print(label)
             ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
         # HAWCStab2
