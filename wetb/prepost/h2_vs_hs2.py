@@ -512,6 +512,31 @@ class MappingsH2HS2(object):
         self.hs2_res = hs2.results()
         self.h2_maps = config.h2_maps
 
+        self.units = {'curved_s': '[m]',
+                      'Cl': '[-]',
+                      'Cd': '[-]',
+                      'Ct': '[-]',
+                      'Cp': '[-]',
+                      'ax_ind': '[-]',
+                      'tan_ind': '[-]',
+                      'vrel': '[m/s]',
+                      'inflow_angle': '[deg]',
+                      'AoA': '[deg]',
+                      'pos_x': '[m]',
+                      'pos_y': '[m]',
+                      'pos_z': '[m]',
+                      'def_x': '[m]',
+                      'def_y': '[m]',
+                      'def_z': '[m]',
+                      'torsion': '[deg]',
+                      'twist': '[deg]',
+                      'ax_ind_vel': '[m/s]',
+                      'tan_ind_vel': '[m/s]',
+                      'F_x': '[N/m]',
+                      'F_y': '[N/m]',
+                      'M': '[Nm/m]',
+                      'chord': '[m]'}
+
     def powercurve(self, h2_df_stats, fname_hs):
 
         self._powercurve_h2(h2_df_stats)
@@ -562,10 +587,12 @@ class MappingsH2HS2(object):
         if h2_df_stats is not None:
             self.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                self.distribution_torsion_h2(fname_h2_tors)
+                self.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
 
     def _distribution_hs2(self):
         """Read a HAWCStab2 *.ind file (blade distribution loading)
+
+        rot_angle and rot_vec_123 in HS2 should be in rotor polar coordinates
         """
 
         mapping_hs2 =  {'s [m]'       :'curved_s',
@@ -583,6 +610,7 @@ class MappingsH2HS2(object):
                         'Z_AC0 [m]'   :'pos_z',
                         'UX0 [m]'     :'def_x',
                         'UY0 [m]'     :'def_y',
+                        'UZ0 [m]'     :'def_z',
                         'Tors. [rad]' :'torsion',
                         'Twist[rad]'  :'twist',
                         'V_a [m/s]'   :'ax_ind_vel',
@@ -590,28 +618,36 @@ class MappingsH2HS2(object):
                         'FX0 [N/m]'   :'F_x',
                         'FY0 [N/m]'   :'F_y',
                         'M0 [Nm/m]'   :'M',
-                        'chord [m]'   :'chord'}
+                        'chord [m]'   :'chord',
+                        'angle [rad]' :'rot_angle',
+                        'v_1 [-]'     :'rot_vec_1',
+                        'v_2 [-]'     :'rot_vec_2',
+                        'v_3 [-]'     :'rot_vec_3'}
 
         try:
             hs2_cols = list(mapping_hs2)
             # select only the HS channels that will be used for the mapping
-            std_cols = [mapping_hs2[k] for k in hs2_cols]
+            std_cols = list(mapping_hs2.values())
             self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
         except KeyError:
             # some results have been created with older HAWCStab2 that did not
             # include CT and CP columns
             mapping_hs2.pop('CT [-]')
             mapping_hs2.pop('CP [-]')
-            hs2_cols = [k for k in mapping_hs2]
-            std_cols = [mapping_hs2[k] for k in hs2_cols]
+            hs2_cols = list(mapping_hs2)
+            std_cols = list(mapping_hs2.values())
             # select only the HS channels that will be used for the mapping
             self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
 
         # change column names to the standard form that is shared with H2
         self.hs_aero.columns = std_cols
+        chord12 = self.hs_aero['chord'] / 2.0
+        self.hs_aero['pos_x'] -= (np.cos(self.hs_aero['twist'])*chord12)
+        self.hs_aero['pos_y'] += (np.sin(self.hs_aero['twist'])*chord12)
         self.hs_aero['AoA'] *= (180.0/np.pi)
         self.hs_aero['inflow_angle'] *= (180.0/np.pi)
         self.hs_aero['torsion'] *= (180.0/np.pi)
+        self.hs_aero['twist'] *= (180.0/np.pi)
 
     def _distribution_h2(self):
         mapping_h2 =  { 'Radius_s'  :'curved_s',
@@ -632,7 +668,7 @@ class MappingsH2HS2(object):
                         'Secfrc_RPy':'F_y',
                         'Secmom_RPz':'M'}
         h2_cols = list(mapping_h2)
-        std_cols = [mapping_h2[k] for k in h2_cols]
+        std_cols = list(mapping_h2.values())
 
         # select only the h2 channels that will be used for the mapping
         h2_aero = self.h2_res[h2_cols].copy()
@@ -642,18 +678,30 @@ class MappingsH2HS2(object):
         h2_aero['def_y'] = self.h2_res['Pos_B_y'] - self.h2_res['Inipos_y_y']
         h2_aero['def_z'] = self.h2_res['Pos_B_z'] - self.h2_res['Inipos_z_z']
         h2_aero['ax_ind_vel'] *= (-1.0)
-        h2_aero['pos_x'] += (self.h2_res['Chord'] / 2.0)
+#        h2_aero['pos_x'] += (self.h2_res['Chord'] / 2.0)
         h2_aero['F_x'] *= (1e3)
         h2_aero['F_y'] *= (1e3)
         h2_aero['M'] *= (1e3)
-        h2_aero['M'] -= (h2_aero['F_y']*1.5)
+        h2_aero['M'] -= (h2_aero['F_y']*h2_aero['chord']/2.0)
+        h2_aero['twist'] = np.nan
 #        # HAWC2 includes root and tip nodes, while HAWC2 doesn't. Remove them
 #        h2_aero = h2_aero[1:-1]
         self.h2_aero = h2_aero
 
-    def distribution_torsion_h2(self, fname_h2):
-        """Determine torsion distribution from the HAWC2 result statistics.
-        tors_e is in degrees.
+    def distribution_stats_h2(self, fname_h2, sensortype, newname):
+        """Determine blade distribution sensor from the HAWC2 statistics.
+        This requires that for each aerodynamic calculation point there should
+        be an output sensor defined manually in the output section.
+
+        Parameters
+        ----------
+
+        fname_h2
+
+        sensortype
+
+        newname
+
         """
         if not hasattr(self, 'h2_aero'):
             raise UserWarning('first run blade_distribution')
@@ -662,13 +710,11 @@ class MappingsH2HS2(object):
         fpath = os.path.dirname(fname_h2)
         fname = os.path.basename(fname_h2)
         res = sim.windIO.LoadResults(fpath, fname, readdata=False)
-        sel = res.ch_df[res.ch_df.sensortype == 'Tors_e'].copy()
+        sel = res.ch_df[res.ch_df.sensortype == sensortype].copy()
         if len(sel) == 0:
-            msg = 'HAWC2 torsion sensors seem to be missing, are they defined?'
-            raise ValueError(msg)
+            msg = 'HAWC2 sensor type "%s" is missing, are they defined?'
+            raise ValueError(msg % sensortype)
         sel.sort_values(['radius'], inplace=True)
-        self.h2_aero['Radius_s_tors'] = sel.radius.values.copy()
-        self.h2_aero['tors_e'] = sel.radius.values.copy()
         tors_e_channels = sel.ch_name.tolist()
 
         # find the current case in the statistics DataFrame
@@ -690,15 +736,9 @@ class MappingsH2HS2(object):
 
         # FIXME: what if number of torsion outputs is less than aero
         # calculation points?
-#        df_tmp = pd.DataFrame()
-        self.h2_aero['torsion'] = df_tors_e['mean'].values.copy()
-        self.h2_aero['torsion_std'] = df_tors_e['std'].values.copy()
-        self.h2_aero['torsion_radius_s'] = df_tors_e['radius'].values.copy()
-#        df_tmp = pd.DataFrame()
-#        df_tmp['torsion'] = df_tors_e['mean'].copy()
-#        df_tmp['torsion_std'] = df_tors_e['std'].copy()
-#        df_tmp['torsion_radius_s'] = df_tors_e['radius'].copy()
-#        df_tmp.set_index('')
+        self.h2_aero['%s' % newname] = df_tors_e['mean'].values.copy()
+        self.h2_aero['%s_std' % newname] = df_tors_e['std'].values.copy()
+        self.h2_aero['%s_radius_s' % newname] = df_tors_e['radius'].values.copy()
 
     def body_structure_modes(self, fname_h2, fname_hs):
         self._body_structure_modes_h2(fname_h2)
@@ -760,11 +800,12 @@ class Plots(object):
 
         res = MappingsH2HS2(self.config)
         res.h2_res = sim.windIO.ReadOutputAtTime(fname_h2)
+        self.units = res.units
         res._distribution_h2()
         if h2_df_stats is not None:
             res.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                res.distribution_torsion_h2(fname_h2_tors)
+                res.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
 
         return res
 
@@ -772,6 +813,7 @@ class Plots(object):
 
         res = MappingsH2HS2(self.config)
         res.hs2_res.load_ind(fname_hs)
+        self.units = res.units
         res._distribution_hs2()
 
         return res
@@ -827,7 +869,7 @@ class Plots(object):
                     label=lab1, alpha=0.9, marker=self.h2ms, ls=self.h2ls)
             ax.plot(radius2, res2[chan].values, color=self.hsc,
                     label=lab2, alpha=0.7, marker=self.hsms, ls=self.hsls)
-            ax.set_ylabel(chan.replace('_', '\\_'))
+            ax.set_ylabel('%s %s' % (chan.replace('_', '\\_'), self.units[chan]))
             xlim = max(radius1.max(), radius2.max())
             ax.set_xlim([0, xlim])
 
@@ -962,6 +1004,7 @@ class Plots(object):
         results = MappingsH2HS2(self.config)
         results.blade_distribution(fname_h2, fname_hs2, h2_df_stats=h2_df_stats,
                                    fname_h2_tors=fname_h2_tors)
+        self.units = results.units
         res = [results.h2_aero[n0+1:-1], results.hs_aero[n0:]]
 
 #        channels = ['pos_x', 'pos_y', 'AoA', 'inflow_angle', 'Cl', 'Cd',
