@@ -921,7 +921,8 @@ class Plots(object):
         axes = self.set_axes_label_grid(axes)
         return fig, axes
 
-    def all_h2_channels(self, results, labels, fpath, channels=None):
+    def all_h2_channels(self, results, labels, fpath, channels=None,
+                        size=(10,5)):
         """Results is a list of res (=HAWC2 results object)"""
 
         for chan, details in results[0].ch_dict.items():
@@ -931,7 +932,8 @@ class Plots(object):
             for res in results:
                 resp.append([res.sig[:,0], res.sig[:,details['chi']]])
 
-            fig, axes = self.new_fig(title=chan.replace('_', '\\_'))
+            fig, axes = self.new_fig(title=chan.replace('_', '\\_'),
+                                     size=size)
             try:
                 mplutils.time_psd(resp, labels, axes, alphas=[1.0, 0.7], NFFT=None,
                                    colors=['k-', 'r-'], res_param=250, f0=0, f1=5,
