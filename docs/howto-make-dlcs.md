@@ -11,6 +11,9 @@ point to the gorm/jess wiki's
 explain the difference in the paths seen from a windows computer and the cluster
 -->
 
+WARNING: these notes contain configuration settings that are specif to the
+DTU Wind Energy cluster Gorm. Only follow this guide in another environment if
+you know what you are doing!
 
 Introduction
 ------------
