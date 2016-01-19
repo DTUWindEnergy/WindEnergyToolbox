@@ -528,6 +528,7 @@ Other options for the ```dlctemplate.py``` script:
 ```
 usage: dlctemplate.py [-h] [--prep] [--check_logs] [--stats] [--fatigue]
                       [--csv] [--years YEARS] [--no_bins NO_BINS] [--neq NEQ]
+                      [--envelopeblade] [--envelopeturbine]
 
 pre- or post-processes DLC's
 
@@ -541,7 +542,18 @@ optional arguments:
   --years YEARS      Total life time in years (default=20)
   --no_bins NO_BINS  Number of bins for fatigue loads (default=46)
   --neq NEQ          Equivalent cycles neq (default=1e6)
+  --envelopeblade    calculate the load envelope for sensors on the blades
+  --envelopeturbine  calculate the load envelope for sensors on the turbine
 ```
+
+The load envelopes are computed for sensors specified in the 
+```dlctemplate.py``` file. The sensors are specified in a list of lists. The 
+inner list contains the sensors at one location. The envelope is computed for
+the first two sensors of the inner list and the other sensors are used to
+retrieve the remaining loads defining the load state occurring at the same 
+instant. The outer list is used to specify sensors at different locations.
+The default values for the blade envelopes are used to compute the Mx-My
+envelopes and retrieve the Mz-Fx-Fy-Fz loads occuring at the same moment.
 
 Debugging
 ---------
@@ -554,4 +566,3 @@ are redirected to the ```pbs_out/qsub-wrap_dlctemplate.py.err``` text file.
 The output and errors of HAWC2 simulations can also be found in the ```pbs_out```
 directory. The ```.err``` and ```.out``` files will be named exactly the same
 as the ```.htc``` input files, and the ```.sel```/```.dat``` output files.
-
