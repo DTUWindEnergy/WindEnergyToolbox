@@ -131,8 +131,20 @@ by editing the file ```.bash_profile``` file in your Gorm’s home directory
 or create a new file with this file name in case it doesn't exist):
 
 ```
-PATH=$PATH:/home/MET/STABCON/repositories/cluster-tools/
-export PATH
+export PATH=$PATH:/home/MET/STABCON/repositories/toolbox/pbsutils/
+```
+
+(The corresponding open repository is on the DTU Wind Energy Gitlab server:
+[pbsutils](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox). Please
+considering reporting bugs and/or suggest improvements there. You're contributions
+are much appreciated!)
+
+If you have been using an old version of this how-to, you might be pointing
+to an earlier version of these tools/utils and its reference should be removed
+from your ```.bash_profile``` file:
+
+```
+export PATH=$PATH:/home/MET/STABCON/repositories/cluster-tools/
 ```
 
 After modifying ```.bash_profile```, save and close it. Then, in the terminal, run the command:
