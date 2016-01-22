@@ -46,6 +46,7 @@ class HTCFile(HTCContents, HTCDefaults):
                 self._add_contents(line)
                 if line.name_ == "exit":
                     break
+        assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
     def readlines(self, filename):
         self.htc_inputfiles.append(filename)
@@ -73,11 +74,12 @@ class HTCFile(HTCContents, HTCDefaults):
             filename = self.filename
         else:
             self.filename = filename
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w') as fid:
             fid.write(str(self))
 
-    def set_name(self, name):
-        self.filename = "%s.htc" % name
+    def set_name(self, name, folder="htc"):
+        self.filename = os.path.join(self.modelpath, folder, "%s.htc" % name).replace("\\", "/")
         self.simulation.logfile = "./log/%s.log" % name
         self.output.filename = "./res/%s" % name
 
@@ -141,7 +143,7 @@ class HTCFile(HTCContents, HTCDefaults):
         files.extend(self.res_file_lst())
 
         for key in [k for k in self.contents.keys() if k.startswith("output_at_time")]:
-            files.append(self[key]['filename'][0])
+            files.append(self[key]['filename'][0] + ".dat")
         return [f for f in files if f]
 
     def turbulence_files(self):
