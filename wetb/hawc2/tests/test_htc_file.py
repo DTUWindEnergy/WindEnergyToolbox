@@ -24,25 +24,25 @@ class TestHtcFile(unittest.TestCase):
 
     def check_htc_file(self, f):
 
-        with open(f) as fid:
-            orglines = fid.readlines()
+      with open(f) as fid:
+          orglines = fid.readlines()
 
-        htcfile = HTCFile(f)
-        newlines = str(htcfile).split("\n")
-        htcfile.save(self.testfilepath + 'tmp.htc')
-        #with open(self.testfilepath + 'tmp.htc') as fid:
-        #    newlines = fid.readlines()
+      htcfile = HTCFile(f)
+      newlines = str(htcfile).split("\n")
+      htcfile.save(self.testfilepath + 'tmp.htc')
+      #with open(self.testfilepath + 'tmp.htc') as fid:
+      #    newlines = fid.readlines()
 
-        for i, (org, new) in enumerate(zip(orglines, newlines), 1):
-            fmt = lambda x : x.strip().replace("\t", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
-            if fmt(org) != fmt(new):
-                print ("----------%d-------------" % i)
-                print (fmt(org))
-                print (fmt(new))
-                self.assertEqual(fmt(org), fmt(new))
-                break
-                print ()
-        assert len(orglines) == len(newlines)
+      for i, (org, new) in enumerate(zip(orglines, newlines), 1):
+          fmt = lambda x : x.strip().replace("\t", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
+          if fmt(org) != fmt(new):
+              print ("----------%d-------------" % i)
+              print (fmt(org))
+              print (fmt(new))
+              self.assertEqual(fmt(org), fmt(new))
+              break
+              print ()
+      assert len(orglines) == len(newlines)
 
     def test_htc_files(self):
         for f in ['test3.htc']:
@@ -92,7 +92,7 @@ class TestHtcFile(unittest.TestCase):
     def test_htcfile_setname(self):
         htcfile = HTCFile()
         htcfile.set_name("mytest")
-        self.assertEqual(htcfile.filename, 'mytest.htc')
+        self.assertEqual(htcfile.filename, '../htc/mytest.htc')
 
 
 
@@ -108,16 +108,16 @@ class TestHtcFile(unittest.TestCase):
         htcfile = HTCFile()
         htcfile.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
         s = """begin mann;
-  create_turb_parameters\t30.1 1.1 3.3 102 0;\tL, alfaeps, gamma, seed, highfrq compensation
-  filename_u\t./turb/turb_wsp10_s0102u.bin;
-  filename_v\t./turb/turb_wsp10_s0102v.bin;
-  filename_w\t./turb/turb_wsp10_s0102w.bin;
-  box_dim_u\t4096 1.4652;
-  box_dim_v\t32 3.2258;
-  box_dim_w\t32 3.2258;
-  std_scaling\t1.000000 0.800000 0.500000;"""
+    create_turb_parameters\t30.1 1.1 3.3 102 0;\tL, alfaeps, gamma, seed, highfrq compensation
+    filename_u\t./turb/turb_wsp10_s0102u.bin;
+    filename_v\t./turb/turb_wsp10_s0102v.bin;
+    filename_w\t./turb/turb_wsp10_s0102w.bin;
+    box_dim_u\t4096 1.4652;
+    box_dim_v\t32 3.2258;
+    box_dim_w\t32 3.2258;
+    std_scaling\t1.000000 0.800000 0.500000;"""
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
-            self.assertEqual(a, b)
+            self.assertEqual(a.strip(), b.strip())
 
 
     def test_sensors(self):
@@ -125,11 +125,11 @@ class TestHtcFile(unittest.TestCase):
         htcfile.set_name("test")
         htcfile.output.add_sensor('wind', 'free_wind', [1, 0, 0, -30])
         s = """begin output;
-  filename\t./res/test;
-  general time;
-  wind free_wind\t1 0 0 -30;"""
+    filename\t./res/test;
+    general time;
+    wind free_wind\t1 0 0 -30;"""
         for a, b in zip(s.split("\n"), str(htcfile.output).split("\n")):
-            self.assertEqual(a, b)
+            self.assertEqual(a.strip(), b.strip())
         #print (htcfile)
 
 
@@ -153,8 +153,8 @@ class TestHtcFile(unittest.TestCase):
                   './launcher_test/ssystem_eigenanalysis.dat', './launcher_test\\mode*.dat',
                   './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.sel',
                   './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.dat',
-                  './res/rotor_check_inipos',
-                  './res/rotor_check_inipos2']:
+                  './res/rotor_check_inipos.dat',
+                  './res/rotor_check_inipos2.dat']:
             try:
                 output_files.remove(f)
             except ValueError:
@@ -194,6 +194,12 @@ class TestHtcFile(unittest.TestCase):
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
         self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
+
+    def test_tjul_example(self):
+        htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")
+        htcfile.save("./temp.htc")
+
+
 
 
 if __name__ == "__main__":
