@@ -209,7 +209,7 @@ class HTCOutputSection(HTCSection):
 
 
     def __str__(self, level=0):
-        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.begin_comments)[len(self.begin_comments.strip())])
+        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.begin_comments)[len(self.begin_comments.strip()) > 0])
         s += "".join([c.__str__(level + 1) for c in self])
         s += "".join([s.__str__(level + 1) for s in self.sensors])
         s += "%send %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.end_comments)[self.end_comments.strip() != ""])
