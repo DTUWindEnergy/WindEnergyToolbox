@@ -13,6 +13,7 @@ import os
 import shutil
 
 tmp_path = os.path.dirname(__file__) + "/tmp/"
+tfp = os.path.dirname(__file__) + "/test_files/"
 class Test_gsdf(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
@@ -207,6 +208,13 @@ class Test_gsdf(unittest.TestCase):
                    attribute_units=['s', 'm/s'],
                    attribute_descriptions=['d1', 'd2'])
         df = gtsdf.load_pandas(fn)
+
+    def test_loadtesthdf5(self):
+
+        time, data, info = gtsdf.load(tfp + 'test.hdf5')
+        self.assertEqual(time[1], 0.05)
+        self.assertEqual(data[1, 1], 11.986652374267578)
+        self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
 
 
 

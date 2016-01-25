@@ -1,15 +1,15 @@
 
 function [time, data, info] = gtsdf_load(filename)
+
+%  gtsdf_load Load a General time series data format - file
+%   Example:
+%       [time, data, info] = gtsdf_load('tests/test_files/test.hdf5')
+%
+
     
     if nargin==0
         filename = 'examples/all.hdf5';
     end
-
-
-    %h5disp('examples/minimum.hdf5');
-
-    %info = h5info(filename);
-  
 
     function value = att_value(name, addr, default)
         try
@@ -32,7 +32,7 @@ function [time, data, info] = gtsdf_load(filename)
     end
     
 
-    if not (strcmpi(att_value('type','/'), 'general time series data format'))
+    if not (strcmpi(lower(att_value('type','/')), 'general time series data format'))
         error('HDF5 file must contain a ''type''-attribute with the value ''General time series data format''')
     end
     if strcmp(att_value('no_blocks','/'),'')
