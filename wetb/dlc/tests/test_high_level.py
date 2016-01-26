@@ -42,12 +42,12 @@ class TestDLCHighLevel(unittest.TestCase):
 
     def test_file_hour_lst(self):
         f, h = self.dlc_hl.file_hour_lst()[0]
-        self.assertEqual(f, os.path.abspath(testfilepath + 'res\\DLC12_IEC61400-1ed3\\dlc12_wsp04_wdir350_s3001.sel'))
+        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/DLC12_IEC61400-1ed3/dlc12_wsp04_wdir350_s3001.sel'))
         self.assertEqual(h, .975 * .25 * 0.11002961306549919 / 2 * 20 * 365 * 24)
 
     def test_file_hour_lst_count(self):
         f, h = self.dlc_hl.file_hour_lst()[-1]
-        self.assertEqual(f, os.path.abspath(testfilepath + 'res\\DLC31_IEC61400-1ed3\\dlc31_wsp25_wdir000_s0000.sel'))
+        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/DLC31_IEC61400-1ed3/dlc31_wsp25_wdir000_s0000.sel'))
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
 
