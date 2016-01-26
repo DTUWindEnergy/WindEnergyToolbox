@@ -270,6 +270,7 @@ class SimulationThread(Thread):
     def __init__(self, simulation):
         Thread.__init__(self)
         self.sim = simulation
+        self.modelpath = self.sim.modelpath
         self.res = [0, "", ""]
 
 

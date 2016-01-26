@@ -1,9 +1,7 @@
 before_script:
-  - apt-get update
-  - apt-get install libblas-dev liblapack-dev gfortran -y
-
+  
 test-3.4:
-  image: python:3.4
+  image: mmpe/wetb
   script:
   - pip install -e .
   - python tests/testsuite.py
