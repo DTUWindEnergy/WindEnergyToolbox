@@ -5,5 +5,4 @@ test-3.4:
   image: mmpe/wetb
   script:
   - pip install -U setuptools
-  - pip install -e .
-  - python setup.py test
+  - python
