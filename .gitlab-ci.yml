@@ -6,4 +6,4 @@ test-3.4:
   script:
   - pip install -U setuptools
   - pip install -e .
-  - python -V
+  - python -V 
