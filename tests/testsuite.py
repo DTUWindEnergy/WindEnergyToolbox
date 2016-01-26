@@ -7,15 +7,16 @@ def module_strings():
     #test_file_strings.extend(glob.glob('../wetb/**/test_*.py'))
     #for root,_,_ in os.walk("../wetb/"):
 
-    for folder, _, _ in os.walk(os.path.abspath(dirname(__file__) + '/../wetb/')):
+    for folder, _, _ in os.walk(os.path.abspath(dirname(__file__) + '../wetb/')):
         test_file_paths.extend(glob.glob(folder + "/tests/test_*.py"))
     return [relpath(s, abspath(dirname(__file__) + "/../")).replace(".py", "").replace(os.path.sep, ".") for s in test_file_paths]
 
 
 def suite():
+    modules = module_strings()
+    suites = []
     try:
-        suites = []
-        for s in module_strings():
+        for s in modules:
             suites.append(unittest.defaultTestLoader.loadTestsFromName(s))
     except:
         print ("Failed to import '%s'" % s)
