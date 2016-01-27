@@ -4776,8 +4776,9 @@ class Cases:
             nn_shaft = 4
         itorque = self.res.ch_dict['shaft-shaft-node-%3.3i-momentvec-z'%nn_shaft]['chi']
         torque = self.res.sig[:,itorque]
-
-        return torque*rads
+        # negative means power is being extracted, which is exactly what a wind
+        # turbine is about, we call that positive
+        return -1.0*torque*rads
 
     def calc_torque_const(self, save=False, name='ojf'):
         """
