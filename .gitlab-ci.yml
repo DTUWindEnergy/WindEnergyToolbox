@@ -5,4 +5,4 @@ test-3.4:
   image: mmpe/wetb
   script:
   - git pull origin master
-  - python3 -V 
+  - python3 setup.py test
