@@ -15,18 +15,18 @@ INITIALIZATION = 'Initializing simulation'
 SIMULATING = "Simulating"
 DONE = "Simulation succeded"
 
-def is_file_open(filename):
-    try:
-        os.rename(filename, filename + "_")
-        os.rename(filename + "_", filename)
-        return False
-    except OSError as e:
-        if "The process cannot access the file because it is being used by another process" not in str(e):
-            raise
-
-        if os.path.isfile(filename + "_"):
-            os.remove(filename + "_")
-        return True
+#def is_file_open(filename):
+#    try:
+#        os.rename(filename, filename + "_")
+#        os.rename(filename + "_", filename)
+#        return False
+#    except OSError as e:
+#        if "The process cannot access the file because it is being used by another process" not in str(e):
+#            raise
+#
+#        if os.path.isfile(filename + "_"):
+#            os.remove(filename + "_")
+#        return True
 
 class LogFile(object):
     def __init__(self, log_filename, time_stop):

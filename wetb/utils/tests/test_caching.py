@@ -55,7 +55,6 @@ class TestCacheProperty(unittest.TestCase):
 
 
     def test_cache_function(self):
-        #pdb.set_trace()
         e = Example()
         self.assertAlmostEqual(get_time(e.test_cache_function)()[1], 1, places=2)
         self.assertAlmostEqual(get_time(e.test_cache_function)()[1], 0, places=2)
