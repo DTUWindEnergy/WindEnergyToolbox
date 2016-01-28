@@ -14,9 +14,9 @@ def get_time(f):
     ('end', 0.999833492421551)
     """
     def wrap(*args, **kwargs):
-        t = time.clock()
+        t = time.time()
         res = f(*args, **kwargs)
-        return res, time.clock() - t
+        return res, time.time() - t
     w = wrap
     w.__name__ = f.__name__
     return w
@@ -103,14 +103,14 @@ def print_line_time(f):
 
 
         lines = inspect.getsourcelines(f)[0][2:]
-        tcum = time.clock()
+        tcum = time.time()
         locals = kwargs
         gl = f.__globals__
 
         for l in lines:
-            tline = time.clock()
+            tline = time.time()
             exec(l.strip(), locals, gl)  #res = f(*args, **kwargs)
-            print ("%.3fs\t%.3fs\t%s" % (time.clock() - tline, time.clock() - tcum, l.strip()))
+            print ("%.3fs\t%.3fs\t%s" % (time.time() - tline, time.time() - tcum, l.strip()))
     w = wrap
     w.__name__ = f.__name__
     return w
