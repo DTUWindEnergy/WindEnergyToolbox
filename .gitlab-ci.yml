@@ -4,5 +4,5 @@ before_script:
 test-3.4:
   image: mmpe/wetb
   script:
-  - git pull
+  - git pull origin master
   - python3 -V 
