@@ -5,9 +5,6 @@ Created on Mon Nov  2 15:23:15 2015
 @author: dave
 """
 
-
-
-
 import os
 
 import numpy as np
@@ -21,188 +18,70 @@ from wetb.prepost import hawcstab2 as hs2
 from wetb.prepost import mplutils
 
 
-class Configurations:
-    # HAWC2
-    eigenan = {'[eigen_analysis]':True, '[time stop]':0,
-               '[t0]'            :0,     '[output]'  :False}
-    control = {'[Free shaft rot]':True,  '[dll]'        :True,
-               '[fixed_op]'      :False, '[fixed_shaft]':False,
-               '[init_wr]'       :0.5,   '[pitch_bearing]':True}
-    opt_h2 = {'[output]'         :True,  '[hs2]'        :False,
-              '[hawc2_exe]'      :'hawc2-latest',
-              '[Case folder]'    :'HAWC2', '[hawc2]'    :True}
-    fix_op = {'[Free shaft rot]' :False, '[dll]'        :False,
-              '[fixed_op]'       :True,  '[fixed_shaft]':False,
-              '[init_wr]'        :0.5,   '[fixed_omega]':0.5,
-              '[pitch_bearing]'  :False}
-    # HAWCStab2
-    opt_hs2 = {'[output]'         :False, '[hs2]'        :True,
-               '[Free shaft rot]' :True,  '[dll]'        :False,
-               '[fixed_op]'       :False, '[fixed_shaft]':False,
-               '[init_wr]'        :0.5,   '[fixed_omega]':0.5,
-               '[pitch_angle]'    :0.0,   '[hawc2_exe]'  :'hs2cmd-latest',
-               '[Case folder]'    :'HAWCStab2', '[hawc2]':False,
-               '[pitch_bearing]'  :True}
-
-    # AERODYNAMIC MODELLING OPTIONS
-    aero_simple = {'[aerocalc]':1, '[Induction]':0, '[tip_loss]':0,
-                   '[Dyn stall]':0, '[t0]':100, '[time stop]':150}
-    # when induction is on, especially the low wind speeds will need more time
-    # to reach steady state in HAWC2 compared to when there is no induction.
-    aero_full = {'[aerocalc]':1, '[Induction]':1, '[tip_loss]':1,
-                 '[Dyn stall]':1, '[t0]':500, '[time stop]':550}
-
-    blade_stiff_pitchC4 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                           '[blade_damp_z]':0.01, '[blade_set]':4,
-                           '[blade_subset]':1, '[blade_posx]':-0.75}
-
-    blade_stiff_pitchC2 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                           '[blade_damp_z]':0.01, '[blade_set]':4,
-                           '[blade_subset]':1, '[blade_posx]':0.0}
-
-    blade_stiff_pitch3C4 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                           '[blade_damp_z]':0.01, '[blade_set]':4,
-                           '[blade_subset]':1, '[blade_posx]':0.75}
-
-    blade_flex50_tstiff_C14 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                               '[blade_damp_z]':0.03, '[blade_set]':1,
-                               '[blade_subset]':15, '[blade_posx]':-0.75,
-                               '[blade_nbodies]': 17,
-                               '[c12]':False, '[c14]':True}
-    blade_flex50_tstiff_C12 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                               '[blade_damp_z]':0.03, '[blade_set]':1,
-                               '[blade_subset]':13, '[blade_posx]':0.0,
-                               '[blade_nbodies]': 17,
-                               '[c12]':True, '[c14]':False}
-    blade_flex50_C14 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                        '[blade_damp_z]':0.03, '[blade_set]':1,
-                        '[blade_subset]':17, '[blade_posx]':-0.75,
-                        '[blade_nbodies]': 17,
-                        '[c12]':False, '[c14]':True}
-    blade_flex50_C12 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                        '[blade_damp_z]':0.03, '[blade_set]':1,
-                        '[blade_subset]':16, '[blade_posx]':0.0,
-                        '[blade_nbodies]': 17,
-                        '[c12]':True, '[c14]':False}
-    blade_flex89_tstiff_C14 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':23, '[blade_posx]':-0.75,
-                            '[blade_nbodies]': 17,
-                            '[c12]':False, '[c14]':True}
-    blade_flex89_tstiff_C12 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':22, '[blade_posx]':0.0,
-                            '[blade_nbodies]': 17,
-                            '[c12]':True, '[c14]':False}
-    blade_flex89_t50_C14 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':19, '[blade_posx]':-0.75,
-                            '[blade_nbodies]': 17,
-                            '[c12]':False, '[c14]':True}
-    blade_flex89_t50_C12 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':18, '[blade_posx]':0.0,
-                            '[blade_nbodies]': 17,
-                            '[c12]':True, '[c14]':False}
-    blade_flex89_t50_C12_allstC14 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':21, '[blade_posx]':-0.75,
-                            '[blade_nbodies]': 17,
-                            '[c12]':False, '[c14]':True}
-    blade_flex89_t50_C12_allstC12 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                            '[blade_damp_z]':0.03, '[blade_set]':1,
-                            '[blade_subset]':19, '[blade_posx]':0.0,
-                            '[blade_nbodies]': 17,
-                            '[c12]':True, '[c14]':False}
-
-    blade_flex89_t50_C12_cgshC14_eaC12 = {'[blade_damp_x]':0.03,
-                                          '[blade_damp_y]':0.03,
-                                          '[blade_damp_z]':0.03,
-                                          '[blade_set]'   :1,
-                                          '[blade_subset]':24,
-                                          '[blade_posx]'  :0.0,
-                                          '[blade_nbodies]': 17,
-                                          '[c12]':True, '[c14]':False}
-
-    blade_flex = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                  '[blade_damp_z]':0.01, '[blade_set]':1,
-                  '[blade_subset]':1, '[blade_posx]':-0.75}
-
-    blade_flex_allac = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                        '[blade_damp_z]':0.01, '[blade_set]':1,
-                        '[blade_subset]':2, '[blade_posx]':-0.75}
-
-    blade_flex_allac_11 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                           '[blade_damp_z]':0.01, '[blade_set]':1,
-                           '[blade_subset]':7, '[blade_posx]':-0.75}
-
-    blade_flex_allac_33 = {'[blade_damp_x]':0.02, '[blade_damp_y]':0.02,
-                           '[blade_damp_z]':0.02, '[blade_set]':1,
-                           '[blade_subset]':8, '[blade_posx]':-0.75}
-
-    blade_flex_allac_50 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                           '[blade_damp_z]':0.03, '[blade_set]':1,
-                           '[blade_subset]':9, '[blade_posx]':-0.75}
-
-    blade_flex_allac_50_pitchC2 = {'[blade_damp_x]':0.03, '[blade_damp_y]':0.03,
-                                   '[blade_damp_z]':0.03, '[blade_set]':1,
-                                   '[blade_subset]':9, '[blade_posx]':0.0}
-
-    # configurations for the B-series (which has quite a few changes)
-    # B0001
-    stiff_pc14_cgsheac14 = {'[blade_damp_x]':0.01, '[blade_damp_y]':0.01,
-                            '[blade_damp_z]':0.01, '[blade_set]':1,
-                            '[blade_subset]':3,    '[blade_posx]':-0.75,
-                            '[blade_nbodies]': 17,
-                            '[st_file]'     :'blade_flex_rect.st',
-                            '[c12]':False, '[c14]':True,
-                            '[ae_tolrel]': 1e-7,
-                            '[ae_itmax]' : 2000,
-                            '[ae_1relax]': 0.2}
-    # B0002
-    flex_tstiff_pc14_cgsheac14 = {'[blade_damp_x]':0.13, '[blade_damp_y]':0.13,
-                                  '[blade_damp_z]':0.15, '[blade_set]':1,
-                                  '[blade_subset]':5,    '[blade_posx]':-0.75,
-                                  '[blade_nbodies]': 17,
-                                  '[st_file]'     :'blade_flex_rect.st',
-                                  '[c12]':False, '[c14]':True,
-                                  '[ae_tolrel]': 1e-7,
-                                  '[ae_itmax]' : 2000,
-                                  '[ae_1relax]': 0.7}
-    # B0003
-    flex_pc14_cgsheac14 = {'[blade_damp_x]':0.13, '[blade_damp_y]':0.13,
-                           '[blade_damp_z]':0.15, '[blade_set]':1,
-                           '[blade_subset]':6,    '[blade_posx]':-0.75,
-                           '[blade_nbodies]': 17,
-                           '[st_file]'     :'blade_flex_rect.st',
-                           '[c12]':False, '[c14]':True,
-                           '[ae_tolrel]': 1e-7,
-                           '[ae_itmax]' : 2000,
-                           '[ae_1relax]': 0.7}
-    # B0004
-    flex_pc12_cgsheac12 = {'[blade_damp_x]':0.15, '[blade_damp_y]':0.15,
-                           '[blade_damp_z]':0.17, '[blade_set]':1,
-                           '[blade_subset]':7,    '[blade_posx]':0.00,
-                           '[blade_nbodies]': 17,
-                           '[st_file]'     :'blade_flex_rect.st',
-                           '[c12]':True, '[c14]':False,
-                           '[ae_tolrel]': 1e-7,
-                           '[ae_itmax]' : 2000,
-                           '[ae_1relax]': 0.7}
-    # B0005, B0006
-    flex_pc12_cgshc14_eac12 = {'[blade_damp_x]':0.15, '[blade_damp_y]':0.15,
-                               '[blade_damp_z]':0.17, '[blade_set]':1,
-                               '[blade_subset]':8,    '[blade_posx]':0.00,
-                               '[blade_nbodies]': 17,
-                               '[st_file]'     :'blade_flex_rect.st',
-                               '[c12]':True, '[c14]':False,
-                               '[ae_tolrel]': 1e-7,
-                               '[ae_itmax]' : 2000,
-                               '[ae_1relax]': 0.98}
-
+class ConfigBase:
 
     def __init__(self):
         pass
+
+    def set_master_defaults(self):
+        """Create a set of default master tags that are required for proper
+        compatibility with Simulations.py
+        """
+        mt = {}
+        # =====================================================================
+        # required tags and their defaults
+        # =====================================================================
+        mt['[dt_sim]'] = 0.01
+        mt['[hawc2_exe]'] = 'hawc2-latest'
+        # convergence_limits  0.001  0.005  0.005 ;
+        # critical one, risidual on the forces: 0.0001 = 1e-4
+        mt['[epsresq]'] = '1.0' # default=10.0
+        # increment residual
+        mt['[epsresd]'] = '0.5' # default= 1.0
+        # constraint equation residual
+        mt['[epsresg]'] = '1e-8' # default= 1e-7
+        # folder names for the saved results, htc, data, zip files
+        # Following dirs are relative to the model_dir_server and they specify
+        # the location of where the results, logfiles, animation files that where
+        # run on the server should be copied to after the simulation has finished.
+        # on the node, it will try to copy the turbulence files from these dirs
+        mt['[animation_dir]'] = 'animation/'
+        mt['[control_dir]']   = 'control/'
+        mt['[data_dir]']      = 'data/'
+        mt['[eigen_analysis]'] = False
+        mt['[eigenfreq_dir]'] = False
+        mt['[htc_dir]']       = 'htc/'
+        mt['[log_dir]']       = 'logfiles/'
+        mt['[meander_dir]']   = False
+        mt['[opt_dir]']       = False
+        mt['[pbs_out_dir]']   = 'pbs_out/'
+        mt['[res_dir]']       = 'res/'
+        mt['[iter_dir]']      = 'iter/'
+        mt['[turb_dir]']      = 'turb/'
+        mt['[turb_db_dir]']   = '../turb/'
+        mt['[wake_dir]']      = False
+        mt['[hydro_dir]']     = False
+        mt['[mooring_dir]']   = False
+        mt['[externalforce]'] = False
+        mt['[Case folder]']   = 'NoCaseFolder'
+        # zip_root_files only is used when copy to run_dir and zip creation, define
+        # in the HtcMaster object
+        mt['[zip_root_files]'] = []
+        # only active on PBS level, so files have to be present in the run_dir
+        mt['[copyback_files]'] = []   # copyback_resultfile
+        mt['[copyback_frename]'] = [] # copyback_resultrename
+        mt['[copyto_files]'] = []     # copyto_inputfile
+        mt['[copyto_generic]'] = []   # copyto_input_required_defaultname
+        # =====================================================================
+        # required tags by HtcMaster and PBS in order to function properly
+        # =====================================================================
+        # the express queue ('#PBS -q xpresq') has a maximum walltime of 1h
+        mt['[pbs_queue_command]'] = '#PBS -q workq'
+        # walltime should have following format: hh:mm:ss
+        mt['[walltime]'] = '04:00:00'
+        mt['[auto_walltime]'] = False
+
+        return mt
 
     def opt_tags_h2_eigenanalysis(self, basename):
         """Return opt_tags suitable for a standstill HAWC2 eigen analysis.
@@ -215,7 +94,7 @@ class Configurations:
         opt_tags[0]['[blade_damp_z]'] = 0.0
         opt_tags[0]['[blade_nbodies]'] = 1
         opt_tags[0]['[Windspeed]'] = 0.0
-        opt_tags[0]['[init_wr]'] = 0.0
+        opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
         opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
 
         return opt_tags
@@ -231,8 +110,8 @@ class Configurations:
         opt_tags[0]['[blade_damp_z]'] = 0.0
         opt_tags[0]['[blade_nbodies]'] = 1
         opt_tags[0]['[Windspeed]'] = 0.0
-        opt_tags[0]['[init_wr]'] = 0.0
-        opt_tags[0]['[fixed_omega]'] = 0.0
+        opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
+        opt_tags[0]['[fixspeed_rotor_rads]'] = 0.0
         opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
 
         return opt_tags
@@ -257,7 +136,7 @@ class Configurations:
         hs2_res.load_operation(fpath)
         omegas = hs2_res.operation.rotorspeed_rpm.values*np.pi/30.0
         winds = hs2_res.operation.windspeed.values
-        pitchs = hs2_res.operation.pitch_deg.values
+        pitchs = -1.0*hs2_res.operation.pitch_deg.values
 
         return self.set_opdata(winds, pitchs, omegas, basename=basename)
 
@@ -298,9 +177,9 @@ class Configurations:
                 tmp = '%s_%02.0fms_%04.01fdeg_%04.02frads_hawc2' % rpl
                 opt_dict['[Case id.]'] = tmp
             opt_dict['[Windspeed]'] = wind
-            opt_dict['[pitch_angle]'] = pitch
-            opt_dict['[fixed_omega]'] = omega
-            opt_dict['[init_wr]'] = omega
+            opt_dict['[blade_pitch_deg]'] = pitch
+            opt_dict['[fixspeed_rotor_rads]'] = omega
+            opt_dict['[initspeed_rotor_rads]'] = omega
 #            opt_dict['[t0]'] = int(2000.0/opt_dict['[Windspeed]']) # or 2000?
 #            opt_dict['[time stop]'] = opt_dict['[t0]']+100
 #            opt_dict['[time_stop]'] = opt_dict['[t0]']+100
@@ -311,7 +190,7 @@ class Configurations:
 class Sims(object):
 
     def __init__(self, sim_id, P_MASTERFILE, MASTERFILE, P_SOURCE, P_RUN,
-                 PROJECT, POST_DIR):
+                 PROJECT, POST_DIR, master_tags_default):
         """
         Create HtcMaster() object
         =========================
@@ -325,6 +204,27 @@ class Sims(object):
 
         It is considered as good practice to define the default values for all
         the variable tags in the master_tags
+
+        Parameters
+        ----------
+
+        sim_id : str
+
+        P_MASTERFILE : str
+
+        MASTERFILE : str
+
+        P_SOURCE : str
+
+        P_RUN : str
+
+        PROJECT : str
+
+        POST_DIR : str
+
+        master_tags_default : dict
+            Dictionary with the default master tag values. Should be created
+            by the turbine specific class Configurations.set_master_defaults()
 
         Members
         -------
@@ -347,7 +247,7 @@ class Sims(object):
         # FIXME: some tags are still variable! Only static tags here that do
         # not depent on any other variable that can change
         self.master = sim.HtcMaster()
-        self.set_tag_defaults()
+        self.master.tags.update(master_tags_default)
 
     def _var_tag_func(self, master, case_id_short=False):
         """
@@ -476,130 +376,6 @@ class Sims(object):
         rpl = (self.PROJECT, self.master.tags['[sim_id]'])
         self.master.tags['[model_zip]'] = '%s_%s.zip' % rpl
 
-    def set_tag_defaults(self):
-        """
-        Set the default values of the required master tags
-        """
-        mt = self.master.tags
-
-        # other required tags and their defaults
-        mt['[dt_sim]'] = 0.01
-        mt['[hawc2_exe]'] = 'hawc2-latest'
-        # convergence_limits  0.001  0.005  0.005 ;
-        # critical one, risidual on the forces: 0.0001 = 1e-4
-        mt['[epsresq]'] = '1.0' # default=10.0
-        # increment residual
-        mt['[epsresd]'] = '0.5' # default= 1.0
-        # constraint equation residual
-        mt['[epsresg]'] = '1e-8' # default= 1e-7
-        # folder names for the saved results, htc, data, zip files
-        # Following dirs are relative to the model_dir_server and they specify
-        # the location of where the results, logfiles, animation files that where
-        # run on the server should be copied to after the simulation has finished.
-        # on the node, it will try to copy the turbulence files from these dirs
-        mt['[animation_dir]'] = 'animation/'
-        mt['[control_dir]']   = 'control/'
-        mt['[data_dir]']      = 'data/'
-        mt['[eigen_analysis]'] = False
-        mt['[eigenfreq_dir]'] = False
-        mt['[htc_dir]']       = 'htc/'
-        mt['[log_dir]']       = 'logfiles/'
-        mt['[meander_dir]']   = False
-        mt['[opt_dir]']       = False
-        mt['[pbs_out_dir]']   = 'pbs_out/'
-        mt['[res_dir]']       = 'res/'
-        mt['[iter_dir]']      = 'iter/'
-        mt['[turb_dir]']      = 'turb/'
-        mt['[turb_db_dir]']   = '../turb/'
-        mt['[wake_dir]']      = False
-        mt['[hydro_dir]']     = False
-        mt['[mooring_dir]']   = False
-        mt['[externalforce]'] = False
-        mt['[Case folder]']   = 'NoCaseFolder'
-        # zip_root_files only is used when copy to run_dir and zip creation, define
-        # in the HtcMaster object
-        mt['[zip_root_files]'] = []
-        # only active on PBS level, so files have to be present in the run_dir
-        mt['[copyback_files]'] = []   # copyback_resultfile
-        mt['[copyback_frename]'] = [] # copyback_resultrename
-        mt['[copyto_files]'] = []     # copyto_inputfile
-        mt['[copyto_generic]'] = []   # copyto_input_required_defaultname
-
-        # In master file tags within the HAWC2 vs HAWCStab2 context
-        mt['[hawc2]'] = False
-        mt['[output]'] = False
-        mt['[eigen_analysis]'] = False
-        mt['[system_eigen_analysis]'] = False
-        mt['[operational_data]'] = 'case_name.opt'
-
-        mt['[gravity]'] = 0.0
-        mt['[shaft_tilt]'] = 0.0 # 5.0
-        mt['[coning]'] = 0.0 # 2.5
-        mt['[Windspeed]'] = 1.0
-        mt['[wtilt]'] = 0.0
-        mt['[wdir]'] = 0.0
-        mt['[aerocalc]'] = 1
-        mt['[Induction]'] = 0
-        mt['[tip_loss]'] = 0
-        mt['[Dyn stall]'] = 0
-        mt['[tu_model]'] = 0
-        mt['[shear_exp]'] = 0
-        mt['[tower_shadow]'] = 0
-        mt['[TI]'] = 1
-        mt['[fixed_omega]'] = 1.0
-        mt['[init_wr]'] = 0
-        mt['[pc_file_name]'] = 'hawc_pc.mhh'
-        mt['[ae_file_name]'] = 'hawc2_ae.mhh'
-        mt['[nr_ae_sections]'] = 30
-        mt['[use_nr_ae_sections]'] = True
-        mt['[use_ae_distrb_file]'] = False
-        mt['[ae_set_nr]'] = 1
-        # tors_e output depends on the pitch axis configuration
-        mt['[c12]'] = False
-        mt['[c14]'] = False
-
-        mt['[t0]'] = 500
-        mt['[time stop]'] = 600
-
-        mt['[hs2]'] = False
-        mt['[nr_blade_modes_hs2]'] = 10
-        mt['[stab_analysis]'] = False
-        mt['[steady_states]'] = True
-        mt['[hs2_bladedeform_switch]'] = True
-        mt['[hs2_gradients_switch]'] = False
-        # by default take the stiff set
-        mt['[st_file]'] = 'hawc2_st.mhh'
-        mt['[tower_set]'] = 4 # 1
-        mt['[shaft_set]'] = 4 # 2
-        mt['[blade_set]'] = 4 # 3
-        mt['[tower_subset]'] = 1
-        mt['[shaft_subset]'] = 1
-        mt['[blade_subset]'] = 1
-        mt['[blade_nbodies]'] = 1
-        mt['[blade_posx]'] = -0.75
-        mt['[blade_damp_x]'] = 0.01
-        mt['[blade_damp_y]'] = 0.01
-        mt['[blade_damp_z]'] = 0.01
-        # HAWCStab2 convergence criteria
-        mt['[bem_tol]'] = 1e-12
-        mt['[bem_itmax]'] = 10000
-        mt['[bem_1relax]'] = 0.02
-        mt['[ae_tolrel]'] = 1e-7
-        mt['[ae_itmax]'] = 2000
-        mt['[ae_1relax]'] = 0.5
-        mt['[tol_7]'] = 10
-        mt['[tol_8]'] = 5
-        mt['[tol_9]'] = 1e-8
-
-        # =========================================================================
-        # basic required tags by HtcMaster and PBS in order to function properly
-        # =========================================================================
-        # the express queue ('#PBS -q xpresq') has a maximum walltime of 1h
-        mt['[pbs_queue_command]'] = '#PBS -q workq'
-        # walltime should have following format: hh:mm:ss
-        mt['[walltime]'] = '04:00:00'
-        mt['[auto_walltime]'] = False
-
     def get_dlc_casedefs(self):
         """
         Create iter_dict and opt_tags based on spreadsheets
@@ -671,7 +447,8 @@ class Sims(object):
 
         return tune_tags
 
-    def post_processing(self, statistics=True, resdir=None):
+    def post_processing(self, statistics=True, resdir=None,
+                        calc_mech_power=False):
         """
         Parameters
         ----------
@@ -715,19 +492,50 @@ class Sims(object):
 
         if statistics:
             tags=['[windspeed]']
-            stats_df = cc.statistics(calc_mech_power=False, ch_fatigue=[],
-                                     tags=tags, update=False)
+            stats_df = cc.statistics(calc_mech_power=calc_mech_power,
+                                     ch_fatigue=[], tags=tags, update=False)
             ftarget = os.path.join(self.POST_DIR, '%s_statistics.xlsx')
             stats_df.to_excel(ftarget % self.sim_id)
 
 
 class MappingsH2HS2(object):
 
-    def __init__(self, chord_length=3.0):
+    def __init__(self, config):
         """
+
+        Parameters
+        ----------
+
+        config : Config class based on ConfigBase
+
         """
         self.hs2_res = hs2.results()
-        self.chord_length = chord_length
+        self.h2_maps = config.h2_maps
+
+        self.units = {'curved_s': '[m]',
+                      'Cl': '[-]',
+                      'Cd': '[-]',
+                      'Ct': '[-]',
+                      'Cp': '[-]',
+                      'ax_ind': '[-]',
+                      'tan_ind': '[-]',
+                      'vrel': '[m/s]',
+                      'inflow_angle': '[deg]',
+                      'AoA': '[deg]',
+                      'pos_x': '[m]',
+                      'pos_y': '[m]',
+                      'pos_z': '[m]',
+                      'def_x': '[m]',
+                      'def_y': '[m]',
+                      'def_z': '[m]',
+                      'torsion': '[deg]',
+                      'twist': '[deg]',
+                      'ax_ind_vel': '[m/s]',
+                      'tan_ind_vel': '[m/s]',
+                      'F_x': '[N/m]',
+                      'F_y': '[N/m]',
+                      'M': '[Nm/m]',
+                      'chord': '[m]'}
 
     def powercurve(self, h2_df_stats, fname_hs):
 
@@ -736,19 +544,16 @@ class MappingsH2HS2(object):
 
     def _powercurve_h2(self, df_stats):
 
-        mappings = {'Ae rot. power' : 'P_aero',
-                    'Ae rot. thrust': 'T_aero',
-                    'Vrel-1-39.03'  : 'vrel_39',
-                    'Omega'         : 'rotorspeed',
-                    'tower-tower-node-010-forcevec-y' : 'T_towertop',
-                    'tower-shaft-node-003-forcevec-y' : 'T_shafttip'}
-
         df_stats.sort_values('[windspeed]', inplace=True)
         df_mean = pd.DataFrame()
         df_std = pd.DataFrame()
 
-        for key, value in mappings.items():
+        for key, value in self.h2_maps.items():
             tmp = df_stats[df_stats['channel']==key]
+            if len(tmp) == 0:
+                rpl = (key, value)
+                msg = 'HAWC2 channel %s is needed for %s but is missing' % rpl
+                raise ValueError(msg)
             df_mean[value] = tmp['mean'].values.copy()
             df_std[value] = tmp['std'].values.copy()
 
@@ -782,10 +587,12 @@ class MappingsH2HS2(object):
         if h2_df_stats is not None:
             self.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                self.distribution_torsion_h2(fname_h2_tors)
+                self.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
 
     def _distribution_hs2(self):
         """Read a HAWCStab2 *.ind file (blade distribution loading)
+
+        rot_angle and rot_vec_123 in HS2 should be in rotor polar coordinates
         """
 
         mapping_hs2 =  {'s [m]'       :'curved_s',
@@ -803,35 +610,44 @@ class MappingsH2HS2(object):
                         'Z_AC0 [m]'   :'pos_z',
                         'UX0 [m]'     :'def_x',
                         'UY0 [m]'     :'def_y',
+                        'UZ0 [m]'     :'def_z',
                         'Tors. [rad]' :'torsion',
                         'Twist[rad]'  :'twist',
                         'V_a [m/s]'   :'ax_ind_vel',
                         'V_t [m/s]'   :'tan_ind_vel',
                         'FX0 [N/m]'   :'F_x',
                         'FY0 [N/m]'   :'F_y',
-                        'M0 [Nm/m]'   :'M'}
+                        'M0 [Nm/m]'   :'M',
+                        'chord [m]'   :'chord',
+                        'angle [rad]' :'rot_angle',
+                        'v_1 [-]'     :'rot_vec_1',
+                        'v_2 [-]'     :'rot_vec_2',
+                        'v_3 [-]'     :'rot_vec_3'}
 
         try:
-            hs2_cols = [k for k in mapping_hs2]
+            hs2_cols = list(mapping_hs2)
             # select only the HS channels that will be used for the mapping
-            std_cols = [mapping_hs2[k] for k in hs2_cols]
+            std_cols = list(mapping_hs2.values())
             self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
         except KeyError:
             # some results have been created with older HAWCStab2 that did not
             # include CT and CP columns
             mapping_hs2.pop('CT [-]')
             mapping_hs2.pop('CP [-]')
-            hs2_cols = [k for k in mapping_hs2]
-            std_cols = [mapping_hs2[k] for k in hs2_cols]
+            hs2_cols = list(mapping_hs2)
+            std_cols = list(mapping_hs2.values())
             # select only the HS channels that will be used for the mapping
             self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
 
         # change column names to the standard form that is shared with H2
         self.hs_aero.columns = std_cols
+        chord12 = self.hs_aero['chord'] / 2.0
+        self.hs_aero['pos_x'] -= (np.cos(self.hs_aero['twist'])*chord12)
+        self.hs_aero['pos_y'] += (np.sin(self.hs_aero['twist'])*chord12)
         self.hs_aero['AoA'] *= (180.0/np.pi)
         self.hs_aero['inflow_angle'] *= (180.0/np.pi)
         self.hs_aero['torsion'] *= (180.0/np.pi)
-#        self.hs_aero['pos_x'] = (-1.0) # self.chord_length / 4.0
+        self.hs_aero['twist'] *= (180.0/np.pi)
 
     def _distribution_h2(self):
         mapping_h2 =  { 'Radius_s'  :'curved_s',
@@ -847,11 +663,12 @@ class MappingsH2HS2(object):
                         'pos_RP_x'  :'pos_x',
                         'pos_RP_y'  :'pos_y',
                         'pos_RP_z'  :'pos_z',
+                        'Chord'     :'chord',
                         'Secfrc_RPx':'F_x',
                         'Secfrc_RPy':'F_y',
                         'Secmom_RPz':'M'}
-        h2_cols = [k for k in mapping_h2]
-        std_cols = [mapping_h2[k] for k in h2_cols]
+        h2_cols = list(mapping_h2)
+        std_cols = list(mapping_h2.values())
 
         # select only the h2 channels that will be used for the mapping
         h2_aero = self.h2_res[h2_cols].copy()
@@ -861,17 +678,30 @@ class MappingsH2HS2(object):
         h2_aero['def_y'] = self.h2_res['Pos_B_y'] - self.h2_res['Inipos_y_y']
         h2_aero['def_z'] = self.h2_res['Pos_B_z'] - self.h2_res['Inipos_z_z']
         h2_aero['ax_ind_vel'] *= (-1.0)
-        h2_aero['pos_x'] += (self.chord_length / 2.0)
+#        h2_aero['pos_x'] += (self.h2_res['Chord'] / 2.0)
         h2_aero['F_x'] *= (1e3)
         h2_aero['F_y'] *= (1e3)
         h2_aero['M'] *= (1e3)
+        h2_aero['M'] -= (h2_aero['F_y']*h2_aero['chord']/2.0)
+        h2_aero['twist'] = np.nan
 #        # HAWC2 includes root and tip nodes, while HAWC2 doesn't. Remove them
 #        h2_aero = h2_aero[1:-1]
         self.h2_aero = h2_aero
 
-    def distribution_torsion_h2(self, fname_h2):
-        """Determine torsion distribution from the HAWC2 result statistics.
-        tors_e is in degrees.
+    def distribution_stats_h2(self, fname_h2, sensortype, newname):
+        """Determine blade distribution sensor from the HAWC2 statistics.
+        This requires that for each aerodynamic calculation point there should
+        be an output sensor defined manually in the output section.
+
+        Parameters
+        ----------
+
+        fname_h2
+
+        sensortype
+
+        newname
+
         """
         if not hasattr(self, 'h2_aero'):
             raise UserWarning('first run blade_distribution')
@@ -880,10 +710,11 @@ class MappingsH2HS2(object):
         fpath = os.path.dirname(fname_h2)
         fname = os.path.basename(fname_h2)
         res = sim.windIO.LoadResults(fpath, fname, readdata=False)
-        sel = res.ch_df[res.ch_df.sensortype == 'Tors_e'].copy()
+        sel = res.ch_df[res.ch_df.sensortype == sensortype].copy()
+        if len(sel) == 0:
+            msg = 'HAWC2 sensor type "%s" is missing, are they defined?'
+            raise ValueError(msg % sensortype)
         sel.sort_values(['radius'], inplace=True)
-        self.h2_aero['Radius_s_tors'] = sel.radius.values.copy()
-        self.h2_aero['tors_e'] = sel.radius.values.copy()
         tors_e_channels = sel.ch_name.tolist()
 
         # find the current case in the statistics DataFrame
@@ -905,15 +736,9 @@ class MappingsH2HS2(object):
 
         # FIXME: what if number of torsion outputs is less than aero
         # calculation points?
-#        df_tmp = pd.DataFrame()
-        self.h2_aero['torsion'] = df_tors_e['mean'].values.copy()
-        self.h2_aero['torsion_std'] = df_tors_e['std'].values.copy()
-        self.h2_aero['torsion_radius_s'] = df_tors_e['radius'].values.copy()
-#        df_tmp = pd.DataFrame()
-#        df_tmp['torsion'] = df_tors_e['mean'].copy()
-#        df_tmp['torsion_std'] = df_tors_e['std'].copy()
-#        df_tmp['torsion_radius_s'] = df_tors_e['radius'].copy()
-#        df_tmp.set_index('')
+        self.h2_aero['%s' % newname] = df_tors_e['mean'].values.copy()
+        self.h2_aero['%s_std' % newname] = df_tors_e['std'].values.copy()
+        self.h2_aero['%s_radius_s' % newname] = df_tors_e['radius'].values.copy()
 
     def body_structure_modes(self, fname_h2, fname_hs):
         self._body_structure_modes_h2(fname_h2)
@@ -941,7 +766,13 @@ class Plots(object):
     the HAWC2 output output_at_time, and HAWCStab2 output *.ind
     """
 
-    def __init__(self):
+    def __init__(self, config):
+        """
+        Parameters
+        ----------
+
+        config : Config class based on ConfigBase
+        """
 
         self.h2c = 'b'
         self.h2ms = '+'
@@ -951,30 +782,38 @@ class Plots(object):
         self.hsls = '--'
         self.errls = '-'
         self.errc = 'k'
-        self.errlab = 'diff [\\%]'
+        self.errms = 'x'
+#        self.errlab = 'diff [\\%]'
+        self.errlab = 'diff'
         self.interactive = False
 
+        self.config = config
+
         self.dist_size = (16, 11)
+        self.dist_nrows = 3
+        self.dist_ncols = 4
         self.dist_channels = ['pos_x', 'pos_y', 'AoA', 'inflow_angle',
                               'Cl', 'Cd', 'vrel', 'ax_ind_vel',
-                              'F_x', 'F_y', 'M']
+                              'F_x', 'F_y', 'M', 'torsion']
 
     def load_h2(self, fname_h2, h2_df_stats=None, fname_h2_tors=None):
 
-        res = MappingsH2HS2()
+        res = MappingsH2HS2(self.config)
         res.h2_res = sim.windIO.ReadOutputAtTime(fname_h2)
+        self.units = res.units
         res._distribution_h2()
         if h2_df_stats is not None:
             res.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                res.distribution_torsion_h2(fname_h2_tors)
+                res.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
 
         return res
 
     def load_hs(self, fname_hs):
 
-        res = MappingsH2HS2()
+        res = MappingsH2HS2(self.config)
         res.hs2_res.load_ind(fname_hs)
+        self.units = res.units
         res._distribution_hs2()
 
         return res
@@ -1009,7 +848,8 @@ class Plots(object):
         print('saved:', fname)
 
     def distribution(self, results, labels, title, channels, x_ax='pos_z',
-                     xlabel='Z-coordinate [m]', nrows=2, ncols=4, size=(16, 5)):
+                     xlabel='Z-coordinate [m]', nrows=2, ncols=4, size=(16, 5),
+                     i0=1):
         """
         Compare blade distribution results
         """
@@ -1029,7 +869,9 @@ class Plots(object):
                     label=lab1, alpha=0.9, marker=self.h2ms, ls=self.h2ls)
             ax.plot(radius2, res2[chan].values, color=self.hsc,
                     label=lab2, alpha=0.7, marker=self.hsms, ls=self.hsls)
-            ax.set_ylabel(chan.replace('_', '\\_'))
+            ax.set_ylabel('%s %s' % (chan.replace('_', '\\_'), self.units[chan]))
+            xlim = max(radius1.max(), radius2.max())
+            ax.set_xlim([0, xlim])
 
 #            if len(radius1) > len(radius2):
 #                radius = res1.hs_aero['pos_z'].values[n0:]
@@ -1055,27 +897,23 @@ class Plots(object):
 #                    qq1 = res1.hs_aero[chan].values[n0:]
 #                    qq2 = interpolate.griddata(x, y, radius)
 
-            # calculate moment arm
-            if chan == 'M':
-                arm = res1.M / res1.F_y
-                axr = ax.twinx()
-                labr = lab1 + ' moment arm'
-                axr.plot(radius1, arm, color=self.errc, label=labr, alpha=0.6,
-                         ls=self.errls, marker=self.h2ms)
-            else:
-                # relative errors on the right axes
-                err = np.abs(1.0 - (res1[chan].values / res2[chan].values))*100.0
-                axr = ax.twinx()
-                axr.plot(radius1, err, color=self.errc, ls=self.errls,
-                         alpha=0.6, label=self.errlab)
-                if err.max() > 50:
-                    axr.set_ylim([0, 35])
+            # relative errors on the right axes
+#            err = np.abs(1.0 - (res1[chan].values / res2[chan].values))*100.0
+            # absolute errors on the right axes
+            err = res1[chan].values[i0:] - res2[chan].values[i0:]
+            axr = ax.twinx()
+            axr.plot(radius1[i0:], err, color=self.errc, ls=self.errls,
+                     alpha=0.6, label=self.errlab, marker=self.errms)
+#            if err.max() > 50:
+#                axr.set_ylim([0, 35])
 
-            # use axr for the legend
-            lines = ax.lines + axr.lines
-            labels = [l.get_label() for l in lines]
-            leg = axr.legend(lines, labels, loc='best')
-            leg.get_frame().set_alpha(0.5)
+            # use axr for the legend, but only for the first plot
+            if i == 0:
+                lines = ax.lines + axr.lines
+                labels = [l.get_label() for l in lines]
+                leg = axr.legend(lines, labels, loc='best')
+                leg.get_frame().set_alpha(0.5)
+
         # x-label only on the last row
         for k in range(ncols):
             axesflat[-k-1].set_xlabel(xlabel)
@@ -1083,7 +921,8 @@ class Plots(object):
         axes = self.set_axes_label_grid(axes)
         return fig, axes
 
-    def all_h2_channels(self, results, labels, fpath, channels=None):
+    def all_h2_channels(self, results, labels, fpath, channels=None,
+                        size=(10,5)):
         """Results is a list of res (=HAWC2 results object)"""
 
         for chan, details in results[0].ch_dict.items():
@@ -1093,7 +932,8 @@ class Plots(object):
             for res in results:
                 resp.append([res.sig[:,0], res.sig[:,details['chi']]])
 
-            fig, axes = self.new_fig(title=chan.replace('_', '\\_'))
+            fig, axes = self.new_fig(title=chan.replace('_', '\\_'),
+                                     size=size)
             try:
                 mplutils.time_psd(resp, labels, axes, alphas=[1.0, 0.7], NFFT=None,
                                    colors=['k-', 'r-'], res_param=250, f0=0, f1=5,
@@ -1121,7 +961,9 @@ class Plots(object):
 
         fig, axes = self.distribution(results, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1136,7 +978,9 @@ class Plots(object):
 
         fig, axes = self.distribution(results, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1145,11 +989,24 @@ class Plots(object):
         """Compare aerodynamics, blade deflections between HAWC2 and HAWCStab2.
         This is based on HAWCSTab2 *.ind files, and an HAWC2 output_at_time
         output file.
+
+        Parameters
+        ----------
+
+        fname_h2
+
+        fname_hs2
+
+        title
+
+        n0 : int, default=0
+            Number of nodes to ignore at the blade root section
         """
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.blade_distribution(fname_h2, fname_hs2, h2_df_stats=h2_df_stats,
                                    fname_h2_tors=fname_h2_tors)
+        self.units = results.units
         res = [results.h2_aero[n0+1:-1], results.hs_aero[n0:]]
 
 #        channels = ['pos_x', 'pos_y', 'AoA', 'inflow_angle', 'Cl', 'Cd',
@@ -1158,7 +1015,9 @@ class Plots(object):
 
         fig, axes = self.distribution(res, labels, title, self.dist_channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=self.dist_size)
+                                      nrows=self.dist_nrows,
+                                      ncols=self.dist_ncols,
+                                      size=self.dist_size)
 
         return fig, axes
 
@@ -1168,7 +1027,7 @@ class Plots(object):
         output file.
         """
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.blade_distribution(fname_h2, fname_hs2)
         res = [results.h2_aero[n0+1:-1], results.hs_aero[n0:]]
 
@@ -1185,7 +1044,7 @@ class Plots(object):
 
     def powercurve(self, h2_df_stats, fname_hs, title, size=(8.6, 4)):
 
-        results = MappingsH2HS2()
+        results = MappingsH2HS2(self.config)
         results.powercurve(h2_df_stats, fname_hs)
 
         fig, axes = self.new_fig(title=title, nrows=1, ncols=2, size=size)
@@ -1193,67 +1052,85 @@ class Plots(object):
         wind_h2 = results.pwr_h2_mean['windspeed'].values
         wind_hs = results.pwr_hs['windspeed'].values
 
-        # POWER
+        # POWER ---------------------------------------------------------------
         ax = axes[0]
-        key = 'P_aero'
-        # HAWC2
-        yerr = results.pwr_h2_std[key]
-        ax.errorbar(wind_h2, results.pwr_h2_mean[key], color=self.h2c, yerr=yerr,
-                    marker=self.h2ms, ls=self.h2ls, label='HAWC2', alpha=0.9)
-        # HAWCSTAB2
-        ax.plot(wind_hs, results.pwr_hs[key], label='HAWCStab2',
-                alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
         ax.set_title('Power [kW]')
-        # relative errors on the right axes
+        # HAWC2
+        keys = ['P_aero', 'P_mech']
+        lss = [self.h2ls, '--', ':']
+        # HAWC2
+        for key, ls in zip(keys, lss):
+            # it is possible the mechanical power has not been calculated
+            if key not in results.pwr_h2_mean:
+                continue
+            label = 'HAWC2 %s' % (key.replace('_', '$_{') + '}$')
+            yerr = results.pwr_h2_std[key].values
+            c = self.h2c
+            ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
+                        label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
+        # HAWCSTAB2
+        key = 'P_aero'
+        ax.plot(wind_hs, results.pwr_hs[key].values, label='HAWCStab2',
+                alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
+
+        # errors on the right axes
         axr = ax.twinx()
         assert np.allclose(wind_h2, wind_hs)
         qq1 = results.pwr_h2_mean[key].values
         qq2 = results.pwr_hs[key].values
-        err = np.abs(1.0 - qq1 / qq2)*100.0
+        err = qq1 - qq2
         axr.plot(wind_hs, err, color=self.errc, ls=self.errls, alpha=0.6,
-                 label=self.errlab)
-#        axr.set_ylabel('absolute error []')
-#        axr.set_ylim([])
+                 label=self.errlab + ' P$_{aero}$')
+        ax.set_xlim([wind_h2.min(), wind_h2.max()])
 
-        # THRUST
+        # legends
+        lines, labels = ax.get_legend_handles_labels()
+        linesr, labelsr = axr.get_legend_handles_labels()
+        leg = axr.legend(lines + linesr, labels + labelsr, loc='lower right')
+        leg.get_frame().set_alpha(0.5)
+
+        # THRUST --------------------------------------------------------------
         ax = axes[1]
+        ax.set_title('Thrust [kN]')
         keys = ['T_aero', 'T_shafttip']
         lss = [self.h2ls, '--', ':']
         # HAWC2
         for key, ls in zip(keys, lss):
             label = 'HAWC2 %s' % (key.replace('_', '$_{') + '}$')
-            yerr = results.pwr_h2_std[key]
+            yerr = results.pwr_h2_std[key].values
             c = self.h2c
-            ax.errorbar(wind_h2, results.pwr_h2_mean[key], color=c, ls=ls,
+            ax.errorbar(wind_h2, results.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
         # HAWCStab2
-        ax.plot(wind_hs, results.pwr_hs['T_aero'], color=self.hsc, alpha=0.7,
+        ax.plot(wind_hs, results.pwr_hs['T_aero'].values, color=self.hsc, alpha=0.7,
                 label='HAWCStab2 T$_{aero}$', marker=self.hsms, ls=self.hsls)
-        # relative errors on the right axes
+
+        # errors on the right axes
         axr = ax.twinx()
         qq1 = results.pwr_h2_mean['T_aero'].values
         qq2 = results.pwr_hs['T_aero'].values
-        err = np.abs(1.0 - (qq1 / qq2))*100.0
+        err = qq1 - qq2
         axr.plot(wind_hs, err, color=self.errc, ls=self.errls, alpha=0.6,
-                 label=self.errlab)
-        ax.set_title('Thrust [kN]')
+                 label=self.errlab + ' T$_{aero}$')
+        ax.set_xlim([wind_h2.min(), wind_h2.max()])
 
-        axes = self.set_axes_label_grid(axes, setlegend=True)
-#        # use axr for the legend
-#        lines = [ax.lines[2]] + [ax.lines[5]] + [ax.lines[6]] + axr.lines
-#        labels = keys + ['HAWCStab2 T$_{aero}$', self.errlab]
-#        leg = axr.legend(lines, labels, loc='best')
-#        leg.get_frame().set_alpha(0.5)
+        # legends
+        lines, labels = ax.get_legend_handles_labels()
+        linesr, labelsr = axr.get_legend_handles_labels()
+        leg = axr.legend(lines + linesr, labels + labelsr, loc='lower right')
+        leg.get_frame().set_alpha(0.5)
+
+        axes = self.set_axes_label_grid(axes, setlegend=False)
 
         return fig, axes
 
     def h2_powercurve(self, h2_df_stats1, h2_df_stats2, title, labels,
                       size=(8.6,4)):
-        res1 = MappingsH2HS2()
+        res1 = MappingsH2HS2(self.config)
         res1._powercurve_h2(h2_df_stats1)
         wind1 = res1.pwr_h2_mean['windspeed'].values
 
-        res2 = MappingsH2HS2()
+        res2 = MappingsH2HS2(self.config)
         res2._powercurve_h2(h2_df_stats2)
         wind2 = res2.pwr_h2_mean['windspeed'].values
 
@@ -1263,11 +1140,11 @@ class Plots(object):
         ax = axes[0]
         key = 'P_aero'
         # HAWC2
-        yerr1 = res1.pwr_h2_std[key]
-        ax.errorbar(wind1, res1.pwr_h2_mean[key], color=self.h2c, yerr=yerr1,
+        yerr1 = res1.pwr_h2_std[key].values
+        ax.errorbar(wind1, res1.pwr_h2_mean[key].values, color=self.h2c, yerr=yerr1,
                     marker=self.h2ms, ls=self.h2ls, label=labels[0], alpha=0.9)
         yerr2 = res2.pwr_h2_std[key]
-        ax.errorbar(wind2, res2.pwr_h2_mean[key], color=self.hsc, yerr=yerr2,
+        ax.errorbar(wind2, res2.pwr_h2_mean[key].values, color=self.hsc, yerr=yerr2,
                     marker=self.hsms, ls=self.hsls, label=labels[1], alpha=0.7)
         ax.set_title('Power [kW]')
         # relative errors on the right axes
@@ -1285,15 +1162,15 @@ class Plots(object):
         lss = [self.h2ls, '--', ':']
         for key, ls in zip(keys, lss):
             label = '%s %s' % (labels[0], key.replace('_', '$_{') + '}$')
-            yerr = res1.pwr_h2_std[key]
+            yerr = res1.pwr_h2_std[key].values
             c = self.h2c
-            ax.errorbar(wind1, res1.pwr_h2_mean[key], color=c, ls=ls,
+            ax.errorbar(wind1, res1.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.h2ms)
         for key, ls in zip(keys, lss):
             label = '%s %s' % (labels[1], key.replace('_', '$_{') + '}$')
-            yerr = res2.pwr_h2_std[key]
+            yerr = res2.pwr_h2_std[key].values
             c = self.hsc
-            ax.errorbar(wind2, res2.pwr_h2_mean[key], color=c, ls=ls,
+            ax.errorbar(wind2, res2.pwr_h2_mean[key].values, color=c, ls=ls,
                         label=label, alpha=0.9, yerr=yerr, marker=self.hsms)
         # relative errors on the right axes
         axr = ax.twinx()
@@ -1315,11 +1192,11 @@ class Plots(object):
 
     def hs_powercurve(self, fname1, fname2, title, labels, size=(8.6, 4)):
 
-        res1 = MappingsH2HS2()
+        res1 = MappingsH2HS2(self.config)
         res1._powercurve_hs2(fname1)
         wind1 = res1.pwr_hs['windspeed'].values
 
-        res2 = MappingsH2HS2()
+        res2 = MappingsH2HS2(self.config)
         res2._powercurve_hs2(fname2)
         wind2 = res2.pwr_hs['windspeed'].values
 
@@ -1328,9 +1205,9 @@ class Plots(object):
         # POWER
         ax = axes[0]
         key = 'P_aero'
-        ax.plot(wind1, res1.pwr_hs['P_aero'], label=labels[0],
+        ax.plot(wind1, res1.pwr_hs['P_aero'].values, label=labels[0],
                 alpha=0.9, color=self.h2c, ls=self.h2ls, marker=self.h2ms)
-        ax.plot(wind2, res2.pwr_hs['P_aero'], label=labels[1],
+        ax.plot(wind2, res2.pwr_hs['P_aero'].values, label=labels[1],
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
         ax.set_title('Power [kW]')
         # relative errors on the right axes
@@ -1345,9 +1222,9 @@ class Plots(object):
 
         # THRUST
         ax = axes[1]
-        ax.plot(wind1, res1.pwr_hs['T_aero'], color=self.h2c, alpha=0.9,
+        ax.plot(wind1, res1.pwr_hs['T_aero'].values, color=self.h2c, alpha=0.9,
                 label=labels[0], marker=self.h2ms, ls=self.h2ls)
-        ax.plot(wind2, res2.pwr_hs['T_aero'], color=self.hsc, alpha=0.7,
+        ax.plot(wind2, res2.pwr_hs['T_aero'].values, color=self.hsc, alpha=0.7,
                 label=labels[1], marker=self.hsms, ls=self.hsls)
         # relative errors on the right axes
         axr = ax.twinx()

@@ -59,7 +59,10 @@ class InductionResults(object):
     def read(self, fname):
         self.data = np.loadtxt(fname)
         self.wsp = int(fname.split('_u')[-1][:-4]) / 1000.0
-        self.df_data = pd.read_fwf(fname, header=0, widths=[14]*34)
+        try:
+            self.df_data = pd.read_fwf(fname, header=0, widths=[14]*38)
+        except:
+            self.df_data = pd.read_fwf(fname, header=0, widths=[14]*34)
         # sanitize the headers
         cols = self.df_data.columns
         self.df_data.columns = [k[:-2].replace('#', '').strip() for k in cols]
