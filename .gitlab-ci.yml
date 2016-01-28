@@ -4,7 +4,5 @@ before_script:
 test-3.4:
   image: mmpe/wetb
   script:
-  - ls
-  - cd WindEnergyToolbox
   - git pull
   - python3 -V 
