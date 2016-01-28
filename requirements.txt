@@ -5,4 +5,5 @@ scipy>=0.9
 matplotlib
 pytest
 xlrd
+h5py
 

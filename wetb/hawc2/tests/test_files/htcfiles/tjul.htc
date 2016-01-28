@@ -1,4 +1,4 @@
-﻿;
+;
 ;this version was at some point based on: Avatar_10MW_RWT version 1, 06-08-14, Anyd, 18.09.2015 TJUL
 begin simulation;
   time_stop    400;
