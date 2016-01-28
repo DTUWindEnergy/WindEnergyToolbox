@@ -4,6 +4,6 @@ before_script:
 test-3.4:
   image: mmpe/wetb
   script:
-  - pip install -U setuptools
-  - pip install -e .
-  - python -V 
+  - cd WindEnergyToolbox
+  - git pull
+  - python3 -V 
