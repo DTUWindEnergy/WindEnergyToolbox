@@ -4,6 +4,18 @@ Created on Thu Apr  3 19:53:59 2014
 
 @author: dave
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import dict
+from builtins import open
+from builtins import range
+from builtins import str
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 
  # always devide as floats
 
@@ -39,7 +51,7 @@ from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_astm as r
 from wetb.fatigue_tools.rainflowcounting.rfc_hist import rfc_hist as rfc_hist
 
 
-class LoadResults:
+class LoadResults(object):
     """Read a HAWC2 result data file
 
     Usage:
@@ -1275,7 +1287,7 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
     return modes_arr
 
 
-class UserWind:
+class UserWind(object):
     """
     """
 
@@ -1533,7 +1545,7 @@ class UserWind:
             np.savetxt(f, w_coord.reshape((w_coord.size,1)), fmt='% 8.02f')
 
 
-class WindProfiles:
+class WindProfiles(object):
 
     def __init__(self):
         pass
@@ -1588,7 +1600,7 @@ class WindProfiles:
         return a_phi * t1 * t2 * t3
 
 
-class Turbulence:
+class Turbulence(object):
 
     def __init__(self):
 
