@@ -1,4 +1,4 @@
-begin Simulation; 
+begin Simulation;  test
  time_stop 10 ;
   solvertype   1 ;    (newmark)
   on_no_convergence continue ;
