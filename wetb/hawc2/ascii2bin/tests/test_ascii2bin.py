@@ -50,7 +50,7 @@ class TestAscii2Bin(unittest.TestCase):
 
 
     def testSizeOfFile(self):
-        self.assertEqual(size_from_file(testfilepath + "hawc2ascii.sel"), (800, 28))
+        self.assertEqual(size_from_file(testfilepath + "Hawc2ascii.sel"), (800, 28))
 
 
 
