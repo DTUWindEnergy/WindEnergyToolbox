@@ -32,19 +32,45 @@ in Python 2.7 by default. You can also write code that is compatible with both
 
 # Dependencies
 
-[numpy](http://www.numpy.org/)
-[scipy](http://scipy.org/scipylib/)
-[pandas](http://pandas.pydata.org/)
-[matplotlib](http://matplotlib.org/)
-[pytables](http://www.pytables.org/)
-[pyscaffold](http://pyscaffold.readthedocs.org/en/)
+* [numpy](http://www.numpy.org/)
+
+* [scipy](http://scipy.org/scipylib/)
+
+* [pandas](http://pandas.pydata.org/)
+
+* xlrd
+
+* h5py
+
+* [matplotlib](http://matplotlib.org/)
+
+* [pytables](http://www.pytables.org/)
+
+* [pyscaffold](http://pyscaffold.readthedocs.org/en/)
+
+* pytest
+
+* six
 
 
 # Installation
 
+Detailed installation instructions, including how to install Python from scratch,
+are described in the [detailed installation manual](docs/install-manual-detailed.md).
+
+
+If you now what you are doing, you can install as follows:
+
 ```
 python setup.py
 ```
+
+Or create a binary wheel distribution package with:
+
+```
+python setup.py bdist_wheel -d dist
+```
+
 
 # Tests
 
@@ -53,6 +79,8 @@ forthcoming.
 
 
 # Contents of WindEnergyToolbox, [wetb](wetb)
+
+### Overview
 
 - [hawc2](#hawc2)
 - [gtsdf](#gtsdf)
@@ -63,7 +91,6 @@ forthcoming.
 - [fast](#fast)
 - [utils](#utils)
 
-------------------------------------------------------------------------------------
 ### [hawc2](wetb/hawc2)
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
 - [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
@@ -108,4 +135,10 @@ Other functions
 - [process_exec](wetb/utils/process_exec.py): Run system command in subprocess
 - [timing](wetb/utils/timing.py): Decorators for evaluating execution time of functions
 - [caching](wetb/utils/caching.py): Decorators to create cached (calculate once) functions and properties
+
+
+# Note
+
+This project has been set up using PyScaffold 2.5. For details and usage
+information on PyScaffold see http://pyscaffold.readthedocs.org/.
 
