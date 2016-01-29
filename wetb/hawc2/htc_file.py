@@ -139,7 +139,7 @@ class HTCFile(HTCContents, HTCDefaults):
         if 'system_eigenanalysis' in self.new_htc_structure:
             f = self.new_htc_structure.system_eigenanalysis[0]
             files.append(f)
-            files.append(os.path.join(os.path.dirname(f), 'mode*.dat'))
+            files.append(os.path.join(os.path.dirname(f), 'mode*.dat').replace("\\", "/"))
         files.extend(self.res_file_lst())
 
         for key in [k for k in self.contents.keys() if k.startswith("output_at_time")]:
