@@ -19,8 +19,8 @@ class TestCmpTestCases(CompareTestCases):
     def test_compare_sel(self):
         self.compare_sel(self.ref_path + 'test1.sel', self.test_path + 'test1.sel')
 
-    def test_compare_sel_different_number_of_lines(self):
-        self.assertRaises(AssertionError, self.compare_sel, self.ref_path + 'test2.sel', self.test_path + 'test2.sel')
+#    def test_compare_sel_different_number_of_lines(self):
+#        self.assertRaises(AssertionError, self.compare_sel, self.ref_path + 'test2.sel', self.test_path + 'test2.sel')
 
     def test_compare_sel_different_header(self):
         self.compare_sel(self.ref_path + 'test3.sel', self.test_path + 'test3.sel')
