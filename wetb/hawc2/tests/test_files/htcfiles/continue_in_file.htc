@@ -1,4 +1,4 @@
-begin Simulation; 
+begin Simulation;
  time_stop 10 ;
   solvertype   1 ;    (newmark)
   on_no_convergence continue ;
@@ -171,7 +171,7 @@ begin new_htc_structure;
     node_distribution    c2_def;
     concentrated_mass 7 0.0  0.0 2.004 2.2333E+4 0.0 0.0 0.0 ;  Blade mass  
     concentrated_mass 1 0.0  0.0 0.0 0.0 5.46E+06 5.46E+06 0.0 ;  Blade additional inertia  	
-    damping_posdef   0.0 0.0 0.0 1.41E-03 2.39E-03 4.5E-05 ;  Mx My Mz Kx Ky Kz , M´s raises overall level, K´s raises high freguency level	(3% log.decr with 9 bodies 
+    damping_posdef   0.0 0.0 0.0 1.41E-03 2.39E-03 4.5E-05 ;  Mx My Mz Kx Ky Kz , M? raises overall level, K? raises high freguency level	(3% log.decr with 9 bodies 
    begin timoschenko_input ;
       filename ./data/OC5_5MW_st.txt ;
       set 5 1 ;                set subset
@@ -467,7 +467,7 @@ end hydro;
   ; aerosections       30 ;
   ; ae_sets            1 1 1;
   ; tiploss_method     1 ;     0=none, 1=prandtl
-  ; dynstall_method    2 ;     0=none, 1=stig øye method,2=mhh method
+  ; dynstall_method    2 ;     0=none, 1=stig ??method,2=mhh method
 ; end aero ;
 ;
 ;---------------------------------------------------------------------------------------------------------------------------------------------------------------- 
