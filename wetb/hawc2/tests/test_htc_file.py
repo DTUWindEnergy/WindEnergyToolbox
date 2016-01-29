@@ -24,25 +24,25 @@ class TestHtcFile(unittest.TestCase):
 
     def check_htc_file(self, f):
 
-      with open(f) as fid:
-          orglines = fid.readlines()
+        with open(f) as fid:
+            orglines = fid.readlines()
 
-      htcfile = HTCFile(f)
-      newlines = str(htcfile).split("\n")
-      htcfile.save(self.testfilepath + 'tmp.htc')
-      #with open(self.testfilepath + 'tmp.htc') as fid:
-      #    newlines = fid.readlines()
+        htcfile = HTCFile(f)
+        newlines = str(htcfile).split("\n")
+        htcfile.save(self.testfilepath + 'tmp.htc')
+        #with open(self.testfilepath + 'tmp.htc') as fid:
+        #    newlines = fid.readlines()
 
-      for i, (org, new) in enumerate(zip(orglines, newlines), 1):
-          fmt = lambda x : x.strip().replace("\t", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
-          if fmt(org) != fmt(new):
-              print ("----------%d-------------" % i)
-              print (fmt(org))
-              print (fmt(new))
-              self.assertEqual(fmt(org), fmt(new))
-              break
-              print ()
-      assert len(orglines) == len(newlines)
+        for i, (org, new) in enumerate(zip(orglines, newlines), 1):
+            fmt = lambda x : x.strip().replace("\t", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
+            if fmt(org) != fmt(new):
+                print ("----------%d-------------" % i)
+                print (fmt(org))
+                print (fmt(new))
+                self.assertEqual(fmt(org), fmt(new))
+                break
+                print ()
+        assert len(orglines) == len(newlines)
 
     def test_htc_files(self):
         for f in ['test3.htc']:
