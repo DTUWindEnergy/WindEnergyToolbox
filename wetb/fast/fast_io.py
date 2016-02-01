@@ -64,13 +64,6 @@ def load_binary_output(filename):
         fmt, nbytes = {'uint8': ('B', 1), 'int16':('h', 2), 'int32':('i', 4), 'float32':('f', 4), 'float64':('d', 8)}[type]
         return struct.unpack(fmt * n, fid.read(nbytes * n))
 
-    def fread2(fid, n, type):
-        fmt, nbytes = {'uint8': ('B', 1), 'int16':('h', 2), 'int32':('i', 4), 'float32':('f', 4), 'float64':('d', 8)}[type]
-        x = fid.read(nbytes * n)
-        d = struct.unpack(fmt * n, x)
-        print (n, type, fmt, nbytes, x, d)
-        return d 
-
     FileFmtID_WithTime = 1  #% File identifiers used in FAST
     FileFmtID_WithoutTime = 2
     LenName = 10  #;  % number of characters per channel name
@@ -79,7 +72,7 @@ def load_binary_output(filename):
     with open(filename, 'rb') as fid:
         FileID = fread(fid, 1, 'int16')  #;             % FAST output file format, INT(2)
 
-        NumOutChans = fread2(fid, 1, 'int32')[0]  #;             % The number of output channels, INT(4)
+        NumOutChans = fread(fid, 1, 'int32')[0]  #;             % The number of output channels, INT(4)
         NT = fread(fid, 1, 'int32')[0]  #;             % The number of time steps, INT(4)
 
         if FileID == FileFmtID_WithTime:
