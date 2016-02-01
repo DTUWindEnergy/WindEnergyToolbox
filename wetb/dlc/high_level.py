@@ -255,7 +255,7 @@ class DLCHighLevel(object):
                 if files:
                     f_prob = self.probability(props, files[0], files) / len(files)
                     f_hours_pr_20year = 365 * 24 * years * f_prob
-                    for f in files:
+                    for f in sorted(files):
                         fh_lst.append((f, f_hours_pr_20year))
         return fh_lst
 
