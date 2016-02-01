@@ -69,7 +69,7 @@ def load_binary_output(filename):
         x = fid.read(nbytes * n)
         d = struct.unpack(fmt * n, x)
         print (n, type, fmt, nbytes, x, d)
-        return d
+        return d 
 
     FileFmtID_WithTime = 1  #% File identifiers used in FAST
     FileFmtID_WithoutTime = 2
