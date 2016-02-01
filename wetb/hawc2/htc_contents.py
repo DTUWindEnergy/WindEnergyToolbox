@@ -6,6 +6,15 @@ Created on 20/01/2014
 See documentation of HTCFile below
 
 '''
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import zip
+from builtins import int
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
 from collections import OrderedDict
 import collections
 
@@ -18,7 +27,8 @@ class OrderedDict(collections.OrderedDict):
 
 
 def parse_next_line(lines):
-    line, *comments = lines.pop(0).split(";")
+    _3to2list = list(lines.pop(0).split(";"))
+    line, comments, = _3to2list[:1] + [_3to2list[1:]]
     comments = ";".join(comments).rstrip()
     while lines and lines[0].lstrip().startswith(";"):
         comments += "\n%s" % lines.pop(0).rstrip()
@@ -52,7 +62,8 @@ class HTCContents(object):
             return self.contents[args[0]]
 
     def __setattr__(self, *args, **kwargs):
-        k, *v = args
+        _3to2list1 = list(args)
+        k, v, = _3to2list1[:1] + [_3to2list1[1:]]
         if k in dir(self):  # in ['section', 'filename', 'lines']:
             return object.__setattr__(self, *args, **kwargs)
         self.contents[k] = HTCLine(k, v, "")
@@ -163,7 +174,8 @@ class HTCLine(HTCContents):
     def from_lines(lines):
         line, end_comments = parse_next_line(lines)
         if len(line.split()) > 0:
-            name, *values = line.split()
+            _3to2list3 = list(line.split())
+            name, values, = _3to2list3[:1] + [_3to2list3[1:]]
         else:
             name = line
             values = []
@@ -245,7 +257,8 @@ class HTCSensor(HTCLine):
     def from_lines(lines):
         line, comments = parse_next_line(lines)
         if len(line.split()) > 2:
-            type, sensor, *values = line.split()
+            _3to2list5 = list(line.split())
+            type, sensor, values, = _3to2list5[:2] + [_3to2list5[2:]]
         else:
             type, sensor = line.split()
             values = []

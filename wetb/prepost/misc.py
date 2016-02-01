@@ -6,6 +6,18 @@ Library for general stuff
 
 @author: dave
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import range
+from builtins import dict
+from builtins import int
+from builtins import open
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 
 
 
@@ -27,7 +39,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 
 
-class Logger:
+class Logger(object):
     """The Logger class can be used to redirect standard output to a log file.
     Usage: Create a Logger object and redirect standard output to the Logger
     object.  For example:

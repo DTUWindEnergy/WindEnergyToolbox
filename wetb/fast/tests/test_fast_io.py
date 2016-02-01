@@ -3,6 +3,12 @@ Created on 03/09/2015
 
 @author: MMPE
 '''
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import unittest
 
 from wetb.fast.fast_io import load_output

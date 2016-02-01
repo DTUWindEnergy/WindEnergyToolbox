@@ -3,6 +3,14 @@ Created on 18/11/2015
 
 @author: MMPE
 '''
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import open
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
 import os
 from wetb.hawc2.htc_file import HTCFile
 from collections import OrderedDict
@@ -59,7 +67,9 @@ class LogFile(object):
     def __str__(self):
         return self.txt
     def clear(self):
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+        # exist_ok does not exist in Python27
+        if not os.path.exists(os.path.dirname(self.filename)):
+            os.makedirs(os.path.dirname(self.filename))#, exist_ok=True)
         with open(self.filename, 'w'):
             pass
         self.reset()
@@ -98,7 +108,8 @@ class LogFile(object):
                 if len(txt.strip()):
                     self.lastline = (txt.strip()[max(0, txt.strip().rfind("\n")):]).strip()
                 if self.status == INITIALIZATION:
-                    init_txt, *rest = txt.split("Starting simulation")
+                    _3to2list = list(txt.split("Starting simulation"))
+                    init_txt, rest, = _3to2list[:1] + [_3to2list[1:]]
                     if self.hawc2version == "Unknown" and "Version ID" in init_txt:
                         self.hawc2version = txt.split("Version ID : ")[1].split("\n", 1)[0].strip()
                     if "*** ERROR ***" in init_txt:
@@ -113,7 +124,8 @@ class LogFile(object):
                         if i1 > -1:
                             self.start_time = (self.extract_time(txt[i1:]), time.time())
 
-                    simulation_txt, *rest = txt.split('Elapsed time')
+                    _3to2list1 = list(txt.split('Elapsed time'))
+                    simulation_txt, rest, = _3to2list1[:1] + [_3to2list1[1:]]
                     if "*** ERROR ***" in simulation_txt:
                         self.errors.extend([l.strip() for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
                     i1 = simulation_txt.rfind("Global time")

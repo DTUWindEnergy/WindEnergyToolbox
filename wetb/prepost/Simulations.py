@@ -6,6 +6,19 @@ Created on Tue Nov  1 15:16:34 2011
 __author__ = "David Verelst <dave@dtu.dk>"
 __license__ = "GPL-2+"
 """
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import dict
+from builtins import open
+from builtins import zip
+from builtins import range
+from builtins import str
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 
 
 
@@ -1201,7 +1214,7 @@ def logcheck_case(errorlogs, cases, case, silent=False):
     #errorlogs.save()
 
 
-class Log:
+class Log(object):
     """
     Class for convinient logging. Create an instance and add lines to the
     logfile as a list with the function add.
@@ -1237,7 +1250,7 @@ class Log:
         for k in self.log:
             print(k)
 
-class HtcMaster:
+class HtcMaster(object):
     """
     """
 
@@ -1828,7 +1841,7 @@ class HtcMaster:
                 self.tags[key] = self.tags[key].lower()
 
 
-class PBS:
+class PBS(object):
     """
     The part where the actual pbs script is writtin in this class (functions
     create(), starting() and ending() ) is based on the MS Excel macro
@@ -2452,7 +2465,7 @@ class PBS:
 # TODO: rewrite the error log analysis to something better. Take different
 # approach: start from the case and see if the results are present. Than we
 # also have the tags_dict available when log-checking a certain case
-class ErrorLogs:
+class ErrorLogs(object):
     """
     Analyse all HAWC2 log files in any given directory
     ==================================================
@@ -2836,12 +2849,12 @@ class ErrorLogs:
             f.write(contents)
 
 
-class ModelData:
+class ModelData(object):
     """
     Second generation ModelData function. The HawcPy version is crappy, buggy
     and not mutch of use in the optimisation context.
     """
-    class st_headers:
+    class st_headers(object):
         """
         Indices to the respective parameters in the HAWC2 st data file
         """
@@ -3261,7 +3274,7 @@ class WeibullParameters(object):
 
 # FIXME: Cases has a memory leek somewhere, this whole thing needs to be
 # reconsidered and rely on a DataFrame instead of a dict!
-class Cases:
+class Cases(object):
     """
     Class for the old htc_dict
     ==========================
@@ -4947,7 +4960,7 @@ class Cases:
         h5f.close()
 
 
-class EnvelopeClass:
+class EnvelopeClass(object):
     """
     Class with the definition of the table for the envelope results
     """
@@ -4962,7 +4975,7 @@ class EnvelopeClass:
 
 
 # TODO: implement this
-class Results():
+class Results(object):
     """
     Move all Hawc2io to here? NO: this should be the wrapper, to interface
     the htc_dict with the io functions

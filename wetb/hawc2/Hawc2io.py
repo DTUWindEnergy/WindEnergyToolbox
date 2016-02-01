@@ -27,6 +27,17 @@ Need to be done:
     * add error handling for allmost every thing
 
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import int
+from builtins import range
+from builtins import open
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import numpy as np
 import os
 ################################################################################
@@ -34,7 +45,7 @@ import os
 ################################################################################
 ## Read HAWC2 class
 ################################################################################
-class ReadHawc2:
+class ReadHawc2(object):
     """
     """
 ################################################################################
