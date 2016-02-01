@@ -83,7 +83,7 @@ class HTCFile(HTCContents, HTCDefaults):
         else:
             self.filename = filename
         # exist_ok does not exist in Python27
-        if not os.path.exists():
+        if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))#, exist_ok=True)
         with open(filename, 'w') as fid:
             fid.write(str(self))
