@@ -138,7 +138,9 @@ class Simulation(object):
                 src = os.path.join(self.modelpath, src)
             for src_file in glob.glob(src):
                 dst = os.path.join(self.tmp_modelpath, os.path.relpath(src_file, self.modelpath))
-                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                # exist_ok does not exist in Python27
+                if not os.path.exists(os.path.dirname(dst)):
+                    os.makedirs(os.path.dirname(dst))#, exist_ok=True)
                 shutil.copy(src_file, dst)
                 if not os.path.isfile(dst) or os.stat(dst).st_size != os.stat(src_file).st_size:
                     print ("error copy ", dst)
@@ -169,7 +171,9 @@ class Simulation(object):
 
             for src_file in glob.glob(src):
                 dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
-                os.makedirs(os.path.dirname(dst_file), exist_ok=True)
+                # exist_ok does not exist in Python27
+                if not os.path.exists(os.path.dirname(dst_file)):
+                    os.makedirs(os.path.dirname(dst_file))#, exist_ok=True)
                 if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
                     shutil.copy(src_file, dst_file)
 

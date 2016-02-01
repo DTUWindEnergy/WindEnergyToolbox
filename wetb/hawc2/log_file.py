@@ -67,7 +67,9 @@ class LogFile(object):
     def __str__(self):
         return self.txt
     def clear(self):
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+        # exist_ok does not exist in Python27
+        if not os.path.exists(os.path.dirname(self.filename)):
+            os.makedirs(os.path.dirname(self.filename))#, exist_ok=True)
         with open(self.filename, 'w'):
             pass
         self.reset()
