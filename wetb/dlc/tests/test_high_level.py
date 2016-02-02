@@ -3,6 +3,12 @@ Created on 09/10/2014
 
 @author: MMPE
 '''
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import unittest
 from wetb.dlc.high_level import DLCHighLevel, Weibull
 import os
@@ -42,12 +48,12 @@ class TestDLCHighLevel(unittest.TestCase):
 
     def test_file_hour_lst(self):
         f, h = self.dlc_hl.file_hour_lst()[0]
-        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/DLC12_IEC61400-1ed3/dlc12_wsp04_wdir350_s3001.sel'))
+        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/dlc12_iec61400-1ed3/dlc12_wsp04_wdir350_s3001.sel'))
         self.assertEqual(h, .975 * .25 * 0.11002961306549919 / 2 * 20 * 365 * 24)
 
     def test_file_hour_lst_count(self):
         f, h = self.dlc_hl.file_hour_lst()[-1]
-        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/DLC31_IEC61400-1ed3/dlc31_wsp25_wdir000_s0000.sel'))
+        self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/dlc31_iec61400-1ed3/dlc31_wsp25_wdir000_s0000.sel'))
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
 

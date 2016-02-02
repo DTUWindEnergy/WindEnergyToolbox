@@ -3,6 +3,15 @@ Created on 03/09/2015
 
 @author: MMPE
 '''
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import open
+from builtins import map
+from builtins import range
+from future import standard_library
+standard_library.install_aliases()
 import os
 import numpy as np
 import struct
@@ -62,7 +71,6 @@ def load_binary_output(filename):
     """
     def fread(fid, n, type):
         fmt, nbytes = {'uint8': ('B', 1), 'int16':('h', 2), 'int32':('i', 4), 'float32':('f', 4), 'float64':('d', 8)}[type]
-
         return struct.unpack(fmt * n, fid.read(nbytes * n))
 
     FileFmtID_WithTime = 1  #% File identifiers used in FAST

@@ -1,4 +1,9 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
+from builtins import zip
+from builtins import range
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
 import warnings
 from wetb.gtsdf.unix_time import from_unix
 try:
@@ -218,7 +223,9 @@ def save(filename, data, **kwargs):
 
     if not filename.lower().endswith('.hdf5'):
         filename += ".hdf5"
-    os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+    # exist_ok does not exist in Python27
+    if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
+        os.makedirs(os.path.dirname(os.path.abspath(filename)))#, exist_ok=True)
     f = h5py.File(filename, "w")
     try:
         f.attrs["type"] = "General time series data format"

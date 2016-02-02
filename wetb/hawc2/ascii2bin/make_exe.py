@@ -4,6 +4,8 @@ Created on 06/09/2013
 @author: Mads M. Pedersen (mmpe@dtu.dk)
 '''
 from __future__ import division, print_function, absolute_import, unicode_literals
+from future import standard_library
+standard_library.install_aliases()
 from build_exe.cx.build_cx_exe import NUMPY
 try: range = xrange; xrange = None
 except NameError: pass

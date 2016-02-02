@@ -3,6 +3,12 @@ Created on 29/10/2013
 
 @author: mmpe
 '''
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 from wetb.hawc2 import Hawc2io
 import numpy as np
 import os

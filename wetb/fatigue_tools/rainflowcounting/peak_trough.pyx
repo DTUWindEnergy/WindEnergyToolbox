@@ -1,16 +1,13 @@
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
 import cython
 import numpy as np
-#cimport numpy as np
+cimport numpy as np
+import cython
+import numpy as np
+cimport numpy as np
 
 @cython.locals(BEGIN=cython.int, MINZO=cython.int, MAXZO=cython.int, ENDZO=cython.int, \
                R=cython.int, L=cython.int, i=cython.int, p=cython.int, f=cython.int)
-def peak_trough(x, R):  #cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[long,ndim=1] x, int R):
+cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[long,ndim=1] x, int R):
     """
     Returns list of local maxima/minima.
 

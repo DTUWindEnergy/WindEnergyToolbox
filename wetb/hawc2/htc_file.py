@@ -6,6 +6,14 @@ Created on 20/01/2014
 See documentation of HTCFile below
 
 '''
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from builtins import str
+from future import standard_library
+standard_library.install_aliases()
 from collections import OrderedDict
 
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine, \
@@ -74,7 +82,9 @@ class HTCFile(HTCContents, HTCDefaults):
             filename = self.filename
         else:
             self.filename = filename
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # exist_ok does not exist in Python27
+        if not os.path.exists(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))#, exist_ok=True)
         with open(filename, 'w') as fid:
             fid.write(str(self))
 

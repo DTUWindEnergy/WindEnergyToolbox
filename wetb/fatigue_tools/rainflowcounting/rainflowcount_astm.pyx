@@ -1,3 +1,6 @@
+import cython
+import numpy as np
+cimport numpy as np
 '''
 Created on 27/02/2013
 
@@ -13,21 +16,14 @@ from cy_rainflowcount import find_extremes,rainflow
 ext = find_extremes(np.array([-2,0,1,0,-3,0,5,0,-1,0,3,0,-4,0,4,0,-2]).astype(np.double))
 print rainflow(ext)
 '''
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import range
-from future import standard_library
-standard_library.install_aliases()
 
 import numpy as np
 
 
-def find_extremes(signal):  #cpdef find_extremes(np.ndarray[double,ndim=1] signal):
+cpdef find_extremes(np.ndarray[double,ndim=1] signal):
     """return indexes of local minima and maxima plus first and last element of signal"""
 
-    #cdef int pi, i
+    cdef int pi, i
     # sign of gradient
     sign_grad = np.int8(np.sign(np.diff(signal)))
 
@@ -55,7 +51,7 @@ def find_extremes(signal):  #cpdef find_extremes(np.ndarray[double,ndim=1] signa
     return signal[extremes]
 
 
-def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
+cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
     """Cython compilable rain ampl_mean count without time analysis
 
 
@@ -81,8 +77,8 @@ def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
 
     """
 
-    #cdef int sig_ptr, index
-    #cdef double ampl
+    cdef int sig_ptr, index
+    cdef double ampl
     a = []
     sig_ptr = 0
     ampl_mean = []
