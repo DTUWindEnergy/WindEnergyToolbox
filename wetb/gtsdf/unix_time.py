@@ -2,11 +2,14 @@ from datetime import datetime, date
 import numpy as np
 timestamp0 = datetime.utcfromtimestamp(0)
 
-def to_unix(dateTime):
-    #return dateTime.timestamp() + 3600
-    return (dateTime - timestamp0).total_seconds()
-    #return (dateTime - datetime.utcfromtimestamp(0)).total_seconds()
 
+def to_unix(dateTime):
+    try:
+        return (dateTime - timestamp0).total_seconds()
+    except:
+        if hasattr(dateTime, "__len__"):
+            return [(dt - timestamp0).total_seconds() for dt in dateTime]
+        raise
 
 def from_unix_old(sec):
     if np.isnan(sec):
