@@ -24,6 +24,14 @@ from wetb.utils.caching import cache_function
 from collections import OrderedDict
 #HOURS_PR_20YEAR = 20 * 365 * 24
 
+# hack around FileNotFoundError not being in Python2
+try:
+    FileNotFoundError
+except NameError as e:
+    class FileNotFoundError(OSError):
+        pass
+
+
 def Weibull(u, k, start, stop, step):
     C = 2 * u / np.sqrt(np.pi)
     cdf = lambda x :-np.exp(-(x / C) ** k)
