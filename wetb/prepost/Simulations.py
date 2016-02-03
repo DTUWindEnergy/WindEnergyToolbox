@@ -11,7 +11,7 @@ from __future__ import division
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from builtins import dict
-from builtins import open
+from io import open
 from builtins import zip
 from builtins import range
 from builtins import str

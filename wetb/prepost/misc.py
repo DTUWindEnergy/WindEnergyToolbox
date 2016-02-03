@@ -13,7 +13,7 @@ from __future__ import absolute_import
 from builtins import range
 from builtins import dict
 from builtins import int
-from builtins import open
+from io import open
 from builtins import str
 from future import standard_library
 standard_library.install_aliases()
