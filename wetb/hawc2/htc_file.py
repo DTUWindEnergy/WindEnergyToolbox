@@ -19,6 +19,7 @@ from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine, \
     HTCDefaults
 import os
+from copy import copy
 
 
 class HTCFile(HTCContents, HTCDefaults):
@@ -43,7 +44,7 @@ class HTCFile(HTCContents, HTCDefaults):
 #                self.lines = fid.readlines()
         self.lines = [l.strip() for l in self.lines]
 
-        lines = self.lines.copy()
+        lines = copy(self.lines)
         while lines:
             if lines[0].startswith(";"):
                 self.initial_comments.append(lines.pop(0).strip() + "\n")
