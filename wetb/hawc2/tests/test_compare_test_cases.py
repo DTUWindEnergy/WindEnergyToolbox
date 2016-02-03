@@ -32,17 +32,17 @@ class TestCmpTestCases(CompareTestCases):
         self.compare_sel(self.ref_path + 'test3.sel', self.test_path + 'test3.sel')
 
     def test_compare_sel_difference(self):
-        self.assertRaisesRegex(AssertionError, "     2      bea1 angle                     deg        shaft_rot angle",
-                               self.compare_sel, self.ref_path + 'test4.sel', self.test_path + 'test4.sel')
+        self.assertRaises(AssertionError, "     2      bea1 angle                     deg        shaft_rot angle",
+                          self.compare_sel, self.ref_path + 'test4.sel', self.test_path + 'test4.sel')
 
     def test_compare_contents_dat(self):
         self.compare_dat_contents(self.ref_path + 'test1.dat', self.test_path + 'test1.dat')
 
     def test_compare_dat_contents_difference(self):
-        self.assertRaisesRegex(AssertionError, "  2.00000E-02", self.compare_dat_contents, self.ref_path + 'test3.dat', self.test_path + 'test3.dat')
+        self.assertRaises(AssertionError, "  2.00000E-02", self.compare_dat_contents, self.ref_path + 'test3.dat', self.test_path + 'test3.dat')
 
     #def test_compare_plot_difference(self):
-    #    self.assertRaisesRegex(AssertionError, "Difference in the the values of:\n1 Time", self.compare_dat_plot, self.ref_path + 'test3', self.test_path + 'test3')
+    #    self.assertRaises(AssertionError, "Difference in the the values of:\n1 Time", self.compare_dat_plot, self.ref_path + 'test3', self.test_path + 'test3')
 
 #    def test_compare_folder(self):
 #        self.compare_folder(r'test_files/ref/', r'test_files/test/', 'ref', 'test1')
