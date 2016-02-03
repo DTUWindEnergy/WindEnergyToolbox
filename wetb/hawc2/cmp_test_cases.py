@@ -32,9 +32,9 @@ class CompareTestCases(unittest.TestCase):
 
 
     def compare_lines(self, ref_file, test_file, skip_first=0):
-        with open(ref_file) as ref:
+        with open(ref_file, encoding='utf-8') as ref:
             ref_lines = ref.readlines()
-        with open(test_file) as test:
+        with open(test_file, encoding='utf-8') as test:
             test_lines = test.readlines()
         self.assertEqual(len(ref_lines), len(test_lines), "\nNumber of lines differs in: '%s' and '%s'" % (ref_file, test_file))
         for i, (ref_l, test_l) in enumerate(zip(ref_lines[skip_first:], test_lines[skip_first:])):

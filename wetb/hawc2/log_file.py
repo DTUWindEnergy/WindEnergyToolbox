@@ -70,7 +70,7 @@ class LogFile(object):
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(self.filename)):
             os.makedirs(os.path.dirname(self.filename))#, exist_ok=True)
-        with open(self.filename, 'w'):
+        with open(self.filename, 'w', encoding='utf-8'):
             pass
         self.reset()
 

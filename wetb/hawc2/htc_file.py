@@ -59,7 +59,7 @@ class HTCFile(HTCContents, HTCDefaults):
     def readlines(self, filename):
         self.htc_inputfiles.append(filename)
         htc_lines = []
-        with open(filename) as fid:
+        with open(filename, encoding='utf-8') as fid:
             lines = fid.readlines()
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
@@ -85,7 +85,7 @@ class HTCFile(HTCContents, HTCDefaults):
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))#, exist_ok=True)
-        with open(filename, 'w') as fid:
+        with open(filename, 'w', encoding='utf-8') as fid:
             fid.write(str(self))
 
     def set_name(self, name, folder="htc"):

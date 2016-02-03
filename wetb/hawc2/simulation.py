@@ -116,7 +116,7 @@ class Simulation(object):
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
         additional_files = {}
         if os.path.isfile(additional_files_file):
-            with open(additional_files_file) as fid:
+            with open(additional_files_file, encoding='utf-8') as fid:
                 additional_files = json.load(fid)
         return additional_files
 
@@ -124,7 +124,7 @@ class Simulation(object):
         additional_files = self.additional_files()
         additional_files['input'] = additional_files.get('input', []) + [file]
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
-        with open(additional_files_file, 'w') as fid:
+        with open(additional_files_file, 'w', encoding='utf-8') as fid:
                 json.dump(additional_files, fid)
 
     def prepare_simulation(self):
@@ -304,7 +304,7 @@ class SimulationThread(Thread):
         p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
         self.process.communicate()
         errorcode = self.process.returncode
-        with open(self.modelpath + self.sim.stdout_filename) as fid:
+        with open(self.modelpath + self.sim.stdout_filename, encoding='utf-8') as fid:
             stdout = fid.read()
         self.res = errorcode, stdout
 

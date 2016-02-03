@@ -433,7 +433,7 @@ def run_local(cases, silent=False, check_log=True):
     """
 
     # remember the current working directory
-    cwd = os.getcwd()
+    cwd = str(os.getcwd())
     nr = len(cases)
     if not silent:
         print('')

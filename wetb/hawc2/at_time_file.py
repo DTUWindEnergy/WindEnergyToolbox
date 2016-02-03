@@ -27,7 +27,7 @@ class AtTimeFile(object):
     -5.34743208242399
     """
     def __init__(self, filename):
-        with open(filename) as fid:
+        with open(filename, encoding='utf-8') as fid:
             lines = fid.readlines()
         self.attribute_names = lines[2].lower().replace("#", "").split()
         data = np.array([[float(l) for l in lines[i].split() ] for i in range(3, len(lines))])

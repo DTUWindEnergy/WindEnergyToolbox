@@ -42,7 +42,7 @@ def wrap(f, autodeclare, *args, **kwargs):
     # Generate name: "c:\documents\project\mymodule.py" -> mymodule_myfunction
     # When called from ipython notebooks, filename is an object e.g: "<ipython-input-12-e897f9fefc0c>"
     # therefore <,>,- is removed to make it a legal python module name
-    name = os.path.relpath(inspect.getabsfile(f), os.getcwd()).replace(".py", "")
+    name = os.path.relpath(inspect.getabsfile(f), str(os.getcwd())).replace(".py", "")
     name = name.replace("<", "").replace(">", "").replace("-", "")
     name = "%s_%s" % (name, f.__name__)
     if name.startswith(".."):
@@ -70,7 +70,7 @@ def wrap(f, autodeclare, *args, **kwargs):
 
         # Write pyrex code lines to .pyx file
         pyx_filename = name.replace("\\", "/") + ".pyx"
-        with open(pyx_filename, 'w') as fid:
+        with open(pyx_filename, 'w', encoding='utf-8') as fid:
             fid.writelines(pyx_lines)
 
         # compile, import compiled module_name and delete temporary files
@@ -151,7 +151,7 @@ def cython_import(import_module_name, compiler=None):
         fid.close()
 
         # compile, import compiled module and delete temporary files
-        module_relname = os.path.relpath(eval(module_name).__file__, os.getcwd()).replace(os.path.sep, ".")[:-3]
+        module_relname = os.path.relpath(eval(module_name).__file__, str(os.getcwd())).replace(os.path.sep, ".")[:-3]
         return compile_and_cleanup(import_module_name, pyx_filename, module_relname, compiler)
     return eval(module_name)
 

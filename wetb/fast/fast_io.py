@@ -37,7 +37,7 @@ def load_output(filename):
     """
 
     assert os.path.isfile(filename), "File, %s, does not exists" % filename
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         try:
             f.readline()
         except UnicodeDecodeError:
@@ -45,7 +45,7 @@ def load_output(filename):
     return load_ascii_output(filename)
 
 def load_ascii_output(filename):
-    with open(filename) as f:
+    with open(filename, encoding='utf-8') as f:
         info = {}
         info['name'] = os.path.splitext(os.path.basename(filename))[0]
         try:

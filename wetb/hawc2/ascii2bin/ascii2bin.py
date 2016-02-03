@@ -24,7 +24,7 @@ class TextUI(object):
 sys.path.append(".")
 
 def size_from_file(selfilename):
-    with open(selfilename) as f:
+    with open(selfilename, encoding='utf-8') as f:
         info = f.readlines()[8].split()
         scans = int(info[0])
         no_sensors = int(info[1])
@@ -39,7 +39,7 @@ def ascii2bin(ascii_selfilename, bin_selfilename=None, ui=TextUI()):
 
 
     # Read, convert and write sel file
-    with open(ascii_selfilename) as f:
+    with open(ascii_selfilename, encoding='utf-8') as f:
         lines = f.readlines()
 
     if "BINARY" in lines[8]:
@@ -54,7 +54,7 @@ def ascii2bin(ascii_selfilename, bin_selfilename=None, ui=TextUI()):
         scale_factors = pandas_dat_ascii2bin(ascii_datfilename, bin_selfilename.replace('.sel', '.dat'), ui)
         for sf in scale_factors:
             lines.append("  %.5E\n" % sf)
-        with open(bin_selfilename, 'w') as f:
+        with open(bin_selfilename, 'w', encoding='utf-8') as f:
             f.writelines(lines)
         if ui is not None:
             ui.show_message("Finish converting %s to %s" % (ascii_selfilename, bin_selfilename))

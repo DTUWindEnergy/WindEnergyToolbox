@@ -48,7 +48,7 @@ class SelFile(object):
     def __init__(self, sel_filename):
         if not os.path.isfile(sel_filename) or os.path.splitext(sel_filename)[1] != ".sel":
             raise Warning("%s cannot be found or is not a legal *.sel file" % os.path.realpath(sel_filename))
-        with open(sel_filename) as f:
+        with open(sel_filename, encoding='utf-8') as f:
             lines = f.readlines()
 
 
@@ -139,6 +139,6 @@ def save(sel_filename, version, time, scans, no_sensors, duration, sensors, scal
         for sf in scale_factors:
             lines.append("  %.5E" % sf)
 
-    with open(sel_filename, 'w') as f:
+    with open(sel_filename, 'w', encoding='utf-8') as f:
         f.write("\n".join(lines))
 

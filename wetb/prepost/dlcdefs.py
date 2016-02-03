@@ -32,7 +32,7 @@ def configure_dirs(verbose=False):
     Automatically configure required directories to launch simulations
     """
 
-    P_RUN = os.getcwd()
+    P_RUN = str(os.getcwd())
     p_run_root = os.sep.join(P_RUN.split(os.sep)[:-2])
     # MODEL SOURCES, exchanche file sources
     P_SOURCE = P_RUN
