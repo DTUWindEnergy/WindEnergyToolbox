@@ -12,6 +12,7 @@ import os
 import sys
 from setuptools import setup
 
+import numpy as np
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
@@ -22,6 +23,7 @@ def setup_package():
     module = 'wetb.fatigue_tools.rainflowcounting'
     names = ['pair_range', 'peak_trough', 'rainflowcount_astm']
     extlist = [Extension('%s.%s' % (module, n),
+                         include_dirs=[np.get_include()],
                          [os.path.join(path, n)+'.pyx']) for n in names]
 
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
