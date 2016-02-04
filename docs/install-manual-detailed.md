@@ -22,7 +22,10 @@ Installation instructions follow in alphabetical orderby platorm.
 install the following python dependencies:
 
 > numpy, cython, scipy, pandas, matplotlib, pyscaffold, future, nose, sphinx,
-> xlrd, pytables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
+> xlrd, (py)tables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
+
+Note that often the pytables packages is called python-tables instead of
+python-pytables.
 
 * Other tools you will need:
 
@@ -36,6 +39,11 @@ complete this guide :-)
 
 
 ## Windows
+
+A Python installation with compilers is required. If you already have this,
+or know how set up such an environment, you skip to
+[here](And Finally: install wetb).
+
 
 ### Microsft Visual Studio 2010
 
