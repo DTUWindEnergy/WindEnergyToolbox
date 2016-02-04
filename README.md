@@ -11,17 +11,17 @@ in [Hawc2io](wetb/hawc2/Hawc2io.py). These different implementations will be
 merged in due time.
 
 
-# Python 3
+# Works with Python 2 and Python 3
 
-This module currently only works under Python 3. If you are working in Python 2,
-this could be a good moment to consider switching. If you are bound to Python 2
-due to critical 3th party dependencies you are encouraged to cast your vote for
-Python 2 compatibility in
-[issue 1](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/1).
+This module is tested for Python 2 and 3 compatibility, and works on both
+Windows and Linux. Testing for Mac is on the way, but in theory it should work.
+Python 2 and 3 compatibility is achieved with a single code base with the help
+of the Python module [future](http://python-future.org/index.html).
 
 Switching to Python 3 is in general a very good idea especially since Python 3.5
 was released. Some even dare to say it
 [is like eating your vegetables](http://nothingbutsnark.svbtle.com/porting-to-python-3-is-like-eating-your-vegetables).
+So if you are still on Python 2, we would recommend you to give Python 3 a try!
 
 You can automatically convert your code from Python 2 to 3 using the
 [2to3](https://docs.python.org/2/library/2to3.html) utility which is included
@@ -33,6 +33,8 @@ in Python 2.7 by default. You can also write code that is compatible with both
 # Dependencies
 
 * [numpy](http://www.numpy.org/)
+
+* [cython](http://cython.org/)
 
 * [scipy](http://scipy.org/scipylib/)
 
@@ -48,9 +50,9 @@ in Python 2.7 by default. You can also write code that is compatible with both
 
 * [pyscaffold](http://pyscaffold.readthedocs.org/en/)
 
-* pytest
+* pytest, pytest-cov
 
-* six
+* six, [future](http://python-future.org/index.html)
 
 
 # Installation
@@ -112,7 +114,7 @@ General Time Series Data Format, a binary hdf5 data format for storing time seri
 - [bearing_damage](wetb/fatigue_tools/bearing_damage.py): Calculate a comparable measure of bearing damage
 
 ### [wind](wetb/wind)
-- [shear](wetb/wind/shear.py): Calculate and fit wind shear 
+- [shear](wetb/wind/shear.py): Calculate and fit wind shear
 
 ### [dlc](wetb/dlc)
 Module for working with "Design load cases" (Code independent)
@@ -124,6 +126,13 @@ corresponding execution scripts for a PBS Torque cluster (Linux), simple bash
 (Linux), or Windows batch scripts. A post-processing module is also included
 that calculates statistical parameters, performs rainflow counting for fatigue
 load calculations, and create load envelopes.
+
+Additional documentation can be found here:
+
+* [Auto-generation of Design Load Cases](docs/howto-make-dlcs.md)
+
+* [How to use the Statistics DataFrame](docs/using-statistics-df.md)
+
 
 ### [fast](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
