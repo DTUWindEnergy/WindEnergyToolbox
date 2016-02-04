@@ -24,6 +24,10 @@ install the following dependencies:
 > numpy, cython, scipy, pandas, matplotlib, pyscaffold, future, nose, sphinx,
 > xlrd, pytables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
 
+* Other tools you will need:
+
+> git gcc
+
 
 ## Mac
 
@@ -58,7 +62,10 @@ option if you know what you are doing or if you do not have administrative
 rights on your computer.
 
 * Git comes with a simple GUI, but there are more and different options available
-if you are not happy with it, see [here](https://git-scm.com/downloads/guis)
+if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
+
+* If you would like to use a GUI for git, we recommend you to use
+[tortoisegit](https://tortoisegit.org/)
 
 
 ### Option 1: Anaconda (large download)
