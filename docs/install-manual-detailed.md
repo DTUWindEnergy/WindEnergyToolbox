@@ -19,7 +19,7 @@ Installation instructions follow in alphabetical orderby platorm.
 ## Linux
 
 * Use either your system package manager, pip + virtualenv, or Anaconda to
-install the following dependencies:
+install the following python dependencies:
 
 > numpy, cython, scipy, pandas, matplotlib, pyscaffold, future, nose, sphinx,
 > xlrd, pytables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
@@ -163,8 +163,11 @@ pip install pyscaffold pytest pytest-cov
 ```
 git clone https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox.git
 cd WindEnergyToolbox
-python setup.py install
+pip install -e .
 ```
+
+Note that ```pip install -e .``` will install ```wetb``` in the source directory.
+This works best if you are also developing and regularly updating this package.
 
 You can run the tests cases from the source root directory:
 
