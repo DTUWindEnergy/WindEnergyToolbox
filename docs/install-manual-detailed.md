@@ -42,7 +42,7 @@ complete this guide :-)
 
 A Python installation with compilers is required. If you already have this,
 or know how set up such an environment, you skip to
-[here](and-finally-install-wetb).
+[here](install-manual-detailed.md#and-finally-install-wetb).
 
 
 ### Microsft Visual Studio 2010
