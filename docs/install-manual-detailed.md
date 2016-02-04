@@ -42,7 +42,7 @@ complete this guide :-)
 
 A Python installation with compilers is required. If you already have this,
 or know how set up such an environment, you skip to
-[here](And Finally: install wetb).
+[here](and-finally-install-wetb).
 
 
 ### Microsft Visual Studio 2010
@@ -158,6 +158,9 @@ conda create -n py34 python=3.4
 ```
 activate py27
 ```
+
+
+### Install dependencies with conda and pip
 
 * Install the necessary Python dependencies using the conda package manager:
 
