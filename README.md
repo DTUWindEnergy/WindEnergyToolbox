@@ -59,7 +59,7 @@ Detailed installation instructions, including how to install Python from scratch
 are described in the [detailed installation manual](docs/install-manual-detailed.md).
 
 
-If you now what you are doing, you can install as follows:
+If you know what you are doing, you can install as follows:
 
 ```
 python setup.py
