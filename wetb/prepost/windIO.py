@@ -9,7 +9,7 @@ from __future__ import division
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from builtins import dict
-from io import open
+from io import open as opent
 from builtins import range
 from builtins import str
 from builtins import int
@@ -175,7 +175,7 @@ class LoadResults(object):
         try:
             # open file, read and close
             go_sel = os.path.join(self.file_path, self.file_name + '.sel')
-            FILE = open(go_sel, "r")
+            FILE = opent(go_sel, "r")
             self.lines = FILE.readlines()
             FILE.close()
             self.error_msg = 'none'
@@ -1120,7 +1120,7 @@ def ReadOutputAtTime(fname):
     command.
     """
     # because the formatting is really weird, we need to sanatize it a bit
-    with open(fname, 'r') as f:
+    with opent(fname, 'r') as f:
         # read the header from line 3
         f.readline()
         f.readline()
@@ -1159,7 +1159,7 @@ def ReadEigenBody(fname, debug=False):
     #Body data for body number : 3 with the name :nacelle
     #Results:         fd [Hz]       fn [Hz]       log.decr [%]
     #Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
-    FILE = open(fname)
+    FILE = opent(fname)
     lines = FILE.readlines()
     FILE.close()
 
@@ -1257,7 +1257,7 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
     #8 Mode nr:  1:   3.58673E+00    3.58688E+00    5.81231E+00
     #  Mode nr:294:   0.00000E+00    6.72419E+09    6.28319E+02
 
-    FILE = open(os.path.join(file_path, file_name))
+    FILE = opent(os.path.join(file_path, file_name))
     lines = FILE.readlines()
     FILE.close()
 
@@ -1482,7 +1482,7 @@ class UserWind(object):
         """
         blok = 0
         bloks = {}
-        with open(fname) as f:
+        with opent(fname) as f:
             for i, line in enumerate(f.readlines()):
                 if line.strip()[0] == '#' and blok > 0:
                     bloks[blok] = i
@@ -1527,7 +1527,7 @@ class UserWind(object):
                              'nr_vert: %i' % (str(u.shape), nr_hor, nr_vert))
 
         # and create the input file
-        with open(fname, 'w') as f:
+        with opent(fname, 'w') as f:
             f.write('# User defined shear file\n')
             f.write('%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
             h1 = 'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
@@ -1827,7 +1827,7 @@ class Bladed(object):
             windows so Western-European windows encoding is a safe bet.
         """
 
-        with codecs.open(fname, 'r', enc) as f:
+        with codecs.opent(fname, 'r', enc) as f:
             lines = f.readlines()
         nrl = len(lines)
         if chans is None and iters is None:

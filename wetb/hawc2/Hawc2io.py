@@ -33,13 +33,18 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from builtins import int
 from builtins import range
-from io import open
+from io import open as opent
 from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
 import numpy as np
 import os
+
+# FIXME: numpy doesn't like io.open binary fid in PY27, why is that? As a hack
+# workaround, use opent for PY23 compatibility when handling text files,
+# and default open for binary
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -71,7 +76,7 @@ class ReadHawc2(object):
         """
 
         # read *.sel hawc2 output file for result info
-        fid = open(self.FileName + '.sel', 'r')
+        fid = opent(self.FileName + '.sel', 'r')
         Lines = fid.readlines()
         fid.close()
         # findes general result info (number of scans, number of channels,
@@ -102,7 +107,7 @@ class ReadHawc2(object):
         # read sensor file used if results are saved in FLEX format
         DirName = os.path.dirname(self.FileName + ".int")
         try:
-            fid = open(DirName + "\sensor ", 'r')
+            fid = opent(DirName + "\sensor ", 'r')
         except IOError:
             print ("can't finde sensor file for FLEX format")
             return
