@@ -39,8 +39,8 @@ complete this guide :-)
 ### Command line
 
 This guide will use the command line (aka command prompt) frequently.
-You can launch a Windows terminal as follows: press Start > and type
-command prompt. A link to the command prompt should be visible now.
+You can launch a Windows terminal as follows: press Start> and type
+"cmd" + <Enter>. A link to the command prompt should be visible now.
 
 In case you want an alternative, more capable windows terminal, you could consider
 using [ConEmu](https://conemu.github.io/) (this is optional).
