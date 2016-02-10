@@ -22,7 +22,14 @@ Installation instructions follow in alphabetical orderby platorm.
 install the following python dependencies:
 
 > numpy, cython, scipy, pandas, matplotlib, pyscaffold, future, nose, sphinx,
-> xlrd, pytables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
+> xlrd, (py)tables, h5py, pytest, pytest-cov, setuptools_scm, setuptools
+
+Note that often the pytables packages is called python-tables instead of
+python-pytables.
+
+* Other tools you will need:
+
+> git gcc
 
 
 ## Mac
@@ -32,6 +39,11 @@ complete this guide :-)
 
 
 ## Windows
+
+A Python installation with compilers is required. If you already have this,
+or know how set up such an environment, you skip to
+[here](install-manual-detailed.md#and-finally-install-wetb).
+
 
 ### Microsft Visual Studio 2010
 
@@ -58,7 +70,10 @@ option if you know what you are doing or if you do not have administrative
 rights on your computer.
 
 * Git comes with a simple GUI, but there are more and different options available
-if you are not happy with it, see [here](https://git-scm.com/downloads/guis)
+if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
+
+* If you would like to use a GUI for git, we recommend you to use
+[tortoisegit](https://tortoisegit.org/)
 
 
 ### Option 1: Anaconda (large download)
@@ -143,6 +158,9 @@ conda create -n py34 python=3.4
 ```
 activate py27
 ```
+
+
+### Install dependencies with conda and pip
 
 * Install the necessary Python dependencies using the conda package manager:
 
