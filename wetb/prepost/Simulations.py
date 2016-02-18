@@ -1314,9 +1314,9 @@ class HtcMaster(object):
         self.tags['[mooring_dir]'] = 'mooring/'
         self.tags['[hydro_dir]'] = 'htc_hydro/'
         self.tags['[pbs_out_dir]'] = 'pbs_out/'
-        self.tags['[turb_base_name]'] = 'turb_'
-        self.tags['[wake_base_name]'] = 'turb_'
-        self.tags['[meand_base_name]'] = 'turb_'
+        self.tags['[turb_base_name]'] = None
+        self.tags['[wake_base_name]'] = None
+        self.tags['[meand_base_name]'] = None
         self.tags['[zip_root_files]'] = []
 
         self.tags['[fname_source]'] = []
@@ -1332,9 +1332,9 @@ class HtcMaster(object):
 
 #        self.queue = Queue.Queue()
 
-        self.output_dirs = ['[res_dir]', '[log_dir]', '[turb_base_name]',
-                            '[case_id]', '[wake_base_name]', '[animation_dir]',
-                            '[meand_base_name]', '[eigenfreq_dir]']
+        self.output_dirs = ['[res_dir]', '[log_dir]', '[turb_dir]',
+                            '[case_id]', '[wake_dir]', '[animation_dir]',
+                            '[meand_dir]', '[eigenfreq_dir]']
 
     def create_run_dir(self):
         """
@@ -2125,26 +2125,42 @@ class PBS(object):
 
             # if there is a turbulence file data base dir, copy from there
             if self.TurbDb:
-                tmp = (self.TurbDb, self.turb_base_name, self.TurbDirName)
-                self.pbs += "cp -R $PBS_O_WORKDIR/%s%s*.bin %s \n" % tmp
+                turb_dir_src = os.path.join('$PBS_O_WORKDIR', self.TurbDb)
             else:
-                # turbulence files basenames are defined for the case
-                self.pbs += "cp -R $PBS_O_WORKDIR/" + self.TurbDirName + \
-                    self.turb_base_name + "*.bin ./"+self.TurbDirName + '\n'
+                turb_dir_src = os.path.join('$PBS_O_WORKDIR', self.TurbDirName)
 
+            # the original behaviour makes assumptions on the turbulence box
+            # names: turb_base_name_xxx_u.bin, turb_base_name_xxx_v.bin
+            if self.turb_base_name is not None:
+                turb_src = os.path.join(turb_dir_src, self.turb_base_name)
+                self.pbs += "cp -R %s*.bin %s \n" % (turb_src, self.TurbDirName)
+            # more generally, literally define the names of the boxes for u,v,w
+            # components
+            elif '[turb_fname_u]' in tag_dict:
+                turb_u = os.path.join(turb_dir_src, tag_dict['[turb_fname_u]'])
+                turb_v = os.path.join(turb_dir_src, tag_dict['[turb_fname_v]'])
+                turb_w = os.path.join(turb_dir_src, tag_dict['[turb_fname_w]'])
+                self.pbs += "cp %s %s \n" % (turb_u, self.TurbDirName)
+                self.pbs += "cp %s %s \n" % (turb_v, self.TurbDirName)
+                self.pbs += "cp %s %s \n" % (turb_w, self.TurbDirName)
+
+            # if there is a turbulence file data base dir, copy from there
             if self.wakeDb and self.WakeDirName:
-                tmp = (self.wakeDb, self.wake_base_name, self.WakeDirName)
-                self.pbs += "cp -R $PBS_O_WORKDIR/%s%s*.bin %s \n" % tmp
+                wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.wakeDb)
             elif self.WakeDirName:
-                self.pbs += "cp -R $PBS_O_WORKDIR/" + self.WakeDirName + \
-                    self.wake_base_name + "*.bin ./"+self.WakeDirName + '\n'
+                wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.WakeDirName)
+            if self.wake_base_name is not None:
+                wake_src = os.path.join(wake_dir_src, self.wake_base_name)
+                self.pbs += "cp -R %s*.bin %s \n" % (wake_src, self.WakeDirName)
 
+            # if there is a turbulence file data base dir, copy from there
             if self.meandDb and self.MeanderDirName:
-                tmp = (self.meandDb, self.meand_base_name, self.MeanderDirName)
-                self.pbs += "cp -R $PBS_O_WORKDIR/%s%s*.bin %s \n" % tmp
+                meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.meandDb)
             elif self.MeanderDirName:
-                self.pbs += "cp -R $PBS_O_WORKDIR/" + self.MeanderDirName + \
-                    self.meand_base_name + "*.bin ./"+self.MeanderDirName + '\n'
+                meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.MeanderDirName)
+            if self.meand_base_name is not None:
+                meand_src = os.path.join(meand_dir_src, self.meand_base_name)
+                self.pbs += "cp -R %s*.bin %s \n" % (meand_src, self.MeanderDirName)
 
             # copy and rename input files with given versioned name to the
             # required non unique generic version
@@ -3811,7 +3827,7 @@ class Cases(object):
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=-1, saveinterval=1000,
                    csv=True, suffix=None, fatigue_cycles=False, A=None,
-                   ch_wind=None, save_new_sigs=False):
+                   ch_wind=None, save_new_sigs=False, xlsx=False):
         """
         Calculate statistics and save them in a pandas dataframe. Save also
         every 500 cases the statistics file.
@@ -3861,6 +3877,10 @@ class Cases(object):
 
         csv : boolean, default=False
             In addition to a h5 file, save the statistics also in csv format.
+
+        xlsx : boolean, default=False
+            In addition to a h5 file, save the statistics also in MS Excel xlsx
+            format.
 
         Returns
         -------
@@ -4250,7 +4270,7 @@ class Cases(object):
                 # TODO: test this first
                 fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
                 dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                                   csv=csv, check_datatypes=False)
+                                   csv=csv, xlsx=xlsx, check_datatypes=False)
 
                 df_dict2 = None
                 df_dict = None
@@ -4272,7 +4292,7 @@ class Cases(object):
             # TODO: test this first
             fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
             dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                               csv=csv, check_datatypes=False)
+                               csv=csv, xlsx=xlsx, check_datatypes=False)
 
         return dfs
 
@@ -4388,7 +4408,8 @@ class Cases(object):
 
     def fatigue_lifetime(self, dfs, neq, res_dir='res/', fh_lst=None, years=20.,
                          dlc_folder="dlc%s_iec61400-1ed3/", extra_cols=[],
-                         save=False, update=False, csv=False, new_sim_id=False):
+                         save=False, update=False, csv=False, new_sim_id=False,
+                         xlsx=False):
         """
         Cacluate the fatigue over a selection of cases and indicate how many
         hours each case contributes to its life time.
@@ -4533,14 +4554,14 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_Leq')
         df_Leq = misc.dict2df(dict_Leq, fname, save=save, update=update,
-                              csv=csv, check_datatypes=True)
+                              csv=csv, check_datatypes=True, xlsx=xlsx)
 
         # only keep the ones that do not have nan's (only works with index)
         return df_Leq
 
     def AEP(self, dfs, fh_lst=None, ch_powe=None, extra_cols=[], update=False,
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
-            new_sim_id=False, save=False, years=20.0):
+            new_sim_id=False, save=False, years=20.0, xlsx=False):
 
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.
@@ -4655,7 +4676,7 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_AEP')
         df_AEP = misc.dict2df(dict_AEP, fname, update=update, csv=csv,
-                              save=save, check_datatypes=True)
+                              save=save, check_datatypes=True, xlsx=xlsx)
 
         return df_AEP
 

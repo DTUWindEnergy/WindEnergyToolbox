@@ -1012,7 +1012,7 @@ def df_dict_check_datatypes(df_dict):
 
 
 def dict2df(df_dict, fname, save=True, update=False, csv=False, colsort=None,
-            check_datatypes=False, rowsort=None, csv_index=False):
+            check_datatypes=False, rowsort=None, csv_index=False, xlsx=False):
         """
         Convert the df_dict to df and save/update if required. If converting
         to df fails, pickle the object. Optionally save as csv too.
@@ -1086,6 +1086,8 @@ def dict2df(df_dict, fname, save=True, update=False, csv=False, colsort=None,
                 print('saving: %s ...' % (fname), end='')
                 if csv:
                     dfs.to_csv('%s.csv' % fname, index=csv_index)
+                if xlsx:
+                    dfs.to_excel('%s.xlsx' % fname, index=csv_index)
                 dfs.to_hdf('%s.h5' % fname, 'table', mode='w',
                            format='table', complevel=9, complib='blosc')
 
