@@ -128,17 +128,21 @@ def load(filename, dtype=None):
                 dtype = np.float32
             else:
                 dtype = np.float64
-        data = np.empty((0, no_attributes), dtype=dtype)
-        time = np.empty((0), dtype=np.float64)
+        time = []
+        data = []
         for i in range(no_blocks):
-            block = f[block_name_fmt % i]
+
+            try:
+                block = f[block_name_fmt % i]
+            except KeyError:
+                continue
             no_observations, no_attributes = block['data'].shape
             block_time = (block.get('time', np.arange(no_observations))[:]).astype(np.float64)
             if 'time_step' in block.attrs:
                 block_time *= block.attrs['time_step']
             if 'time_start' in block.attrs:
                 block_time += block.attrs['time_start']
-            time = np.append(time, block_time)
+            time.extend(block_time)
 
             block_data = block['data'][:].astype(dtype)
             if "int" in str(block['data'].dtype):
@@ -148,10 +152,10 @@ def load(filename, dtype=None):
                 block_data *= block['gains'][:]
             if 'offsets' in block:
                 block_data += block['offsets'][:]
-            data = np.append(data, block_data, 0)
+            data.append(block_data)
 
         f.close()
-        return time, data.astype(dtype), info
+        return np.array(time).astype(np.float64), np.vstack(data).astype(dtype), info
     except (ValueError, AssertionError):
         f.close()
         raise
@@ -225,7 +229,7 @@ def save(filename, data, **kwargs):
         filename += ".hdf5"
     # exist_ok does not exist in Python27
     if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
-        os.makedirs(os.path.dirname(os.path.abspath(filename)))#, exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(filename)))  #, exist_ok=True)
     f = h5py.File(filename, "w")
     try:
         f.attrs["type"] = "General time series data format"
@@ -323,9 +327,9 @@ def append_block(filename, data, **kwargs):
             block.create_dataset('time', data=kwargs['time'])
         if 'time_step' in kwargs:
             time_step = kwargs['time_step']
-            block.attrs['time_step'] = time_step
+            block.attrs['time_step'] = time_step.astype(np.float64)
         if 'time_start' in kwargs:
-            block.attrs['time_start'] = kwargs['time_start']
+            block.attrs['time_start'] = kwargs['time_start'].astype(np.float64)
 
         pct_res = np.array([1])
         if "int" in str(dtype):
