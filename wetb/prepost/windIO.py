@@ -1510,7 +1510,8 @@ class UserWind(object):
 
         return u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
 
-    def write_user_defined_shear(self, fname, u, v, w, v_coord, w_coord):
+    def write_user_defined_shear(self, fname, u, v, w, v_coord, w_coord,
+                                 fmt_uvw='% 08.05f', fmt_coord='% 8.02f'):
         """
         """
         nr_hor = len(v_coord)
@@ -1527,22 +1528,22 @@ class UserWind(object):
                              'nr_vert: %i' % (str(u.shape), nr_hor, nr_vert))
 
         # and create the input file
-        with opent(fname, 'w') as f:
-            f.write('# User defined shear file\n')
-            f.write('%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
-            h1 = 'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
-            f.write('# v component, %s\n' % h1)
-            np.savetxt(f, v, fmt='% 08.05f', delimiter='  ')
-            f.write('# u component, %s\n' % h1)
-            np.savetxt(f, u, fmt='% 08.05f', delimiter='  ')
-            f.write('# w component, %s\n' % h1)
-            np.savetxt(f, w, fmt='% 08.05f', delimiter='  ')
-            h2 = '# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
-            f.write('%s\n' % h2)
-            np.savetxt(f, v_coord.reshape((v_coord.size,1)), fmt='% 8.02f')
-            h3 = '# w coordinates (zero is at ground level, height, nr_hor)'
-            f.write('%s\n' % h3)
-            np.savetxt(f, w_coord.reshape((w_coord.size,1)), fmt='% 8.02f')
+        with open(fname, 'wb') as fid:
+            fid.write(b'# User defined shear file\n')
+            fid.write(b'%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
+            h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
+            fid.write(b'# v component, %s\n' % h1)
+            np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
+            fid.write(b'# u component, %s\n' % h1)
+            np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
+            fid.write(b'# w component, %s\n' % h1)
+            np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
+            h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
+            fid.write(b'%s\n' % h2)
+            np.savetxt(fid, v_coord.reshape((v_coord.size,1)), fmt=fmt_coord)
+            h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
+            fid.write(b'%s\n' % h3)
+            np.savetxt(fid, w_coord.reshape((w_coord.size,1)), fmt=fmt_coord)
 
 
 class WindProfiles(object):

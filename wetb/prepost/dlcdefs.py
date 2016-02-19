@@ -321,7 +321,11 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
             tags_dict['[htc_dir]'] = 'htc/%s/' % dlc_case
             tags_dict['[case_id]'] = tags_dict['[Case id.]']
             tags_dict['[time_stop]'] = tags_dict['[time stop]']
-            tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
+            try:
+                tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
+            except KeyError:
+                tags_dict['[turb_base_name]'] = None
+                tags_dict['[Turb base name]'] = None
             tags_dict['[DLC]'] = tags_dict['[Case id.]'].split('_')[0][3:]
             tags_dict['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
             tags_dict['[pbs_in_dir]'] = 'pbs_in/%s/' % dlc_case
