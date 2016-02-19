@@ -163,6 +163,8 @@ class HTCLine(HTCContents):
         return str(self)
 
     def __str__(self, level=0):
+        if self.name_ == "":
+            return ""
         return "%s%s%s;%s\n" % ("  "*(level), self.name_,
                                   ("", "\t" + self.str_values())[bool(self.values)],
                                   ("", "\t" + self.comments)[bool(self.comments.strip())])
@@ -190,6 +192,11 @@ class HTCLine(HTCContents):
                 return v
         values = [fmt(v) for v in values]
         return HTCLine(name, values, end_comments)
+
+    def remove(self):
+        self.name_ = ""
+        self.values = []
+        self.comments = ""
 
 
 class HTCOutputSection(HTCSection):

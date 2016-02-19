@@ -205,6 +205,8 @@ class TestHtcFile(unittest.TestCase):
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
         self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
+        self.assertEqual(str(htcfile).count("exit"), 1)
+        self.assertIn('filename\t./res/oc4_p2_Load_case_eq;', str(htcfile))
 
     def test_tjul_example(self):
         htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")

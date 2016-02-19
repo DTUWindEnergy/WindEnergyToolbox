@@ -66,7 +66,11 @@ class HTCFile(HTCContents, HTCDefaults):
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()
                 filename = os.path.join(os.path.dirname(self.filename), self.modelpath, filename)
-                htc_lines.extend(self.readlines(filename))
+
+                for line in self.readlines(filename):
+                    if line.lstrip().lower().startswith('exit'):
+                        break
+                    htc_lines.append(line)
             else:
                 htc_lines.append(l)
         return htc_lines
