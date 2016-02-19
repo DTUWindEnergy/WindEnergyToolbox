@@ -122,7 +122,7 @@ class Simulation(object):
 
     def add_additional_input_file(self, file):
         additional_files = self.additional_files()
-        additional_files['input'] = additional_files.get('input', []) + [file]
+        additional_files['input'] = list(set(additional_files.get('input', []) + [file]))
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
         with open(additional_files_file, 'w', encoding='utf-8') as fid:
                 json.dump(additional_files, fid)
@@ -140,7 +140,7 @@ class Simulation(object):
                 dst = os.path.join(self.tmp_modelpath, os.path.relpath(src_file, self.modelpath))
                 # exist_ok does not exist in Python27
                 if not os.path.exists(os.path.dirname(dst)):
-                    os.makedirs(os.path.dirname(dst))#, exist_ok=True)
+                    os.makedirs(os.path.dirname(dst))  #, exist_ok=True)
                 shutil.copy(src_file, dst)
                 if not os.path.isfile(dst) or os.stat(dst).st_size != os.stat(src_file).st_size:
                     print ("error copy ", dst)
@@ -173,7 +173,7 @@ class Simulation(object):
                 dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
                 # exist_ok does not exist in Python27
                 if not os.path.exists(os.path.dirname(dst_file)):
-                    os.makedirs(os.path.dirname(dst_file))#, exist_ok=True)
+                    os.makedirs(os.path.dirname(dst_file))  #, exist_ok=True)
                 if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
                     shutil.copy(src_file, dst_file)
 
@@ -199,10 +199,11 @@ class Simulation(object):
         self.simulationThread.join()
         self.returncode, self.stdout = self.simulationThread.res
         if self.returncode or 'error' in self.stdout.lower():
-            self.errors = (list(set([l for l in self.stdout.split("\n") if 'error' in l.lower()])))
+            self.errors = list(set([l for l in self.stdout.split("\n") if 'error' in l.lower()]))
             self.status = ERROR
         self.is_simulating = False
         self.logFile.update_status()
+        self.errors.extend(list(set(self.logFile.errors)))
         if self.returncode:
             raise Exception("Simulation error:\n" + "\n".join(self.errors))
         elif self.logFile.status != log_file.DONE  or self.errors or self.logFile.errors:
@@ -223,13 +224,15 @@ class Simulation(object):
                 filename = os.path.join(folder, file).replace(os.path.sep, "/")
                 if self.get_confirmation("File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
                     self.add_additional_input_file(filename)
-                    self.show_message("'%s' is not added to additional_files.txt.\n\nPlease restart the simulation" % filename)
+                    self.show_message("'%s' is now added to additional_files.txt.\n\nPlease restart the simulation" % filename)
         for error in self.errors:
-            m = re.compile(r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the (.*) folder").match(error.strip())
-            if m is not None:
-                file, folder = m.groups()
-                confirm_add_additional_file(folder, file)
-                continue
+            for regex in [r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the (.*) folder",
+                          r".*\*\*\* ERROR \*\*\* DLL (.*)()"]:
+                m = re.compile(regex).match(error.strip())
+                if m is not None:
+                    file, folder = m.groups()
+                    confirm_add_additional_file(folder, file)
+                    continue
             m = re.compile(r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the working directory").match(error.strip())
             if m is not None:
                 file = m.groups()[0]

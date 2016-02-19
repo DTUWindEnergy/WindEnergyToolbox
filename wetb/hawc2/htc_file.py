@@ -60,7 +60,7 @@ class HTCFile(HTCContents, HTCDefaults):
     def readlines(self, filename):
         self.htc_inputfiles.append(filename)
         htc_lines = []
-        with open(filename, encoding='utf-8') as fid:
+        with open(filename, encoding='cp1252') as fid:
             lines = fid.readlines()
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
@@ -85,7 +85,7 @@ class HTCFile(HTCContents, HTCDefaults):
             self.filename = filename
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(filename)):
-            os.makedirs(os.path.dirname(filename))#, exist_ok=True)
+            os.makedirs(os.path.dirname(filename))  #, exist_ok=True)
         with open(filename, 'w', encoding='utf-8') as fid:
             fid.write(str(self))
 
@@ -96,10 +96,11 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def input_files(self):
         files = self.htc_inputfiles
-        for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
-            if "timoschenko_input" in mb:
-                files.append(mb.timoschenko_input.filename[0])
-            files.append(mb.get('external_bladedata_dll', [None, None, None])[2])
+        if 'new_htc_structure' in self:
+            for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
+                if "timoschenko_input" in mb:
+                    files.append(mb.timoschenko_input.filename[0])
+                files.append(mb.get('external_bladedata_dll', [None, None, None])[2])
         if 'aero' in self:
             files.append(self.aero.ae_filename[0])
             files.append(self.aero.pc_filename[0])
@@ -146,11 +147,11 @@ class HTCFile(HTCContents, HTCDefaults):
             line = self.get(k)
             if line:
                 files.append(line[index])
-
-        if 'system_eigenanalysis' in self.new_htc_structure:
-            f = self.new_htc_structure.system_eigenanalysis[0]
-            files.append(f)
-            files.append(os.path.join(os.path.dirname(f), 'mode*.dat').replace("\\", "/"))
+        if 'new_htc_structure' in self:
+            if 'system_eigenanalysis' in self.new_htc_structure:
+                f = self.new_htc_structure.system_eigenanalysis[0]
+                files.append(f)
+                files.append(os.path.join(os.path.dirname(f), 'mode*.dat').replace("\\", "/"))
         files.extend(self.res_file_lst())
 
         for key in [k for k in self.contents.keys() if k.startswith("output_at_time")]:

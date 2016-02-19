@@ -106,7 +106,9 @@ class HTCContents(object):
         return section
 
     def add_line(self, name, values, comments):
-        self._add_contents(HTCLine(name, values, comments))
+        line = HTCLine(name, values, comments)
+        self._add_contents(line)
+        return line
 
 
 
@@ -333,9 +335,12 @@ class HTCDefaults(object):
                             no_grid_points=(4096, 32, 32), box_dimension=(6000, 100, 100),
                             std_scaling=(1, .8, .5)):
         wind = self.add_section('wind')
-        wind.turb_format = (1, "0=none, 1=mann,2=flex")
+        wind.turb_format = 1
         mann = wind.add_section('mann')
-        mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)], "L, alfaeps, gamma, seed, highfrq compensation")
+        if 'create_turb_parameters' in mann:
+            mann.create_turb_parameters.values = [L, ae23, Gamma, seed, int(high_frq_compensation)]
+        else:
+            mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)], "L, alfaeps, gamma, seed, highfrq compensation")
         if filenames is None:
             filenames = ["./turb/turb_wsp%d_s%04d%s.bin" % (self.wind.wsp[0], seed, c) for c in ['u', 'v', 'w']]
         if isinstance(filenames, str):

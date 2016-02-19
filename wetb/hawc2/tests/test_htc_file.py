@@ -127,6 +127,8 @@ class TestHtcFile(unittest.TestCase):
     std_scaling\t1.000000 0.800000 0.500000;"""
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
             self.assertEqual(a.strip(), b.strip())
+        self.assertEqual(htcfile.wind.turb_format[0], 1)
+        self.assertEqual(htcfile.wind.turb_format.comments, "")
 
 
     def test_sensors(self):
@@ -208,6 +210,8 @@ class TestHtcFile(unittest.TestCase):
         htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")
         htcfile.save("./temp.htc")
 
+    def test_ansi(self):
+        htcfile = HTCFile(self.testfilepath + "./ansi.htc")
 
 
 
