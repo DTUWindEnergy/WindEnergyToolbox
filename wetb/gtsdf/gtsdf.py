@@ -155,7 +155,9 @@ def load(filename, dtype=None):
             data.append(block_data)
 
         f.close()
-        return np.array(time).astype(np.float64), np.vstack(data).astype(dtype), info
+        if no_blocks > 0:
+            data = np.vstack(data)
+        return np.array(time).astype(np.float64), np.array(data).astype(dtype), info
     except (ValueError, AssertionError):
         f.close()
         raise
@@ -327,9 +329,9 @@ def append_block(filename, data, **kwargs):
             block.create_dataset('time', data=kwargs['time'])
         if 'time_step' in kwargs:
             time_step = kwargs['time_step']
-            block.attrs['time_step'] = time_step.astype(np.float64)
+            block.attrs['time_step'] = np.float64(time_step)
         if 'time_start' in kwargs:
-            block.attrs['time_start'] = kwargs['time_start'].astype(np.float64)
+            block.attrs['time_start'] = np.float64(kwargs['time_start'])
 
         pct_res = np.array([1])
         if "int" in str(dtype):
