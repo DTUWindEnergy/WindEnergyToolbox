@@ -1,0 +1,598 @@
+;oc4_jacket_phase_1 version 3, 31-01-13, Larh
+begin Simulation;
+ time_stop 200 ;
+  solvertype   1 ;    (newmark)
+  on_no_convergence continue ;
+;  convergence_limits 3E4 1.0 0.7 ;
+  convergence_limits 5E3 1.0 0.7 ;
+  logfile ./log/oc4_load_case_5-7.log ;
+  animation ./anim/oc4_jacket.dat;
+   visualization ./visualization/structure_jacket_new.hdf5;
+  begin newmark;
+    deltat    .025;  
+  end newmark;
+end simulation;
+;
+begin new_htc_structure;
+;  beam_output_file_name  ./log/oc4_load_case_5-7_beam.dat;                    Optional - Calculated beam properties of the bodies are written to file
+;  body_output_file_name  ./log/oc4_load_case_5-7_body.dat;                    Optional - Body initial position and orientation are written to file
+;  struct_inertia_output_file_name ./log/oc4_load_case_5-7_struct.dat;
+;  body_eigenanalysis_file_name ./eigenfrq/oc4_load_case_5-7_body_eigen.dat;
+;  structure_eigenanalysis_file_name ./eigenfrq/oc4_load_case_5-7_strc_eigen.dat ;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+;
+;  continue_in_file bodies.dat;            Definition of substructure
+;
+  begin main_body;         tower 68m
+    name        tower ;            
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+     damping_posdef   0.0 0.0 0.0 4.24E-3 4.24E-3 1.25E-3 ; Mx My Mz Kx Ky Kz , M´s raises overall level, K´s raises high freguency level
+    concentrated_mass 1 0.0 0.0 0.0 1.9E3 0.0 0.0 0.0 ; 1st tower point mass 
+	 concentrated_mass 5  0.0 0.0 0.0 1.4E3 0.0 0.0 0.0 ; 2nd tower point mass
+      concentrated_mass 9 0.0 0.0 0.0 1.0E3 0.0 0.0 0.0 ; 3rd tower point mass
+       concentrated_mass 1 0.0 0.0 2.0 6.66E5 6.00288E6 6.00288E6 1.02298E7; concrete transition pieace
+	  gravity 9.80665;      
+    begin timoschenko_input;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 1 1 ; 
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 9;
+      sec 1  0.0 0.0  0.0      0.0 ;  x,y,z,twist
+      sec 2  0.0 0.0 -1.0      0.0 ;
+      sec 3  0.0 0.0 -12.0     0.0 ;
+      sec 4  0.0 0.0 -22.0     0.0 ;
+      sec 5  0.0 0.0 -34.0     0.0 ;
+      sec 6  0.0 0.0 -44.0     0.0 ;
+      sec 7  0.0 0.0 -54.0     0.0 ;
+      sec 8  0.0 0.0 -63.0     0.0 ;
+      sec 9  0.0 0.0 -68.0     0.0 ;
+     end c2_def ;
+    end main_body;
+;
+  begin main_body;
+    name        tow_dummy ;              Dummy structure with other element coordinate than the tower, for output only
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef  0.0  0.0  0.0  3.00E-06  3.00E-06  2.00E-05;
+	  gravity 9.80665;      	
+	begin timoschenko_input;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 4 2 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 2;
+      sec 1 0.0 0.0 0.0     0.0 ; x,y,z,twist
+      sec 2 0.0 0.0 0.1   0.0 ; 
+    end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name        towertop ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef  0.0  0.0  0.0  3.00E-05  3.00E-05  2.00E-04  ;	
+    concentrated_mass 2 0.0  1.9 0.21256 2.4E5 1741490.0  1.7E5 1741490.0 ;  Nacelle mass and inertia    	
+	  gravity 9.80665;      	
+	begin timoschenko_input;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 2 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 2;
+      sec 1 0.0 0.0 0.0       0.0 ; x,y,z,twist
+      sec 2 0.0 0.0 -1.96256  0.0 ; 
+    end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name        shaft ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+	damping_posdef  0.0 0.0 0.0 4.65E-04  4.65E-04  7.0725E-03 ; "tuned by Anyd 23/5/13 to 31.45 log decr. damping for free free with stiff rotor and tower"
+   	concentrated_mass 1 0.0 0.0 0.0 0.0 0.0 0.0 5025497.444 ;generator equivalent slow shaft
+    concentrated_mass 5 0.0 0.0 0.0 56780 0.0 0.0 115926 ; hub mass and inertia;    	
+	  gravity 9.80665;      	
+	begin timoschenko_input;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 3 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 10;
+      sec 1 0.0 0.0 0.0 0.0;
+	  sec 2 0.0 0.0 0.2 0.0;
+	  sec 3 0.0 0.0 1.0     0.0 ; Tower top x,y,z,twist
+      sec 4 0.0 0.0 5.0     0.0 ; 
+      sec 5 0.0 0.0 6.0     0.0 ; 
+      sec 6 0.0 0.0 7.1071  0.0 ; Main bearing
+      sec 7 0.0 0.0 9.0191  0.0 ; Rotor centre
+	  sec 8 0.0 0.0 11.0 0.0;
+	  sec 9 0.0	0.0	12.5 0;
+	  sec 10 0 0 13.5 0;
+    end c2_def ;
+	begin visualization_profile;
+		type cylinder;
+		nsec 5;
+		sec 	0		0.0;
+		sec 	0.3 	5;
+		sec		10		5;
+		sec 	11 	2;
+		sec     11.5 0;
+	end visualization_profile;
+  end main_body;	
+;
+  begin main_body;
+    name        hub1 ;              
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef  0.0  0.0  0.0  3.00E-06  3.00E-06  2.00E-05;    	
+	  gravity 9.80665;      	
+	begin timoschenko_input;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 4 1 ;                
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 2;
+      sec 1 0.0 0.0 0.0     0.0 ; x,y,z,twist
+      sec 2 0.0 0.0 1.5   0.0 ; 
+    end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name           hub2 ;
+    copy_main_body hub1;
+  end main_body;
+;
+  begin main_body;
+    name           hub3 ;
+    copy_main_body hub1 ;
+  end main_body;
+;
+  begin main_body;
+    name        blade1 ;        
+    type        timoschenko ;
+    nbodies     9 ;
+    node_distribution    c2_def;
+    damping_posdef   0.0 0.0 0.0 1.41E-03 2.39E-03 4.5E-05 ;  
+	  gravity 9.80665;      
+   begin timoschenko_input ;
+      filename ./data_turb/NREL_5MW_st.txt ;
+      set 5 1 ;                set subset
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+      nsec 19 ;
+	sec 1		 0.0000		0.0000		0.000		0.000		;	x.y.z. twist
+	sec 2		-0.0027		0.0006		1.367		-13.308		;	
+	sec 3		-0.1057		0.0250		4.100		-13.308		;	
+	sec 4		-0.2501		0.0592		6.833		-13.308		;	
+	sec 5		-0.4592		0.1086		10.250		-13.308		;
+	sec 6		-0.5699		0.1157		14.350		-11.480		;	
+	sec 7		-0.5485		0.0983		18.450		-10.162		;	
+	sec 8		-0.5246		0.0832		22.550		-9.011		;	
+	sec 9		-0.4962		0.0679		26.650		-7.795		;	
+	sec 10		-0.4654		0.0534		30.750		-6.544		;	50% blade radius
+	sec 11		-0.4358		0.0409		34.850		-5.361		;	
+	sec 12		-0.4059		0.0297		38.950		-4.188		;	
+	sec 13		-0.3757		0.0205		43.050		-3.125		;	
+	sec 14		-0.3452		0.0140		47.150		-2.319		;	
+	sec 15		-0.3146		0.0084		51.250		-1.526		;	
+	sec 16		-0.2891		0.0044		54.667		-0.863		;	
+	sec 17		-0.2607		0.0017		57.400		-0.370		;	
+	sec 18		-0.1774		0.0003		60.133		-0.106		;	
+	sec 19		-0.1201		0.0000		61.500		-0.000		;
+   end c2_def ;
+  end main_body;
+;
+  begin main_body;
+    name           blade2 ;
+    copy_main_body blade1;
+  end main_body;
+;
+  begin main_body;
+    name           blade3 ;
+    copy_main_body blade1 ;
+  end main_body;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------                   
+  begin orientation;
+ ;     continue_in_file orientation.dat;    
+;	  
+    begin base;
+      body   tower;
+      inipos        0.0 0.0 -20.15 ;         initial position of node 1
+      body_eulerang 0.0 0.0 0.0;
+    end base;
+;	  
+    begin relative;
+      body1  tower 1;
+      body2  tow_dummy 1;
+      body2_eulerang 0.0 0.0 0.0; 
+    end relative;
+;	  
+    begin relative;
+      body1  tower last;
+      body2  towertop 1;
+      body2_eulerang 0.0 0.0 0.0; 
+    end relative;
+;
+    begin relative;
+      body1  towertop last;
+      body2  shaft 4;
+      body2_eulerang 0.0 0.0 0.0; 	  
+	  body2_eulerang 90.0 0.0 0.0; 
+	  body2_eulerang 5.0 0.0 0.0;    5 deg tilt angle
+      body2_ini_rotvec_d1 0.0 0.0 -1.0 1.267109036 ; 12.1 rpm body initial rotation velocity x.y.z.angle velocity[rad/s]  (body 2 coordinates)
+    end relative;
+;
+    begin relative;
+      body1  shaft 7;         
+      body2  hub1 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 180.0 0.0;    
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  shaft 7;         
+      body2  hub2 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 60.0 0.0;   
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  shaft 7;         
+      body2  hub3 1;
+      body2_eulerang -90.0 0.0 0.0;    
+      body2_eulerang 0.0 -60.0 0.0;    
+      body2_eulerang 2.5 0.0 0.0;      2.5deg cone angle
+    end relative;
+;
+    begin relative;
+      body1  hub1 last;         
+      body2  blade1 1;
+      body2_eulerang 0.0 0.0 0;    
+    end relative;
+;
+    begin relative;
+      body1  hub2 last;         
+      body2  blade2 1;
+      body2_eulerang 0.0 0.0 0.0;    
+    end relative;
+;
+    begin relative;
+      body1  hub3 last;         
+      body2  blade3 1;
+      body2_eulerang 0.0 0.0 0.0;    
+    end relative;
+;
+ 	end orientation;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+begin constraint;
+;    continue_in_file constraints.dat;  
+; constraints upper nodes of substructures to tower
+;
+    begin fix1;
+      mbdy1 T1 1;
+      mbdy2 tower 1;
+    end fix1;
+;
+    begin fix1;
+      mbdy1 T2 1;
+      mbdy2 tower 1;
+    end fix1;
+;
+    begin fix1;
+      mbdy1 T3 1;
+      mbdy2 tower 1;
+    end fix1;
+;
+    begin fix1;
+      mbdy1 T4 1;
+      mbdy2 tower 1;
+    end fix1;
+;
+    begin fix1;
+      mbdy1 tower 1;
+      mbdy2 tow_dummy 1;
+    end fix1;
+;
+; constraints turbine'
+;
+     begin fix1;
+		   body1 tower last ;
+		   body2 towertop 1;
+		 end fix1;
+;
+    begin bearing1;                       free bearing
+     name  shaft_rot;
+      body1 towertop last;
+      body2 shaft 3;
+      bearing_vector 2 0.0 0.0 -1.0;        x=coo (0=global.1=body1.2=body2) vector in body2 coordinates where the free rotation is present
+   end bearing1; 
+; ;
+    ; begin fix1;
+		   ; body1 towertop last ;
+		   ; body2 shaft 1;
+		 ; end fix1;
+; ;
+     begin fix1;
+		   body1 shaft 8 ;
+		   body2 hub1 1;
+		 end fix1;
+;
+     begin fix1;
+		   body1 shaft 8 ;
+		   body2 hub2 1;
+		 end fix1;
+;
+     begin fix1;
+		   body1 shaft 8 ;
+		   body2 hub3 1;
+		 end fix1; 
+;	
+    begin bearing2;
+      name pitch1;		
+      body1 hub1 last;
+     body2 blade1 1;
+			bearing_vector 2 0.0 0.0 -1.0;
+   end bearing2;
+;
+    begin bearing2;
+      name pitch2;		
+      body1 hub2 last;
+      body2 blade2 1;
+			bearing_vector 2 0.0 0.0 -1.0;
+    end bearing2;
+;
+    begin bearing2;
+      name pitch3;		
+      body1 hub3 last;
+      body2 blade3 1;
+			bearing_vector 2 0.0 0.0 -1.0;
+    end bearing2;
+;
+;     begin fix1;
+;		   body1 hub1 last ;
+;		   body2 blade1 1;
+;		 end fix1; 
+;
+;     begin fix1;
+;		   body1 hub2 last ;
+;		   body2 blade2 1;
+;		 end fix1; 
+;		
+;     begin fix1;
+;		   body1 hub3 last ;
+;		   body2 blade3 1;
+;		 end fix1; 
+;	
+end constraint;
+;
+end new_htc_structure;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+begin wind ;
+  density                 1.225 ; to be checked
+  wsp                     12.0  ;
+  tint                    0.0;
+  horizontal_input        1     ;            0=false, 1=true
+  windfield_rotations     0.0  0.0  0.0 ;    yaw, tilt, rotation
+  center_pos0             0.0 0.0 -90.55;
+  shear_format            1  0.14  ;0=none,1=constant,2=log,3=power,4=linear
+  turb_format             0     ;  0=none, 1=mann,2=flex
+  tower_shadow_method     3     ;  0=none, 1=potential flow, 2=jet
+;  scale_time_start        0 ;
+;  wind_ramp_factor   0.0 [t0] [wsp factor] 1.0 ;
+;  [gust] iec_gust [gust_type] [gust_A] [gust_phi0] [gust_t0] [gust_T] ;
+;
+  begin mann;
+    filename_u    ./turb/dummyu.bin ;      
+    filename_v    ./turb/dummyv.bin ;  
+    filename_w    ./turb/dummyw.bin ;
+    box_dim_u    8192 0.0 ;
+    box_dim_v    32 4.6875;
+    box_dim_w    32 4.6875;
+    std_scaling   1.0 0.7 0.5 ;
+  end mann;
+;
+  begin tower_shadow_potential_2;
+    tower_mbdy_link tower ;
+    nsec  2;
+    radius      0   2.8 ;
+    radius     68   2.0 ;
+  end tower_shadow_potential;
+end wind;
+;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+;
+begin aero ;
+  nblades  3;
+  hub_vec shaft -3 ;         rotor rotation vector (normally shaft composant directed from pressure to sustion side)
+  link 1 mbdy_c2_def blade1;
+  link 2 mbdy_c2_def blade2;
+  link 3 mbdy_c2_def blade3;
+  ae_filename        ./data_turb/NREL_5MW_ae.txt;
+  pc_filename        ./data_turb/NREL_5MW_pc.txt;
+  induction_method   1 ;     0=none, 1=normal
+  aerocalc_method    1 ;     0=ingen aerodynamic, 1=med aerodynamic
+  aerosections       30 ;
+  ae_sets            1 1 1;
+  tiploss_method     1 ;     0=none, 1=prandtl
+  dynstall_method    2 ;     0=none, 1=stig øye method,2=mhh method
+end aero ;
+;
+; begin aerodrag ;
+  ; begin aerodrag_element ;
+    ; mbdy_name tower;
+    ; aerodrag_sections uniform 10 ;
+    ; nsec 2 ;
+    ; sec 0.0 0.6 5.6 ;  tower bottom
+    ; sec 87.6 0.6 4.0 ;  tower top
+  ; end aerodrag_element;
+; ;
+  ; begin aerodrag_element ;        Nacelle drag side
+    ; mbdy_name shaft;
+    ; aerodrag_sections uniform 2 ;
+    ; nsec 2 ;
+    ; sec 0.0   0.8 10.0 ;  
+    ; sec 5.02  0.8 10.0 ;  
+  ; end aerodrag_element;
+; end aerodrag;
+;
+;---------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+begin dll;
+  begin hawc_dll;
+    filename  ./control/bladed2hawc.dll ;
+    dll_subroutine regulation ;
+    arraysizes  15 15 ;
+    begin output;
+      general time ;                                                                                                             1
+      constraint bearing2 pitch1 1;  angle and angle velocity written to dll                                                     2,3
+      constraint bearing2 pitch2 1;  angle and angle velocity written to dll                                                     4,5
+      constraint bearing2 pitch3 1;  angle and angle velocity written to dll                                                     6,7
+      constraint bearing2 shaft_rot 1; angle and angle velocity written to dll  (slow speed shaft)                               8,9
+      wind free_wind 1 0.0 0.0 -90.55; local wind at fixed position: coo (1=global,2=non-rotation rotor coo.), pos x, pos y, pos z   10,11,12
+      general constant 97.0 ;                  generator exchange ratio                                                              13
+    end output;
+;
+    begin actions;    
+      body moment_ext shaft 1 3;
+    end actions;
+  end hawc_dll;
+;
+  begin hawc_dll;
+    filename  ./control/pitchservo_pos.dll ;
+    dll_subroutine servo ;
+    arraysizes  15 15 ;
+    begin output;
+      general time ;                                                                     1
+      dll inpvec 1 2;                                                                    2
+      dll inpvec 1 3;                                                                    3
+      dll inpvec 1 4;                                                                    4
+      constraint bearing2 pitch1 1;  angle and angle velocity written to dll         5,6
+      constraint bearing2 pitch2 1;  angle and angle velocity written to dll         7,8
+      constraint bearing2 pitch3 1;  angle and angle velocity written to dll         9,10
+    end output;
+;
+    begin actions;    
+      body bearing_angle pitch1;
+      body bearing_angle pitch2;
+      body bearing_angle pitch3;
+    end actions;
+  end hawc_dll;
+;
+  ; begin hawc_dll;
+    ; filename  ./control/damper.dll ;
+    ; dll_subroutine damp ;
+    ; arraysizes  15 15 ;
+    ; begin output;
+      ; general time ;                                                                     1
+      ; general constant 5.0;
+      ; general constant 25.0;
+      ; general constant 0.0 ;
+      ; mbdy state vel towertop 1 1.0 tower;
+    ; end output;
+; ;
+    ; begin actions;    
+       ; mbdy force_ext towertop 2 1 towertop;  
+	    ; mbdy force_ext towertop 2 2 towertop;  
+    ; end actions;
+  ; end hawc_dll;
+;
+;
+  begin type2_dll;
+    name gear;
+    filename  ./control/hss_convert.dll ;
+    arraysizes_init  3 1 ;
+    arraysizes_update  2 2 ;
+    begin init;
+      constant 1 1.0 ;     number of used sensors - in this case only 1
+      constant 2 1000;     unit conversion factor
+    end init;
+    begin output;
+      mbdy momentvec shaft 1 1 shaft # only 3;
+    end output;
+;
+    begin actions;    
+      mbdy moment_ext towertop 2 3 shaft;
+    end actions;
+  end type2_dll;
+;
+end dll;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+begin HYDRO ;
+  begin WATER_PROPERTIES ;
+    rho 1025 ; [kg/m^3]
+    gravity 9.80665 ; [m/s^2]
+    mwl 0.00 ; [m]
+    mudlevel 200 ; [m]
+    water_kinematics_dll ./wkin_dll.dll ./htc_hydro/ireg_airy_h6_t10.inp ;
+  end WATER_PROPERTIES ; 
+ ;continue_in_file hydro.dat; 
+ end HYDRO ;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+begin output;
+  filename ./res/oc4_jacket ;
+  data_format  hawc_binary;
+;  time 50.0 650.0 ; 
+  buffer 1 ;
+;
+  general time;
+  wind free_wind 1 0.0 0.0 -90.55; local wind at fixed position: coo (1=global,2=non-rotation rotor coo.), pos x, pos y, pos z  ---------- sensor 2-4 ----------- 
+  hydro water_surface 0.0 0.0 ;        x,y   gl. pos ---------- sensor 5 -----------
+;  general constant 0.0;
+  dll inpvec 1 9 # Electrical power generator [kW]; ---------- sensor 6 -----------
+;  general constant 0.0;
+  dll inpvec 1 6 # Mgen fast; ---------- sensor 7 -----------
+  mbdy state pos blade1  18 1.0 hub1 only 1 # blade 1 tip pos ; ---------- sensor 8-9 -----------
+  mbdy state pos blade1  18 1.0 hub1 only 2 # blade 1 tip pos ; ---------- sensor 8-9 -----------
+  mbdy state_rot proj_ang blade1  18 1.0 blade1 only 3 # blade 1 tip twist ; ---------- sensor 10 ----------- ???checkes?????
+;  general constant 0.0;
+  constraint bearing2 pitch1 5 only 1;   Blade1 pitch angle ---------- sensor 11 -----------
+;  general constant 0.0;
+;  general constant 0.0;
+  constraint bearing1 shaft_rot 2;       Azimut Angle and angle velocity ---------- sensor 12-13 -----------
+;  general constant 0.0;
+  dll inpvec 1 5 # Gen speed fast;      ---------- sensor 14 -----------
+  mbdy state pos towertop   1 1.0 global # tower top position ;  ---------- sensor 15-16 -----------
+  mbdy state_rot proj_ang towertop   1 1.0 global # tower top twist ;  ---------- sensor 17 -----------
+  mbdy momentvec blade1 10 1 local # blade 1 50 bending moment% (local e coo) ; ---------- sensor 18-19 -----------
+;  mbdy forcevec  blade1 1  1 hub1 # blade 1 root shear force and axial force ; ---------- sensor 20-22 -----------
+;  mbdy momentvec blade1 1  1 hub1 # blade 1 root bending moment ; ---------- sensor 23-25 -----------
+  mbdy forcevec  hub1 1  2 hub1 # blade 1 root shear force and axial force ; ---------- sensor 20-22 -----------
+  mbdy momentvec hub1 1  2 hub1 # blade 1 root bending moment ; ---------- sensor 23-25 -----------
+  mbdy momentvec shaft 4 1  shaft # main bearing ; ---------- sensor 27-28 -----------
+  mbdy forcevec  towertop  1 1 towertop # tower top shear force ;  ---------- sensor 29-31 -----------
+  mbdy momentvec  towertop  1 1 towertop # tower top bending moment ;  ---------- sensor 31-34 -----------
+  mbdy state pos tower  1 0.0 global # tower bottom/tp position ;  ---------- sensor 35-36 -----------
+  mbdy state_rot proj_ang tow_dummy  1 0.0 global # tower bottom/tp twist ;  ---------- sensor 37-40 -----------
+;  mbdy forcevec L2  8 0.0 L2 # Leg 2 axial force at k-joint position ;  ---------- sensor 41 -----------
+  mbdy forcevec L2  7 1.0 L2 # Leg 2 axial force at k-joint position ;  ---------- sensor 41 -----------
+;  mbdy forcevec L4  8 0.0 L4 # Leg 4 axial force at k-joint position ;  ---------- sensor 42 -----------  
+  mbdy forcevec L4  7 1.0 L4 # Leg 4 axial force at k-joint position ;  ---------- sensor 42 -----------  
+  mbdy state pos S2X3A  1 1.0 global # x-2 position side 2 ;  ---------- sensor 43 -----------
+  mbdy state pos S3X3A  1 1.0 global # x-2 position side 3 ;  ---------- sensor 44 -----------
+  mbdy state pos S2X1A  3 1.0 global # x-4 position side 2 ;  ---------- sensor 45 ----------- måske revideres pga nyt punkt
+  mbdy state pos S3X1A  3 1.0 global # x-4 position side 3 ;  ---------- sensor 46 -----------
+  mbdy forcevec S2X1A  3 1 S2X1A # b59 brace position side 2 ;  ---------- sensor 47 ----------- nyt punkt ind her til før det passser!!!
+  mbdy forcevec S2X1A  3 1 global # b59 brace position side 2 ;  ---------- sensor 48 -----------
+  mbdy forcevec S3X1A  3 1 S3X1A # b61 brace position side 3 ;  ---------- sensor 49 -----------
+  mbdy forcevec S3X1A  3 1 global # b61 brace position side 3 ;  ---------- sensor 50 -----------
+  mbdy forcevec L2  2 1.0 L2 only 3 # Leg 2 axial force at mudbrace position ;  ---------- sensor 51 -----------
+  mbdy forcevec L4  2 1.0 L4 only 3 # Leg 4 axial force at mudbrace position ;  ---------- sensor 52 -----------  
+  mbdy forcevec Pile1  1 1 global # Pile1 shear force ;  ---------- sensor 52-54,58 -----------        
+  mbdy forcevec Pile2  1 1 global # Pile1 shear force ;  ---------- sensor 52-54,58 -----------        
+  mbdy forcevec Pile3  1 1 global # Pile1 shear force ;  ---------- sensor 52-54,58 -----------        
+  mbdy forcevec Pile4  1 1 global # Pile1 shear force ;  ---------- sensor 52-54,58 -----------        
+  mbdy momentvec Pile1  1 1 global # Pile1 moment vector ;  ---------- sensor 55-57 -----------        
+  mbdy momentvec Pile2  1 1 global # Pile1 moment vector ;  ---------- sensor 55-57 -----------        
+  mbdy momentvec Pile3  1 1 global # Pile1 moment vector ;  ---------- sensor 55-57 -----------        
+  mbdy momentvec Pile4  1 1 global # Pile1 moment vector ;  ---------- sensor 55-57 -----------   
+end output;
+exit;
+
