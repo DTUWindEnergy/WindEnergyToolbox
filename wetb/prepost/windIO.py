@@ -1018,14 +1018,14 @@ class LoadResults(object):
 
         try:
             sig_rf = rainflow_astm(signal)
-        except:
+        except (TypeError) as e:
+            print(e)
             return []
 
         if len(sig_rf) < 1 and not sig_rf:
             return []
 
         hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
-
         m = np.atleast_1d(m)
 
         eq = []
