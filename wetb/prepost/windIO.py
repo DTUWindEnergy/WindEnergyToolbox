@@ -1013,7 +1013,22 @@ class LoadResults(object):
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_fatigue(self, signal, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1):
         """
-        signal is 1D
+        Parameters
+        ----------
+
+        signal: 1D array
+            One dimentional array containing the signal.
+        no_bins: int
+            Number of bins for the binning of the amplitudes.
+        m: list
+            Values of the slope of the SN curve.
+        neq: int
+            Number of equivalent cycles
+
+        Returns
+        -------
+        eq: list
+            Damage equivalent loads for each m value.
         """
 
         try:
