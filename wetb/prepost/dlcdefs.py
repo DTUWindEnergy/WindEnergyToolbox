@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
 from builtins import str
+from future.utils import viewitems
 from future import standard_library
 standard_library.install_aliases()
 
@@ -284,7 +285,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
 
     opt_tags = []
 
-    for dlc, df in df_list.items():
+    for (dlc, df) in viewitems(df_list):
         # replace ';' with False, and Nan(='') with True
         # this is more easy when testing for the presence of stuff compared
         # to checking if a value is either True/False or ''/';'
@@ -298,19 +299,19 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
         for count, row in df2.iterrows():
             tags_dict = {}
             # construct to dict, convert unicode keys/values to strings
-            for key, value in row.items():
+            for key, value in row.iteritems():
                 if isinstance(value, str):
                     tags_dict[str(key)] = str(value)
                 else:
                     tags_dict[str(key)] = value
                 # convert ; and empty to False/True
-#                if isinstance(tags_dict[str(key)], str):
-                if tags_dict[str(key)] == ';':
-                    tags_dict[str(key)] = False
-                elif tags_dict[str(key)] == '':
-                    tags_dict[str(key)] = True
-                elif tags_dict[str(key)].lower() == 'nan':
-                    tags_dict[str(key)] = True
+                if isinstance(tags_dict[str(key)], str):
+                    if tags_dict[str(key)] == ';':
+                        tags_dict[str(key)] = False
+                    elif tags_dict[str(key)] == '':
+                        tags_dict[str(key)] = True
+                    elif tags_dict[str(key)].lower() == 'nan':
+                        tags_dict[str(key)] = True
 
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()

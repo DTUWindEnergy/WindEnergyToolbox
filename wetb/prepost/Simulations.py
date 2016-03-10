@@ -2584,6 +2584,8 @@ class ErrorLogs(object):
         self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
         # *** WARNING *** Shear center x location not in elastic center, set to zero
         self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
+        # Turbulence file ./xyz.bin does not exist
+        self.err_init[' Turbulence file '] = len(self.err_init)
         self.err_init[' *** WARNING ***'] = len(self.err_init)
         self.err_init[' *** ERROR ***'] = len(self.err_init)
         self.err_init[' WARNING'] = len(self.err_init)
