@@ -169,7 +169,7 @@ def fit_log_shear(z_u_lst, include_R=False):
 
     Example
     --------
-    >>> fit_log_shear([(85, 8.88131), (21, 4.41832)],  87.13333)
+    >>> fit_log_shear([(85, 8.88131), (21, 4.41832)])
     [ 0.49938238  8.99192568]
     """
 #    def shear_error(x, z_u_lst):

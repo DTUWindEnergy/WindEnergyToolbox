@@ -5,4 +5,5 @@ Created on 29/01/2016
 '''
 import pytest
 import os
-pytest.main(os.path.dirname(__file__) + "./../")
+p = os.path.abspath(os.path.join(os.path.dirname(__file__) + "./../")).replace("\\", "/")
+pytest.main(p)

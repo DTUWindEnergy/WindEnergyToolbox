@@ -76,12 +76,43 @@ class PCFile(AEFile):
         return Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
 
     def CL(self, radius, alpha, ae_set_nr=1):
+        """Lift coefficient
+
+        Parameters
+        ---------
+        radius : float
+            radius [m]
+        alpha : float
+            Angle of attack [deg]
+        ae_set_nr : int optional
+            Aerdynamic set number, default is 1
+
+        Returns
+        -------
+        Lift coefficient : float
+        """
         return self._Cxxx(radius, alpha, 1, ae_set_nr)
 
     def CD(self, radius, alpha, ae_set_nr=1):
+        """Drag coefficient
+
+        Parameters
+        ---------
+        radius : float
+            radius [m]
+        alpha : float
+            Angle of attack [deg]
+        ae_set_nr : int optional
+            Aerdynamic set number, default is 1
+
+        Returns
+        -------
+        Drag coefficient : float
+        """
         return self._Cxxx(radius, alpha, 2, ae_set_nr)
 
     def CM(self, radius, alpha, ae_set_nr=1):
+
         return self._Cxxx(radius, alpha, 3, ae_set_nr)
 
 if __name__ == "__main__":
