@@ -18,9 +18,8 @@ class HAWC2PBSJob(PBSJob):
         print (htcfilename)
         htcfile = HTCFile(cwd + htcfilename)
 
-        logfilename = htcfile.simulation.logfile[0]
+        self.log_filename = htcfile.simulation.logfile[0]
         self.loginterpreter = LogInterpreter(htcfile.simulation.time_stop[0])
-        print (self.loginterpreter.filename)
         PBSJob.submit(self, job, cwd, pbs_out_file)
 
     def status_monitor(self, update=5):
@@ -31,7 +30,7 @@ class HAWC2PBSJob(PBSJob):
             print (i, self.status, self.get_nodeid())
             if self.status is pbsjob.RUNNING:
                 #self.test()
-                scratch_log_filename = "/scratch/%s/%s.g-000.risoe.dk/%s" % (self.client.username, self.jobid, self.loginterpreter.filename)
+                scratch_log_filename = "/scratch/%s/%s.g-000.risoe.dk/%s" % (self.client.username, self.jobid, self.log_filename)
                 try:
                     n, out, err = self.client.execute('tail --lines=+%d %s' % (self.loglinenumber, scratch_log_filename))
                     self.loginterpreter.update_status(out)
