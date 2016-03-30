@@ -41,7 +41,6 @@ from wetb.fatigue_tools.fatigue import eq_load
 
 standard_library.install_aliases()
 
-
 __author__ = 'David Verelst'
 __license__ = 'GPL'
 __version__ = '0.5'
@@ -130,7 +129,7 @@ class LoadResults(ReadHawc2):
         # any wrongly used upper case letters to lower case here
         self.file_name = file_name.lower()
         FileName = os.path.join(self.file_path, self.file_name)
-        print('readdata', readdata)
+
         ReadOnly = 0 if readdata else 1
         super(LoadResults, self).__init__(FileName, ReadOnly=ReadOnly)
         ChVec = [] if usecols is None else usecols
@@ -195,7 +194,7 @@ class LoadResults(ReadHawc2):
         change_list.append(['My coo: chasis', 'yaw-moment chasis'])
         change_list.append(['Mz coo: chasis', 'chasis moment SS'])
 
-        change_list.append( ['DLL inp  2:  2','tower clearance'])
+        change_list.append(['DLL inp  2:  2', 'tower clearance'])
 
         self.ch_details_new = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
 
@@ -205,10 +204,10 @@ class LoadResults(ReadHawc2):
         for ch in range(self.Nch):
             # the change_list will always be slower, so this loop will be
             # inside the bigger loop of all channels
-            self.ch_details_new[ch,:] = self.ch_details[ch,:]
+            self.ch_details_new[ch, :] = self.ch_details[ch, :]
             for k in range(len(change_list)):
-                if change_list[k][0] == self.ch_details[ch,0]:
-                    self.ch_details_new[ch,0] =  change_list[k][1]
+                if change_list[k][0] == self.ch_details[ch, 0]:
+                    self.ch_details_new[ch, 0] = change_list[k][1]
                     # channel description should be unique, so delete current
                     # entry and stop looking in the change list
                     del change_list[k]
@@ -287,7 +286,7 @@ class LoadResults(ReadHawc2):
 
         # some channel ID's are unique, use them
         ch_unique = set(['Omega', 'Ae rot. torque', 'Ae rot. power',
-                     'Ae rot. thrust', 'Time', 'Azi  1'])
+                         'Ae rot. thrust', 'Time', 'Azi  1'])
         ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa'])
         ch_aerogrid = set(['a_grid', 'am_grid'])
 
@@ -296,13 +295,13 @@ class LoadResults(ReadHawc2):
 #                    'component', 'pos', 'coord', 'sensortype', 'radius',
 #                    'blade_nr', 'units', 'output_type', 'io_nr', 'io', 'dll',
 #                    'azimuth', 'flap_nr'])
-        df_dict = {col:[] for col in self.cols}
+        df_dict = {col: [] for col in self.cols}
         df_dict['ch_name'] = []
 
         # scan through all channels and see which can be converted
         # to sensible unified name
         for ch in range(self.Nch):
-            items = self.ch_details[ch,2].split(' ')
+            items = self.ch_details[ch, 2].split(' ')
             # remove empty values in the list
             items = misc.remove_items(items, '')
 
@@ -315,24 +314,24 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             # check for all the unique channel descriptions
             if self.ch_details[ch,0].strip() in ch_unique:
-                tag = self.ch_details[ch,0].strip()
+                tag = self.ch_details[ch, 0].strip()
                 channelinfo = {}
-                channelinfo['units'] = self.ch_details[ch,1]
-                channelinfo['sensortag'] = self.ch_details[ch,2]
+                channelinfo['units'] = self.ch_details[ch, 1]
+                channelinfo['sensortag'] = self.ch_details[ch, 2]
                 channelinfo['chi'] = ch
 
             # -----------------------------------------------------------------
             # or in the long description:
             #    0          1        2      3  4    5     6 and up
             # MomentMz Mbdy:blade nodenr:   5 coo: blade  TAG TEXT
-            elif self.ch_details[ch,2].startswith('MomentM'):
+            elif self.ch_details[ch, 2].startswith('MomentM'):
                 coord = items[5]
                 bodyname = items[1].replace('Mbdy:', '')
                 # set nodenr to sortable way, include leading zeros
                 # node numbers start with 0 at the root
                 nodenr = '%03i' % int(items[3])
                 # skip the attached the component
-                #sensortype = items[0][:-2]
+                # sensortype = items[0][:-2]
                 # or give the sensor type the same name as in HAWC2
                 sensortype = 'momentvec'
                 component = items[0][-1:len(items[0])]
@@ -344,7 +343,7 @@ class LoadResults(ReadHawc2):
 
                 # and tag it
                 pos = 'node-%s' % nodenr
-                tagitems = (coord,bodyname,pos,sensortype,component)
+                tagitems = (coord, bodyname, pos, sensortype, component)
                 tag = '%s-%s-%s-%s-%s' % tagitems
                 # save all info in the dict
                 channelinfo = {}
@@ -355,17 +354,17 @@ class LoadResults(ReadHawc2):
                 channelinfo['component'] = component
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
-                channelinfo['units'] = self.ch_details[ch,1]
+                channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
             #   0    1      2        3       4  5     6     7 and up
             # Force  Fx Mbdy:blade nodenr:   2 coo: blade  TAG TEXT
-            elif self.ch_details[ch,2].startswith('Force'):
+            elif self.ch_details[ch, 2].startswith('Force'):
                 coord = items[6]
                 bodyname = items[2].replace('Mbdy:', '')
                 nodenr = '%03i' % int(items[4])
                 # skipe the attached the component
-                #sensortype = items[0]
+                # sensortype = items[0]
                 # or give the sensor type the same name as in HAWC2
                 sensortype = 'forcevec'
                 component = items[1][1]
@@ -376,7 +375,7 @@ class LoadResults(ReadHawc2):
 
                 # and tag it
                 pos = 'node-%s' % nodenr
-                tagitems = (coord,bodyname,pos,sensortype,component)
+                tagitems = (coord, bodyname, pos, sensortype, component)
                 tag = '%s-%s-%s-%s-%s' % tagitems
                 # save all info in the dict
                 channelinfo = {}
@@ -387,7 +386,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['component'] = component
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
-                channelinfo['units'] = self.ch_details[ch,1]
+                channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
             #   0    1  2      3       4      5   6         7    8
@@ -408,7 +407,7 @@ class LoadResults(ReadHawc2):
                 # skip the attached the component
                 #sensortype = ''.join(items[0:2])
                 # or give the sensor type the same name as in HAWC2
-                tmp = self.ch_details[ch,0].split(' ')
+                tmp = self.ch_details[ch, 0].split(' ')
                 sensortype = tmp[0]
                 if sensortype.startswith('State'):
                     sensortype += ' ' + tmp[1]
@@ -420,7 +419,7 @@ class LoadResults(ReadHawc2):
 
                 # and tag it
                 pos = 'elem-%s-zrel-%s' % (elementnr, zrel)
-                tagitems = (coord,bodyname,pos,sensortype,component)
+                tagitems = (coord, bodyname, pos, sensortype, component)
                 tag = '%s-%s-%s-%s-%s' % tagitems
                 # save all info in the dict
                 channelinfo = {}
@@ -431,7 +430,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['component'] = component
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
-                channelinfo['units'] = self.ch_details[ch,1]
+                channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
             # DLL CONTROL I/O
@@ -449,17 +448,17 @@ class LoadResults(ReadHawc2):
             # description case 3
             #           0         1     2       4
             #          hawc_dll :echo outvec :  1
-            elif self.ch_details[ch,0].startswith('DLL'):
+            elif self.ch_details[ch, 0].startswith('DLL'):
                 # case 3
                 if items[1][0] == ':echo':
                     # hawc_dll named case (case 3) is polluted with colons
-                    items = self.ch_details[ch,2].replace(':','')
+                    items = self.ch_details[ch,2].replace(':', '')
                     items = items.split(' ')
                     items = misc.remove_items(items, '')
                     dll = items[1]
                     io = items[2]
                     io_nr = items[3]
-                    tag = 'DLL-%s-%s-%s' % (dll,io,io_nr)
+                    tag = 'DLL-%s-%s-%s' % (dll, io, io_nr)
                     sensortag = ''
                 # case 2: no reference to dll name
                 elif self.ch_details[ch,2].startswith('DLL'):
@@ -475,7 +474,7 @@ class LoadResults(ReadHawc2):
                     io = items[1]
                     io_nr = items[2]
                     sensortag = ' '.join(items[3:])
-                    tag = 'DLL-%s-%s-%s' % (dll,io,io_nr)
+                    tag = 'DLL-%s-%s-%s' % (dll, io, io_nr)
 
                 # save all info in the dict
                 channelinfo = {}
@@ -484,19 +483,19 @@ class LoadResults(ReadHawc2):
                 channelinfo['io_nr'] = io_nr
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
-                channelinfo['units'] = self.ch_details[ch,1]
+                channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
             # BEARING OUTPUS
             # bea1 angle_speed       rpm      shaft_nacelle angle speed
-            elif self.ch_details[ch,0].startswith('bea'):
-                output_type = self.ch_details[ch,0].split(' ')[1]
+            elif self.ch_details[ch, 0].startswith('bea'):
+                output_type = self.ch_details[ch, 0].split(' ')[1]
                 bearing_name = items[0]
-                units = self.ch_details[ch,1]
+                units = self.ch_details[ch, 1]
                 # there is no label option for the bearing output
 
                 # and tag it
-                tag = 'bearing-%s-%s-%s' % (bearing_name,output_type,units)
+                tag = 'bearing-%s-%s-%s' % (bearing_name, output_type, units)
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['bearing_name'] = bearing_name
@@ -508,20 +507,20 @@ class LoadResults(ReadHawc2):
             # AERO CL, CD, CM, VREL, ALFA, LIFT, DRAG, etc
             # Cl, R=  0.5     deg      Cl of blade  1 at radius   0.49
             # Azi  1          deg      Azimuth of blade  1
-            elif self.ch_details[ch,0].split(',')[0] in ch_aero:
-                dscr_list = self.ch_details[ch,2].split(' ')
+            elif self.ch_details[ch, 0].split(',')[0] in ch_aero:
+                dscr_list = self.ch_details[ch, 2].split(' ')
                 dscr_list = misc.remove_items(dscr_list, '')
 
-                sensortype = self.ch_details[ch,0].split(',')[0]
+                sensortype = self.ch_details[ch, 0].split(',')[0]
                 radius = dscr_list[-1]
                 # is this always valid?
-                blade_nr = self.ch_details[ch,2].split('blade  ')[1][0]
+                blade_nr = self.ch_details[ch, 2].split('blade  ')[1][0]
                 # sometimes the units for aero sensors are wrong!
-                units = self.ch_details[ch,1]
+                units = self.ch_details[ch, 1]
                 # there is no label option
 
                 # and tag it
-                tag = '%s-%s-%s' % (sensortype,blade_nr,radius)
+                tag = '%s-%s-%s' % (sensortype, blade_nr, radius)
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['sensortype'] = sensortype
@@ -533,14 +532,14 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             # for the induction grid over the rotor
             # a_grid, azi    0.00 r   1.74
-            elif self.ch_details[ch,0].split(',')[0] in ch_aerogrid:
-                items = self.ch_details[ch,0].split(',')
+            elif self.ch_details[ch, 0].split(',')[0] in ch_aerogrid:
+                items = self.ch_details[ch, 0].split(',')
                 sensortype = items[0]
                 items2 = items[1].split(' ')
                 items2 = misc.remove_items(items2, '')
                 azi = items2[1]
                 radius = items2[3]
-                units = self.ch_details[ch,1]
+                units = self.ch_details[ch, 1]
                 # and tag it
                 tag = '%s-azi-%s-r-%s' % (sensortype,azi,radius)
                 # save all info in the dict
@@ -560,15 +559,15 @@ class LoadResults(ReadHawc2):
 # Induc. Vy, blco, R=  1.4 // Induced wsp Vy of blade  1 at radius   1.37, local bl coo.
 # Induc. Vz, glco, R=  1.4 // Induced wsp Vz of blade  1 at radius   1.37, global coo.
 # Induc. Vx, rpco, R=  8.4 // Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
-            elif self.ch_details[ch,0].strip()[:5] == 'Induc':
-                items = self.ch_details[ch,2].split(' ')
+            elif self.ch_details[ch, 0].strip()[:5] == 'Induc':
+                items = self.ch_details[ch, 2].split(' ')
                 items = misc.remove_items(items, '')
                 blade_nr = int(items[5])
                 radius = float(items[8].replace(',', ''))
-                items = self.ch_details[ch,0].split(',')
+                items = self.ch_details[ch, 0].split(',')
                 coord = items[1].strip()
                 component = items[0][-2:]
-                units = self.ch_details[ch,1]
+                units = self.ch_details[ch, 1]
                 # and tag it
                 rpl = (coord, blade_nr, component, radius)
                 tag = 'induc-%s-blade-%1i-%s-r-%03.02f' % rpl
@@ -591,8 +590,8 @@ class LoadResults(ReadHawc2):
 
             # -----------------------------------------------------------------
             # WATER SURFACE gl. coo, at gl. coo, x,y=   0.00,   0.00
-            elif self.ch_details[ch,2].startswith('Water'):
-                units = self.ch_details[ch,1]
+            elif self.ch_details[ch, 2].startswith('Water'):
+                units = self.ch_details[ch, 1]
 
                 # but remove the comma
                 x = items[-2][:-1]
@@ -610,10 +609,10 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             # WIND SPEED
             # WSP gl. coo.,Vx
-            elif self.ch_details[ch,0].startswith('WSP gl.'):
-                units = self.ch_details[ch,1]
-                direction = self.ch_details[ch,0].split(',')[1]
-                tmp = self.ch_details[ch,2].split('pos')[1]
+            elif self.ch_details[ch, 0].startswith('WSP gl.'):
+                units = self.ch_details[ch, 1]
+                direction = self.ch_details[ch, 0].split(',')[1]
+                tmp = self.ch_details[ch, 2].split('pos')[1]
                 x, y, z = tmp.split(',')
                 x, y, z = x.strip(), y.strip(), z.strip()
 
@@ -629,12 +628,12 @@ class LoadResults(ReadHawc2):
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
             # 2: Wind speed Vx of blade  1 at radius  61.52, global coo.
-            elif self.ch_details[ch,0].startswith('WSP V'):
-                units = self.ch_details[ch,1].strip()
-                direction = self.ch_details[ch,0].split(' ')[1].strip()
-                blade_nr = self.ch_details[ch,2].split('blade')[1].strip()[:2]
-                radius = self.ch_details[ch,2].split('radius')[1].split(',')[0]
-                coord = self.ch_details[ch,2].split(',')[1].strip()
+            elif self.ch_details[ch, 0].startswith('WSP V'):
+                units = self.ch_details[ch, 1].strip()
+                direction = self.ch_details[ch, 0].split(' ')[1].strip()
+                blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()[:2]
+                radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
+                coord = self.ch_details[ch, 2].split(',')[1].strip()
 
                 radius = radius.strip()
                 blade_nr = blade_nr.strip()
@@ -653,11 +652,11 @@ class LoadResults(ReadHawc2):
 
             # FLAP ANGLE
             # 2: Flap angle for blade  3 flap number  1
-            elif self.ch_details[ch,0][:7] == 'setbeta':
-                units = self.ch_details[ch,1].strip()
-                blade_nr = self.ch_details[ch,2].split('blade')[1].strip()
+            elif self.ch_details[ch, 0][:7] == 'setbeta':
+                units = self.ch_details[ch, 1].strip()
+                blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()
                 blade_nr = blade_nr.split(' ')[0].strip()
-                flap_nr = self.ch_details[ch,2].split(' ')[-1].strip()
+                flap_nr = self.ch_details[ch, 2].split(' ')[-1].strip()
 
                 radius = radius.strip()
                 blade_nr = blade_nr.strip()
@@ -719,7 +718,7 @@ class LoadResults(ReadHawc2):
         for ch_name, channelinfo in self.ch_dict.items():
             cols.update(set(channelinfo.keys()))
 
-        df_dict = {col:[] for col in cols}
+        df_dict = {col: [] for col in cols}
         df_dict['ch_name'] = []
         for ch_name, channelinfo in self.ch_dict.items():
             cols_ch = set(channelinfo.keys())
@@ -732,7 +731,6 @@ class LoadResults(ReadHawc2):
 
         self.ch_df = pd.DataFrame(df_dict)
         self.ch_df.set_index('chi', inplace=True)
-
 
     def _data_window(self, nr_rev=None, time=None):
         """
@@ -779,7 +777,7 @@ class LoadResults(ReadHawc2):
             i_range = int(self.Freq*time_range)
             window = [0, time_range]
             # in case the first datapoint is not at 0 seconds
-            i_zero = int(self.sig[0,0]*self.Freq)
+            i_zero = int(self.sig[0, 0]*self.Freq)
             slice_ = np.r_[i_zero:i_range+i_zero]
 
             zoomtype = '_nrrev_' + format(nr_rev, '1.0f') + 'rev'
@@ -792,7 +790,7 @@ class LoadResults(ReadHawc2):
             slice_ = np.r_[i_start:i_end]
             window = [time[0], time[1]]
 
-            zoomtype = '_zoom_%1.1f-%1.1fsec' %  (time[0], time[1])
+            zoomtype = '_zoom_%1.1f-%1.1fsec' % (time[0], time[1])
 
         return slice_, window, zoomtype, time_range
 
@@ -801,14 +799,14 @@ class LoadResults(ReadHawc2):
 
         stats = {}
         # calculate the statistics values:
-        stats['max'] = sig[i0:i1,:].max(axis=0)
-        stats['min'] = sig[i0:i1,:].min(axis=0)
-        stats['mean'] = sig[i0:i1,:].mean(axis=0)
-        stats['std'] = sig[i0:i1,:].std(axis=0)
+        stats['max'] = sig[i0:i1, :].max(axis=0)
+        stats['min'] = sig[i0:i1, :].min(axis=0)
+        stats['mean'] = sig[i0:i1, :].mean(axis=0)
+        stats['std'] = sig[i0:i1, :].std(axis=0)
         stats['range'] = stats['max'] - stats['min']
-        stats['absmax'] = np.absolute(sig[i0:i1,:]).max(axis=0)
-        stats['rms'] = np.sqrt(np.mean(sig[i0:i1,:]*sig[i0:i1,:], axis=0))
-        stats['int'] = integrate.trapz(sig[i0:i1,:], x=sig[i0:i1,0], axis=0)
+        stats['absmax'] = np.absolute(sig[i0:i1, :]).max(axis=0)
+        stats['rms'] = np.sqrt(np.mean(sig[i0:i1, :]*sig[i0:i1, :], axis=0))
+        stats['int'] = integrate.trapz(sig[i0:i1, :], x=sig[i0:i1, 0], axis=0)
         return stats
 
     # TODO: general signal method, this is not HAWC2 specific, move out
@@ -845,14 +843,14 @@ class LoadResults(ReadHawc2):
         # sort the keys and save the mean values to an array/list
         chiz, zvals = [], []
         for key in sorted(db.dict_sel.keys()):
-            zvals.append(-self.sig[:,db.dict_sel[key]['chi']].mean())
+            zvals.append(-self.sig[:, db.dict_sel[key]['chi']].mean())
             chiz.append(db.dict_sel[key]['chi'])
 
-        db.search({'sensortype' : 'state pos', 'component' : 'y'})
+        db.search({'sensortype': 'state pos', 'component': 'y'})
         # sort the keys and save the mean values to an array/list
         chiy, yvals = [], []
         for key in sorted(db.dict_sel.keys()):
-            yvals.append(self.sig[:,db.dict_sel[key]['chi']].mean())
+            yvals.append(self.sig[:, db.dict_sel[key]['chi']].mean())
             chiy.append(db.dict_sel[key]['chi'])
 
         return np.array(zvals), np.array(yvals)
@@ -877,7 +875,7 @@ class LoadResults(ReadHawc2):
 
         # and save
         print('saving...', end='')
-        np.savetxt(fname, self.sig[:,list(map_sorting.keys())], fmt=fmt,
+        np.savetxt(fname, self.sig[:, list(map_sorting.keys())], fmt=fmt,
                    delimiter=delimiter, header=delimiter.join(header))
         print(fname)
 
@@ -934,26 +932,26 @@ def ReadEigenBody(fname, debug=False):
 
     """
 
-    #Body data for body number : 3 with the name :nacelle
-    #Results:         fd [Hz]       fn [Hz]       log.decr [%]
-    #Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
+    # Body data for body number : 3 with the name :nacelle
+    # Results:         fd [Hz]       fn [Hz]       log.decr [%]
+    # Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
     FILE = opent(fname)
     lines = FILE.readlines()
     FILE.close()
 
-    df_dict = {'Fd_hz':[], 'Fn_hz':[], 'log_decr_pct':[], 'body':[]}
+    df_dict = {'Fd_hz': [], 'Fn_hz': [], 'log_decr_pct': [], 'body': []}
     for i, line in enumerate(lines):
         if debug: print('line nr: %5i' % i)
         # identify for which body we will read the data
         if line[:25] == 'Body data for body number':
             body = line.split(':')[2].rstrip().lstrip()
             # remove any annoying characters
-            body = body.replace('\n','').replace('\r','')
+            body = body.replace('\n', '').replace('\r', '')
             if debug: print('modes for body: %s' % body)
         # identify mode number and read the eigenfrequencies
         elif line[:8] == 'Mode nr:':
-            linelist = line.replace('\n','').replace('\r','').split(':')
-            #modenr = linelist[1].rstrip().lstrip()
+            linelist = line.replace('\n', '').replace('\r', '').split(':')
+            # modenr = linelist[1].rstrip().lstrip()
             # text after Mode nr can be empty
             try:
                 eigenmodes = linelist[2].rstrip().lstrip().split('   ')
@@ -969,12 +967,12 @@ def ReadEigenBody(fname, debug=False):
                 for k in eigenmodes:
                     if len(k) > 1:
                         eigmod.append(k)
-                #eigenmodes = eigmod
+                # eigenmodes = eigmod
             else:
                 eigmod = eigenmodes
             # remove any trailing spaces for each element
             for k in range(len(eigmod)):
-                eigmod[k] = float(eigmod[k])#.lstrip().rstrip()
+                eigmod[k] = float(eigmod[k])  #.lstrip().rstrip()
 
             df_dict['body'].append(body)
             df_dict['Fd_hz'].append(eigmod[0])
@@ -1024,16 +1022,16 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
 
     """
 
-    #0 Version ID : HAWC2MB 11.3
-    #1 ___________________________________________________________________
-    #2 Structure eigenanalysis output
-    #3 ___________________________________________________________________
-    #4 Time : 13:46:59
-    #5 Date : 28:11.2012
-    #6 ___________________________________________________________________
-    #7 Results:         fd [Hz]       fn [Hz]       log.decr [%]
-    #8 Mode nr:  1:   3.58673E+00    3.58688E+00    5.81231E+00
-    #  Mode nr:294:   0.00000E+00    6.72419E+09    6.28319E+02
+    # 0 Version ID : HAWC2MB 11.3
+    # 1 ___________________________________________________________________
+    # 2 Structure eigenanalysis output
+    # 3 ___________________________________________________________________
+    # 4 Time : 13:46:59
+    # 5 Date : 28:11.2012
+    # 6 ___________________________________________________________________
+    # 7 Results:         fd [Hz]       fn [Hz]       log.decr [%]
+    # 8 Mode nr:  1:   3.58673E+00    3.58688E+00    5.81231E+00
+    #   Mode nr:294:   0.00000E+00    6.72419E+09    6.28319E+02
 
     FILE = opent(os.path.join(file_path, file_name))
     lines = FILE.readlines()
@@ -1044,12 +1042,12 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
     # we now the number of modes by having the number of lines
     nrofmodes = len(lines) - header_lines
 
-    modes_arr = np.ndarray((3,nrofmodes))
+    modes_arr = np.ndarray((3, nrofmodes))
 
     for i, line in enumerate(lines):
         if i > max_modes:
             # cut off the unused rest
-            modes_arr = modes_arr[:,:i]
+            modes_arr = modes_arr[:, :i]
             break
 
         # ignore the header
@@ -1058,9 +1056,9 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
 
         # split up mode nr from the rest
         parts = line.split(':')
-        #modenr = int(parts[1])
+        # modenr = int(parts[1])
         # get fd, fn and damping, but remove all empty items on the list
-        modes_arr[:,i-header_lines]=misc.remove_items(parts[2].split(' '),'')
+        modes_arr[:, i-header_lines]=misc.remove_items(parts[2].split(' '), '')
 
     return modes_arr
 
@@ -1194,7 +1192,7 @@ class UserWind(object):
 
         t1 = np.exp(-math.sqrt(z_h / h_ME))
         t2 = (z - z_h) / math.sqrt(z_h * h_ME)
-        t3 = ( 1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h) )
+        t3 = (1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h))
 
         return a_phi * t1 * t2 * t3
 
@@ -1243,9 +1241,9 @@ class UserWind(object):
 #        assert np.allclose(np.abs(u), np.abs(u2))
 #        assert np.allclose(np.abs(v), np.abs(v2))
 
-        u_full = u[:,np.newaxis] + np.zeros((3,))[np.newaxis,:]
-        v_full = v[:,np.newaxis] + np.zeros((3,))[np.newaxis,:]
-        w_full = np.zeros((nr_vert,nr_hor))
+        u_full = u[:, np.newaxis] + np.zeros((3,))[np.newaxis, :]
+        v_full = v[:, np.newaxis] + np.zeros((3,))[np.newaxis, :]
+        w_full = np.zeros((nr_vert, nr_hor))
 
         return u_full, v_full, w_full, x, z
 
@@ -1281,10 +1279,10 @@ class UserWind(object):
         w_comp = np.genfromtxt(fname, skiprows=3+2+nr_vert*2,
                                skip_footer=i-3-3-nr_vert*3)
         v_coord = np.genfromtxt(fname, skiprows=3+3+nr_vert*3,
-                               skip_footer=i-3-3-nr_vert*3-3)
+                                skip_footer=i-3-3-nr_vert*3-3)
         w_coord = np.genfromtxt(fname, skiprows=3+3+nr_vert*3+4,
-                               skip_footer=i-k)
-        phi_deg = np.arctan(v_comp[:,0]/u_comp[:,0])*180.0/np.pi
+                                skip_footer=i-k)
+        phi_deg = np.arctan(v_comp[:, 0]/u_comp[:, 0])*180.0/np.pi
 
         return u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
 
@@ -1318,10 +1316,10 @@ class UserWind(object):
             np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
             h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
             fid.write(b'%s\n' % h2)
-            np.savetxt(fid, v_coord.reshape((v_coord.size,1)), fmt=fmt_coord)
+            np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
             h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
             fid.write(b'%s\n' % h3)
-            np.savetxt(fid, w_coord.reshape((w_coord.size,1)), fmt=fmt_coord)
+            np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
 
 
 class WindProfiles(object):
@@ -1443,9 +1441,9 @@ class Turbulence(object):
         # mean velocity components at the center of the box
         v1, v2 = (shape[1]/2)-1, shape[1]/2
         w1, w2 = (shape[2]/2)-1, shape[2]/2
-        ucent = (u[:,v1,w1] + u[:,v1,w2] + u[:,v2,w1] + u[:,v2,w2]) / 4.0
-        vcent = (v[:,v1,w1] + v[:,v1,w2] + v[:,v2,w1] + v[:,v2,w2]) / 4.0
-        wcent = (w[:,v1,w1] + w[:,v1,w2] + w[:,v2,w1] + w[:,v2,w2]) / 4.0
+        ucent = (u[:, v1, w1] + u[:, v1, w2] + u[:, v2, w1] + u[:, v2, w2]) / 4.0
+        vcent = (v[:, v1, w1] + v[:, v1, w2] + v[:, v2, w1] + v[:, v2, w2]) / 4.0
+        wcent = (w[:, v1, w1] + w[:, v1, w2] + w[:, v2, w1] + w[:, v2, w2]) / 4.0
 
         # FIXME: where is this range 351:7374 coming from?? The original script
         # considered a box of lenght 8192
@@ -1471,9 +1469,9 @@ class Turbulence(object):
         iv = np.zeros(shape)
         iw = np.zeros(shape)
 
-        iu[:,:,:] = (u - umean)/ustd*1000.0
-        iv[:,:,:] = (v - vmean)/vstd*1000.0
-        iw[:,:,:] = (w - wmean)/wstd*1000.0
+        iu[:, :, :] = (u - umean)/ustd*1000.0
+        iv[:, :, :] = (v - vmean)/vstd*1000.0
+        iw[:, :, :] = (w - wmean)/wstd*1000.0
 
         # because MATLAB and Octave do a round when casting from float to int,
         # and Python does a floor, we have to round first
@@ -1505,33 +1503,33 @@ class Turbulence(object):
         iu, iv, iw = self.convert2bladed(fpath, basename, shape=shape)
 
         fid = open(fpath + basename + '.wnd', 'wb')
-        fid.write(struct.pack('h', R1)) # R1
-        fid.write(struct.pack('h', R2)) # R2
-        fid.write(struct.pack('i', turb)) # Turb
-        fid.write(struct.pack('f', 999)) # Lat
-        fid.write(struct.pack('f', 999)) # rough
-        fid.write(struct.pack('f', 999)) # refh
-        fid.write(struct.pack('f', longti)) # LongTi
-        fid.write(struct.pack('f', latti)) # LatTi
-        fid.write(struct.pack('f', vertti)) # VertTi
-        fid.write(struct.pack('f', dv)) # VertGpSpace
-        fid.write(struct.pack('f', dw)) # LatGpSpace
-        fid.write(struct.pack('f', du)) # LongGpSpace
-        fid.write(struct.pack('i', shape[0]/2)) # HalfAlong
-        fid.write(struct.pack('f', mean_ws)) # meanWS
-        fid.write(struct.pack('f', 999.)) # VertLongComp
-        fid.write(struct.pack('f', 999.)) # LatLongComp
-        fid.write(struct.pack('f', 999.)) # LongLongComp
-        fid.write(struct.pack('i', 999)) # Int
-        fid.write(struct.pack('i', seed)) # Seed
-        fid.write(struct.pack('i', shape[1])) # VertGpNum
-        fid.write(struct.pack('i', shape[2])) # LatGpNum
-        fid.write(struct.pack('f', 999)) # VertLatComp
-        fid.write(struct.pack('f', 999)) # LatLatComp
-        fid.write(struct.pack('f', 999)) # LongLatComp
-        fid.write(struct.pack('f', 999)) # VertVertComp
-        fid.write(struct.pack('f', 999)) # LatVertComp
-        fid.write(struct.pack('f', 999)) # LongVertComp
+        fid.write(struct.pack('h', R1))  # R1
+        fid.write(struct.pack('h', R2))  # R2
+        fid.write(struct.pack('i', turb))  # Turb
+        fid.write(struct.pack('f', 999))  # Lat
+        fid.write(struct.pack('f', 999))  # rough
+        fid.write(struct.pack('f', 999))  # refh
+        fid.write(struct.pack('f', longti))  # LongTi
+        fid.write(struct.pack('f', latti))  # LatTi
+        fid.write(struct.pack('f', vertti))  # VertTi
+        fid.write(struct.pack('f', dv))  # VertGpSpace
+        fid.write(struct.pack('f', dw))  # LatGpSpace
+        fid.write(struct.pack('f', du))  # LongGpSpace
+        fid.write(struct.pack('i', shape[0]/2))  # HalfAlong
+        fid.write(struct.pack('f', mean_ws))  # meanWS
+        fid.write(struct.pack('f', 999.))  # VertLongComp
+        fid.write(struct.pack('f', 999.))  # LatLongComp
+        fid.write(struct.pack('f', 999.))  # LongLongComp
+        fid.write(struct.pack('i', 999))  # Int
+        fid.write(struct.pack('i', seed))  # Seed
+        fid.write(struct.pack('i', shape[1]))  # VertGpNum
+        fid.write(struct.pack('i', shape[2]))  # LatGpNum
+        fid.write(struct.pack('f', 999))  # VertLatComp
+        fid.write(struct.pack('f', 999))  # LatLatComp
+        fid.write(struct.pack('f', 999))  # LongLatComp
+        fid.write(struct.pack('f', 999))  # VertVertComp
+        fid.write(struct.pack('f', 999))  # LatVertComp
+        fid.write(struct.pack('f', 999))  # LongVertComp
 #        fid.flush()
 
 #        bladed2 = np.ndarray((shape[0], shape[2], shape[1], 3), dtype=np.int16)
@@ -1547,9 +1545,9 @@ class Turbulence(object):
 
         # re-arrange array for bladed format
         bladed = np.ndarray((shape[0], shape[2], shape[1], 3), dtype=np.int16)
-        bladed[:,:,:,0] = iu[:,::-1,:]
-        bladed[:,:,:,1] = iv[:,::-1,:]
-        bladed[:,:,:,2] = iw[:,::-1,:]
+        bladed[:, :, :, 0] = iu[:, ::-1, :]
+        bladed[:, :, :, 1] = iv[:, ::-1, :]
+        bladed[:, :, :, 2] = iw[:, ::-1, :]
         bladed_swap_view = bladed.swapaxes(1,2)
         bladed_swap_view.tofile(fid, format='%int16')
 
@@ -1651,12 +1649,12 @@ class Tests(unittest.TestCase):
         turb = np.fromfile(fid, 'float32', 32*32*8192)
         turb.shape
         fid.close()
-        u = np.zeros((8192,32,32))
+        u = np.zeros((8192, 32, 32))
 
         for i in range(8192):
             for j in range(32):
                 for k in range(32):
-                    u[i,j,k] = turb[ i*1024 + j*32 + k]
+                    u[i, j, k] = turb[i*1024 + j*32 + k]
 
         u2 = np.reshape(turb, (8192, 32, 32))
 
@@ -1668,24 +1666,24 @@ class Tests(unittest.TestCase):
 
         basename = 'turb_s100_3.00_refoctave_header'
         fid = open(fpath + basename + '.wnd', 'rb')
-        R1 = struct.unpack("h",fid.read(2))[0]
-        R2 = struct.unpack("h",fid.read(2))[0]
-        turb = struct.unpack("i",fid.read(4))[0]
-        lat = struct.unpack("f",fid.read(4))[0]
+        R1 = struct.unpack("h", fid.read(2))[0]
+        R2 = struct.unpack("h", fid.read(2))[0]
+        turb = struct.unpack("i", fid.read(4))[0]
+        lat = struct.unpack("f", fid.read(4))[0]
         # last line
         fid.seek(100)
-        LongVertComp = struct.unpack("f",fid.read(4))[0]
+        LongVertComp = struct.unpack("f", fid.read(4))[0]
         fid.close()
 
         basename = 'turb_s100_3.00_python_header'
         fid = open(fpath + basename + '.wnd', 'rb')
-        R1_p = struct.unpack("h",fid.read(2))[0]
-        R2_p = struct.unpack("h",fid.read(2))[0]
-        turb_p = struct.unpack("i",fid.read(4))[0]
-        lat_p = struct.unpack("f",fid.read(4))[0]
+        R1_p = struct.unpack("h", fid.read(2))[0]
+        R2_p = struct.unpack("h", fid.read(2))[0]
+        turb_p = struct.unpack("i", fid.read(4))[0]
+        lat_p = struct.unpack("f", fid.read(4))[0]
         # last line
         fid.seek(100)
-        LongVertComp_p = struct.unpack("f",fid.read(4))[0]
+        LongVertComp_p = struct.unpack("f", fid.read(4))[0]
         fid.close()
 
         self.assertEqual(R1, R1_p)
@@ -1700,7 +1698,7 @@ class Tests(unittest.TestCase):
         turb = Turbulence()
         # write with Python
         basename = 'turb_s100_3.00'
-        turb.write_bladed(fpath, basename, shape=(8192,32,32))
+        turb.write_bladed(fpath, basename, shape=(8192, 32, 32))
         python = turb.read_bladed(fpath, basename)
 
         # load octave
@@ -1721,7 +1719,7 @@ class Tests(unittest.TestCase):
 
     def test_turbdata(self):
 
-        shape = (8192,32,32)
+        shape = (8192, 32, 32)
 
         fpath = 'data/'
         basename = 'turb_s100_3.00_refoctave'
@@ -1729,11 +1727,10 @@ class Tests(unittest.TestCase):
 
         # check the last element of the header
         fid.seek(100)
-        print(struct.unpack("f",fid.read(4))[0])
+        print(struct.unpack("f", fid.read(4))[0])
         # save in a list using struct
         items = (os.path.getsize(fpath + basename + '.wnd')-104)/2
-        data_list = [struct.unpack("h",fid.read(2))[0] for k in range(items)]
-
+        data_list = [struct.unpack("h", fid.read(2))[0] for k in range(items)]
 
         fid.seek(104)
         data_16 = np.fromfile(fid, 'int16', shape[0]*shape[1]*shape[2]*3)
@@ -1741,8 +1738,8 @@ class Tests(unittest.TestCase):
         fid.seek(104)
         data_8 = np.fromfile(fid, 'int8', shape[0]*shape[1]*shape[2]*3)
 
-        self.assertTrue(np.alltrue( data_16 == data_list ))
-        self.assertFalse(np.alltrue( data_8 == data_list ))
+        self.assertTrue(np.alltrue(data_16 == data_list))
+        self.assertFalse(np.alltrue(data_8 == data_list))
 
     def test_compare_octave(self):
         """
@@ -1751,7 +1748,7 @@ class Tests(unittest.TestCase):
 
         turb = Turbulence()
         iu, iv, iw = turb.convert2bladed('data/', 'turb_s100_3.00',
-                                         shape=(8192,32,32))
+                                         shape=(8192, 32, 32))
         res = sio.loadmat('data/workspace.mat')
         # increase tolerances, values have a range up to 5000-10000
         # and these values will be written to an int16 format for BLADED!
