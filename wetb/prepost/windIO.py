@@ -49,9 +49,11 @@ from wetb.prepost import misc
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_astm as rainflow_astm
 from wetb.fatigue_tools.rainflowcounting.rfc_hist import rfc_hist as rfc_hist
+from wetb.hawc2.Hawc2io import ReadHawc2
+from wetb.fatigue_tools import fatigue
 
 
-class LoadResults(object):
+class LoadResults(ReadHawc2):
     """Read a HAWC2 result data file
 
     Usage:
@@ -133,211 +135,17 @@ class LoadResults(object):
         # FIXME: since HAWC2 will always have lower case output files, convert
         # any wrongly used upper case letters to lower case here
         self.file_name = file_name.lower()
-        self.read_sel()
-        # create for any supported channel the
-        # continue if the file has been succesfully read
-        if self.error_msg == 'none':
-            # load the channel id's and scale factors
-            self.scale_factors = self.data_sel()
-            # with the sel file loaded, we have all the channel names to
-            # squeeze into a more consistant naming scheme
-            self._unified_channel_names()
-            # only read when asked for
-            if readdata:
-                # if there is sel file but it is empty or whatever else
-                # FilType will not exists
-                try:
-                    # read the binary file
-                    if self.FileType == 'BINARY':
-                        self.read_bin(self.scale_factors, usecols=usecols)
-                    # read the ASCII file
-                    elif self.FileType == 'ASCII':
-                        self.read_ascii(usecols=usecols)
-                    else:
-                        print('='*79)
-                        print('unknown file type: ' + self.FileType)
-                        print('='*79)
-                        self.error_msg = 'error: unknown file type'
-                        self.sig = []
-                except:
-                    print('='*79)
-                    print('couldn\'t determine FileType')
-                    print('='*79)
-                    self.error_msg = 'error: no file type'
-                    self.sig = []
+        FileName = os.path.join(self.file_path, self.file_name)
+        print('readdata', readdata)
+        ReadOnly = 0 if readdata else 1
+        super(LoadResults, self).__init__(FileName, ReadOnly=ReadOnly)
+        ChVec = [] if usecols is None else usecols
+        self.sig = super(LoadResults, self).__call__(ChVec=ChVec)
 
         if self.debug:
             stop = time() - start
             print('time to load HAWC2 file:', stop, 's')
 
-    def read_sel(self):
-        # anticipate error on file reading
-        try:
-            # open file, read and close
-            go_sel = os.path.join(self.file_path, self.file_name + '.sel')
-            FILE = opent(go_sel, "r")
-            self.lines = FILE.readlines()
-            FILE.close()
-            self.error_msg = 'none'
-
-        # error message if the file does not exists
-        except:
-            # print(26*' ' + 'ERROR'
-            print(50*'=')
-            print(self.file_path)
-            print(self.file_name + '.sel could not be found')
-            print(50*'=')
-            self.error_msg = 'error: file not found'
-
-    def data_sel(self):
-
-        # scan through all the lines in the file
-        line_nr = 1
-        # channel counter for ch_details
-        ch = 0
-        for line in self.lines:
-            # on line 9 we can read following paramaters:
-            if line_nr == 9:
-                # remove the end of line character
-                line = line.replace('\n','').replace('\r', '')
-
-                settings = line.split(' ')
-                # delete all empty string values
-                for k in range(settings.count('')):
-                    settings.remove('')
-
-                # and assign proper values with correct data type
-                self.N = int(settings[0])
-                self.Nch = int(settings[1])
-                self.Time = float(settings[2])
-                self.FileType = settings[3]
-                self.Freq = self.N/self.Time
-
-                # prepare list variables
-                self.ch_details = np.ndarray(shape=(self.Nch,3),dtype='<U100')
-                # it seems that float64 reeds the data correctly from the file
-                scale_factors = scipy.zeros(self.Nch, dtype='Float64')
-                #self.scale_factors_dec = scipy.zeros(self.Nch, dtype='f8')
-                i = 0
-
-            # starting from line 13, we have the channels info
-            if line_nr > 12:
-                # read the signal details
-                if line_nr < 13 + self.Nch:
-                    # remove leading and trailing whitespaces from line parts
-                    self.ch_details[ch,0] = str(line[12:43]).strip() # chID
-                    self.ch_details[ch,1] = str(line[43:54]).strip() # chUnits
-                    self.ch_details[ch,2] = str(line[54:-1]).strip() # chDescr
-                    ch += 1
-                # read the signal scale parameters for binary format
-                elif line_nr > 14 + self.Nch:
-                    scale_factors[i] = line
-                    # print(scale_factors[i]
-                    #self.scale_factors_dec[i] = D.Decimal(line)
-                    i = i + 1
-                # stop going through the lines if at the end of the file
-                if line_nr == 2*self.Nch + 14:
-                    self.scale_factors = scale_factors
-
-                    if self.debug:
-                        print('N       ', self.N)
-                        print('Nch     ', self.Nch)
-                        print('Time    ', self.Time)
-                        print('FileType', self.FileType)
-                        print('Freq    ', self.Freq)
-                        print('scale_factors', scale_factors.shape)
-
-                    return scale_factors
-                    break
-
-            # counting the line numbers
-            line_nr = line_nr + 1
-
-    def read(self, usecols=False):
-        """
-        This whole LoadResults needs to be refactered because it is crap.
-        Keep the old ones for backwards compatibility
-        """
-
-        if self.FileType == 'ASCII':
-            self.read_ascii(usecols=usecols)
-        elif self.FileType == 'BINARY':
-            self.read_bin(self.scale_factors, usecols=usecols)
-
-    def read_bin(self, scale_factors, usecols=False):
-        if not usecols:
-            usecols = list(range(0, self.Nch))
-        fid = open(os.path.join(self.file_path, self.file_name) + '.dat', 'rb')
-        self.sig = np.zeros( (self.N, len(usecols)) )
-        for j, i in enumerate(usecols):
-            fid.seek(i*self.N*2,0)
-            self.sig[:,j] = np.fromfile(fid, 'int16', self.N)*scale_factors[i]
-
-    def read_bin_old(self, scale_factors):
-        # if there is an error reading the binary file (for instance if empty)
-        try:
-            # read the binary file
-            go_binary = os.path.join(self.file_path, self.file_name) + '.dat'
-            FILE = open(go_binary, mode='rb')
-
-            # create array, put all the binary elements as one long chain in it
-            binvalues = array.array('h')
-            binvalues.fromfile(FILE, self.N * self.Nch)
-            FILE.close()
-            # convert now to a structured numpy array
-            # sig = np.array(binvalues, np.float)
-#            sig = np.array(binvalues)
-            # this is faster! the saved bin values are only of type int16
-            sig = np.array(binvalues, dtype='int16')
-
-            if self.debug: print(self.N, self.Nch, sig.shape)
-
-#            sig = np.reshape(sig, (self.Nch, self.N))
-#            # apperently Nch and N had to be reversed to read it correctly
-#            # is this because we are reading a Fortran array with Python C
-#            # code? so now transpose again so we have sig(time, channel)
-#            sig = np.transpose(sig)
-
-            # reshape the array to 2D and transpose (Fortran to C array)
-            sig = sig.reshape((self.Nch, self.N)).T
-
-            # create diagonal vector of size (Nch,Nch)
-            dig = np.diag(scale_factors)
-            # now all rows of column 1 are multiplied with dig(1,1)
-            sig = np.dot(sig,dig)
-            self.sig = sig
-            # 'file name;' + 'lnr;msg;'*(len(MsgList)) + '\n'
-        except:
-            self.sig = []
-            self.error_msg = 'error: reading binary file failed'
-            print('========================================================')
-            print(self.error_msg)
-            print(self.file_path)
-            print(self.file_name)
-            print('========================================================')
-
-    def read_ascii(self, usecols=None):
-
-        try:
-            go_ascii = os.path.join(self.file_path, self.file_name) + '.dat'
-#            self.sig = np.genfromtxt(go_ascii)
-            self.sig = np.loadtxt(go_ascii, usecols=usecols)
-#            self.sig = np.fromfile(go_ascii, dtype=np.float32, sep='  ')
-#            self.sig = self.sig.reshape((self.N, self.Nch))
-        except:
-            self.sig = []
-            self.error_msg = 'error: reading ascii file failed'
-            print('========================================================')
-            print(self.error_msg)
-            print(self.file_path)
-            print(self.file_name)
-            print('========================================================')
-
-#        print '========================================================'
-#        print 'ASCII reading not implemented yet'
-#        print '========================================================'
-#        self.sig = []
-#        self.error_msg = 'error: ASCII reading not implemented yet'
 
     def reformat_sig_details(self):
         """Change HAWC2 output description of the channels short descriptive
@@ -996,7 +804,7 @@ class LoadResults(object):
         return slice_, window, zoomtype, time_range
 
     # TODO: general signal method, this is not HAWC2 specific, move out
-    def calc_stats(self, sig, i0=0, i1=-1):
+    def calc_stats(self, sig, i0=0, i1=None):
 
         stats = {}
         # calculate the statistics values:
