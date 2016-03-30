@@ -70,7 +70,7 @@ class LogInterpreter(object):
             if self.status == UNKNOWN or self.status == MISSING:
                 self.status = PENDING
             txt = new_lines
-            sself.txt += txt
+            self.txt += txt
             if self.status == PENDING and self.position > 0:
                 self.status = INITIALIZATION
 
