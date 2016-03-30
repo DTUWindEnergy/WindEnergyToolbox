@@ -14,16 +14,7 @@ from builtins import range
 from builtins import str
 from builtins import int
 from future import standard_library
-standard_library.install_aliases()
 from builtins import object
-
- # always devide as floats
-
-#print(*objects, sep=' ', end='\n', file=sys.stdout)
-
-__author__ = 'David Verelst'
-__license__ = 'GPL'
-__version__ = '0.5'
 
 import os
 import copy
@@ -40,17 +31,20 @@ import array
 import numpy as np
 import pandas as pd
 
-#import sympy
-
 # misc is part of prepost, which is available on the dtu wind gitlab server:
 # https://gitlab.windenergy.dtu.dk/dave/prepost
 from wetb.prepost import misc
 # wind energy python toolbox, available on the dtu wind redmine server:
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
-from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_astm as rainflow_astm
-from wetb.fatigue_tools.rainflowcounting.rfc_hist import rfc_hist as rfc_hist
 from wetb.hawc2.Hawc2io import ReadHawc2
-from wetb.fatigue_tools import fatigue
+from wetb.fatigue_tools.fatigue import eq_load
+
+standard_library.install_aliases()
+
+
+__author__ = 'David Verelst'
+__license__ = 'GPL'
+__version__ = '0.5'
 
 
 class LoadResults(ReadHawc2):
@@ -130,7 +124,7 @@ class LoadResults(ReadHawc2):
 
         self.file_path = file_path
         # remove .log, .dat, .sel extensions who might be accedental left
-        if file_name[-4:] in ['.htc','.sel','.dat','.log']:
+        if file_name[-4:] in ['.htc', '.sel', '.dat', '.log']:
             file_name = file_name[:-4]
         # FIXME: since HAWC2 will always have lower case output files, convert
         # any wrongly used upper case letters to lower case here
@@ -146,7 +140,6 @@ class LoadResults(ReadHawc2):
             stop = time() - start
             print('time to load HAWC2 file:', stop, 's')
 
-
     def reformat_sig_details(self):
         """Change HAWC2 output description of the channels short descriptive
         strings, usable in plots
@@ -156,7 +149,7 @@ class LoadResults(ReadHawc2):
 
         # CONFIGURATION: mappings between HAWC2 and short good output:
         change_list = []
-        change_list.append( ['original','new improved'] )
+        change_list.append( ['original', 'new improved'] )
 
 #        change_list.append( ['Mx coo: hub1','blade1 root bending: flap'] )
 #        change_list.append( ['My coo: hub1','blade1 root bending: edge'] )
@@ -170,41 +163,41 @@ class LoadResults(ReadHawc2):
 #        change_list.append( ['My coo: hub3','blade3 root bending: edge'] )
 #        change_list.append( ['Mz coo: hub3','blade3 root bending: torsion'] )
 
-        change_list.append( ['Mx coo: blade1','blade1 flap'] )
-        change_list.append( ['My coo: blade1','blade1 edge'] )
-        change_list.append( ['Mz coo: blade1','blade1 torsion'] )
+        change_list.append(['Mx coo: blade1', 'blade1 flap'])
+        change_list.append(['My coo: blade1', 'blade1 edge'])
+        change_list.append(['Mz coo: blade1', 'blade1 torsion'])
 
-        change_list.append( ['Mx coo: blade2','blade2 flap'] )
-        change_list.append( ['My coo: blade2','blade2 edge'] )
-        change_list.append( ['Mz coo: blade2','blade2 torsion'] )
+        change_list.append(['Mx coo: blade2', 'blade2 flap'])
+        change_list.append(['My coo: blade2', 'blade2 edge'])
+        change_list.append(['Mz coo: blade2', 'blade2 torsion'])
 
-        change_list.append( ['Mx coo: blade3','blade3 flap'] )
-        change_list.append( ['My coo: blade3','blade3 edeg'] )
-        change_list.append( ['Mz coo: blade3','blade3 torsion'] )
+        change_list.append(['Mx coo: blade3', 'blade3 flap'])
+        change_list.append(['My coo: blade3', 'blade3 edeg'])
+        change_list.append(['Mz coo: blade3', 'blade3 torsion'])
 
-        change_list.append( ['Mx coo: hub1','blade1 out-of-plane'] )
-        change_list.append( ['My coo: hub1','blade1 in-plane'] )
-        change_list.append( ['Mz coo: hub1','blade1 torsion'] )
+        change_list.append(['Mx coo: hub1', 'blade1 out-of-plane'])
+        change_list.append(['My coo: hub1', 'blade1 in-plane'])
+        change_list.append(['Mz coo: hub1', 'blade1 torsion'])
 
-        change_list.append( ['Mx coo: hub2','blade2 out-of-plane'] )
-        change_list.append( ['My coo: hub2','blade2 in-plane'] )
-        change_list.append( ['Mz coo: hub2','blade2 torsion'] )
+        change_list.append(['Mx coo: hub2', 'blade2 out-of-plane'])
+        change_list.append(['My coo: hub2', 'blade2 in-plane'])
+        change_list.append(['Mz coo: hub2', 'blade2 torsion'])
 
-        change_list.append( ['Mx coo: hub3','blade3 out-of-plane'] )
-        change_list.append( ['My coo: hub3','blade3 in-plane'] )
-        change_list.append( ['Mz coo: hub3','blade3 torsion'] )
+        change_list.append(['Mx coo: hub3', 'blade3 out-of-plane'])
+        change_list.append(['My coo: hub3', 'blade3 in-plane'])
+        change_list.append(['Mz coo: hub3', 'blade3 torsion'])
         # this one will create a false positive for tower node nr1
-        change_list.append( ['Mx coo: tower','tower top momemt FA'] )
-        change_list.append( ['My coo: tower','tower top momemt SS'] )
-        change_list.append( ['Mz coo: tower','yaw-moment'] )
+        change_list.append(['Mx coo: tower', 'tower top momemt FA'])
+        change_list.append(['My coo: tower', 'tower top momemt SS'])
+        change_list.append(['Mz coo: tower', 'yaw-moment'])
 
-        change_list.append( ['Mx coo: chasis','chasis momemt FA'] )
-        change_list.append( ['My coo: chasis','yaw-moment chasis'] )
-        change_list.append( ['Mz coo: chasis','chasis moment SS'] )
+        change_list.append(['Mx coo: chasis', 'chasis momemt FA'])
+        change_list.append(['My coo: chasis', 'yaw-moment chasis'])
+        change_list.append(['Mz coo: chasis', 'chasis moment SS'])
 
-        change_list.append( ['DLL inp  2:  2','tower clearance'] )
+        change_list.append( ['DLL inp  2:  2','tower clearance'])
 
-        self.ch_details_new = np.ndarray(shape=(self.Nch,3),dtype='<U100')
+        self.ch_details_new = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
 
         # approach: look for a specific description and change it.
         # This approach is slow, but will not fail if the channel numbers change
@@ -839,45 +832,7 @@ class LoadResults(ReadHawc2):
             Damage equivalent loads for each m value.
         """
 
-        try:
-            sig_rf = rainflow_astm(signal)
-        except (TypeError) as e:
-            print(e)
-            return []
-
-        if len(sig_rf) < 1 and not sig_rf:
-            return []
-
-        hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
-        m = np.atleast_1d(m)
-
-        eq = []
-        for i in range(len(m)):
-            eq.append(np.power(np.sum(0.5 * hist_data *\
-                                    np.power(bin_avg, m[i])) / neq, 1. / m[i]))
-        return eq
-
-    # TODO: general signal method, this is not HAWC2 specific, move out
-    def cycle_matrix(self, signal, no_bins=46, m=[3, 4, 6, 8, 10, 12]):
-
-#        import fatigue_tools.fatigue as ft
-#        cycles, ampl_bin_mean, ampl_bin_edges, mean_bin_mean, mean_edges \
-#            = ft.cycle_matrix(signal, ampl_bins=no_bins, mean_bins=1,
-#                              rainflow_func=ft.rainflow_windap)
-#        # in this case eq = sum( n_i*S_i^m )
-#        return [np.sum(cycles * ampl_bin_mean ** _m) for _m in m]
-
-        try:
-            sig_rf = rainflow_astm(signal)
-        except:
-            return []
-
-        if len(sig_rf) < 1 and not sig_rf:
-            return []
-
-        hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
-        m = np.atleast_1d(m)
-        return [np.sum(0.5 * hist_data * bin_avg ** _m) for _m in m]
+        return eq_load(signal, no_bins=no_bins, m=m, neq=neq)[0]
 
     def blade_deflection(self):
         """
@@ -886,7 +841,7 @@ class LoadResults(ReadHawc2):
         # select all the y deflection channels
         db = misc.DictDB(self.ch_dict)
 
-        db.search({'sensortype' : 'state pos', 'component' : 'z'})
+        db.search({'sensortype': 'state pos', 'component': 'z'})
         # sort the keys and save the mean values to an array/list
         chiz, zvals = [], []
         for key in sorted(db.dict_sel.keys()):
