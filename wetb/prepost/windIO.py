@@ -1013,19 +1013,34 @@ class LoadResults(object):
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_fatigue(self, signal, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1):
         """
-        signal is 1D
+        Parameters
+        ----------
+
+        signal: 1D array
+            One dimentional array containing the signal.
+        no_bins: int
+            Number of bins for the binning of the amplitudes.
+        m: list
+            Values of the slope of the SN curve.
+        neq: int
+            Number of equivalent cycles
+
+        Returns
+        -------
+        eq: list
+            Damage equivalent loads for each m value.
         """
 
         try:
             sig_rf = rainflow_astm(signal)
-        except:
+        except (TypeError) as e:
+            print(e)
             return []
 
         if len(sig_rf) < 1 and not sig_rf:
             return []
 
         hist_data, x, bin_avg =  rfc_hist(sig_rf, no_bins)
-
         m = np.atleast_1d(m)
 
         eq = []
