@@ -23,34 +23,12 @@ INITIALIZATION = 'Initializing simulation'
 SIMULATING = "Simulating"
 DONE = "Simulation succeded"
 
-#def is_file_open(filename):
-#    try:
-#        os.rename(filename, filename + "_")
-#        os.rename(filename + "_", filename)
-#        return False
-#    except OSError as e:
-#        if "The process cannot access the file because it is being used by another process" not in str(e):
-#            raise
-#
-#        if os.path.isfile(filename + "_"):
-#            os.remove(filename + "_")
-#        return True
-
-class LogFile(object):
-    def __init__(self, log_filename, time_stop):
-        self.filename = log_filename
+class LogInterpreter(object):
+    def __init__(self, time_stop):
         self.time_stop = time_stop
         self.hawc2version = "Unknown"
         self.reset()
         self.update_status()
-
-
-    @staticmethod
-    def from_htcfile(htcfile, modelpath):
-        logfilename = htcfile.simulation.logfile[0]
-        if not os.path.isabs(logfilename):
-            logfilename = os.path.join(modelpath, logfilename)
-        return LogFile(logfilename, htcfile.simulation.time_stop[0])
 
     def reset(self):
         self.position = 0
@@ -66,12 +44,8 @@ class LogFile(object):
 
     def __str__(self):
         return self.txt
+
     def clear(self):
-        # exist_ok does not exist in Python27
-        if not os.path.exists(os.path.dirname(self.filename)):
-            os.makedirs(os.path.dirname(self.filename))#, exist_ok=True)
-        with open(self.filename, 'w', encoding='utf-8'):
-            pass
         self.reset()
 
     def extract_time(self, txt):
@@ -89,17 +63,13 @@ class LogFile(object):
             print ("Cannot extract time from #" + time_line + "#")
             pass
 
-    def update_status(self):
-        if not os.path.isfile(self.filename):
+    def update_status(self, new_lines=""):
+        if self.txt == "" and new_lines == "":
             self.status = MISSING
         else:
             if self.status == UNKNOWN or self.status == MISSING:
                 self.status = PENDING
-            with open(self.filename, 'rb') as fid:
-                fid.seek(self.position)
-                txt = fid.read()
-            self.position += len(txt)
-            txt = txt.decode(encoding='utf_8', errors='strict')
+            txt = new_lines
             self.txt += txt
             if self.status == PENDING and self.position > 0:
                 self.status = INITIALIZATION
@@ -162,6 +132,42 @@ class LogFile(object):
             return "--:--"
 
 
+class LogFile(LogInterpreter):
+
+    def __init__(self, log_filename, time_stop):
+        self.filename = log_filename
+        LogInterpreter.__init__(self, time_stop)
+
+
+    @staticmethod
+    def from_htcfile(htcfile, modelpath):
+        logfilename = htcfile.simulation.logfile[0]
+        if not os.path.isabs(logfilename):
+            logfilename = os.path.join(modelpath, logfilename)
+        return LogFile(logfilename, htcfile.simulation.time_stop[0])
+
+    def clear(self):
+        # exist_ok does not exist in Python27
+        if not os.path.exists(os.path.dirname(self.filename)):
+            os.makedirs(os.path.dirname(self.filename))  #, exist_ok=True)
+        with open(self.filename, 'w', encoding='utf-8'):
+            pass
+        LogInterpreter.clear(self)
+
+    def update_status(self):
+        if not os.path.isfile(self.filename):
+            self.status = MISSING
+        else:
+            if self.status == UNKNOWN or self.status == MISSING:
+                self.status = PENDING
+            s = self.status
+            with open(self.filename, 'rb') as fid:
+                fid.seek(self.position)
+                txt = fid.read()
+            self.position += len(txt)
+            txt = txt.decode(encoding='utf_8', errors='strict')
+            if txt != "":
+                LogInterpreter.update_status(self, txt)
 
 
 
