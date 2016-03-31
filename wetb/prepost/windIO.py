@@ -128,9 +128,8 @@ class LoadResults(object):
         # remove .log, .dat, .sel extensions who might be accedental left
         if file_name[-4:] in ['.htc','.sel','.dat','.log']:
             file_name = file_name[:-4]
-        # FIXME: since HAWC2 will always have lower case output files, convert
-        # any wrongly used upper case letters to lower case here
-        self.file_name = file_name.lower()
+
+        self.file_name = file_name
         self.read_sel()
         # create for any supported channel the
         # continue if the file has been succesfully read
