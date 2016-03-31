@@ -11,6 +11,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 import unittest
+import os
 
 import numpy as np
 
@@ -20,7 +21,8 @@ from wetb.prepost.windIO import LoadResults
 class TestsLoadResults(unittest.TestCase):
 
     def setUp(self):
-        self.respath = '../../hawc2/tests/test_files/hawc2io/'
+        self.respath = os.path.join(os.path.dirname(__file__),
+                                    '../../hawc2/tests/test_files/hawc2io/')
         self.fascii = 'Hawc2ascii'
         self.fbin = 'Hawc2bin'
 

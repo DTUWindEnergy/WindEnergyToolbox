@@ -11,25 +11,26 @@ from future import standard_library
 standard_library.install_aliases()
 
 import unittest
+import os
 
 import numpy as np
 
 from wetb.prepost.hawcstab2 import results, hs2_control_tuning
 
 
-# path for test data files
-#fpath = os.path.join(os.path.dirname(__file__), 'data/')
-
 class Tests(unittest.TestCase):
     """
     """
 
     def setUp(self):
-        self.fpath_linear = 'data/controller_input_linear.txt'
-        self.fpath_quadratic = 'data/controller_input_quadratic.txt'
+        self.fpath_linear = os.path.join(os.path.dirname(__file__),
+                                         'data/controller_input_linear.txt')
+        self.fpath_quad = os.path.join(os.path.dirname(__file__),
+                                       'data/controller_input_quadratic.txt')
 
     def test_cmb_df(self):
-        fname1 = 'data/campbell_diagram.cmb'
+        fname1 = os.path.join(os.path.dirname(__file__),
+                              'data/campbell_diagram.cmb')
         speed, freq, damp = results().load_cmb(fname1)
 
         df = results().load_cmb_df(fname1)
@@ -69,7 +70,7 @@ class Tests(unittest.TestCase):
     def test_quadratic_file(self):
 
         hs2 = hs2_control_tuning()
-        hs2.read_parameters(self.fpath_quadratic)
+        hs2.read_parameters(self.fpath_quad)
 
         self.assertEqual(hs2.pi_gen_reg1.K, 0.108313E+07)
 
