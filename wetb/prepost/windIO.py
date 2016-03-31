@@ -824,6 +824,8 @@ class LoadResults(object):
                 channelinfo['pos'] = (x, y, z)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+                channelinfo['sensortype'] = 'windspeed'
+                channelinfo['component'] = direction[1:]
 
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
