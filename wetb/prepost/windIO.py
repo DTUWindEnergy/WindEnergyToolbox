@@ -129,12 +129,25 @@ class LoadResults(ReadHawc2):
 
         ReadOnly = 0 if readdata else 1
         super(LoadResults, self).__init__(FileName, ReadOnly=ReadOnly)
+        self.FileType = self.FileFormat[6:]
+        self.N = int(self.NrSc)
+        self.Nch = int(self.NrCh)
+        self.ch_details = np.ndarray(shape=(self.Nch,3),dtype='<U100')
+        for ic in range(self.Nch):
+            self.ch_details[ic, 0] = self.ChInfo[0][ic]
+            self.ch_details[ic, 1] = self.ChInfo[1][ic]
+            self.ch_details[ic, 2] = self.ChInfo[2][ic]
+
         ChVec = [] if usecols is None else usecols
-        self.sig = super(LoadResults, self).__call__(ChVec=ChVec)
+
+        self._unified_channel_names()
+        if readdata:
+            self.sig = super(LoadResults, self).__call__(ChVec=ChVec)
 
         if self.debug:
             stop = time() - start
             print('time to load HAWC2 file:', stop, 's')
+
 
     def reformat_sig_details(self):
         """Change HAWC2 output description of the channels short descriptive
