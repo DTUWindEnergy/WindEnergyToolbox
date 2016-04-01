@@ -124,7 +124,7 @@ class LoadResults(ReadHawc2):
             file_name = file_name[:-4]
         # FIXME: since HAWC2 will always have lower case output files, convert
         # any wrongly used upper case letters to lower case here
-        self.file_name = file_name.lower()
+        self.file_name = file_name
         FileName = os.path.join(self.file_path, self.file_name)
 
         ReadOnly = 0 if readdata else 1
@@ -132,7 +132,7 @@ class LoadResults(ReadHawc2):
         self.FileType = self.FileFormat[6:]
         self.N = int(self.NrSc)
         self.Nch = int(self.NrCh)
-        self.ch_details = np.ndarray(shape=(self.Nch,3),dtype='<U100')
+        self.ch_details = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
         for ic in range(self.Nch):
             self.ch_details[ic, 0] = self.ChInfo[0][ic]
             self.ch_details[ic, 1] = self.ChInfo[1][ic]
