@@ -90,8 +90,8 @@ class ReadHawc2(object):
         Name = []; Unit = []; Description = [];
         for i in range(0, self.NrCh):
             temp = str(Lines[i + 12][12:43]); Name.append(temp.strip())
-            temp = str(Lines[i + 12][43:48]); Unit.append(temp.strip())
-            temp = str(Lines[i + 12][49:]); Description.append(temp.strip())
+            temp = str(Lines[i + 12][43:54]); Unit.append(temp.strip())
+            temp = str(Lines[i + 12][54:-1]); Description.append(temp.strip())
         self.ChInfo = [Name, Unit, Description]
         # if binary file format, scaling factors are read
         if Format.lower() == 'binary':
