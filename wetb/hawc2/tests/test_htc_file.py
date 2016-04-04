@@ -200,6 +200,12 @@ class TestHtcFile(unittest.TestCase):
                 raise ValueError(f + " is not in list")
         self.assertFalse(input_files)
 
+    def test_input_files2(self):
+        htcfile = HTCFile(self.testfilepath + "ansi.htc")
+        input_files = htcfile.input_files()
+        self.assertTrue('./htc_hydro/ireg_airy_h6_t10.inp' in input_files)
+        #
+
     def test_continue_in_files(self):
         htcfile = HTCFile(self.testfilepath + "continue_in_file.htc", ".")
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())

@@ -286,7 +286,7 @@ begin wind ;
   windfield_rotations     0.0 0.0 0.0 ;    yaw, tilt, rotation
   center_pos0             0.0 0.0 -90 ; hub heigth
   shear_format            3 0.2 ; 
-  turb_format             0.0     ;  0=none, 1=mann,2=flex
+  turb_format             1     ;  0=none, 1=mann,2=flex
   tower_shadow_method     3     ;  0=none, 1=potential flow, 2=jet
   scale_time_start       100.0 ; 
   wind_ramp_factor   0.0 100.0 0.8 1.0 ;
