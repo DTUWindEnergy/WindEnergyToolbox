@@ -131,6 +131,7 @@ class HTCFile(HTCContents, HTCDefaults):
         if 'hydro' in self:
             if 'water_properties' in self.hydro:
                 files.append(self.hydro.water_properties.get('water_kinematics_dll', [None])[0])
+                files.append(self.hydro.water_properties.get('water_kinematics_dll', [None, None])[1])
         if 'soil' in self:
             if 'soil_element' in self.soil:
                 files.append(self.soil.soil_element.get('datafile', [None])[0])
@@ -168,7 +169,12 @@ class HTCFile(HTCContents, HTCDefaults):
         return [f for f in files if f]
 
     def turbulence_files(self):
-        files = [self.get('wind.%s.filename_%s' % (type, comp), [None])[0] for type in ['mann', 'flex'] for comp in ['u', 'v', 'w']]
+        if self.wind.turb_format[0] == 0:
+            return []
+        elif self.wind.turb_format[0] == 1:
+            files = [self.get('wind.mann.filename_%s' % comp, [None])[0] for comp in ['u', 'v', 'w']]
+        elif self.wind.turb_format[0] == 2:
+            files = [self.get('wind.flex.filename_%s' % comp, [None])[0] for comp in ['u', 'v', 'w']]
         return [f for f in files if f]
 
 
@@ -195,7 +201,6 @@ class HTCFile(HTCContents, HTCDefaults):
             raise Exception (str(stdout) + str(stderr))
 
 if "__main__" == __name__:
-    f = HTCFile(r"C:\mmpe\HAWC2\Hawc2_model\htc\NREL_5MW_reference_wind_turbine_launcher_test.htc")
-    print ("\n".join(f.output_files()))
+    f = HTCFile(r"C:\mmpe\HAWC2\models\PhaseIJacketv30\htc", "../../")
 
 
