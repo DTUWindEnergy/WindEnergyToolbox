@@ -11,9 +11,8 @@ from wetb.hawc2.htc_file import HTCFile
 from wetb.hawc2.log_file import LogFile
 from threading import Timer, Thread
 import sys
-from multiprocessing.process import Process
+from multiprocessing import Process
 import psutil
-from wetb.utils.process_exec import process, exec_process
 import subprocess
 import shutil
 import json
@@ -63,7 +62,6 @@ class Simulation(object):
         self.last_status = self._status
         self.errors = []
         self.thread = Thread(target=self.simulate_distributed)
-        self.dist_thread = Thread()
         self.hawc2exe = hawc2exe
         self.simulationThread = SimulationThread(self)
         self.timer = RepeatedTimer(self.update_status)
@@ -82,9 +80,8 @@ class Simulation(object):
         self.show_status()
 
     def update_status(self, *args, **kwargs):
+        self.logFile.update_status()
         if self.status in [INITIALIZING, SIMULATING]:
-            self.logFile.update_status()
-
             if self.logFile.status == log_file.SIMULATING:
                 self._status = SIMULATING
             if self.logFile.status == log_file.DONE:
@@ -109,7 +106,6 @@ class Simulation(object):
             if self.logFile.errors:
                 print (self.logFile.errors)
         self.last_status = self.logFile.status
-
 
 
     def additional_files(self):
@@ -247,10 +243,15 @@ class Simulation(object):
     def show_message(self, msg, title="Information"):
         print (msg)
 
-    def start(self):
+    def start(self, update_interval=1):
         """Start non blocking distributed simulation"""
-        self.timer.start(1000)
+        self.timer.start(update_interval*1000)
         self.thread.start()
+
+    def wait(self):
+        self.thread.join()
+        self.timer.stop()
+        self.update_status()
 
     def stop(self):
         self.timer.stop()
@@ -263,48 +264,34 @@ class Simulation(object):
             self.status = ABORTED
         self.update_status()
 
-#class SimulationProcess(Process):
-#
-#    def __init__(self, modelpath, htcfile, hawc2exe="HAWC2MB.exe"):
-#        Process.__init__(self)
-#        self.modelpath = modelpath
-#        self.htcfile = os.path.abspath(htcfile)
-#        self.hawc2exe = hawc2exe
-#        self.res = [0, "", "", ""]
-#        self.process = process([self.hawc2exe, self.htcfile] , self.modelpath)
-#
-#
-#    def run(self):
-#        p = psutil.Process(os.getpid())
-#        p.nice = psutil.BELOW_NORMAL_PRIORITY_CLASS
-#        exec_process(self.process)
-
 
 class SimulationThread(Thread):
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, low_priority=True):
         Thread.__init__(self)
         self.sim = simulation
         self.modelpath = self.sim.modelpath
         self.res = [0, "", ""]
+        self.low_priority = low_priority
 
 
     def start(self):
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         CREATE_NO_WINDOW = 0x08000000
         modelpath = self.modelpath
         htcfile = os.path.relpath(self.sim.htcFile.filename, self.sim.modelpath)
         hawc2exe = self.sim.hawc2exe
         stdout = self.sim.stdout_filename
-        self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath, creationflags=CREATE_NO_WINDOW)
-
+        if os.name=="nt":
+            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath, creationflags=CREATE_NO_WINDOW)
+        else:
+            self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
         Thread.start(self)
 
 
     def run(self):
         p = psutil.Process(os.getpid())
-        p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+        if self.low_priority:
+            p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
         self.process.communicate()
         errorcode = self.process.returncode
         with open(self.modelpath + self.sim.stdout_filename, encoding='utf-8') as fid:
