@@ -320,8 +320,10 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
             tags_dict['[res_dir]'] = 'res/%s/' % dlc_case
             tags_dict['[log_dir]'] = 'logfiles/%s/' % dlc_case
             tags_dict['[htc_dir]'] = 'htc/%s/' % dlc_case
-            tags_dict['[case_id]'] = tags_dict['[Case id.]']
-            tags_dict['[time_stop]'] = tags_dict['[time stop]']
+            if '[Case id.]' in tags_dict.keys():
+                tags_dict['[case_id]'] = tags_dict['[Case id.]']
+            if '[time stop]' in tags_dict.keys():
+                tags_dict['[time_stop]'] = tags_dict['[time stop]']
             try:
                 tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
             except KeyError:
