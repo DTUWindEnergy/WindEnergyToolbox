@@ -183,3 +183,13 @@ def fit_log_shear(z_u_lst, include_R=False):
         return a * kappa, np.exp(-b / a), sum((U - (a * np.log(z) + b)) ** 2)
     return a * kappa, np.exp(-b / a)
 
+if __name__ == '__main__':
+    from matplotlib.pyplot import plot, show
+    z = np.arange(0, 211)
+    for alpha, c in zip([0.00001, 1, 2], ['r', 'b', 'g']):
+        u = power_shear(alpha, 120, 10, z)
+        plot(u, z, c)
+        plot(u.mean(), 120, c + '.')
+
+    plot([8.5, 11], [120, 120])
+    show()

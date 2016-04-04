@@ -27,7 +27,7 @@ QUEUED = "queued"  #until start
 PREPARING = "Copy to host"  # during prepare simulation
 INITIALIZING = "Initializing"  #when starting
 SIMULATING = "Simulating"  # when logfile.status=simulating
-FINISH = "Finish"  # when finish
+FINISH = "Finish"  # when HAWC2 finish
 ERROR = "Error"  # when hawc2 returns error
 ABORTED = "Aborted"  # when stopped and logfile.status != Done
 CLEANED = "Cleaned"  # after copy back
@@ -84,7 +84,7 @@ class Simulation(object):
         if self.status in [INITIALIZING, SIMULATING]:
             if self.logFile.status == log_file.SIMULATING:
                 self._status = SIMULATING
-            if self.logFile.status == log_file.DONE:
+            if self.logFile.status == log_file.DONE and self.is_simulating is False:
                 self._status = FINISH
 
     def show_status(self):

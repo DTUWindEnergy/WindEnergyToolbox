@@ -125,7 +125,7 @@ class DLCHighLevel(object):
 
     def sensor_info(self, sensors=[]):
         if sensors != []:
-            return self.sensor_df[functools.reduce(np.logical_or, [((self.sensor_df.get(f, np.array([""] * len(self.sensor_df.name))).values != "") | (self.sensor_df.name == f)) for f in np.atleast_1d(sensors)])]
+            return self.sensor_df[functools.reduce(np.logical_or, [((self.sensor_df.get(f, pd.DataFrame([""] * len(self.sensor_df.name))[0]).values != "") | (self.sensor_df.name == f)) for f in np.atleast_1d(sensors)])]
         else:
             return self.sensor_df
 
