@@ -28,7 +28,7 @@ QUEUED = "queued"  #until start
 PREPARING = "Copy to host"  # during prepare simulation
 INITIALIZING = "Initializing"  #when starting
 SIMULATING = "Simulating"  # when logfile.status=simulating
-FINISH = "Finish"  # when finish
+FINISH = "Finish"  # when HAWC2 finish
 ERROR = "Error"  # when hawc2 returns error
 ABORTED = "Aborted"  # when stopped and logfile.status != Done
 CLEANED = "Cleaned"  # after copy back
@@ -87,7 +87,7 @@ class Simulation(object):
 
             if self.logFile.status == log_file.SIMULATING:
                 self._status = SIMULATING
-            if self.logFile.status == log_file.DONE:
+            if self.logFile.status == log_file.DONE and self.is_simulating is False:
                 self._status = FINISH
 
     def show_status(self):
@@ -282,11 +282,12 @@ class Simulation(object):
 
 class SimulationThread(Thread):
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, low_priority=True):
         Thread.__init__(self)
         self.sim = simulation
         self.modelpath = self.sim.modelpath
         self.res = [0, "", ""]
+        self.low_priority = low_priority
 
 
     def start(self):
@@ -304,7 +305,8 @@ class SimulationThread(Thread):
 
     def run(self):
         p = psutil.Process(os.getpid())
-        p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+        if self.low_priority:
+            p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
         self.process.communicate()
         errorcode = self.process.returncode
         with open(self.modelpath + self.sim.stdout_filename, encoding='utf-8') as fid:
