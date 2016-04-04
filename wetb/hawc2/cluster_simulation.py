@@ -1,11 +1,7 @@
-from wetb.hawc2.simulation import Simulation, SimulationThread, INITIALIZING, ERROR, FINISH
-from wetb.hawc2.htc_file import HTCFile
-from wetb.hawc2.log_file import LogFile
-from wetb.hawc2 import log_file
+from wetb.hawc2.simulation import Simulation, SimulationThread
 import os
 import sys
-import time
-from threading import Timer, Thread
+from threading import  Thread
 class ClusterSimulation(Simulation):
     def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe"):
         Simulation.__init__(self, modelpath, htcfilename, hawc2exe=hawc2exe)
