@@ -3,4 +3,5 @@ Developers
 ==========
 
 * Mads Mølgaard Pedersen
-* David Verelst
+* David R.S. Verelst
+* Carlo Tibaldi

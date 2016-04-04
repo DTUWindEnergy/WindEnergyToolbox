@@ -838,13 +838,20 @@ class Plots(object):
             subplots = mplutils.subplots
 
         fig, axes = subplots(nrows=nrows, ncols=ncols, dpi=dpi, figsize=size)
-        axes = axes.ravel()
+        if isinstance(axes, np.ndarray):
+            axes = axes.ravel()
+        else:
+            axes = [axes]
         if title is not None:
             fig.suptitle(title)
         return fig, axes
 
     def set_axes_label_grid(self, axes, setlegend=False):
-        for ax in axes.ravel():
+
+        if isinstance(axes, np.ndarray):
+            axes = axes.ravel()
+
+        for ax in axes:
             if setlegend:
                 leg = ax.legend(loc='best')
                 if leg is not None:
@@ -861,7 +868,7 @@ class Plots(object):
 
     def distribution(self, results, labels, title, channels, x_ax='pos_z',
                      xlabel='Z-coordinate [m]', nrows=2, ncols=4, size=(16, 5),
-                     i0=1):
+                     i0=1, iplot_legend=0, legloc='best'):
         """
         Compare blade distribution results
         """
@@ -874,7 +881,10 @@ class Plots(object):
         radius2 = res2[x_ax].values
 
         fig, axes = self.new_fig(title=title, nrows=nrows, ncols=ncols, size=size)
-        axesflat = axes.flatten()
+        if isinstance(axes, np.ndarray):
+            axesflat = axes.ravel()
+        else:
+            axesflat = axes
         for i, chan in enumerate(channels):
             ax = axesflat[i]
             ax.plot(radius1, res1[chan].values, color=self.h2c,
@@ -919,11 +929,11 @@ class Plots(object):
 #            if err.max() > 50:
 #                axr.set_ylim([0, 35])
 
-            # use axr for the legend, but only for the first plot
-            if i == 0:
+            # use axr for the legend, but only for defined plot
+            if i == iplot_legend:
                 lines = ax.lines + axr.lines
                 labels = [l.get_label() for l in lines]
-                leg = axr.legend(lines, labels, loc='best')
+                leg = axr.legend(lines, labels, loc=legloc)
                 leg.get_frame().set_alpha(0.5)
 
         # x-label only on the last row
@@ -960,7 +970,8 @@ class Plots(object):
             self.save_fig(fig, axes, fname)
 
     def h2_blade_distribution(self, fname_1, fname_2, title, labels, n0=0,
-                              df_stats1=None, df_stats2=None):
+                              df_stats1=None, df_stats2=None,
+                              iplot_legend=0, legloc='best'):
         """
         Compare blade distribution aerodynamics of two HAWC2 cases.
         """
@@ -975,11 +986,13 @@ class Plots(object):
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
                                       nrows=self.dist_nrows,
                                       ncols=self.dist_ncols,
-                                      size=self.dist_size)
+                                      size=self.dist_size,
+                                      iplot_legend=iplot_legend, legloc=legloc)
 
         return fig, axes
 
-    def hs_blade_distribution(self, fname_1, fname_2, title, labels, n0=0):
+    def hs_blade_distribution(self, fname_1, fname_2, title, labels, n0=0,
+                              iplot_legend=0, legloc='best'):
 
         res1 = self.load_hs(fname_1)
         res2 = self.load_hs(fname_2)
@@ -992,12 +1005,14 @@ class Plots(object):
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
                                       nrows=self.dist_nrows,
                                       ncols=self.dist_ncols,
-                                      size=self.dist_size)
+                                      size=self.dist_size,
+                                      iplot_legend=iplot_legend, legloc=legloc)
 
         return fig, axes
 
     def blade_distribution(self, fname_h2, fname_hs2, title, n0=0,
-                           h2_df_stats=None, fname_h2_tors=None):
+                           h2_df_stats=None, fname_h2_tors=None,
+                           iplot_legend=0, legloc='best'):
         """Compare aerodynamics, blade deflections between HAWC2 and HAWCStab2.
         This is based on HAWCSTab2 *.ind files, and an HAWC2 output_at_time
         output file.
@@ -1029,11 +1044,13 @@ class Plots(object):
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
                                       nrows=self.dist_nrows,
                                       ncols=self.dist_ncols,
-                                      size=self.dist_size)
+                                      size=self.dist_size,
+                                      iplot_legend=iplot_legend, legloc=legloc)
 
         return fig, axes
 
-    def blade_distribution2(self, fname_h2, fname_hs2, title, n0=0):
+    def blade_distribution2(self, fname_h2, fname_hs2, title, n0=0,
+                            iplot_legend=0, legloc='best'):
         """Compare aerodynamics, blade deflections between HAWC2 and HAWCStab2.
         This is based on HAWCSTab2 *.ind files, and an HAWC2 output_at_time
         output file.
@@ -1050,7 +1067,8 @@ class Plots(object):
 
         fig, axes = self.distribution(res, labels, title, channels,
                                       x_ax='pos_z', xlabel='Z-coordinate [m]',
-                                      nrows=3, ncols=4, size=(16, 12))
+                                      nrows=3, ncols=4, size=(16, 12),
+                                      iplot_legend=iplot_legend, legloc=legloc)
 
         return fig, axes
 
@@ -1066,7 +1084,8 @@ class Plots(object):
 
         # POWER ---------------------------------------------------------------
         ax = axes[0]
-        ax.set_title('Power [kW]')
+        ax.set_ylabel('Power [kW]')
+        ax.set_xlabel('Wind speed [m/s]')
         # HAWC2
         keys = ['P_aero', 'P_mech']
         lss = [self.h2ls, '--', ':']
@@ -1103,7 +1122,8 @@ class Plots(object):
 
         # THRUST --------------------------------------------------------------
         ax = axes[1]
-        ax.set_title('Thrust [kN]')
+        ax.set_ylabel('Thrust [kN]')
+        ax.set_xlabel('Wind speed [m/s]')
         keys = ['T_aero', 'T_shafttip']
         lss = [self.h2ls, '--', ':']
         # HAWC2
@@ -1125,6 +1145,7 @@ class Plots(object):
         axr.plot(wind_hs, err, color=self.errc, ls=self.errls, alpha=0.6,
                  label=self.errlab + ' T$_{aero}$')
         ax.set_xlim([wind_h2.min(), wind_h2.max()])
+        ax.set_xlabel('Wind speed [m/s]')
 
         # legends
         lines, labels = ax.get_legend_handles_labels()
@@ -1158,7 +1179,8 @@ class Plots(object):
         yerr2 = res2.pwr_h2_std[key]
         ax.errorbar(wind2, res2.pwr_h2_mean[key].values, color=self.hsc, yerr=yerr2,
                     marker=self.hsms, ls=self.hsls, label=labels[1], alpha=0.7)
-        ax.set_title('Power [kW]')
+        ax.set_ylabel('Power [kW]')
+        ax.set_xlabel('Wind speed [m/s]')
         # relative errors on the right axes
         axr = ax.twinx()
         assert np.allclose(wind1, wind2)
@@ -1191,7 +1213,8 @@ class Plots(object):
         err = np.abs(1.0 - (qq1 / qq2))*100.0
         axr.plot(wind1, err, color=self.errc, ls=self.errls, alpha=0.6,
                  label=self.errlab)
-        ax.set_title('Thrust [kN]')
+        ax.set_ylabel('Thrust [kN]')
+        ax.set_xlabel('Wind speed [m/s]')
 
         axes = self.set_axes_label_grid(axes, setlegend=True)
 #        # use axr for the legend
@@ -1221,7 +1244,8 @@ class Plots(object):
                 alpha=0.9, color=self.h2c, ls=self.h2ls, marker=self.h2ms)
         ax.plot(wind2, res2.pwr_hs['P_aero'].values, label=labels[1],
                 alpha=0.7, color=self.hsc, ls=self.hsls, marker=self.hsms)
-        ax.set_title('Power [kW]')
+        ax.set_ylabel('Power [kW]')
+        ax.set_xlabel('Wind speed [m/s]')
         # relative errors on the right axes
         axr = ax.twinx()
         assert np.allclose(wind1, wind2)
@@ -1245,7 +1269,8 @@ class Plots(object):
         err = np.abs(1.0 - (qq1 / qq2))*100.0
         axr.plot(wind1, err, color=self.errc, ls=self.errls, alpha=0.6,
                  label=self.errlab)
-        ax.set_title('Thrust [kN]')
+        ax.set_ylabel('Thrust [kN]')
+        ax.set_xlabel('Wind speed [m/s]')
 
         axes = self.set_axes_label_grid(axes, setlegend=True)
 #        # use axr for the legend
