@@ -33,7 +33,6 @@ class SSHClient(object):
             self.connect()
 
     def connect(self):
-        print ("start connect")
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
@@ -41,7 +40,6 @@ class SSHClient(object):
         self.transport = paramiko.Transport((self.host, self.port))
         self.transport.connect(username=self.username, password=self.password)
         self.sftp = paramiko.SFTPClient.from_transport(self.transport)
-        print ("End connect")
         return self
 
     def __exit__(self, *args):
