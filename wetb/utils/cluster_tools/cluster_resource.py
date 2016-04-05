@@ -11,33 +11,6 @@ import psutil
 class Resource(object):
     pass
 
-class LocalResource(Resource):
-    def __init__(self, process_name):
-        self.process_name = process_name
-        self.no_users = 1
-        self.host = 'Localhost'
-
-    def check_resources(self):
-        def name(i):
-            try:
-                return psutil.Process(i).name
-            except psutil._error.AccessDenied:
-                pass
-
-
-        no_cpu = multiprocessing.cpu_count()
-        cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
-        no_current_process = len([i for i in psutil.get_pid_list() if name(i) == self.process_name])
-        return no_cpu, cpu_free, no_current_process
-
-    def ok2submit(self):
-
-        total, free, user = self.check_resources()
-        minimum_cpus = total * 1 / self.no_users
-        if user < minimum_cpus and free > 2:
-            return True
-        else:
-            return False
 
 
 
@@ -78,5 +51,33 @@ class PBSClusterResource(Resource, SSHClient):
             return True
         else:
             return False
-        pass
+
+class LocalResource(Resource):
+    def __init__(self, process_name):
+        self.process_name = process_name
+        self.no_users = 1
+        self.host = 'Localhost'
+
+    def check_resources(self):
+        def name(i):
+            try:
+                return psutil.Process(i).name
+            except psutil._error.AccessDenied:
+                pass
+
+
+        no_cpu = multiprocessing.cpu_count()
+        cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
+        no_current_process = len([i for i in psutil.get_pid_list() if name(i) == self.process_name])
+        return no_cpu, cpu_free, no_current_process
+
+    def ok2submit(self):
+
+        total, free, user = self.check_resources()
+        minimum_cpus = total * 1 / self.no_users
+        if user < minimum_cpus and free > 2:
+            return True
+        else:
+            return False
+
 

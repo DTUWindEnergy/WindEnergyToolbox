@@ -169,6 +169,16 @@ class LogFile(LogInterpreter):
             if txt != "":
                 LogInterpreter.update_status(self, txt)
 
+class LogInfo(LogFile):
+    def __init__(self, status, pct, remaining_time, lastline):
+        self.status = status
+        self.pct = int(pct)
+        try:
+            self.remaining_time = float(remaining_time)
+        except:
+            self.remaining_time = None
+        self.lastline = lastline
+        self.errors = []
 
-
-
+    def update_status(self):
+        pass
