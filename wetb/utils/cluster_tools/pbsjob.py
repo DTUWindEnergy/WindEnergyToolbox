@@ -19,6 +19,7 @@ DONE = "Done"
 class PBSJob(object):
     _status = NOT_SUBMITTED
     nodeid = None
+    jobid = None
     def __init__(self, sshclient):
         self.ssh = sshclient
 
@@ -49,6 +50,7 @@ class PBSJob(object):
             self._status = RUNNING
         elif self.ssh.file_exists(self.pbs_out_file):
             self._status = DONE
+            self.jobid = None
         return self._status
 
     def get_nodeid(self):
@@ -61,12 +63,13 @@ class PBSJob(object):
             #raise e
 
     def stop(self):
-        try:
-            self.ssh.execute("qdel %s" % self.jobid)
-        except Warning as e:
-            if 'qdel: Unknown Job Id' in str(e):
-                return
-            raise e
+        if self.jobid:
+            try:
+                self.ssh.execute("qdel %s" % self.jobid)
+            except Warning as e:
+                if 'qdel: Unknown Job Id' in str(e):
+                    return
+                raise e
 
 
     def is_executing(self):
