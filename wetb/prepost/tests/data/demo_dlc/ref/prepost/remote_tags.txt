@@ -63,7 +63,7 @@
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 1.0                 
-              [zip_root_files] : ['pbs_in_file_cache.txt', 'A0001_ErrorLog.csv']
+              [zip_root_files] : []                  
 
 -------------------------------------------------------------------------------
                  opt_tags set
@@ -119,7 +119,7 @@
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.888888888889      
-              [zip_root_files] : ['pbs_in_file_cache.txt', 'A0001_ErrorLog.csv']
+              [zip_root_files] : []                  
 
 -------------------------------------------------------------------------------
                  opt_tags set
@@ -175,4 +175,4 @@
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.8                 
-              [zip_root_files] : ['pbs_in_file_cache.txt', 'A0001_ErrorLog.csv']
+              [zip_root_files] : []                  
