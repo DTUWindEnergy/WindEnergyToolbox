@@ -280,6 +280,8 @@ class SimulationThread(Thread):
             p.set_nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
         self.process.communicate()
         errorcode = self.process.returncode
+        if not os.path.isdir(os.path.dirname(self.modelpath + self.sim.stdout_filename)):
+            os.makedirs(os.path.dirname(self.modelpath + self.sim.stdout_filename))
         with open(self.modelpath + self.sim.stdout_filename, encoding='utf-8') as fid:
             stdout = fid.read()
         self.res = errorcode, stdout
