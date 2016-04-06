@@ -9,15 +9,29 @@ import multiprocessing
 import psutil
 
 class Resource(object):
-    pass
+
+    def __init__(self, min_cpu, min_free):
+        self.min_cpu = min_cpu
+        self.min_free = min_free
+
+    def ok2submit(self):
+        """Always ok to have min_cpu cpus and ok to have more if there are min_free free cpus"""
+        total, free, user = self.check_resources()
+
+        if user < self.min_cpu:
+            return True
+        elif free > self.min_free:
+            return True
+        else:
+            return False
 
 
 
 
 class PBSClusterResource(Resource, SSHClient):
-    def __init__(self, host, username, password, port=22):
+    def __init__(self, host, username, password, port, min_cpu, min_free):
+        Resource.__init__(self, min_cpu, min_free)
         SSHClient.__init__(self, host, username, password, port=port)
-        self.no_users = 20
 
     def new_ssh_connection(self):
         return SSHClient(self.host, self.username, self.password, self.port)
@@ -41,21 +55,13 @@ class PBSClusterResource(Resource, SSHClient):
 
         return nodeSum['used_cpu'] + cpu_free, cpu_free, cpu_user
 
-    def ok2submit(self):
 
-        total, free, user = self.check_resources()
-        minimum_cpus = total * 1 / self.no_users
-        if user < minimum_cpus:
-            return True
-        elif free > minimum_cpus * 4:
-            return True
-        else:
-            return False
 
 class LocalResource(Resource):
     def __init__(self, process_name):
+        N = max(1, multiprocessing.cpu_count() / 4)
+        Resource.__init__(self, N, N)
         self.process_name = process_name
-        self.no_users = 1
         self.host = 'Localhost'
 
     def check_resources(self):
@@ -65,19 +71,7 @@ class LocalResource(Resource):
             except psutil._error.AccessDenied:
                 pass
 
-
         no_cpu = multiprocessing.cpu_count()
         cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
         no_current_process = len([i for i in psutil.get_pid_list() if name(i) == self.process_name])
         return no_cpu, cpu_free, no_current_process
-
-    def ok2submit(self):
-
-        total, free, user = self.check_resources()
-        minimum_cpus = total * 1 / self.no_users
-        if user < minimum_cpus and free > 2:
-            return True
-        else:
-            return False
-
-
