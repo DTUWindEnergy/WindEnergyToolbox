@@ -28,9 +28,7 @@ import math
 from time import time
 import codecs
 
-import scipy
 import scipy.integrate as integrate
-import array
 import numpy as np
 import pandas as pd
 
