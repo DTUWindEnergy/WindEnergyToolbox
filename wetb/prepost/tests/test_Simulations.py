@@ -55,11 +55,14 @@ class TestGenerateInputs(unittest.TestCase):
         # for the pickled file we can just read it
         remote = os.path.join(p_root, tmpl.PROJECT, 'remote', 'prepost')
         ref = os.path.join(p_root, tmpl.PROJECT, 'ref', 'prepost')
-        with open(os.path.join(remote, 'remote.pkl'), 'rb') as FILE:
-            pkl_remote = pickle.load(FILE)
-        with open(os.path.join(ref, 'remote.pkl'), 'rb') as FILE:
-            pkl_ref = pickle.load(FILE)
-        self.assertTrue(pkl_remote == pkl_ref)
+        cmp = filecmp.cmp(os.path.join(remote, 'remote_tags.txt'),
+                          os.path.join(ref, 'remote_tags.txt'), shallow=False)
+        self.assertTrue(cmp)
+#        with open(os.path.join(remote, 'remote.pkl'), 'rb') as FILE:
+#            pkl_remote = pickle.load(FILE)
+#        with open(os.path.join(ref, 'remote.pkl'), 'rb') as FILE:
+#            pkl_ref = pickle.load(FILE)
+#        self.assertTrue(pkl_remote == pkl_ref)
 
 
 if __name__ == "__main__":
