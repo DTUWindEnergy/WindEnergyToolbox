@@ -1,32 +1,33 @@
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
 from __future__ import absolute_import
-from io import open
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from builtins import str
-from future import standard_library
-from wetb.utils.cluster_tools.cluster_resource import LocalResource, \
-    PBSClusterResource
-from wetb.utils.cluster_tools.pbsjob import PBSJob
+import glob
+from io import open
 import io
-import time
-from wetb.utils.cluster_tools import pbsjob
-from wetb.utils.cluster_tools.ssh_client import SSHClient
-standard_library.install_aliases()
+import json
 import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile
 from wetb.hawc2.log_file import LogFile, LogInfo
-from threading import Timer, Thread
-import sys
-from multiprocessing import Process
+
+from future import standard_library
 import psutil
-import subprocess
-import shutil
-import json
-import glob
-from wetb.hawc2 import log_file
-import re
-import threading
+
+from wetb.utils.cluster_tools import pbsjob
+from wetb.utils.cluster_tools.cluster_resource import LocalResource
+from wetb.utils.cluster_tools.pbsjob import PBSJob
+from wetb.utils.cluster_tools.ssh_client import SSHClient
+standard_library.install_aliases()
+from threading import Thread
 
 QUEUED = "queued"  #until start
 PREPARING = "Copy to host"  # during prepare simulation
@@ -49,7 +50,7 @@ class Simulation(object):
         self.htcFile = HTCFile(htcfilename)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.copy_turbulence = True
-        self.simulation_id = os.path.relpath(htcfilename, self.modelpath).replace("\\", "_") + "_%d" % id(self)
+        self.simulation_id = os.path.relpath(htcfilename, self.modelpath).replace("\\", "_").replace("/", "_") + "_%d" % id(self)
         self.stdout_filename = "stdout/%s.out" % self.simulation_id
         if 'logfile' in self.htcFile.simulation:
             self.log_filename = self.htcFile.simulation.logfile[0]
@@ -104,14 +105,13 @@ class Simulation(object):
         self.errors = []
         self.status = INITIALIZING
         self.logFile.clear()
-
         self.host._simulate()
-
         if self.host.returncode or 'error' in self.host.stdout.lower():
-            self.errors = (list(set([l for l in self.host.stdout.split("\n") if 'error' in l.lower()])))
+            if "error" in self.host.stdout.lower():
+                self.errors = (list(set([l for l in self.host.stdout.split("\n") if 'error' in l.lower()])))
             self.status = ERROR
         if  'HAWC2MB version:' not in self.host.stdout:
-            self.errors.append(self.stdout)
+            self.errors.append(self.host.stdout)
             self.status = ERROR
 
         self.logFile.update_status()
@@ -241,11 +241,11 @@ class Simulation(object):
             if self.is_simulating:
                 break
             time.sleep(0.1)
-        try:
-            self.finish_simulation()
-        except Exception as e:
-            print (str(e))
-            pass
+#        try:
+#            self.finish_simulation()
+#        except Exception as e:
+#            print (str(e))
+#            pass
         if self.logFile.status not in [log_file.DONE]:
             self.status = ABORTED
         self.update_status()
@@ -312,6 +312,7 @@ class SimulationResource(object):
     modelpath = property(lambda self : self.sim.modelpath)
     tmp_modelpath = property(lambda self : self.sim.tmp_modelpath, lambda self, v: setattr(self.sim, "tmp_modelpath", v))
     simulation_id = property(lambda self : self.sim.simulation_id)
+    stdout_filename = property(lambda self : self.sim.stdout_filename)
     htcFile = property(lambda self : self.sim.htcFile)
     additional_files = property(lambda self : self.sim.additional_files)
     input_sources = property(lambda self : self.sim.input_sources)
@@ -408,9 +409,10 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
                     self.upload(src_file, dst, verbose=False)
                     ##assert self.ssh.file_exists(dst)
 
-            f = io.StringIO(self.pbsjobfile(self.simulation_id))
+            f = io.StringIO(self.pbsjobfile())
             f.seek(0)
             self.upload(f, self.tmp_modelpath + "%s.in" % self.simulation_id)
+            self.execute("mkdir -p .hawc2launcher/%s/stdout" % self.simulation_id)
             remote_log_filename = "%s%s" % (self.tmp_modelpath, self.log_filename)
             self.execute("rm -f %s" % remote_log_filename)
 
@@ -498,7 +500,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
         self.is_simulating = False
         self.pbsjob.stop()
 
-    def pbsjobfile(self, simulation_id):
+    def pbsjobfile(self):
         cp_back = ""
         for folder in set([os.path.relpath(os.path.dirname(f)) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
             cp_back += "mkdir -p $PBS_O_WORKDIR/%s/. \n" % folder
@@ -509,7 +511,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
 #PBS -N h2l_%s
 ### merge stderr into stdout
 #PBS -j oe
-#PBS -o %s.out
+#PBS -o %s
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
 #PBS -l walltime=01:00:00
 ###PBS -a 201547.53
@@ -534,7 +536,7 @@ cd /scratch/$USER/$PBS_JOBID
 echo $PBS_JOBID
 cd /scratch/
 ### rm -r $PBS_JOBID
-exit""" % (simulation_id, simulation_id, rel_htcfilename, self.hawc2exe, cp_back)
+exit""" % (self.simulation_id, self.stdout_filename, rel_htcfilename, self.hawc2exe, cp_back)
 
 
 
