@@ -59,7 +59,7 @@ class TestGenerateInputs(unittest.TestCase):
             pkl_remote = pickle.load(FILE)
         with open(os.path.join(ref, 'remote.pkl'), 'rb') as FILE:
             pkl_ref = pickle.load(FILE)
-        self.assertEqual(pkl_remote, pkl_ref)
+        self.assertTrue(pkl_remote == pkl_ref)
 
 
 if __name__ == "__main__":
