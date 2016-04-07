@@ -4912,6 +4912,96 @@ class Cases(object):
             envelope[ch[0]] = closed_contour
         return envelope
 
+    def compute_envelope2(self, sig, ch_list, thetanr = 361):
+
+        envelope= {}
+        theta_int = np.linspace(-np.pi,np.pi,thetanr)
+        
+        for ch in ch_list:
+            chi0 = self.res.ch_dict[ch[0]]['chi']
+            chi1 = self.res.ch_dict[ch[1]]['chi']
+            s0 = np.array(sig[:, chi0]).reshape(-1, 1)
+            s1 = np.array(sig[:, chi1]).reshape(-1, 1)
+            cloud =  np.append(s0, s1, axis=1)
+            hull = scipy.spatial.ConvexHull(cloud)
+            closed_contour = np.append(cloud[hull.vertices,:],
+                                       cloud[hull.vertices[0],:].reshape(1,2),
+                                       axis=0)
+            for ich in range(2, len(ch)):
+                chix = self.res.ch_dict[ch[ich]]['chi']
+                s0 = np.array(sig[hull.vertices, chix]).reshape(-1, 1)
+                s1 = np.array(sig[hull.vertices[0], chix]).reshape(-1, 1)
+                s0 = np.append(s0, s1, axis=0)
+                closed_contour = np.append(closed_contour, s0, axis=1)
+            
+            upper = []
+            lower = []
+    
+            indmax = np.argmax(closed_contour[:,0])
+            indmin = np.argmin(closed_contour[:,0])
+            if indmax > indmin:
+                lower = np.array(closed_contour[np.argmin(closed_contour[:,0]):\
+                                            np.argmax(closed_contour[:,0])+1,:])
+                upper = np.concatenate((closed_contour[np.argmax(closed_contour[:,0]):,:],\
+                        closed_contour[:np.argmin(closed_contour[:,0])+1,:]),axis=0)
+            else:
+                upper = np.array(closed_contour[np.argmax(closed_contour[:,0]):\
+                                            np.argmin(closed_contour[:,0])+1,:])
+                lower = np.concatenate((closed_contour[np.argmin(closed_contour[:,0]):,:],\
+                        closed_contour[:np.argmax(closed_contour[:,0])+1,:]),axis=0)
+            
+            normx = max(max(upper[:,0]),abs(min(upper[:,0])),max(lower[:,0]),\
+                                                        abs(min(lower[:,0])))
+            normy = max(max(upper[:,1]),abs(min(upper[:,1])),max(lower[:,1]),\
+                                                        abs(min(lower[:,1])))
+            
+            norm_up = np.array([upper[:,0]/normx,
+                                upper[:,1]/normy]).T
+            norm_up = norm_up[np.argsort(norm_up,axis=0)[:,0]]
+             
+            norm_low = np.array([lower[:,0]/normx,
+                                 lower[:,1]/normy]).T
+                                
+            int_x = np.linspace(-1,1,1e5)
+            int_y_up = np.interp(int_x,norm_up[:,0],norm_up[:,1])
+            int_y_low = np.interp(int_x,norm_low[:,0],norm_low[:,1])
+    
+            int_x = int_x*normx
+            int_y_up = int_y_up*normy
+            int_y_low = int_y_low*normy
+            
+            int_x = np.linspace(-1,1,1e5)
+            int_y_up = np.interp(int_x,norm_up[:,0],norm_up[:,1])
+            int_y_low = np.interp(int_x,norm_low[:,0],norm_low[:,1])        
+            
+            indremmax = np.where((int_x>max(closed_contour[:,0])))
+            indremmin = np.where((int_x<min(closed_contour[:,0])))
+            if  len(indremmax[0]) > 2:
+                int_y_up = np.delete(int_y_up,indremmax[0][1:])
+                int_y_low = np.delete(int_y_low,indremmax[0][1:])
+                int_x = np.delete(int_x,indremmax[0][1:])
+            if  len(indremmin[0]) > 2:
+                int_y_up = np.delete(int_y_up,indremmin[0][:-2])
+                int_y_low = np.delete(int_y_low,indremmin[0][:-2])
+                int_x = np.delete(int_x,indremmin[0][:-2])
+            
+            R_up = np.sqrt(int_x**2+int_y_up**2)
+            theta_up = np.arctan2(int_y_up,int_x)
+            
+            R_low = np.sqrt(int_x**2+int_y_low**2)
+            theta_low = np.arctan2(int_y_low,int_x)
+                
+            R = np.concatenate((R_up,R_low))
+            theta = np.concatenate((theta_up,theta_low))
+            R = R[np.argsort(theta)]
+            theta = np.sort(theta)
+            
+            R_int = np.interp(theta_int,theta,R,period=2*np.pi)
+            
+            envelope[ch[0]] = np.array([theta_int,R_int]).T
+            
+        return envelope
+        
     def envelope(self, silent=False, ch_list=[], append=''):
         """
         Calculate envelopes and save them in a table.
