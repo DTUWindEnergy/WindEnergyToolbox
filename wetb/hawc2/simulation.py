@@ -24,7 +24,7 @@ import psutil
 
 from wetb.utils.cluster_tools import pbsjob
 from wetb.utils.cluster_tools.cluster_resource import LocalResource
-from wetb.utils.cluster_tools.pbsjob import PBSJob
+from wetb.utils.cluster_tools.pbsjob import SSHPBSJob
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 standard_library.install_aliases()
 from threading import Thread
@@ -426,7 +426,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
     def __init__(self, simulation, host, username, password, port=22):
         SimulationResource.__init__(self, simulation)
         SSHClient.__init__(self, host, username, password, port=port)
-        self.pbsjob = PBSJob(self)
+        self.pbsjob = SSHPBSJob(host, username, password, port)
 
     hawc2exe = property(lambda self : os.path.basename(self.sim.hawc2exe))
 

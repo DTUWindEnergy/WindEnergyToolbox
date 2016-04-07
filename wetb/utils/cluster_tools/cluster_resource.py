@@ -28,7 +28,7 @@ class Resource(object):
 
 
 
-class PBSClusterResource(Resource, SSHClient):
+class SSHPBSClusterResource(Resource, SSHClient):
     def __init__(self, host, username, password, port, min_cpu, min_free):
         Resource.__init__(self, min_cpu, min_free)
         SSHClient.__init__(self, host, username, password, port=port)

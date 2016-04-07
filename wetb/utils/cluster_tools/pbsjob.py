@@ -3,12 +3,8 @@ Created on 04/12/2015
 
 @author: mmpe
 '''
-
-
-import time
 import os
-import paramiko
-
+from wetb.utils.cluster_tools.ssh_client import SSHClient
 
 NOT_SUBMITTED = "Job not submitted"
 PENDING = "Pending"
@@ -16,12 +12,14 @@ RUNNING = "Running"
 DONE = "Done"
 
 
-class PBSJob(object):
+class SSHPBSJob(SSHClient):
     _status = NOT_SUBMITTED
     nodeid = None
     jobid = None
-    def __init__(self, sshclient):
-        self.ssh = sshclient
+
+
+    def __init__(self, host, username, password, port=22):
+        SSHClient.__init__(self, host, username, password, port=port)
 
     def submit(self, job, cwd, pbs_out_file):
         self.cwd = cwd
@@ -33,7 +31,7 @@ class PBSJob(object):
         if cwd != "":
             cmds.append("cd %s" % cwd)
         cmds.append("qsub %s" % job)
-        _, out, _ = self.ssh.execute(";".join(cmds))
+        _, out, _ = self.execute(";".join(cmds))
         self.jobid = out.split(".")[0]
         self._status = PENDING
 
@@ -41,21 +39,17 @@ class PBSJob(object):
     def status(self):
         if self._status in [NOT_SUBMITTED, DONE]:
             return self._status
-
-#        if self.nodeid is None:
-#            self.nodeid = self.get_nodeid()
-#            if self.nodeid is not None:
-#                self._status = RUNNING
-        if self.is_executing():
-            self._status = RUNNING
-        elif self.ssh.file_exists(self.pbs_out_file):
-            self._status = DONE
-            self.jobid = None
+        with self:
+            if self.is_executing():
+                self._status = RUNNING
+            elif self.file_exists(self.pbs_out_file):
+                self._status = DONE
+                self.jobid = None
         return self._status
 
     def get_nodeid(self):
         try:
-            _, out, _ = self.ssh.execute("qstat -f %s | grep exec_host" % self.jobid)
+            _, out, _ = self.execute("qstat -f %s | grep exec_host" % self.jobid)
             return out.strip().replace("exec_host = ", "").split(".")[0]
         except Warning as e:
             if 'qstat: Unknown Job Id' in str(e):
@@ -65,7 +59,7 @@ class PBSJob(object):
     def stop(self):
         if self.jobid:
             try:
-                self.ssh.execute("qdel %s" % self.jobid)
+                self.execute("qdel %s" % self.jobid)
             except Warning as e:
                 if 'qdel: Unknown Job Id' in str(e):
                     return
@@ -74,20 +68,9 @@ class PBSJob(object):
 
     def is_executing(self):
         try:
-            self.ssh.execute("qstat %s" % self.jobid)
+            self.execute("qstat %s" % self.jobid)
             return True
         except Warning as e:
             if 'qstat: Unknown Job Id' in str(e):
                 return False
             raise e
-
-
-if __name__ == "__main__":
-    x = None
-    username, password = "mmpe", x.password  #q.get_login("mmpe")
-    pbsjob = PBSJob('gorm', username, password, 22)
-    #pbsjob.submit("pbsjob", ".hawc2launcher/__1__/", "pbs_out.txt")
-    pbsjob.nodeid = "g-080"
-    print (pbsjob.execute_on_node("tail -20 /scratch/mmpe/1996208.g-000.risoe.dk/logfiles/structure_wind.log\n"))
-
-
