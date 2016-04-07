@@ -135,48 +135,40 @@ export PATH=$PATH:/home/MET/STABCON/repositories/toolbox/pbsutils/
 ```
 
 (The corresponding open repository is on the DTU Wind Energy Gitlab server:
-[pbsutils](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox). Please
+[pbsutils](https://gitlab.windenergy.dtu.dk/toolbox/pbsutils). Please
 considering reporting bugs and/or suggest improvements there. You're contributions
 are much appreciated!)
 
 If you have been using an old version of this how-to, you might be pointing
-to an earlier version of these tools/utils and its reference should be removed
-from your ```.bash_profile``` file:
+to an earlier version of these tools/utils and any references containing
+```cluster-tools``` or ```prepost``` should be removed
+from your ```.bash_profile``` file.
 
-```
-export PATH=$PATH:/home/MET/STABCON/repositories/cluster-tools/
-```
-
-After modifying ```.bash_profile```, save and close it. Then, in the terminal, run the command:
+After modifying ```.bash_profile```, save and close it. Then, in the terminal,
+run the command:
 ```
 g-000 $ source ~/.bash_profile
 ```
-In order for any changes made in ```.bash_profile``` to take effect, you need to either ```source``` it (as shown above), or log out and in again.  
 
-You will also need to configure wine and place the HAWC2 executables in a
-directory that wine knows about. First, activate the correct wine environment by
-typing in a shell in the Gorm's home directory (it can be activated with
-ssh (Linux, Mac) or putty (MS Windows)):
+You will also need to configure wine and place the HAWC2 executables in your
+local wine directory, which by default is assumed to be ```~/.wine32```, and
+```pbsutils``` contains and automatic configuration script you can run:
 
 ```
-g-000 $ WINEARCH=win32 WINEPREFIX=~/.wine32 wine test.exe
+g-000 $ ./config-wine-hawc2.sh
 ```
 
-Optionally, you can also make an alias (a short format for a longer, more complex
-command). In the ```.bashrc``` file in your home directory
-(```/home/$USER/.bash_profile```), add at the bottom of the file:
+If you need more information on what is going on, you can read a more detailed
+description [here]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/configure-wine.md).
+
+All your HAWC2 executables and DLL's are now located at
+```/home/$USER/.wine32/drive_c/bin```. When there is a new version of HAWC2, or
+when a new license manager is released, you can update your local wine directory
+as follows:
 
 ```
-alias wine32='WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
-```
-
-And now copy all the HAWC2 executables, DLL's (including the license manager)
-to your wine directory. You can copy all the required executables, dll's and
-the license manager are located at ```/home/MET/hawc2exe```. The following
-command will do this copying:
-
-```
-g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/windows/system32
+g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/bin/
 ```
 
 Notice that the HAWC2 executable names are ```hawc2-latest.exe```,
@@ -280,18 +272,13 @@ First activate the Anaconda Python environment by typing:
 # add the Anaconda Python environment paths to the system PATH
 g-000 $ export PATH=/home/MET/STABCON/miniconda/bin:$PATH
 # activate the custom python environment:
-g-000 $ source activate anaconda
-# add the Pythone libraries to the PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/prepost:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/pythontoolbox/fatigue_tools:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/pythontoolbox:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/MMPE:$PYTHONPATH
+g-000 $ source activate wetb_py3
 ```
 For example, launch the auto-generation of DLCs input files:
 
 ```
 g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ python /home/MET/STABCON/repositories/prepost/dlctemplate.py --prep
+g-000 $ python dlctemplate.py --prep
 ```
 
 Or start an interactive IPython shell:
@@ -309,10 +296,12 @@ jammed.
 Method C: Generating htc input files locally
 --------------------------------------------
 
-This approach gives you total freedom, but is also more difficult since you
-will have to have fully configured Python environment installed locally.
+This approach gives you more flexibility and room for custimizations, but you
+will need to install a Python environment with all its dependencies locally.
 Additionally, you need access to the cluster discs from your local workstation.
-Method C is not documented yet.
+
+The installation procedure for wetb is outlined in the [installation manual]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/install-manual-detailed.md).
 
 
 Optional configuration
@@ -546,14 +535,15 @@ optional arguments:
   --envelopeturbine  calculate the load envelope for sensors on the turbine
 ```
 
-The load envelopes are computed for sensors specified in the 
-```dlctemplate.py``` file. The sensors are specified in a list of lists. The 
+The load envelopes are computed for sensors specified in the
+```dlctemplate.py``` file. The sensors are specified in a list of lists. The
 inner list contains the sensors at one location. The envelope is computed for
 the first two sensors of the inner list and the other sensors are used to
-retrieve the remaining loads defining the load state occurring at the same 
+retrieve the remaining loads defining the load state occurring at the same
 instant. The outer list is used to specify sensors at different locations.
 The default values for the blade envelopes are used to compute the Mx-My
 envelopes and retrieve the Mz-Fx-Fy-Fz loads occuring at the same moment.
+
 
 Debugging
 ---------

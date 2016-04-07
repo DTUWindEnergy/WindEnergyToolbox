@@ -29,7 +29,7 @@ python-pytables.
 
 * Other tools you will need:
 
-> git gcc
+> git gcc gcc-fortran (gfortran)
 
 
 ## Mac
@@ -165,14 +165,15 @@ activate py27
 * Install the necessary Python dependencies using the conda package manager:
 
 ```
-conda install scipy pandas matplotlib cython xlrd pytables sphinx nose setuptools_scm future h5py
+conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx
+conda install scipy pandas matplotlib cython xlrd sphinx
 ```
 
 * Not all packages are available in the conda repositories, but they can be
 easily installed with pip:
 
 ```
-pip install pyscaffold pytest pytest-cov
+pip install pyscaffold pytest
 ```
 
 
