@@ -2,6 +2,11 @@
 Configure Wine for HAWC2
 ------------------------
 
+> Note that the steps described here are executed automatically by the
+configuration script ```[config-wine-hawc2.sh]
+(https://gitlab.windenergy.dtu.dk/toolbox/pbsutils/blob/master/config-wine-hawc2.sh)```
+in ```pbsutils```.
+
 
 You will also need to configure wine and place the HAWC2 executables in a
 directory that wine knows about. First, activate the correct wine environment by
