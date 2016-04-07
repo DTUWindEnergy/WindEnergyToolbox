@@ -61,11 +61,18 @@ Detailed installation instructions, including how to install Python from scratch
 are described in the [detailed installation manual](docs/install-manual-detailed.md).
 
 
-If you know what you are doing, you can install as follows:
+If you know what you are doing, you can install as a package as follows:
 
 ```
-python setup.py
+python setup.py install
 ```
+
+Or in development mode, install from your working directory
+
+```
+pip install -e ./
+```
+
 
 Or create a binary wheel distribution package with:
 
