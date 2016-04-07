@@ -46,7 +46,7 @@ def configure_dirs(verbose=False):
         raise ValueError('Could not find master file in htc/_master')
     MASTERFILE = master
     P_MASTERFILE = os.path.join(P_SOURCE, 'htc%s_master%s' % (os.sep, os.sep))
-    POST_DIR = os.path.join(p_run_root, PROJECT, 'python-prepost-data%s' % os.sep)
+    POST_DIR = os.path.join(p_run_root, PROJECT, 'prepost-data%s' % os.sep)
 
     if verbose:
         print('='*79)
@@ -240,7 +240,7 @@ def tags_defaults(master):
 
 
 def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
-                  pinclude=None):
+                  pinclude=None, silent=False):
     """
     Read all MS Excel files that hold load case definitions according to
     the team STABCON definitions. Save each case in a list according to the
@@ -272,16 +272,20 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
         first sheet (index=0) is taken.
 
     """
-    print('looking for DLC spreadsheet definitions at:')
-    print(proot)
+    if not silent:
+        print('looking for DLC spreadsheet definitions at:')
+        print(proot)
     df_list = misc.read_excel_files(proot, fext=fext, pignore=pignore,
-                                    sheet=sheet, pinclude=pinclude)
+                                    sheet=sheet, pinclude=pinclude,
+                                    silent=silent)
 
-    print('found %i Excel file(s), ' % len(df_list), end='')
+    if not silent:
+        print('found %i Excel file(s), ' % len(df_list), end='')
     k = 0
     for df in df_list:
         k += len(df)
-    print('in which a total of %s cases are defined.' % k)
+    if not silent:
+        print('in which a total of %s cases are defined.' % k)
 
     opt_tags = []
 

@@ -70,7 +70,6 @@ def eq_load(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1, rainflow_func=ra
         return [[np.nan] * len(np.atleast_1d(m))] * len(np.atleast_1d(neq))
 
 
-
 def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6, 10 ** 7, 10 ** 8], rainflow_func=rainflow_windap):
     """Calculate combined fatigue equivalent load
 
@@ -109,7 +108,6 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
     return eq_loads, cycles, ampl_bin_mean, ampl_bin_edges
 
 
-
 def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_windap):
     """Markow load cycle matrix
 
@@ -132,7 +130,8 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     Returns
     -------
     cycles : ndarray, shape(ampl_bins, mean_bins)
-        A bi-dimensional histogram of load cycles(full cycles). Amplitudes are histogrammed along the first dimension and mean values are histogrammed along the second dimension.
+        A bi-dimensional histogram of load cycles(full cycles). Amplitudes are\
+        histogrammed along the first dimension and mean values are histogrammed along the second dimension.
     ampl_bin_mean : ndarray, shape(ampl_bins,)
         The average cycle amplitude of the bins
     ampl_edges : ndarray, shape(ampl_bins+1,)
