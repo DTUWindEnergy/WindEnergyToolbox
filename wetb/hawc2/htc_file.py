@@ -169,7 +169,7 @@ class HTCFile(HTCContents, HTCDefaults):
         return [f for f in files if f]
 
     def turbulence_files(self):
-        if self.wind.turb_format[0] == 0:
+        if 'wind' not in self.contents.keys() or self.wind.turb_format[0] == 0:
             return []
         elif self.wind.turb_format[0] == 1:
             files = [self.get('wind.mann.filename_%s' % comp, [None])[0] for comp in ['u', 'v', 'w']]

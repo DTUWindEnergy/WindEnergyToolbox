@@ -19,6 +19,8 @@ class SSHClient(object):
         self.password = password
         self.port = port
         self.key = key
+        self.disconnect = 0
+        self.client = None
         if key is not None:
             self.key = paramiko.RSAKey.from_private_key(StringIO(key), password=passphrase)
 
@@ -26,6 +28,11 @@ class SSHClient(object):
         return self.host, self.username, self.password, self.port
 
     def __enter__(self):
+        self.disconnect += 1
+        if self.client is None:
+            self.connect()
+
+    def connect(self):
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
@@ -36,7 +43,9 @@ class SSHClient(object):
         return self
 
     def __exit__(self, *args):
-        self.close()
+        self.disconnect -= 1
+        if self.disconnect == 0:
+            self.close()
 
 
     def download(self, remotefilepath, localfile, verbose=False):
@@ -68,6 +77,7 @@ class SSHClient(object):
             self.client = None
         self.sftp.close()
         self.transport.close()
+        self.disconnect = False
 
     def file_exists(self, filename):
         _, out, _ = (self.execute('[ -f %s ] && echo "File exists" || echo "File does not exists"' % filename.replace("\\", "/")))
@@ -133,7 +143,7 @@ class SSHClient(object):
 if __name__ == "__main__":
     from mmpe.ui.qt_ui import QtInputUI
     q = QtInputUI(None)
-    import x
+    x = None
     username, password = "mmpe", x.password  #q.get_login("mmpe")
 
 
