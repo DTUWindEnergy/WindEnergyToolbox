@@ -3379,7 +3379,6 @@ class Cases(object):
         self.loadstats = kwargs.get('loadstats', False)
         self.rem_failed = kwargs.get('rem_failed', True)
         self.config = kwargs.get('config', {})
-        print(self.config)
         # determine the input argument scenario
         if len(args) == 1:
             if type(args[0]).__name__ == 'dict':
@@ -5203,4 +5202,3 @@ def eigenstructure(cases, debug=False):
 
 if __name__ == '__main__':
     pass
-
