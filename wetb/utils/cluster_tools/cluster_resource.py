@@ -69,9 +69,9 @@ class LocalResource(Resource):
             try:
                 return psutil.Process(i).name
             except psutil._error.AccessDenied:
-                pass
+                return ""
 
         no_cpu = multiprocessing.cpu_count()
         cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
-        no_current_process = len([i for i in psutil.get_pid_list() if name(i) == self.process_name])
+        no_current_process = len([i for i in psutil.get_pid_list() if name(i).lower().startswith(self.process_name.lower())])
         return no_cpu, cpu_free, no_current_process
