@@ -199,25 +199,23 @@ Method A: Generating htc input files on the cluster
 
 Use ssh (Linux, Mac) or putty (MS Windows) to connect to the cluster.
 
-With qsub-wrap.py the user can wrap a PBS launch script around any executable or
-Python/Matlab/... script. In doing so, the executable/Python script will be
-immediately submitted to the cluster for execution. By default, the Anaconda
-Python environment in ```/home/MET/STABCON/miniconda``` will be activated. The
-Anaconda Python environment is not relevant, and can be safely ignored, if the
-executable does not have anything to do with Python.
-
-In order to see the different options of this qsub-wrap utility, do:
+With qsub-wrap.py will be used to create a job for the cluster that will run
+the htc file generator within the correct environment Python environment. A
+emplate for such a file, which works for standard DLBs, can be found here:
 
 ```
-g-000 $ qsub-wrap.py --help
+/home/MET/STABCON/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py
 ```
 
 For example, in order to generate the default IEC DLCs:
 
 ```
 g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/prepost/dlctemplate.py -c python --prep
+g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
 ```
+
+You could consider copying the template into the HAWC2 model folder to avoid
+typing such a long command over and over again.
 
 Note that the following folder structure for the HAWC2 model is assumed:
 
