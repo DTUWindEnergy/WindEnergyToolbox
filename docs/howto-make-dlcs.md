@@ -162,8 +162,8 @@ If you need more information on what is going on, you can read a more detailed
 description [here]
 (https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/configure-wine.md).
 
-All your HAWC2 executables and DLL's are now located at
-```/home/$USER/.wine32/drive_c/bin```.
+All your HAWC2 executables and DLL's are now located
+at ```/home/$USER/.wine32/drive_c/bin```.
 
 Notice that the HAWC2 executable names are ```hawc2-latest.exe```,
 ```hawc2-118.exe```, etc. By default the latest version will be used and the user
@@ -560,4 +560,3 @@ are redirected to the ```pbs_out/qsub-wrap_dlctemplate.py.err``` text file.
 The output and errors of HAWC2 simulations can also be found in the ```pbs_out```
 directory. The ```.err``` and ```.out``` files will be named exactly the same
 as the ```.htc``` input files, and the ```.sel```/```.dat``` output files.
-
