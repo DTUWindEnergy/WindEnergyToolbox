@@ -163,21 +163,13 @@ description [here]
 (https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/configure-wine.md).
 
 All your HAWC2 executables and DLL's are now located at
-```/home/$USER/.wine32/drive_c/bin```. When there is a new version of HAWC2, or
-when a new license manager is released, you can update your local wine directory
-as follows:
-
-```
-g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/bin/
-```
+```/home/$USER/.wine32/drive_c/bin```.
 
 Notice that the HAWC2 executable names are ```hawc2-latest.exe```,
 ```hawc2-118.exe```, etc. By default the latest version will be used and the user
 does not need to specify this. However, when you need to compare different version
 you can easily do so by specifying which case should be run with which
-executable. The file ```hawc2-latest.exe``` will always be the latest HAWC2
-version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
-simply copy all the files from there again to update.
+executable.
 
 Log out and in again from the cluster (close and restart PuTTY).
 
@@ -186,6 +178,20 @@ At this stage you can run HAWC2 as follows:
 ```
 g-000 $ wine32 hawc2-latest htc/some-intput-file.htc
 ```
+
+Updating local HAWC2 executables
+--------------------------------
+
+When there is a new version of HAWC2, or when a new license manager is released,
+you can update your local wine directory as follows:
+
+```
+g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/bin/
+```
+
+The file ```hawc2-latest.exe``` will always be the latest HAWC2
+version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
+simply copy all the files from there again to update.
 
 
 Method A: Generating htc input files on the cluster
