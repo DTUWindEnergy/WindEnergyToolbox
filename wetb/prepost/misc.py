@@ -678,7 +678,7 @@ def to_lower_case(proot):
             os.rename(root, new)
 
 def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
-                     pinclude=None):
+                     pinclude=None, silent=False):
     """
     Read recursively all MS Excel files with extension "fext". Only the
     default name for the first sheet (Sheet1) of the Excel file is considered.
@@ -726,14 +726,17 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
             # if it does contain pignore, ingore the dlc
             if pignore is not None and f_target.find(pignore) > -1:
                 continue
-            print(f_target, end='')
+            if not silent:
+                print(f_target, end='')
             try:
                 xl = pd.ExcelFile(f_target)
                 df = xl.parse(sheet)
                 df_list[f_target.replace('.'+fext, '')] = df
-                print(': sucesfully included %i case(s)' % len(df))
+                if not silent:
+                    print(': sucesfully included %i case(s)' % len(df))
             except:
-                print('     XXXXX ERROR COULD NOT READ')
+                if not silent:
+                    print('     XXXXX ERROR COULD NOT READ')
 
     return df_list
 

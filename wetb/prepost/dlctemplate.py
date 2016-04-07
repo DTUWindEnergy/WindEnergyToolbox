@@ -164,7 +164,7 @@ def variable_tag_func(master, case_id_short=False):
 ### PRE- POST
 # =============================================================================
 
-def launch_dlcs_excel(sim_id):
+def launch_dlcs_excel(sim_id, silent=False):
     """
     Launch load cases defined in Excel files
     """
@@ -175,9 +175,10 @@ def launch_dlcs_excel(sim_id):
     # see if a htc/DLCs dir exists
     dlcs_dir = os.path.join(P_SOURCE, 'htc', 'DLCs')
     if os.path.exists(dlcs_dir):
-        opt_tags = dlcdefs.excel_stabcon(dlcs_dir)
+        opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent)
     else:
-        opt_tags = dlcdefs.excel_stabcon(os.path.join(P_SOURCE, 'htc'))
+        opt_tags = dlcdefs.excel_stabcon(os.path.join(P_SOURCE, 'htc'),
+                                         silent=silent)
 
     if len(opt_tags) < 1:
         raise ValueError('There are is not a single case defined. Make sure '
@@ -200,7 +201,8 @@ def launch_dlcs_excel(sim_id):
 #    runmethod = 'local-script'
 #    runmethod = 'windows-script'
 #    runmethod = 'jess'
-    master = master_tags(sim_id, runmethod=runmethod)
+    master = master_tags(sim_id, runmethod=runmethod, silent=silent,
+                         verbose=False)
     master.tags['[sim_id]'] = sim_id
     master.output_dirs.append('[Case folder]')
     master.output_dirs.append('[Case id.]')
@@ -219,7 +221,8 @@ def launch_dlcs_excel(sim_id):
                        write_htc=True, runmethod=runmethod, verbose=False,
                        copyback_turb=True, msg='', update_cases=False,
                        ignore_non_unique=False, run_only_new=False,
-                       pbs_fname_appendix=False, short_job_names=False)
+                       pbs_fname_appendix=False, short_job_names=False,
+                       silent=silent)
 
 
 def launch_param(sim_id):
@@ -264,10 +267,10 @@ def launch_param(sim_id):
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                fatigue_cycles=False, m=[1, 3, 4, 5, 6, 8, 10, 12, 14],
-                neq=1e6, no_bins=46, years=20.0, fatigue=True, nn_twb=1,
-                nn_twt=20, nn_blr=4, A=None, save_new_sigs=False,
-                envelopeturbine=False, envelopeblade=False, save_iter=False):
+                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e6, no_bins=46,
+                years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
+                save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
+                save_iter=False, AEP=False):
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -339,12 +342,12 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
         df_stats = cc.statistics(calc_mech_power=True, i0=i0, i1=i1,
                                  tags=tags, add_sensor=add, ch_fatigue=None,
                                  update=update, saveinterval=saveinterval,
-                                 suffix=suffix, fatigue_cycles=fatigue_cycles,
+                                 suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=neq, no_bins=no_bins,
-                                 chs_resultant=chs_resultant, A=A,
-                                 save_new_sigs=save_new_sigs)
+                                 chs_resultant=chs_resultant, A=A)
         # annual energy production
-        df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
+        if AEP:
+            df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
 
     if envelopeblade:
         ch_list = []
@@ -395,6 +398,9 @@ if __name__ == '__main__':
                         dest='stats', help='calculate statistics')
     parser.add_argument('--fatigue', action='store_true', default=False,
                         dest='fatigue', help='calculate Leq for a full DLC')
+    parser.add_argument('--AEP', action='store_true', default=False,
+                        dest='AEP', help='calculate AEP, requires '
+                        'htc/DLCs/dlc_config.xlsx')
     parser.add_argument('--csv', action='store_true', default=False,
                         dest='csv', help='Save data also as csv file')
     parser.add_argument('--years', type=float, default=20.0, action='store',
@@ -429,24 +435,26 @@ if __name__ == '__main__':
     # --plots, --report, --...
 
     # -------------------------------------------------------------------------
-#    # manually configure all the dirs
-#    p_root_remote = '/mnt/hawc2sim'
-#    p_root_local = '/home/dave/DTU/Projects/AVATAR/'
+#    # manually configure paths, HAWC2 model root path is then constructed as
+#    # p_root_remote/PROJECT/sim_id, and p_root_local/PROJECT/sim_id
+#    # adopt accordingly when you have configured your directories differently
+#    p_root_remote = '/mnt/hawc2sim/'
+#    p_root_local = '/mnt/hawc2sim/'
 #    # project name, sim_id, master file name
-#    PROJECT = 'DTU10MW'
-#    sim_id = 'C0014'
-#    MASTERFILE = 'dtu10mw_master_C0014.htc'
+#    PROJECT = 'demo'
+#    sim_id = 'A0001'
+#    MASTERFILE = 'dtu10mw_avatar_master_A0001.htc'
 #    # MODEL SOURCES, exchanche file sources
 #    P_RUN = os.path.join(p_root_remote, PROJECT, sim_id+'/')
-#    P_SOURCE = os.path.join(p_root_local, PROJECT)
+#    P_SOURCE = os.path.join(p_root_local, PROJECT, sim_id)
 #    # location of the master file
-#    P_MASTERFILE = os.path.join(p_root_local, PROJECT, 'htc', '_master/')
+#    P_MASTERFILE = os.path.join(p_root_local, PROJECT, sim_id, 'htc', '_master/')
 #    # location of the pre and post processing data
-#    POST_DIR = os.path.join(p_root_remote, PROJECT, 'python-prepost-data/')
+#    POST_DIR = os.path.join(p_root_remote, PROJECT, sim_id, 'prepost-data/')
 #    force_dir = P_RUN
 #    launch_dlcs_excel(sim_id)
 #    post_launch(sim_id, check_logs=True, update=False, force_dir=force_dir,
-#                saveinterval=2000, csv=False)
+#                saveinterval=2000, csv=True, fatigue_cycles=True, fatigue=False)
     # -------------------------------------------------------------------------
 
     # create HTC files and PBS launch scripts (*.p)
@@ -458,7 +466,7 @@ if __name__ == '__main__':
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
                     force_dir=P_RUN, saveinterval=2000, csv=opt.csv,
                     statistics=opt.stats, years=opt.years, neq=opt.neq,
-                    fatigue=opt.fatigue, fatigue_cycles=True, A=opt.rotarea,
+                    fatigue=opt.fatigue, A=opt.rotarea, AEP=opt.AEP,
                     no_bins=opt.no_bins, nn_blr=opt.nn_blr, nn_twt=opt.nn_twt,
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,

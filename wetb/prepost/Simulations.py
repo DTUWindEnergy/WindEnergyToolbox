@@ -795,7 +795,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
            copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
-           pbs_fname_appendix=pbs_fname_appendix)
+           pbs_fname_appendix=pbs_fname_appendix, silent=silent)
 
     return cases
 
@@ -1030,10 +1030,10 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
     elif runmethod in ['jess','gorm']:
         # create the pbs object
         pbs = PBS(cases, server=runmethod, short_job_names=short_job_names,
-                  pbs_fname_appendix=pbs_fname_appendix, qsub=qsub)
+                  pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
+                  verbose=verbose, silent=silent)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
-        pbs.verbose = verbose
         pbs.pbs_out_dir = pbs_out_dir
         pbs.create()
     elif runmethod == 'local':
@@ -1851,8 +1851,8 @@ class PBS(object):
     such as the turbulence file and folder, htc folder and others
     """
 
-    def __init__(self, cases, server='gorm', qsub='time',
-                 pbs_fname_appendix=True, short_job_names=True):
+    def __init__(self, cases, server='gorm', qsub='time', silent=False,
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1882,7 +1882,8 @@ class PBS(object):
 
         """
         self.server = server
-        self.verbose = True
+        self.verbose = verbose
+        self.silent = silent
 
 #        if server == 'thyra':
 #            self.maxcpu = 4
@@ -2182,7 +2183,8 @@ class PBS(object):
                 ended = True
                 # print progress:
                 replace = ((i/self.maxcpu), (i_tot/self.maxcpu), self.walltime)
-                print('pbs script %3i/%i walltime=%s' % replace)
+                if not self.silent:
+                    print('pbs script %3i/%i walltime=%s' % replace)
 
             count2 += 1
             i += 1
@@ -2196,7 +2198,8 @@ class PBS(object):
             self.ending(pbs_path)
             # progress printing
             replace = ( (i/self.maxcpu), (i_tot/self.maxcpu), self.walltime )
-            print('pbs script %3i/%i walltime=%s, partially loaded' % replace)
+            if not self.silent:
+                print('pbs script %3i/%i walltime=%s, partially loaded' % replace)
 #            print 'pbs progress, script '+format(i/self.maxcpu,'2.0f')\
 #                + '/' + format(i_tot/self.maxcpu, '2.0f') \
 #                + ' partially loaded...'
@@ -2451,7 +2454,8 @@ class PBS(object):
 
         cases_fail = {}
 
-        print('checking if all log and result files are present...', end='')
+        if not self.silent:
+            print('checking if all log and result files are present...', end='')
 
         # check for each case if we have results and a log file
         for cname, case in cases.items():
@@ -2473,7 +2477,8 @@ class PBS(object):
             if size_sel < 5 or size_dat < 5:
                 cases_fail[cname] = copy.copy(cases[cname])
 
-        print('done!')
+        if not self.silent:
+            print('done!')
 
         # length will be zero if there are no failures
         return cases_fail
@@ -3828,7 +3833,7 @@ class Cases(object):
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=-1, saveinterval=1000,
-                   csv=True, suffix=None, fatigue_cycles=False, A=None,
+                   csv=True, suffix=None, A=None,
                    ch_wind=None, save_new_sigs=False, xlsx=False):
         """
         Calculate statistics and save them in a pandas dataframe. Save also
@@ -3850,10 +3855,6 @@ class Cases(object):
             Valid ch_dict channel names for which the equivalent fatigue load
             needs to be calculated. When set to None, ch_fatigue = ch_sel,
             and hence all channels will have a fatigue analysis.
-
-        fatigue_cycles : Boolean, default=False
-            If True, the cycle matrix, or sum( n_i*S_i^m ), is calculated. If
-            set to False, the 1Hz equivalent load is calculated.
 
         chs_resultant
 
@@ -4168,12 +4169,13 @@ class Cases(object):
                 signal = self.sig[:,chi]
                 if neq is None:
                     neq = float(case['[duration]'])
-                if not fatigue_cycles:
-                    eq = self.res.calc_fatigue(signal, no_bins=no_bins,
-                                               neq=neq, m=m)
-                else:
-                    eq = self.res.cycle_matrix(signal, no_bins=no_bins, m=m)
+
+                eq = self.res.calc_fatigue(signal, no_bins=no_bins,
+                                           neq=neq, m=m)
+
+                # save in the fatigue results
                 fatigue[ch_id] = {}
+                fatigue[ch_id]['neq'] = neq
                 # when calc_fatigue succeeds, we should have as many items
                 # as in m
                 if len(eq) == len(m):
@@ -4188,6 +4190,7 @@ class Cases(object):
             for m_ in m:
                 tag = 'm=%2.01f' % m_
                 tags_fatigue.append(tag)
+            tags_fatigue.append('neq')
 
             # -----------------------------------------------------------------
             # define the pandas data frame dict on first run
@@ -4408,10 +4411,10 @@ class Cases(object):
                 raise(e)
         return df_dict2
 
-    def fatigue_lifetime(self, dfs, neq, res_dir='res/', fh_lst=None, years=20.,
+    def fatigue_lifetime(self, dfs, neq_life, res_dir='res/', fh_lst=None,
                          dlc_folder="dlc%s_iec61400-1ed3/", extra_cols=[],
                          save=False, update=False, csv=False, new_sim_id=False,
-                         xlsx=False):
+                         xlsx=False, years=20.0):
         """
         Cacluate the fatigue over a selection of cases and indicate how many
         hours each case contributes to its life time.
@@ -4427,7 +4430,7 @@ class Cases(object):
             should only hold the results of one standard organized DLC (one
             turbine, one inflow case).
 
-        neq : float
+        neq_life : float
             Reference number of cycles. Usually, neq is either set to 10e6,
             10e7 or 10e8.
 
@@ -4543,12 +4546,17 @@ class Cases(object):
                 # values of the identifier columns for each case. We do this
                 # in case the original dfs holds multiple DLC cases.
                 dict_Leq[col].append(sel_sort[col].unique()[0])
+
+            # R_eq is usually expressed as the 1Hz equivalent load
+            neq_1hz = sel_sort['neq'].values
+
             for m in ms:
-                # sel_sort[m] holds the cycle_matrices for each of the DLC
+                # sel_sort[m] holds the equivalent loads for each of the DLC
                 # cases: such all the different wind speeds for dlc1.2
-                R_eq = (sel_sort[m].values*np.array(hours)).sum()
+                R_eq_mod = np.power(sel_sort[m].values, m) * neq_1hz
+                tmp = (R_eq_mod*np.array(hours)).sum()
                 # the effective Leq for each of the material constants
-                dict_Leq[m].append(math.pow(R_eq/neq, 1.0/float(m[2:])))
+                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/float(m[2:])))
                 # the following is twice as slow:
                 # [i*j for (i,j) in zip(sel_sort[m].values.tolist(),hours)]
 

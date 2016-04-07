@@ -7,5 +7,6 @@ pytest
 xlrd
 h5py
 pandas
+tables
 future
 
