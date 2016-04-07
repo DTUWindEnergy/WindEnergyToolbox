@@ -8,7 +8,7 @@ class ClusterSimulation(Simulation):
         Simulation.__init__(self, modelpath, htcfilename, hawc2exe=hawc2exe)
         self.simulation_id = [f for f in os.listdir('.') if f.endswith('.in')][0][:-3]
         self.resource.simulationThread.low_priority = False
-        self.thread = Thread(target=self.simulate)
+        self.non_blocking_simulation_thread = Thread(target=self.simulate)
         self.start(1)
         self.wait()
         print (self.resource.simulationThread.res[1])  # print hawc2 output to stdout
