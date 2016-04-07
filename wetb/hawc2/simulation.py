@@ -39,9 +39,41 @@ ABORTED = "Aborted"  # when stopped and logfile.status != Done
 CLEANED = "Cleaned"  # after copy back
 
 class Simulation(object):
+    """Class for doing hawc2 simulations
+
+
+
+
+    Examples
+    --------
+    >>> sim = Simulation("<path>/MyModel","htc/MyHtc")
+
+    Blocking inplace simulation
+    >>> sim.simulate()
+
+    Non-blocking distributed simulation(everything copied to temporary folder)\n
+    Starts two threads:
+    - non_blocking_simulation_thread:
+        - prepare_simulation() # copy to temporary folder
+        - simulate() # simulate
+        - finish_simulation # copy results back again
+    - updateStatusThread:
+        - update status every second
+    >>> sim.start()
+    >>> while sim.status!=CLEANED:
+    >>>     sim.show_status()
+
+
+    The default host is LocalSimulationHost. To simulate on pbs featured cluster
+    >>> sim.host = PBSClusterSimulationHost(sim, <hostname>, <username>, <password>):
+    >>> sim.start()
+    >>> while sim.status!=CLEANED:
+    >>>     sim.show_status()
+    """
+
     is_simulating = False
     status = QUEUED
-    def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe"):
+    def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
         self.modelpath = os.path.abspath(modelpath) + "/"
         self.folder = os.path.dirname(htcfilename)
         if not os.path.isabs(htcfilename):
@@ -49,7 +81,8 @@ class Simulation(object):
         self.filename = os.path.basename(htcfilename)
         self.htcFile = HTCFile(htcfilename)
         self.time_stop = self.htcFile.simulation.time_stop[0]
-        self.copy_turbulence = True
+        self.hawc2exe = hawc2exe
+        self.copy_turbulence = copy_turbulence
         self.simulation_id = os.path.relpath(htcfilename, self.modelpath).replace("\\", "_").replace("/", "_") + "_%d" % id(self)
         self.stdout_filename = "stdout/%s.out" % self.simulation_id
         if 'logfile' in self.htcFile.simulation:
@@ -66,31 +99,52 @@ class Simulation(object):
         self.logFile.clear()
         self.last_status = self.status
         self.errors = []
-        self.thread = Thread(target=self.simulate_distributed)
-        self.hawc2exe = hawc2exe
+        self.non_blocking_simulation_thread = Thread(target=self.simulate_distributed)
         self.updateStatusThread = UpdateStatusThread(self)
         self.host = LocalSimulationHost(self)
 
-    def input_sources(self):
-        def fmt(src):
-            if os.path.isabs(src):
-                src = os.path.relpath(os.path.abspath(src), self.modelpath)
-            else:
-                src = os.path.relpath (src)
-            assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
-            return src
-        return [fmt(src) for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + self.additional_files().get('input', [])]
 
-    def output_sources(self):
-        def fmt(dst):
-            if os.path.isabs(dst):
-                dst = os.path.relpath(os.path.abspath(dst), self.modelpath)
-            else:
-                dst = os.path.relpath (dst)
-            dst = dst.replace("\\", "/")
-            assert not dst.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % dst
-            return dst
-        return [fmt(dst) for dst in self.htcFile.output_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + [self.stdout_filename]]
+    def start(self, update_interval=1):
+        """Start non blocking distributed simulation"""
+        self.is_simulating = True
+        self.updateStatusThread.start()
+        self.non_blocking_simulation_thread.start()
+
+    def wait(self):
+        self.non_blocking_simulation_thread.join()
+        self.update_status()
+
+    def abort(self):
+        self.host.stop()
+        for _ in range(100):
+            if self.is_simulating:
+                break
+            time.sleep(0.1)
+        if self.logFile.status not in [log_file.DONE]:
+            self.status = ABORTED
+        self.update_status()
+
+    def show_status(self):
+        #print ("log status:", self.logFile.status)
+        if self.logFile.status == log_file.SIMULATING:
+            if self.last_status != log_file.SIMULATING:
+                print ("|" + ("-"*50) + "|" + ("-"*49) + "|")
+                sys.stdout.write("|")
+            sys.stdout.write("."*(self.logFile.pct - getattr(self, 'last_pct', 0)))
+            sys.stdout.flush()
+            self.last_pct = self.logFile.pct
+        elif self.last_status == log_file.SIMULATING:
+            sys.stdout.write("."*(100 - self.last_pct) + "|")
+            sys.stdout.flush()
+            print ("\n")
+        elif self.logFile.status == log_file.UNKNOWN:
+            print (self.status)
+        else:
+            print (self.logFile.status)
+        if self.logFile.status != log_file.SIMULATING:
+            if self.logFile.errors:
+                print (self.logFile.errors)
+        self.last_status = self.logFile.status
 
 
     def prepare_simulation(self):
@@ -146,31 +200,33 @@ class Simulation(object):
             if self.logFile.status == log_file.DONE and self.is_simulating is False:
                 self.status = FINISH
 
+    def _input_sources(self):
+        def fmt(src):
+            if os.path.isabs(src):
+                src = os.path.relpath(os.path.abspath(src), self.modelpath)
+            else:
+                src = os.path.relpath (src)
+            assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
+            return src
+        return [fmt(src) for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + self.additional_files().get('input', [])]
+
+    def _output_sources(self):
+        def fmt(dst):
+            if os.path.isabs(dst):
+                dst = os.path.relpath(os.path.abspath(dst), self.modelpath)
+            else:
+                dst = os.path.relpath (dst)
+            dst = dst.replace("\\", "/")
+            assert not dst.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % dst
+            return dst
+        return [fmt(dst) for dst in self.htcFile.output_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + [self.stdout_filename]]
+
+
 
     def __str__(self):
         return "Simulation(%s)" % self.filename
 
-    def show_status(self):
-        #print ("log status:", self.logFile.status)
-        if self.logFile.status == log_file.SIMULATING:
-            if self.last_status != log_file.SIMULATING:
-                print ("|" + ("-"*50) + "|" + ("-"*49) + "|")
-                sys.stdout.write("|")
-            sys.stdout.write("."*(self.logFile.pct - getattr(self, 'last_pct', 0)))
-            sys.stdout.flush()
-            self.last_pct = self.logFile.pct
-        elif self.last_status == log_file.SIMULATING:
-            sys.stdout.write("."*(100 - self.last_pct) + "|")
-            sys.stdout.flush()
-            print ("\n")
-        elif self.logFile.status == log_file.UNKNOWN:
-            print (self.status)
-        else:
-            print (self.logFile.status)
-        if self.logFile.status != log_file.SIMULATING:
-            if self.logFile.errors:
-                print (self.logFile.errors)
-        self.last_status = self.logFile.status
+
 
 
     def additional_files(self):
@@ -220,35 +276,111 @@ class Simulation(object):
                 continue
 
     def get_confirmation(self, title, msg):
+        """override in subclass"""
         return True
 
     def show_message(self, msg, title="Information"):
         print (msg)
 
-    def start(self, update_interval=1):
-        """Start non blocking distributed simulation"""
-        self.is_simulating = True
-        self.updateStatusThread.start()
-        self.thread.start()
 
-    def wait(self):
-        self.thread.join()
-        self.update_status()
 
-    def abort(self):
-        self.host.stop()
-        for _ in range(100):
-            if self.is_simulating:
-                break
-            time.sleep(0.1)
-#        try:
-#            self.finish_simulation()
-#        except Exception as e:
-#            print (str(e))
-#            pass
-        if self.logFile.status not in [log_file.DONE]:
-            self.status = ABORTED
-        self.update_status()
+class UpdateStatusThread(Thread):
+    def __init__(self, simulation, interval=1):
+        Thread.__init__(self)
+        self.simulation = simulation
+        self.interval = interval
+
+    def start(self):
+        Thread.start(self)
+
+    def run(self):
+        while self.simulation.is_simulating:
+            self.simulation.update_status()
+            time.sleep(self.interval)
+
+
+class SimulationResource(object):
+    def __init__(self, simulation):
+        self.sim = simulation
+    logFile = property(lambda self : self.sim.logFile, lambda self, v: setattr(self.sim, "logFile", v))
+    errors = property(lambda self : self.sim.errors)
+    modelpath = property(lambda self : self.sim.modelpath)
+    tmp_modelpath = property(lambda self : self.sim.tmp_modelpath, lambda self, v: setattr(self.sim, "tmp_modelpath", v))
+    simulation_id = property(lambda self : self.sim.simulation_id)
+    stdout_filename = property(lambda self : self.sim.stdout_filename)
+    htcFile = property(lambda self : self.sim.htcFile)
+    additional_files = property(lambda self : self.sim.additional_files)
+    _input_sources = property(lambda self : self.sim._input_sources)
+    _output_sources = property(lambda self : self.sim._output_sources)
+    log_filename = property(lambda self : self.sim.log_filename)
+
+    status = property(lambda self : self.sim.status, lambda self, v: setattr(self.sim, "status", v))
+    is_simulating = property(lambda self : self.sim.is_simulating, lambda self, v: setattr(self.sim, "is_simulating", v))
+
+    def __str__(self):
+        return self.host
+class LocalSimulationHost(SimulationResource):
+    def __init__(self, simulation):
+        SimulationResource.__init__(self, simulation)
+        LocalResource.__init__(self, "hawc2mb")
+        self.simulationThread = SimulationThread(self.sim)
+
+    def _prepare_simulation(self):
+        # must be called through simulation object
+        self.tmp_modelpath = os.path.join(self.modelpath, self.tmp_modelpath)
+        self.sim.set_id(self.simulation_id, 'Localhost', self.tmp_modelpath)
+        for src in self._input_sources():
+            for src_file in glob.glob(os.path.join(self.modelpath, src)):
+                dst = os.path.join(self.tmp_modelpath, os.path.relpath(src_file, self.modelpath))
+                # exist_ok does not exist in Python27
+                if not os.path.exists(os.path.dirname(dst)):
+                    os.makedirs(os.path.dirname(dst))  #, exist_ok=True)
+                shutil.copy(src_file, dst)
+                if not os.path.isfile(dst) or os.stat(dst).st_size != os.stat(src_file).st_size:
+                    print ("error copy ", dst)
+
+        if not os.path.exists(os.path.join(self.tmp_modelpath, 'stdout')):
+            os.makedirs(os.path.join(self.tmp_modelpath, 'stdout'))  #, exist_ok=True)
+        self.logFile.filename = os.path.join(self.tmp_modelpath, self.log_filename)
+        self.simulationThread.modelpath = self.tmp_modelpath
+
+
+    def _simulate(self):
+        #must be called through simulation object
+        self.returncode, self.stdout = 1, "Simulation failed"
+        self.simulationThread.start()
+        self.simulationThread.join()
+        self.returncode, self.stdout = self.simulationThread.res
+        self.logFile.update_status()
+        self.errors.extend(list(set(self.logFile.errors)))
+
+
+    def _finish_simulation(self):
+        for dst in self._output_sources():
+            src = os.path.join(self.tmp_modelpath, dst)
+
+            for src_file in glob.glob(src):
+                dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
+                # exist_ok does not exist in Python27
+                if not os.path.isdir(os.path.dirname(dst_file)):
+                    os.makedirs(os.path.dirname(dst_file))  #, exist_ok=True)
+                if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
+                    shutil.copy(src_file, dst_file)
+
+        self.logFile.filename = os.path.join(self.modelpath, self.log_filename)
+
+        try:
+            shutil.rmtree(self.tmp_modelpath)
+        except (PermissionError, OSError) as e:
+            raise Warning(str(e))
+
+    def update_logFile_status(self):
+        self.logFile.update_status()
+
+    def stop(self):
+        self.simulationThread.stop()
+        self.simulationThread.join()
+
 
 
 class SimulationThread(Thread):
@@ -289,104 +421,6 @@ class SimulationThread(Thread):
     def stop(self):
         subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=self.process.pid))
 
-class UpdateStatusThread(Thread):
-    def __init__(self, simulation, interval=1):
-        Thread.__init__(self)
-        self.simulation = simulation
-        self.interval = interval
-
-    def start(self):
-        Thread.start(self)
-
-    def run(self):
-        while self.simulation.is_simulating:
-            self.simulation.update_status()
-            time.sleep(self.interval)
-
-
-class SimulationResource(object):
-    def __init__(self, simulation):
-        self.sim = simulation
-    logFile = property(lambda self : self.sim.logFile, lambda self, v: setattr(self.sim, "logFile", v))
-    errors = property(lambda self : self.sim.errors)
-    modelpath = property(lambda self : self.sim.modelpath)
-    tmp_modelpath = property(lambda self : self.sim.tmp_modelpath, lambda self, v: setattr(self.sim, "tmp_modelpath", v))
-    simulation_id = property(lambda self : self.sim.simulation_id)
-    stdout_filename = property(lambda self : self.sim.stdout_filename)
-    htcFile = property(lambda self : self.sim.htcFile)
-    additional_files = property(lambda self : self.sim.additional_files)
-    input_sources = property(lambda self : self.sim.input_sources)
-    output_sources = property(lambda self : self.sim.output_sources)
-    log_filename = property(lambda self : self.sim.log_filename)
-
-    status = property(lambda self : self.sim.status, lambda self, v: setattr(self.sim, "status", v))
-    is_simulating = property(lambda self : self.sim.is_simulating, lambda self, v: setattr(self.sim, "is_simulating", v))
-
-    def __str__(self):
-        return self.host
-class LocalSimulationHost(SimulationResource):
-    def __init__(self, simulation):
-        SimulationResource.__init__(self, simulation)
-        LocalResource.__init__(self, "hawc2mb")
-        self.simulationThread = SimulationThread(self.sim)
-
-    def _prepare_simulation(self):
-        # must be called through simulation object
-        self.tmp_modelpath = os.path.join(self.modelpath, self.tmp_modelpath)
-        self.sim.set_id(self.simulation_id, 'Localhost', self.tmp_modelpath)
-        for src in self.input_sources():
-            for src_file in glob.glob(os.path.join(self.modelpath, src)):
-                dst = os.path.join(self.tmp_modelpath, os.path.relpath(src_file, self.modelpath))
-                # exist_ok does not exist in Python27
-                if not os.path.exists(os.path.dirname(dst)):
-                    os.makedirs(os.path.dirname(dst))  #, exist_ok=True)
-                shutil.copy(src_file, dst)
-                if not os.path.isfile(dst) or os.stat(dst).st_size != os.stat(src_file).st_size:
-                    print ("error copy ", dst)
-
-        if not os.path.exists(os.path.join(self.tmp_modelpath, 'stdout')):
-            os.makedirs(os.path.join(self.tmp_modelpath, 'stdout'))  #, exist_ok=True)
-        self.logFile.filename = os.path.join(self.tmp_modelpath, self.log_filename)
-        self.simulationThread.modelpath = self.tmp_modelpath
-
-
-    def _simulate(self):
-        #must be called through simulation object
-        self.returncode, self.stdout = 1, "Simulation failed"
-        self.simulationThread.start()
-        self.simulationThread.join()
-        self.returncode, self.stdout = self.simulationThread.res
-        self.logFile.update_status()
-        self.errors.extend(list(set(self.logFile.errors)))
-
-
-    def _finish_simulation(self):
-        for dst in self.output_sources():
-            src = os.path.join(self.tmp_modelpath, dst)
-
-            for src_file in glob.glob(src):
-                dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
-                # exist_ok does not exist in Python27
-                if not os.path.isdir(os.path.dirname(dst_file)):
-                    os.makedirs(os.path.dirname(dst_file))  #, exist_ok=True)
-                if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
-                    shutil.copy(src_file, dst_file)
-
-        self.logFile.filename = os.path.join(self.modelpath, self.log_filename)
-
-        try:
-            shutil.rmtree(self.tmp_modelpath)
-        except (PermissionError, OSError) as e:
-            raise Warning(str(e))
-
-    def update_logFile_status(self):
-        self.logFile.update_status()
-
-    def stop(self):
-        self.simulationThread.stop()
-        self.simulationThread.join()
-
-
 
 class PBSClusterSimulationHost(SimulationResource, SSHClient):
     def __init__(self, simulation, host, username, password, port=22):
@@ -402,7 +436,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
             self.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
             self.execute("mkdir -p %s%s" % (self.tmp_modelpath, os.path.dirname(self.log_filename)))
 
-            for src in self.input_sources():
+            for src in self._input_sources():
                 for src_file in glob.glob(os.path.join(self.modelpath, src)):
                     dst = (self.tmp_modelpath + os.path.relpath(src_file, self.modelpath)).replace("\\", "/")
                     self.execute("mkdir -p %s" % os.path.dirname(dst), verbose=False)
@@ -420,7 +454,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
 
     def _finish_simulation(self):
         with self:
-            for dst in self.output_sources():
+            for dst in self._output_sources():
 
                 src = os.path.join(self.tmp_modelpath, dst).replace("\\", "/")
                 for src_file in self.glob(src):
@@ -482,7 +516,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
 
     def start(self):
         """Start non blocking distributed simulation"""
-        self.thread.start()
+        self.non_blocking_simulation_thread.start()
 
 
 
