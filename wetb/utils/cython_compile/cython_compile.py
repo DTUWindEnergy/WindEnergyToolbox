@@ -381,7 +381,10 @@ def py2pyx(pylines):
             indent = l[:len(l) - len(l.lstrip())]
             cdef = l[l.index("#c") + 1:]
             l = indent + cdef
-        pyxlines.append(l)
+        if "__future__" in l:
+            pyxlines.insert(0, l)  # from __future__ import ... must be first
+        else:
+            pyxlines.append(l)
     return pyxlines
 
 

@@ -297,7 +297,7 @@ class SimulationThread(Thread):
         htcfile = os.path.relpath(self.sim.htcFile.filename, self.sim.modelpath)
         hawc2exe = self.sim.hawc2exe
         stdout = self.sim.stdout_filename
-        self.process = subprocess.Popen("%s %s 1> %s 2>&1" % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath, creationflags=CREATE_NO_WINDOW)
+        self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath, creationflags=CREATE_NO_WINDOW)
 
         Thread.start(self)
 

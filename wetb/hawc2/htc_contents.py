@@ -155,6 +155,8 @@ class HTCLine(HTCContents):
     values = None
     comments = ""
     def __init__(self, name, values, comments):
+        if "__" in name:
+            name = name[:name.index("__")]
         self.name_ = name
         self.values = values
         self.comments = comments

@@ -168,11 +168,11 @@ def abvrel2xyz(alpha, beta, vrel):
     Parameters
     ----------
     alpha : array_like
-        Pitot tube angle of attack
+        Pitot tube angle of attack. Zero: Parallel to pitot tube. Positive: Flow from wind side (pressure side)
     beta : array_like
-        Pitot tube side slip angle
+        Pitot tube side slip angle. Zero: Parallel to pitot tube. Positive: Flow from root side
     vrel : array_like
-        Pitot tube relative velocity
+        Pitot tube relative velocity. Positive: flow towards pitot tube
 
     Returns
     -------
@@ -181,13 +181,13 @@ def abvrel2xyz(alpha, beta, vrel):
     y : array_like
         Wind component in alpha plane (positive for positive alpha)
     z : array_like
-        Wind component in beta plane (positive for positive beta)
+        Wind component in beta plane (positive for negative beta)
     """
     alpha = np.array(alpha, dtype=np.float)
     beta = np.array(beta, dtype=np.float)
     vrel = np.array(vrel, dtype=np.float)
 
-    sign_vsx = -((np.abs(beta) > np.pi / 2) * 2 - 1)  # +1 for |beta| <= 90, -1 for |beta|>90
+    sign_vsx = -((np.abs(beta) > np.pi / 2) * 2 - 1)  # +1 for |beta| < 90, -1 for |beta|>90
     sign_vsy = np.sign(alpha)  #+ for alpha > 0
     sign_vsz = -np.sign(beta)  #- for beta>0
 
@@ -196,10 +196,10 @@ def abvrel2xyz(alpha, beta, vrel):
 
     m = alpha != 0
     y = np.zeros_like(alpha)
-    y[m] = sign_vsy * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 + 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
+    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 + 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
 
     m = beta != 0
     z = np.zeros_like(alpha)
-    z[m] = sign_vsz * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
+    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
 
     return x, y, z

@@ -13,6 +13,7 @@ from __future__ import absolute_import
 from io import open
 from builtins import str
 from future import standard_library
+from wetb.utils.process_exec import pexec
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -39,6 +40,7 @@ class HTCFile(HTCContents, HTCDefaults):
             self.lines = self.empty_htc.split("\n")
         else:
             self.filename = filename
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), modelpath))
             self.lines = self.readlines(filename)
 #            with open(filename) as fid:
 #                self.lines = fid.readlines()
@@ -55,7 +57,7 @@ class HTCFile(HTCContents, HTCDefaults):
                 self._add_contents(line)
                 if line.name_ == "exit":
                     break
-        assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
+        #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
     def readlines(self, filename):
         self.htc_inputfiles.append(filename)
@@ -65,7 +67,7 @@ class HTCFile(HTCContents, HTCDefaults):
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()
-                filename = os.path.join(os.path.dirname(self.filename), self.modelpath, filename)
+                filename = os.path.join(self.modelpath, filename)
 
                 for line in self.readlines(filename):
                     if line.lstrip().lower().startswith('exit'):
@@ -95,7 +97,10 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def set_name(self, name, folder="htc"):
         self.filename = os.path.join(self.modelpath, folder, "%s.htc" % name).replace("\\", "/")
-        self.simulation.logfile = "./log/%s.log" % name
+        if 'simulation' in self and 'logfile' in self.simulation:
+            self.simulation.logfile = "./log/%s.log" % name
+        elif 'test_structure' in self and 'logfile' in self.test_structure:
+            self.test_structure.logfile = "./log/%s.log" % name
         self.output.filename = "./res/%s" % name
 
     def input_files(self):
@@ -126,6 +131,7 @@ class HTCFile(HTCContents, HTCDefaults):
         if 'hydro' in self:
             if 'water_properties' in self.hydro:
                 files.append(self.hydro.water_properties.get('water_kinematics_dll', [None])[0])
+                files.append(self.hydro.water_properties.get('water_kinematics_dll', [None, None])[1])
         if 'soil' in self:
             if 'soil_element' in self.soil:
                 files.append(self.soil.soil_element.get('datafile', [None])[0])
@@ -163,7 +169,12 @@ class HTCFile(HTCContents, HTCDefaults):
         return [f for f in files if f]
 
     def turbulence_files(self):
-        files = [self.get('wind.%s.filename_%s' % (type, comp), [None])[0] for type in ['mann', 'flex'] for comp in ['u', 'v', 'w']]
+        if self.wind.turb_format[0] == 0:
+            return []
+        elif self.wind.turb_format[0] == 1:
+            files = [self.get('wind.mann.filename_%s' % comp, [None])[0] for comp in ['u', 'v', 'w']]
+        elif self.wind.turb_format[0] == 2:
+            files = [self.get('wind.flex.filename_%s' % comp, [None])[0] for comp in ['u', 'v', 'w']]
         return [f for f in files if f]
 
 
@@ -172,17 +183,24 @@ class HTCFile(HTCContents, HTCDefaults):
             return []
         dataformat = self.output.get('data_format', 'hawc_ascii')
         res_filename = self.output.filename[0]
-        if dataformat == "gtsdf" or dataformat == "gtsdf64":
+        if dataformat[0] == "gtsdf" or dataformat[0] == "gtsdf64":
             return [res_filename + ".hdf5"]
-        elif dataformat == "flex_int":
+        elif dataformat[0] == "flex_int":
             return [res_filename + ".int", os.path.join(os.path.dirname(res_filename), 'sensor')]
         else:
             return [res_filename + ".sel", res_filename + ".dat"]
 
 
+    def simulate(self, exe):
+        self.save()
+        htcfile = os.path.relpath(self.filename, self.modelpath)
+        hawc2exe = exe
+        errorcode, stdout, stderr, cmd = pexec([hawc2exe, htcfile], self.modelpath)
+
+        if errorcode or 'Elapsed time' not in stderr:
+            raise Exception (str(stdout) + str(stderr))
 
 if "__main__" == __name__:
-    f = HTCFile(r"C:\mmpe\HAWC2\Hawc2_model\htc\NREL_5MW_reference_wind_turbine_launcher_test.htc")
-    print ("\n".join(f.output_files()))
+    f = HTCFile(r"C:\mmpe\HAWC2\models\PhaseIJacketv30\htc", "../../")
 
 

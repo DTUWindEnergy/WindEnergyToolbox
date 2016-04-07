@@ -125,7 +125,7 @@ class DLCHighLevel(object):
 
     def sensor_info(self, sensors=[]):
         if sensors != []:
-            return self.sensor_df[functools.reduce(np.logical_or, [((self.sensor_df.get(f, np.array([""] * len(self.sensor_df.name))).values != "") | (self.sensor_df.name == f)) for f in np.atleast_1d(sensors)])]
+            return self.sensor_df[functools.reduce(np.logical_or, [((self.sensor_df.get(f, pd.DataFrame([""] * len(self.sensor_df.name))[0]).values != "") | (self.sensor_df.name == f)) for f in np.atleast_1d(sensors)])]
         else:
             return self.sensor_df
 
@@ -149,7 +149,10 @@ class DLCHighLevel(object):
             start, step, stop = [float(eval(v, globals(), self.__dict__)) for v in values.lower().split(":")]
             values = np.arange(start, stop + step, step)
         else:
-            values = [(eval(v, globals(), self.__dict__)) for v in str(values).lower().replace("/", ",").split(",")]
+            try:
+                values = [(eval(v, globals(), self.__dict__)) for v in str(values).lower().replace("/", ",").split(",")]
+            except SyntaxError:
+                values = [(eval(v.lstrip('0'), globals(), self.__dict__)) for v in str(values).lower().replace("/", ",").split(",")]
 
         dist = self.dlc_df[dist_key][row]
         if str(dist).lower() == "weibull" or str(dist).lower() == "rayleigh":
@@ -287,10 +290,10 @@ class DLCHighLevel(object):
 
 
 if __name__ == "__main__":
-    dlc_hl = DLCHighLevel(r'X:\NREL5MW\dlc.xlsx')
+    dlc_hl = DLCHighLevel(r'X:\DTU10MW\Q0010\DLC_post_betas1.xlsx')
     #print (DLCHighLevelInputFile(r'C:\mmpe\Projects\DLC.xlsx').sensor_info(0, 0, 1)['Name'])
     #print (dlc_dict()['64'])
     #print (dlc_hl.fatigue_distribution()['64'])
-    print (dlc_hl.file_hour_lst(r"X:\NREL5MW/C0008/res/"))
+    print (dlc_hl.file_hour_lst(r"X:\DTU10MW/Q0010/res/"))
 
 

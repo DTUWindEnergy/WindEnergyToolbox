@@ -13,7 +13,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 import os
-import psutil
+
 
 DEBUG = False
 def pexec(args, cwd=None):
