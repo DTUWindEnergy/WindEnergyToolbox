@@ -131,7 +131,7 @@ by editing the file ```.bash_profile``` file in your Gorm’s home directory
 or create a new file with this file name in case it doesn't exist):
 
 ```
-export PATH=$PATH:/home/MET/STABCON/repositories/toolbox/pbsutils/
+export PATH=$PATH:/home/MET/repositories/toolbox/pbsutils/
 ```
 
 (The corresponding open repository is on the DTU Wind Energy Gitlab server:
@@ -204,14 +204,14 @@ the htc file generator within the correct environment Python environment. A
 emplate for such a file, which works for standard DLBs, can be found here:
 
 ```
-/home/MET/STABCON/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py
+/home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py
 ```
 
 For example, in order to generate the default IEC DLCs:
 
 ```
 g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
+g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
 ```
 
 You could consider copying the template into the HAWC2 model folder to avoid
@@ -274,7 +274,7 @@ First activate the Anaconda Python environment by typing:
 
 ```bash
 # add the Anaconda Python environment paths to the system PATH
-g-000 $ export PATH=/home/MET/STABCON/miniconda/bin:$PATH
+g-000 $ export PATH=/home/python/miniconda3/bin:$PATH
 # activate the custom python environment:
 g-000 $ source activate wetb_py3
 ```
@@ -513,7 +513,7 @@ htc files, but now we set different flags. For example, for checking the log
 files, calculating the statistics, the AEP and the life time equivalent loads:
 
 ```
-g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/prepost/dlctemplate.py -c python --years=25 --neq=1e7 --stats --check_logs --fatigue
+g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
 
 Other options for the ```dlctemplate.py``` script:
@@ -560,3 +560,4 @@ are redirected to the ```pbs_out/qsub-wrap_dlctemplate.py.err``` text file.
 The output and errors of HAWC2 simulations can also be found in the ```pbs_out```
 directory. The ```.err``` and ```.out``` files will be named exactly the same
 as the ```.htc``` input files, and the ```.sel```/```.dat``` output files.
+
