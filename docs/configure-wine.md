@@ -30,8 +30,8 @@ the HAWC2 executables in here:
 
 ```
 WINEDIRNAME=".wine32"
-WINEARCH=win32 WINEPREFIX=~/$WINEDIRNAME wine regedit /E tmp.reg "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment"
-sed -i 's/"PATH"="C:\\\\windows\\\\system32;C:\\\\windows"/"PATH"="C:\\\\windows\\\\system32;C:\\\\windows;C:\\\\bin"/g' tmp.reg
+WINEARCH=win32 WINEPREFIX=~/$WINEDIRNAME wine regedit /E tmp.reg "HKEY_CURRENT_USER\Environment"
+echo '"PATH"="c:\\bin"' >> ./tmp.reg
 WINEARCH=win32 WINEPREFIX=~/$WINEDIRNAME wine regedit ./tmp.reg
 rm ./tmp.reg
 ```
