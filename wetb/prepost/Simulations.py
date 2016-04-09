@@ -1721,9 +1721,9 @@ class HtcMaster(object):
         # load the file:
         if not self.silent:
             print('loading master: ' + fpath)
-        FILE = open(fpath, 'r')
-        lines = FILE.readlines()
-        FILE.close()
+
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
 
         # regex for finding all tags in a line
         regex = re.compile('(\\[.*?\\])')
@@ -1919,7 +1919,6 @@ class PBS(object):
         # in case you want to redirect stdout to /dev/nul
 #        self.wine_appendix = '> /dev/null 2>&1'
         self.wine_appendix = ''
-        self.wine_dir = '/home/dave/.wine32/drive_c/bin'
         # /dev/shm should be the RAM of the cluster
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
@@ -2280,11 +2279,6 @@ class PBS(object):
         self.pbs += 'echo ""\n'
         self.pbs += 'echo "Execute commands on scratch nodes"\n'
         self.pbs += 'cd %s/$USER/$PBS_JOBID\n' % self.node_run_root
-#        # also copy all the HAWC2 exe's to the scratch dir
-#        self.pbs += "cp -R %s/* ./\n" % self.wine_dir
-#        # custom name hawc2 exe
-#        self.h2_new = tag_dict['[hawc2_exe]'] + '-' + jobid + '.exe'
-#        self.pbs += "mv %s.exe %s\n" % (tag_dict['[hawc2_exe]'], self.h2_new)
 
     def ending(self, pbs_path):
         """
