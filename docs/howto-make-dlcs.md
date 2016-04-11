@@ -75,7 +75,7 @@ On Linux/Mac connecting to the cluster is as simple as running the following
 command in the terminal:
 
 ```
-g-000 $ ssh $USER@gorm.risoe.dk
+ssh $USER@gorm.risoe.dk
 ```
 
 Use your DTU password when asked. This will give you terminal access to the
@@ -155,7 +155,7 @@ local wine directory, which by default is assumed to be ```~/.wine32```, and
 ```pbsutils``` contains and automatic configuration script you can run:
 
 ```
-g-000 $ ./config-wine-hawc2.sh
+g-000 $ config-wine-hawc2.sh
 ```
 
 If you need more information on what is going on, you can read a more detailed
@@ -529,7 +529,7 @@ optional arguments:
   -h, --help         show this help message and exit
   --prep             create htc, pbs, files (default=False)
   --check_logs       check the log files (default=False)
-  --stats            calculate statistics (default=False)
+  --stats            calculate statistics and 1Hz equivalent loads (default=False)
   --fatigue          calculate Leq for a full DLC (default=False)
   --csv              Save data also as csv file (default=False)
   --years YEARS      Total life time in years (default=20)

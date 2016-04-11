@@ -30,7 +30,7 @@ the HAWC2 executables in here:
 
 ```
 WINEDIRNAME=".wine32"
-printf 'REGEDIT4\n[HKEY_CURRENT_USER\Environment]\n"PATH"="c:\\bin"' >> ./tmp.reg
+printf 'REGEDIT4\n[HKEY_CURRENT_USER\\Environment]\n"PATH"="c:\\bin"' >> ./tmp.reg
 WINEARCH=win32 WINEPREFIX=~/$WINEDIRNAME wine regedit ./tmp.reg
 rm ./tmp.reg
 ```
