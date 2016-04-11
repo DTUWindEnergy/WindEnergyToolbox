@@ -1161,6 +1161,20 @@ def post_launch(cases, save_iter=False):
 
     return cases_fail
 
+def copy_pbs_in_failedcases(cases_fail, pbs_in_dir_fail='pbs_in_fail'):
+    """
+    Copy all the pbs_in files from failed cases to a new directory so it
+    is easy to re-launch them
+    """
+
+    for cname in cases_fail.keys():
+        case = cases_fail[cname]
+        pbs_in_fname = '%s.p' % (case['[case_id]'])
+        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_in_dir_fail)
+        run_dir = case['[run_dir]']
+        fname = os.path.join(run_dir, pbs_in_dir, pbs_in_fname)
+
+
 def logcheck_case(errorlogs, cases, case, silent=False):
     """
     Check logfile of a single case
@@ -2663,7 +2677,7 @@ class ErrorLogs(object):
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
                 dt = float(case['[dt_sim]'])
-                time_steps = float(case['[time_stop]']) / dt
+                time_steps = int(float(case['[time_stop]']) / dt)
                 iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
             else:
                 iterations = np.ndarray( (len(lines),3), dtype=np.float32 )

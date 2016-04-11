@@ -46,7 +46,7 @@ def configure_dirs(verbose=False):
         raise ValueError('Could not find master file in htc/_master')
     MASTERFILE = master
     P_MASTERFILE = os.path.join(P_SOURCE, 'htc%s_master%s' % (os.sep, os.sep))
-    POST_DIR = os.path.join(p_run_root, PROJECT, 'prepost-data%s' % os.sep)
+    POST_DIR = os.path.join(p_run_root, PROJECT, sim_id, 'prepost-data%s' % os.sep)
 
     if verbose:
         print('='*79)

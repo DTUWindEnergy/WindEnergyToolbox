@@ -14,8 +14,6 @@ from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 
-
-
 import os
 import socket
 from argparse import ArgumentParser
@@ -395,7 +393,8 @@ if __name__ == '__main__':
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
     parser.add_argument('--stats', action='store_true', default=False,
-                        dest='stats', help='calculate statistics')
+                        dest='stats', help='calculate statistics and 1Hz '
+                                           'equivalent loads')
     parser.add_argument('--fatigue', action='store_true', default=False,
                         dest='fatigue', help='calculate Leq for a full DLC')
     parser.add_argument('--AEP', action='store_true', default=False,
@@ -425,12 +424,6 @@ if __name__ == '__main__':
                         dest='envelopeturbine', help='Compute envelopeturbine')
     opt = parser.parse_args()
 
-    # auto configure directories: assume you are running in the root of the
-    # relevant HAWC2 model
-    # and assume we are in a simulation case of a certain turbine/project
-    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
-        = dlcdefs.configure_dirs(verbose=True)
-
     # TODO: use arguments to determine the scenario:
     # --plots, --report, --...
 
@@ -457,6 +450,12 @@ if __name__ == '__main__':
 #                saveinterval=2000, csv=True, fatigue_cycles=True, fatigue=False)
     # -------------------------------------------------------------------------
 
+    # auto configure directories: assume you are running in the root of the
+    # relevant HAWC2 model
+    # and assume we are in a simulation case of a certain turbine/project
+    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
+        = dlcdefs.configure_dirs(verbose=True)
+
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
@@ -473,5 +472,5 @@ if __name__ == '__main__':
                     envelopeblade=opt.envelopeblade)
     if opt.dlcplot:
         sim_ids = [sim_id]
-        figdir = os.path.join(P_RUN, '..', 'figures/%s' % '-'.join(sim_ids))
+        figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
         dlcplots.plot_stats2(sim_ids, [POST_DIR], fig_dir_base=figdir)
