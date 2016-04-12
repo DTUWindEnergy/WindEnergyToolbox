@@ -41,7 +41,7 @@ in the Excel spreadsheets): ```[Case folder]```,  ```[Case id.]```, and
 ```[Turb base name]```.
 
 The system will always force the values of the tags to be lower case anyway, and
-when working on Windows, this might cause some confusing and unexpected behaviour.
+when working on Windows, this might cause some confusing and unexpected behavior.
 The tags themselves can have lower and upper case characters as can be seen
 in the example above.
 
@@ -204,7 +204,9 @@ simply copy all the files from there again to update.
 HAWC2 model folder structure and results on mimer/hawc2sim
 ----------------------------------------------------------
 
-See [house rules on mimer/hawc2sim] for a more detailed description.
+See [house rules on mimer/hawc2sim]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/houserules-mimerhawc2sim.md)
+for a more detailed description.
 
 
 Method A: Generating htc input files on the cluster (recommended)
@@ -544,7 +546,7 @@ the first two sensors of the inner list and the other sensors are used to
 retrieve the remaining loads defining the load state occurring at the same
 instant. The outer list is used to specify sensors at different locations.
 The default values for the blade envelopes are used to compute the Mx-My
-envelopes and retrieve the Mz-Fx-Fy-Fz loads occuring at the same moment.
+envelopes and retrieve the Mz-Fx-Fy-Fz loads occurring at the same moment.
 
 
 Debugging
