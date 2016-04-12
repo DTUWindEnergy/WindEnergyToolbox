@@ -118,7 +118,6 @@ From Linux/Mac, you should be able to mount using either of the following
 addresses:
 ```
 //mimer.risoe.dk/hawc2sim
-//mimer.risoe.dk/well/hawc2sim
 //gorm.risoe.dk/$USER
 ```
 You can use either ```sshfs``` or ```mount -t cifs``` to mount the discs.
@@ -534,7 +533,8 @@ optional arguments:
   --csv              Save data also as csv file (default=False)
   --years YEARS      Total life time in years (default=20)
   --no_bins NO_BINS  Number of bins for fatigue loads (default=46)
-  --neq NEQ          Equivalent cycles neq (default=1e6)
+  --neq NEQ          Equivalent cycles neq, default 1 Hz equivalent load
+                     (neq = simulation duration in seconds)
   --envelopeblade    calculate the load envelope for sensors on the blades
   --envelopeturbine  calculate the load envelope for sensors on the turbine
 ```

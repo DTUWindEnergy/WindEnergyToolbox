@@ -265,10 +265,13 @@ def launch_param(sim_id):
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e6, no_bins=46,
+                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
                 years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, AEP=False):
+
+    if neq < 0:
+        neq = None
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -406,8 +409,10 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=1e6, action='store',
-                        dest='neq', help='Equivalent cycles neq')
+    parser.add_argument('--neq', type=float, default=-1.0, action='store',
+                        dest='neq', help='Equivalent cycles neq, default 1 Hz '
+                                         'equivalent load (neq = simulation '
+                                         'duration in seconds)')
     parser.add_argument('--nn_twt', type=float, default=20, action='store',
                         dest='nn_twt', help='Node number tower top')
     parser.add_argument('--nn_blr', type=float, default=4, action='store',
