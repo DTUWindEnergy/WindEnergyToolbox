@@ -14,6 +14,8 @@ from __future__ import absolute_import
 from numpy import floor, arctan, pi
 import pandas as pd
 import xlrd
+from argparse import ArgumentParser
+import os
 
 
 def multi_for(iterables):
@@ -230,7 +232,9 @@ class GenerateDLCCases(GeneralDLC):
             self.add_formulas(dlc, general_functions)
             self.eval_formulas(dlc)
             df = pd.DataFrame(dlc)
-            df.to_excel(folder+sheet.name+'.xls', index=False)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            df.to_excel(os.path.join(folder, sheet.name+'.xls'), index=False)
 
 
 class RunTest():
@@ -257,6 +261,12 @@ class RunTest():
             assert_frame_equal(book1, book2, check_dtype=False)
 
 if __name__ == '__main__':
+
+    parser = ArgumentParser(description = "generator of DLB spreadsheets")
+    parser.add_argument('--master', type=str, default='DLCs.xlsx', action='store',
+                        dest='filename', help='Master spreadsheet file')
+    parser.add_argument('--folder', type=str, default='', action='store',
+                        dest='folder', help='Destination folder name')
+    opt = parser.parse_args()
     DLB = GenerateDLCCases()
-    DLB.execute()
-    pass
+    DLB.execute(filename=opt.filename, folder=opt.folder)
