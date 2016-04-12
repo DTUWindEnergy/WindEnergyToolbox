@@ -5,6 +5,7 @@ scipy>=0.9
 matplotlib
 pytest
 xlrd
+xlwt
 h5py
 pandas
 tables
