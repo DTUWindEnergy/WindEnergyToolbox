@@ -11,9 +11,10 @@ point to the gorm/jess wiki's
 explain the difference in the paths seen from a windows computer and the cluster
 -->
 
-WARNING: these notes contain configuration settings that are specif to the
+> WARNING: these notes contain configuration settings that are specif to the
 DTU Wind Energy cluster Gorm. Only follow this guide in another environment if
 you know what you are doing!
+
 
 Introduction
 ------------
@@ -110,7 +111,8 @@ with the cluster discs.
 
 Note that by default Windows Explorer will hide some of the files you will need edit.
 In order to show all files on your Gorm home drive, you need to un-hide system files:
-Explorer > Organize > Folder and search options > select tab "view" > select the option to show hidden files and folders.
+Explorer > Organize > Folder and search options > select tab "view" > select the
+option to show hidden files and folders.
 
 From Linux/Mac, you should be able to mount using either of the following
 addresses:
@@ -171,6 +173,10 @@ does not need to specify this. However, when you need to compare different versi
 you can easily do so by specifying which case should be run with which
 executable.
 
+Alternatively you can also include all the DLL's and executables in the root of
+your HAWC2 model folder. Executables and DLL's placed in the root folder take
+precedence over the ones placed in ```/home/$USER/.wine32/drive_c/bin```.
+
 Log out and in again from the cluster (close and restart PuTTY).
 
 At this stage you can run HAWC2 as follows:
@@ -178,6 +184,7 @@ At this stage you can run HAWC2 as follows:
 ```
 g-000 $ wine32 hawc2-latest htc/some-intput-file.htc
 ```
+
 
 Updating local HAWC2 executables
 --------------------------------
@@ -194,71 +201,53 @@ version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
 simply copy all the files from there again to update.
 
 
-Method A: Generating htc input files on the cluster
----------------------------------------------------
+HAWC2 model folder structure and results on mimer/hawc2sim
+----------------------------------------------------------
+
+See [house rules on mimer/hawc2sim] for a more detailed description.
+
+
+Method A: Generating htc input files on the cluster (recommended)
+-----------------------------------------------------------------
 
 Use ssh (Linux, Mac) or putty (MS Windows) to connect to the cluster.
 
-With qsub-wrap.py will be used to create a job for the cluster that will run
-the htc file generator within the correct environment Python environment. A
-emplate for such a file, which works for standard DLBs, can be found here:
+In order to simplify things, we're using ```qsub-wrap.py``` from ```pbsutils```
+(which we added under the [preparation]/(#preparation) section) in order to
+generate the htc files. It will execute, on a compute node, any given Python
+script in a pre-installed Python environment that has the Wind Energy Toolbox
+installed.
+
+For the current implementation of the DLB the following template is available:
 
 ```
 /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py
 ```
 
-For example, in order to generate the default IEC DLCs:
+And the corresponding definitions of all the different load cases can be copied
+from here (valid for the DTU10MW):
 
 ```
-g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
+/mnt/mimer/hawc2sim/DTU10MW/C0020/htc/DLCs
+```
+
+For example, in order to generate all the HAWC2 htc input files and the
+corresponding ```*.p``` cluster launch files using this default DLB setup with:
+
+```
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001 # folder where the hawc2 model is located
 g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
 ```
 
-You could consider copying the template into the HAWC2 model folder to avoid
-typing such a long command over and over again.
-
-Note that the following folder structure for the HAWC2 model is assumed:
+You could consider adding ```dlctemplate.py``` into the turbine folder or in
+the simulation set id folder for your convenience:
 
 ```
-|-- control
-|   |-- ...
-|-- data
-|   |-- ...
-|-- htc
-|   |-- DLCs
-|   |   |-- dlc12_iec61400-1ed3.xlsx
-|   |   |-- dlc13_iec61400-1ed3.xlsx
-|   |   |-- ...
-|   |-- _master
-|   |   `-- dtu10mw_master_C0013.htc
-```
-
-The load case definitions should be placed in Excel spreadsheets with a
-```*.xlsx``` extension. The above example shows one possible scenario whereby
-all the load case definitions are placed in ```htc/DLCs``` (all folder names
-are case sensitive). Alternatively, one can also place the spreadsheets in
-separate sub folders, for example:
-
-```
-|-- control
-|   |-- ...
-|-- data
-|   |-- ...
-|-- htc
-|   |-- dlc12_iec61400-1ed3
-|   |   |-- dlc12_iec61400-1ed3.xlsx
-|   |-- dlc13_iec61400-1ed3
-|   |   |-- dlc13_iec61400-1ed3.xlsx
-```
-
-In order to use this auto-configuration mode, there can only be one master file
-in ```_master``` that contains ```_master_``` in its file name.
-
-For the NREL5MW and the DTU10MW HAWC2 models, you can find their respective
-master files and DLC definition spreadsheet files on Mimer. When connected
-to Gorm over SSH/PuTTY, you will find these files at:
-```
-/mnt/mimer/hawc2sim # (when on Gorm)
+g-000 $ cd /mnt/mimer/hawc2sim/demo/
+# copy the dlctemplate to your turbine model folder and rename to myturbine.py
+g-000 $ cp /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py ./myturbine.py
+g-000 $ cd A0001
+g-000 $ qsub-wrap.py -f ../dlctemplate.py --prep
 ```
 
 
@@ -422,12 +411,20 @@ options:
 ```
 
 Then launch the actual jobs (each job is a ```*.p``` file in ```pbs_in```) using
-100 cpu's, and using a compute node instead of the login node (see you can exit
-the ssh/putty session without interrupting the launching process):
+100 cpu's:
 
 ```bash
-g-000 $ cd path/to/HAWC2/model
-g-000 $ launch.py -n 100 --node
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+g-000 $ launch.py -n 100 -p pbs_in/
+```
+
+If the launching process requires hours, and you have to close you SHH/PuTTY
+session before it reaches the end, you should use the ```--node``` argument so
+the launching process will take place on a dedicated node:
+
+```bash
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+g-000 $ launch.py -n 100 -p pbs_in/ --node
 ```
 
 
@@ -513,7 +510,8 @@ htc files, but now we set different flags. For example, for checking the log
 files, calculating the statistics, the AEP and the life time equivalent loads:
 
 ```
-g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --years=25 --neq=1e7 --stats --check_logs --fatigue
+# dlctemplate.py is assumed to be located one folder up
+g-000 $ qsub-wrap.py -f ../dlctemplate.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
 
 Other options for the ```dlctemplate.py``` script:
