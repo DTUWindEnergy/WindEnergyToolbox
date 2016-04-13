@@ -234,7 +234,7 @@ class GenerateDLCCases(GeneralDLC):
             df = pd.DataFrame(dlc)
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            df.to_excel(os.path.join(folder, sheet.name+'.xls'), index=False)
+            df.to_excel(os.path.join(folder, sheet.name+'.xlsx'), index=False)
 
 
 class RunTest():
