@@ -6,6 +6,7 @@ matplotlib
 pytest
 xlrd
 xlwt
+openpyxl
 h5py
 pandas
 tables

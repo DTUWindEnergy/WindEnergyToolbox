@@ -61,6 +61,8 @@ in Python 2.7 by default. You can also write code that is compatible with both
 
 * xlrd and xlwt from [python-excel](http://www.python-excel.org/)
 
+* [openpyxl](http://openpyxl.readthedocs.org/en/default/)
+
 * h5py
 
 * [matplotlib](http://matplotlib.org/)
