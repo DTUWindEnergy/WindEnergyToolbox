@@ -248,7 +248,7 @@ g-000 $ cd /mnt/mimer/hawc2sim/demo/
 # copy the dlctemplate to your turbine model folder and rename to myturbine.py
 g-000 $ cp /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py ./myturbine.py
 g-000 $ cd A0001
-g-000 $ qsub-wrap.py -f ../dlctemplate.py --prep
+g-000 $ qsub-wrap.py -f ../myturbine.py --prep
 ```
 
 
@@ -271,8 +271,10 @@ g-000 $ source activate wetb_py3
 For example, launch the auto-generation of DLCs input files:
 
 ```
-g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ python dlctemplate.py --prep
+# folder where the HAWC2 model is located
+g-000 $ cd /mnt/mimer/hawc2sim/demo/AA0001
+# assuming myturbine.py is copy of dlctemplate.py and is placed one level up
+g-000 $ python ../myturbine.py --prep
 ```
 
 Or start an interactive IPython shell:
@@ -511,11 +513,11 @@ htc files, but now we set different flags. For example, for checking the log
 files, calculating the statistics, the AEP and the life time equivalent loads:
 
 ```
-# dlctemplate.py is assumed to be located one folder up
-g-000 $ qsub-wrap.py -f ../dlctemplate.py --years=25 --neq=1e7 --stats --check_logs --fatigue
+# myturbine.py (copy of dlctemplate.py) is assumed to be located one folder up
+g-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
 
-Other options for the ```dlctemplate.py``` script:
+Other options for the original ```dlctemplate.py``` script:
 
 ```
 usage: dlctemplate.py [-h] [--prep] [--check_logs] [--stats] [--fatigue]
@@ -540,7 +542,7 @@ optional arguments:
 ```
 
 The load envelopes are computed for sensors specified in the
-```dlctemplate.py``` file. The sensors are specified in a list of lists. The
+```myturbine.py``` file. The sensors are specified in a list of lists. The
 inner list contains the sensors at one location. The envelope is computed for
 the first two sensors of the inner list and the other sensors are used to
 retrieve the remaining loads defining the load state occurring at the same
@@ -553,9 +555,9 @@ Debugging
 ---------
 
 Any output (everything that involves print statements) generated during the
-post-processing of the simulations using ```dlctemplate.py``` is captured in
-the ```pbs_out/qsub-wrap_dlctemplate.py.out``` file, while exceptions and errors
-are redirected to the ```pbs_out/qsub-wrap_dlctemplate.py.err``` text file.
+post-processing of the simulations using ```myturbine.py``` is captured in
+the ```pbs_out/qsub-wrap_myturbine.py.out``` file, while exceptions and errors
+are redirected to the ```pbs_out/qsub-wrap_myturbine.py.err``` text file.
 
 The output and errors of HAWC2 simulations can also be found in the ```pbs_out```
 directory. The ```.err``` and ```.out``` files will be named exactly the same
