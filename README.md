@@ -59,7 +59,7 @@ in Python 2.7 by default. You can also write code that is compatible with both
 
 * [pandas](http://pandas.pydata.org/)
 
-* xlrd
+* xlrd and xlwt from [python-excel](http://www.python-excel.org/)
 
 * h5py
 
