@@ -94,12 +94,13 @@ Mounting the cluster discs
 --------------------------
 
 You need to be connected to the DTU network in order for this to work. You can
-also connect to the DTU network over VPN.
+also connect to the DTU network over VPN. When doing the HAWC2 simulations, you
+will interact regularly with the cluster file system and discs.
 
-When doing the HAWC2 simulations, you will interact regularly with the cluster
-file system and discs. It is convenient to map these discs as network
-drives (in Windows terms). Map the following network drives (replace ```$USER```
-with your user name):
+### Windows
+
+It is convenient to map these discs as network drives (in Windows terms).
+Map the following network drives (replace ```$USER``` with your user name):
 
 ```
 \\mimer\hawc2sim
@@ -113,6 +114,8 @@ Note that by default Windows Explorer will hide some of the files you will need 
 In order to show all files on your Gorm home drive, you need to un-hide system files:
 Explorer > Organize > Folder and search options > select tab "view" > select the
 option to show hidden files and folders.
+
+### Unix
 
 From Linux/Mac, you should be able to mount using either of the following
 addresses:
@@ -140,13 +143,13 @@ export PATH=$PATH:/home/MET/repositories/toolbox/pbsutils/
 considering reporting bugs and/or suggest improvements there. You're contributions
 are much appreciated!)
 
-If you have been using an old version of this how-to, you might be pointing
+> If you have been using an old version of this how-to, you might be pointing
 to an earlier version of these tools/utils and any references containing
 ```cluster-tools``` or ```prepost``` should be removed
-from your ```.bash_profile``` file.
+from your ```.bash_profile``` and/or ```.bashrc``` file on your gorm home drive.
 
 After modifying ```.bash_profile```, save and close it. Then, in the terminal,
-run the command:
+run the command (or logout and in again to be safe):
 ```
 g-000 $ source ~/.bash_profile
 ```
@@ -303,7 +306,7 @@ The installation procedure for wetb is outlined in the [installation manual]
 Optional configuration
 ----------------------
 
-Optional tags that can be set in the Excel spreadsheet, and their corresponding
+Optional tags that can be set in the Excel spreadsheet and their corresponding
 default values are given below. Beside a replacement value in the master htc
 file, there are also special actions connected to these values. Consequently,
 these tags have to be present. When removed, the system will stop working properly.
@@ -347,8 +350,23 @@ This zip file will be extracted into the execution directory (```[run_dir]```).
 After the model has ran on the node, only the files that have been created
 during simulation time in the ```[log_dir]```, ```[res_dir]```,
 ```[animation_dir]```, and ```[eigenfreq_dir]``` will be copied back.
-Optionally, on can also copy back the turbulence files, and other explicitly
-defined files [TODO: expand manual here].
+
+
+### Advanced configuration options
+
+> Note that not all features are documented yet...
+
+Special tags: copy special result files from the compute node back to the HAWC2
+working directory on the network drive, and optionally rename the file in case
+it would otherwise be overwritten by other cases in your DLB:
+* ```[copyback_files] = ['ESYSMooring_init.dat']```
+* ```[copyback_frename] = ['path/to/ESYSMooring_init_vXYZ.dat']```, optionally specify
+a different file path/name
+
+Copy files from the HAWC2 working directory with a special name to the compute
+node for which the a fixed file name is assumed
+* ```[copyto_files] = ['path/to/ESYSMooring_init_vXYZ.dat']```
+* ```[copyto_generic] = ['ESYSMooring_init.dat']```
 
 
 Launching the jobs on the cluster
