@@ -11,6 +11,25 @@ in [Hawc2io](wetb/hawc2/Hawc2io.py). These different implementations will be
 merged in due time.
 
 
+# How to create HAWC2 DLB's and run them on a cluster
+
+The process of how to generated, run and post-process a design load basis (DLB)
+of HAWC2 simulations on a DTU Wind Energy cluster is outlined in more detail
+in the documentation:
+
+* [Auto-generation of Design Load Cases](docs/howto-make-dlcs.md)
+* [House rules mimer/hawc2sim and HAWC2 folder structure](docs/houserules-mimerhawc2sim.md)
+* [Generate DLB spreadsheets](docs/generate-spreadsheet.md)
+* [How to use the Statistics DataFrame](docs/using-statistics-df.md)
+
+You can also use the Pdap for post-processing, which includes a MS Word report
+generator based on a full DLB, a GUI for easy plotting of HAWC2 result files,
+and a Python scripting interface:
+
+* [Pdap](http://www.hawc2.dk/Download/Post-processing-tools/Pdap)
+* [Pdap report/docs](http://orbit.dtu.dk/en/publications/post-processing-of-design-load-cases-using-pdap%28827c432b-cf7d-44eb-899b-93e9c0648ca5%29.html)
+
+
 # Works with Python 2 and Python 3
 
 This module is tested for Python 2 and 3 compatibility, and works on both

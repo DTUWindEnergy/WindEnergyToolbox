@@ -1,6 +1,6 @@
 
-House Rules for ```mimer/hawc2sim```
-====================================
+House Rules for ```mimer/hawc2sim``` and HAWC2 model folder structure
+=====================================================================
 
 
 Objectives
@@ -32,6 +32,7 @@ The HAWC2 simulations are located on the data capacitor [mimer]
 The following structure is currently used for this ```hawc2sim``` directory:
 * turbine model (e.g. DTU10MW, NREL5MW, etc)
     * set ID: 2 alphabetic characters followed by 4 numbers (e.g. AA0001)
+* letters are task/project oriented, numbers are case oriented
 
 For example:
 * DTU10MW
