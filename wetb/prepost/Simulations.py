@@ -1161,7 +1161,7 @@ def post_launch(cases, save_iter=False):
 
     return cases_fail
 
-def copy_pbs_in_failedcases(cases_fail, pbs_in_dir_fail='pbs_in_fail'):
+def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail'):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
     is easy to re-launch them
@@ -1170,7 +1170,7 @@ def copy_pbs_in_failedcases(cases_fail, pbs_in_dir_fail='pbs_in_fail'):
     for cname in cases_fail.keys():
         case = cases_fail[cname]
         pbs_in_fname = '%s.p' % (case['[case_id]'])
-        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_in_dir_fail)
+        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
         run_dir = case['[run_dir]']
         fname = os.path.join(run_dir, pbs_in_dir, pbs_in_fname)
 
@@ -4497,7 +4497,7 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
-            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
