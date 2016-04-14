@@ -14,8 +14,6 @@ from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 
-
-
 import os
 import socket
 from argparse import ArgumentParser
@@ -267,10 +265,13 @@ def launch_param(sim_id):
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e6, no_bins=46,
+                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
                 years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, AEP=False):
+
+    if neq < 0:
+        neq = None
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -395,7 +396,8 @@ if __name__ == '__main__':
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
     parser.add_argument('--stats', action='store_true', default=False,
-                        dest='stats', help='calculate statistics')
+                        dest='stats', help='calculate statistics and 1Hz '
+                                           'equivalent loads')
     parser.add_argument('--fatigue', action='store_true', default=False,
                         dest='fatigue', help='calculate Leq for a full DLC')
     parser.add_argument('--AEP', action='store_true', default=False,
@@ -407,8 +409,10 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=1e6, action='store',
-                        dest='neq', help='Equivalent cycles neq')
+    parser.add_argument('--neq', type=float, default=-1.0, action='store',
+                        dest='neq', help='Equivalent cycles neq, default 1 Hz '
+                                         'equivalent load (neq = simulation '
+                                         'duration in seconds)')
     parser.add_argument('--nn_twt', type=float, default=20, action='store',
                         dest='nn_twt', help='Node number tower top')
     parser.add_argument('--nn_blr', type=float, default=4, action='store',
@@ -424,12 +428,6 @@ if __name__ == '__main__':
     parser.add_argument('--envelopeturbine', default=False, action='store_true',
                         dest='envelopeturbine', help='Compute envelopeturbine')
     opt = parser.parse_args()
-
-    # auto configure directories: assume you are running in the root of the
-    # relevant HAWC2 model
-    # and assume we are in a simulation case of a certain turbine/project
-    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
-        = dlcdefs.configure_dirs(verbose=True)
 
     # TODO: use arguments to determine the scenario:
     # --plots, --report, --...
@@ -457,6 +455,12 @@ if __name__ == '__main__':
 #                saveinterval=2000, csv=True, fatigue_cycles=True, fatigue=False)
     # -------------------------------------------------------------------------
 
+    # auto configure directories: assume you are running in the root of the
+    # relevant HAWC2 model
+    # and assume we are in a simulation case of a certain turbine/project
+    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
+        = dlcdefs.configure_dirs(verbose=True)
+
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
@@ -473,5 +477,5 @@ if __name__ == '__main__':
                     envelopeblade=opt.envelopeblade)
     if opt.dlcplot:
         sim_ids = [sim_id]
-        figdir = os.path.join(P_RUN, '..', 'figures/%s' % '-'.join(sim_ids))
+        figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
         dlcplots.plot_stats2(sim_ids, [POST_DIR], fig_dir_base=figdir)

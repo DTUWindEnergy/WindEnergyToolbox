@@ -1161,6 +1161,20 @@ def post_launch(cases, save_iter=False):
 
     return cases_fail
 
+def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail'):
+    """
+    Copy all the pbs_in files from failed cases to a new directory so it
+    is easy to re-launch them
+    """
+
+    for cname in cases_fail.keys():
+        case = cases_fail[cname]
+        pbs_in_fname = '%s.p' % (case['[case_id]'])
+        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        run_dir = case['[run_dir]']
+        fname = os.path.join(run_dir, pbs_in_dir, pbs_in_fname)
+
+
 def logcheck_case(errorlogs, cases, case, silent=False):
     """
     Check logfile of a single case
@@ -1721,9 +1735,9 @@ class HtcMaster(object):
         # load the file:
         if not self.silent:
             print('loading master: ' + fpath)
-        FILE = open(fpath, 'r')
-        lines = FILE.readlines()
-        FILE.close()
+
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
 
         # regex for finding all tags in a line
         regex = re.compile('(\\[.*?\\])')
@@ -1919,7 +1933,6 @@ class PBS(object):
         # in case you want to redirect stdout to /dev/nul
 #        self.wine_appendix = '> /dev/null 2>&1'
         self.wine_appendix = ''
-        self.wine_dir = '/home/dave/.wine32/drive_c/bin'
         # /dev/shm should be the RAM of the cluster
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
@@ -2280,11 +2293,6 @@ class PBS(object):
         self.pbs += 'echo ""\n'
         self.pbs += 'echo "Execute commands on scratch nodes"\n'
         self.pbs += 'cd %s/$USER/$PBS_JOBID\n' % self.node_run_root
-#        # also copy all the HAWC2 exe's to the scratch dir
-#        self.pbs += "cp -R %s/* ./\n" % self.wine_dir
-#        # custom name hawc2 exe
-#        self.h2_new = tag_dict['[hawc2_exe]'] + '-' + jobid + '.exe'
-#        self.pbs += "mv %s.exe %s\n" % (tag_dict['[hawc2_exe]'], self.h2_new)
 
     def ending(self, pbs_path):
         """
@@ -2669,7 +2677,7 @@ class ErrorLogs(object):
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
                 dt = float(case['[dt_sim]'])
-                time_steps = float(case['[time_stop]']) / dt
+                time_steps = int(float(case['[time_stop]']) / dt)
                 iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
             else:
                 iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
@@ -4489,7 +4497,7 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
-            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
@@ -4629,7 +4637,7 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
