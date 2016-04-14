@@ -104,10 +104,10 @@ class HTCFile(HTCContents, HTCDefaults):
             fid.write(str(self))
 
     def set_name(self, name, folder="htc/"):
-        if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
-            folder = "./" + os.path.relpath(folder).replace("\\", "/")
+        #if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
+        folder = "./" + os.path.relpath(folder).replace("\\", "/")
 
-        self.filename = os.path.join(self.modelpath, folder, "%s.htc" % name).replace("\\", "/")
+        self.filename = os.path.relpath(os.path.join(self.modelpath, folder, "%s.htc" % name)).replace("\\", "/")
         if 'simulation' in self and 'logfile' in self.simulation:
             self.simulation.logfile = os.path.join(folder.replace("htc", "log", 1), "%s.log" % name).replace("\\", "/")
         elif 'test_structure' in self and 'logfile' in self.test_structure:
