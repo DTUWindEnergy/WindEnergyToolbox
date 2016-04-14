@@ -13,7 +13,7 @@ class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password, port=22, key=None, passphrase=None):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None):
         self.host = host
         self.username = username
         self.password = password
@@ -33,6 +33,8 @@ class SSHClient(object):
             self.connect()
 
     def connect(self):
+        if self.password is None:
+            raise IOError("Password not set")
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
@@ -136,7 +138,8 @@ class SSHClient(object):
         _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
         files = []
         for file in out.strip().split("\n"):
-            files.append(file.strip())
+            if file != "":
+                files.append(file.strip())
         return files
 
 

@@ -24,6 +24,14 @@ from copy import copy
 
 
 class HTCFile(HTCContents, HTCDefaults):
+    """Wrapper for HTC files
+
+    Examples:
+    ---------
+    >>> htcfile = HTCFile('htc/test.htc')
+    >>> htcfile.wind.wsp = 10
+    >>> htcfile.save()
+    """
 
     filename = None
     htc_inputfiles = []
@@ -95,13 +103,16 @@ class HTCFile(HTCContents, HTCDefaults):
         with open(filename, 'w', encoding='utf-8') as fid:
             fid.write(str(self))
 
-    def set_name(self, name, folder="htc"):
+    def set_name(self, name, folder="htc/"):
+        if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
+            folder = "./" + os.path.relpath(folder).replace("\\", "/")
+
         self.filename = os.path.join(self.modelpath, folder, "%s.htc" % name).replace("\\", "/")
         if 'simulation' in self and 'logfile' in self.simulation:
-            self.simulation.logfile = "./log/%s.log" % name
+            self.simulation.logfile = os.path.join(folder.replace("htc", "log", 1), "%s.log" % name).replace("\\", "/")
         elif 'test_structure' in self and 'logfile' in self.test_structure:
-            self.test_structure.logfile = "./log/%s.log" % name
-        self.output.filename = "./res/%s" % name
+            self.test_structure.logfile = os.path.join(folder.replace("htc", "log", 1), "%s.log" % name).replace("\\", "/")
+        self.output.filename = os.path.join(folder.replace("htc", "res", 1), "%s" % name).replace("\\", "/")
 
     def input_files(self):
         files = self.htc_inputfiles
