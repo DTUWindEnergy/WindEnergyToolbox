@@ -108,10 +108,11 @@ class Simulation(object):
         self.host = LocalSimulationHost(self)
 
 
-    def start(self, auto_status_update=True):
+    def start(self, update_interval=1):
         """Start non blocking distributed simulation"""
         self.is_simulating = True
-        if auto_status_update:
+        if update_interval > 0:
+            self.updateStatusThread.interval = update_interval
             self.updateStatusThread.start()
         self.non_blocking_simulation_thread.start()
 
