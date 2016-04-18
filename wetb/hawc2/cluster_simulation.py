@@ -11,6 +11,7 @@ class ClusterSimulation(Simulation):
         self.non_blocking_simulation_thread = Thread(target=self.simulate)
         self.start(1)
         self.wait()
+        self.is_done = True
         print (self.host.simulationThread.res[1])  # print hawc2 output to stdout
         sys.exit(self.host.simulationThread.res[0])
 
