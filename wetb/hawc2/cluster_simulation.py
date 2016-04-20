@@ -18,7 +18,7 @@ class ClusterSimulation(Simulation):
     def update_status(self, *args, **kwargs):
         Simulation.update_status(self, *args, **kwargs)
         with open("/home/mmpe/.hawc2launcher/status_%s" % self.simulation_id, 'w') as fid:
-            fid.write (";".join([self.status] + [str(getattr(self.logFile, v)) for v in ['status', 'pct', 'remaining_time', 'lastline']]) + "\n")
+            fid.write (";".join([self.simulation_id, self.status] + [str(getattr(self.logFile, v)) for v in ['status', 'pct', 'remaining_time', 'lastline']]) + "\n")
 
     def show_status(self):
         pass
