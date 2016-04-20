@@ -1,5 +1,5 @@
 from wetb.hawc2.simulation import Simulation, SimulationThread
-import os
+import os  
 import sys
 from threading import  Thread
 class ClusterSimulation(Simulation):
