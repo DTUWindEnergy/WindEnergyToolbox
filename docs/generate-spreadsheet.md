@@ -31,3 +31,17 @@ The tags are devided into three possible different categories:
 * Variables (V). Variables are tags that define the number of cases in a DLC through their combinations, e.g. wind speed, number of turbilence seeds, wind direction, ..;
 * Functions (F). Functions are tags that depend on other tags through an expression, e.g. turbulence intensity, case name, ....
 
+In each sheet the type of tag is defined in the line above the tag by typing one of the letters C, V, or F.
+
+Generate the files
+------------------
+
+To generate the files defining the different DLC the following lines need to be executed:
+    
+    export PATH=/home/python/miniconda3/bin:$PATH
+    source activate wetb_py3
+    python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLCs.py --folder=DLCs 
+    
+the first two lines activate the virtual environment. The third calls the routine *GenerateDLCs.py * that generates the files.
+The routine should be called from the folder *htc* where also the master preadsheet *DLCs.xlsx* need to be located.
+The generated files are placed in the folder *DLCs*.
