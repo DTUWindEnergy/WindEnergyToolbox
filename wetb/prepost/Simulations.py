@@ -4890,7 +4890,7 @@ class Cases(object):
 
         return result
 
-    def compute_envelope(self, sig, ch_list, int_env=False):
+    def compute_envelope(self, sig, ch_list, int_env=False, Nx=300):
 
         envelope= {}
         for ch in ch_list:
@@ -4905,7 +4905,7 @@ class Cases(object):
                                        axis=0)
             if int_env:
                 closed_contour_int = self.int_envelope(closed_contour[:,0],\
-                                                        closed_contour[:,1])                
+                                                    closed_contour[:,1],Nx=Nx)                
                 
                 
             for ich in range(2, len(ch)):
@@ -4916,7 +4916,7 @@ class Cases(object):
                 closed_contour = np.append(closed_contour, s0, axis=1)
                 if int_env:
                     extra_sensor = self.int_envelope(closed_contour[:,0],\
-                                                        closed_contour[:,ich])
+                                                    closed_contour[:,ich],Nx=Nx)
                     es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
                     closed_contour_int = np.append(closed_contour_int,es,axis=1)
                 
@@ -4926,7 +4926,7 @@ class Cases(object):
                 envelope[ch[0]] = closed_contour
         return envelope
         
-    def int_envelope(ch1,ch2,Nx=300):
+    def int_envelope(ch1,ch2,Nx):
         # Function to interpolate envelopes and output arrays of same length
     
         # Number of points is defined by Nx + 1, where the + 1 is needed to
