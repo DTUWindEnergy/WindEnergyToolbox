@@ -382,7 +382,7 @@ begin wind ;
     filename_u    ./turb/noneu.bin ;
     filename_v    ./turb/nonev.bin ;
     filename_w    ./turb/nonew.bin ;
-    box_dim_u    8192 0.0439453125 ;
+    box_dim_u    512 0.0439453125 ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;

@@ -4,7 +4,7 @@ begin simulation;
   solvertype   1 ;    (newmark)
   on_no_convergence continue ;
 ;  convergence_limits 1E3 1.0 1E-7 ;
-  logfile ./logfiles/dlc01_demos/dlc01_steady_wsp10_noturb.log ;
+  logfile ./logfiles/dlc01_demos/dlc01_steady_wsp10_s100.log ;
   begin newmark;
     deltat    0.02;
   end newmark;
@@ -13,11 +13,11 @@ end simulation;
 ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
 begin new_htc_structure;
 ;--------------------------------------------------------------------------------------------------
-;  beam_output_file_name  ./res_eigen/dlc01_demos/dlc01_steady_wsp10_noturb/dlc01_steady_wsp10_noturb_beam.dat;
-;  body_output_file_name  ./res_eigen/dlc01_demos/dlc01_steady_wsp10_noturb/dlc01_steady_wsp10_noturb_body.dat;
-;  struct_inertia_output_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_noturb/dlc01_steady_wsp10_noturb_struct.dat;
-;  body_eigenanalysis_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_noturb/dlc01_steady_wsp10_noturb_body_eigen.dat;
-;  structure_eigenanalysis_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_noturb/dlc01_steady_wsp10_noturb_strc_eigen.dat;
+;  beam_output_file_name  ./res_eigen/dlc01_demos/dlc01_steady_wsp10_s100/dlc01_steady_wsp10_s100_beam.dat;
+;  body_output_file_name  ./res_eigen/dlc01_demos/dlc01_steady_wsp10_s100/dlc01_steady_wsp10_s100_body.dat;
+;  struct_inertia_output_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_s100/dlc01_steady_wsp10_s100_struct.dat;
+;  body_eigenanalysis_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_s100/dlc01_steady_wsp10_s100_body_eigen.dat;
+;  structure_eigenanalysis_file_name ./res_eigen/dlc01_demos/dlc01_steady_wsp10_s100/dlc01_steady_wsp10_s100_strc_eigen.dat;
 ;---------------------------------------------------------------------------------------------------
   begin main_body;         tower 123.6m
     name        tower ;
@@ -346,7 +346,7 @@ begin wind ;
   windfield_rotations     0 8.0 0.0 ;    yaw, tilt (positive=upflow=wind coming from below), rotation
   center_pos0             0.0 0.0 -127 ; hub heigth
   shear_format            3 0 ;
-  turb_format             0     ;  0=none, 1=mann,2=flex
+  turb_format             1     ;  0=none, 1=mann,2=flex
   tower_shadow_method     3     ;  0=none, 1=potential flow, 2=jet
   scale_time_start       20 ;
   wind_ramp_factor   0.0 20 0.8 1.0 ;
@@ -378,11 +378,11 @@ begin wind ;
 ;  wind_ramp_abs  2400.0  4200.0  0.0  -21.0 ;   wsp. after the step: 25.0
   ;
   begin mann ;
-    create_turb_parameters 29.4 1.0 3.9 0 1.0 ;      L, alfaeps, gamma, seed, highfrq compensation
-    filename_u    ./turb/noneu.bin ;
-    filename_v    ./turb/nonev.bin ;
-    filename_w    ./turb/nonew.bin ;
-    box_dim_u    8192 0.048828125 ;
+    create_turb_parameters 29.4 1.0 3.9 100 1.0 ;      L, alfaeps, gamma, seed, highfrq compensation
+    filename_u    ./turb/turb_s100_10msu.bin ;
+    filename_v    ./turb/turb_s100_10msv.bin ;
+    filename_w    ./turb/turb_s100_10msw.bin ;
+    box_dim_u    512 0.78125 ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;
@@ -645,7 +645,7 @@ end dll;
 ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ;
 begin output;
-  filename ./res/dlc01_demos/dlc01_steady_wsp10_noturb ;
+  filename ./res/dlc01_demos/dlc01_steady_wsp10_s100 ;
   time 20 40 ;
   data_format  hawc_binary;
   buffer 1 ;

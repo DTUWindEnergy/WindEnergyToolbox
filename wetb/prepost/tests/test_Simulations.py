@@ -13,7 +13,8 @@ standard_library.install_aliases()
 import unittest
 import os
 import filecmp
-import pickle
+import shutil
+#import pickle
 
 from wetb.prepost import dlctemplate as tmpl
 
@@ -40,17 +41,25 @@ class TestGenerateInputs(unittest.TestCase):
         # location of the pre and post processing data
         tmpl.POST_DIR = os.path.join(p_root, tmpl.PROJECT, 'remote',
                                      'prepost/')
-        tmpl.force_dir = tmpl.P_RUN
-        tmpl.launch_dlcs_excel('remote', silent=True)
 
-        # we can not check-in empty dirs in git
-        for subdir in ['control', 'data', 'htc', 'pbs_in']:
+        # make sure the remote dir is empty so a test does not pass on data
+        # generated during a previous cycle
+        if os.path.exists(os.path.join(p_root, tmpl.PROJECT, 'remote')):
+            shutil.rmtree(os.path.join(p_root, tmpl.PROJECT, 'remote'))
+
+        tmpl.force_dir = tmpl.P_RUN
+        tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm')
+
+        # we can not check-in empty dirs so we can not compare the complete
+        # directory structure withouth manually creating the empty dirs here
+        for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in/turb',
+                       'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)
             cmp = filecmp.dircmp(remote, ref)
-            self.assertTrue(len(cmp.diff_files)==0)
-            self.assertTrue(len(cmp.right_only)==0)
-            self.assertTrue(len(cmp.left_only)==0)
+            self.assertEqual(len(cmp.diff_files), 0, cmp.diff_files)
+            self.assertEqual(len(cmp.right_only), 0, cmp.right_only)
+            self.assertEqual(len(cmp.left_only), 0, cmp.left_only)
 
         # for the pickled file we can just read it
         remote = os.path.join(p_root, tmpl.PROJECT, 'remote', 'prepost')
