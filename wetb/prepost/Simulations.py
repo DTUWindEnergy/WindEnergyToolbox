@@ -1043,7 +1043,8 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
     elif runmethod == 'none':
         pass
     else:
-        msg = 'unsupported runmethod, valid options: local, thyra, gorm or opt'
+        msg = 'unsupported runmethod, valid options: local, local-script, ' \
+              'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
 
 def post_launch(cases, save_iter=False, silent=False):
@@ -5106,13 +5107,13 @@ class Results(object):
         return M_x_equiv
 
 
-class ManTurb64(prepost.prepost.PBSScript):
+class ManTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
     mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
     """
 
-    def __init__(self):
+    def __init__(self, silent=False):
         super(ManTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
         # PBS configuration
@@ -5121,21 +5122,32 @@ class ManTurb64(prepost.prepost.PBSScript):
         self.queue = 'workq'
         self.lnodes = '1'
         self.ppn = '1'
+        self.silent = silent
 
     def gen_pbs(self, cases):
 
         case0 = cases[list(cases.keys())[0]]
         # make sure the path's end with a trailing separator, why??
         self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
-#        pbs.path_pbs_e = os.path.join(case0['[pbs_out_dir]'], '')
-#        pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
-#        pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
-#        pbs.check_dirs()
+        if not self.silent:
+            '\nStart creating PBS files for turbulence with Mann64...'
         for cname, case in cases.items():
-            base = case['[Turb base name]']
-            self.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
-            self.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')
-            self.path_pbs_i = os.path.join(case['[pbs_turb_dir]'], base + '.pbs')
+
+            # only relevant for cases with turbulence
+            if '[tu_model]' in case and int(case['[tu_model]']) == 0:
+                continue
+            if '[Turb base name]' not in case:
+                continue
+
+            base_name = case['[Turb base name]']
+            # pbs_in/out dir can contain subdirs, only take the root
+            out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
+            in_base = misc.path_split_dirs(case['[pbs_in_dir]'])[0]
+            turb = case['[turb_dir]']
+
+            self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
+            self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
+            self.path_pbs_i = os.path.join(in_base, turb, base_name + '.pbs')
 
             if case['[turb_db_dir]'] is not None:
                 self.prelude = 'cd %s' % case['[turb_db_dir]']
@@ -5143,19 +5155,19 @@ class ManTurb64(prepost.prepost.PBSScript):
                 self.prelude = 'cd %s' % case['[turb_dir]']
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-            rpl = (case['[AlfaEpsilon]'],
-                   case['[L_mann]'],
-                   case['[Gamma]'],
-                   case['[tu_seed]'],
-                   case['[turb_nr_u]'],
-                   case['[turb_nr_v]'],
-                   case['[turb_nr_w]'],
-                   case['[turb_dx]'],
-                   case['[turb_dy]'],
-                   case['[turb_dz]'].
-                   case['[high_freq_comp]'])
-            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4 %1.4 %1.4f %i' % rpl
-            self.execution = '%s %s %s' % (self.exe, base, params)
+            rpl = (float(case['[AlfaEpsilon]']),
+                   float(case['[L_mann]']),
+                   float(case['[Gamma]']),
+                   int(case['[tu_seed]']),
+                   int(case['[turb_nr_u]']),
+                   int(case['[turb_nr_v]']),
+                   int(case['[turb_nr_w]']),
+                   float(case['[turb_dx]']),
+                   float(case['[turb_dy]']),
+                   float(case['[turb_dz]']),
+                   int(case['[high_freq_comp]']))
+            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
+            self.execution = '%s %s %s' % (self.exe, base_name, params)
             self.create(check_dirs=True)
 
 
