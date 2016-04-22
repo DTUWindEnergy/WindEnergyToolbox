@@ -1046,7 +1046,7 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
         msg = 'unsupported runmethod, valid options: local, thyra, gorm or opt'
         raise ValueError(msg)
 
-def post_launch(cases, save_iter=False):
+def post_launch(cases, save_iter=False, silent=False):
     """
     Do some basics checks: do all launched cases have a result and LOG file
     and are there any errors in the LOG files?
@@ -1101,8 +1101,9 @@ def post_launch(cases, save_iter=False):
     nr_tot = len(cases)
 
     tmp = list(cases.keys())[0]
-    print('checking logs, path (from a random item in cases):')
-    print(os.path.join(run_dir, log_dir))
+    if not silent:
+        print('checking logs, path (from a random item in cases):')
+        print(os.path.join(run_dir, log_dir))
 
     for k in sorted(cases.keys()):
         # a case could not have a result, but a log file might still exist
@@ -1117,12 +1118,15 @@ def post_launch(cases, save_iter=False):
         errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
         try:
             errorlogs.check(save_iter=save_iter)
-            print('checking logfile progress: ' + str(nr) + '/' + str(nr_tot))
+            if not silent:
+                print('checking logfile progress: % 6i/% 6i' % (nr, nr_tot))
         except IOError:
-            print('           no logfile for:  %s' % (errorlogs.PathToLogs))
+            if not silent:
+                print('           no logfile for:  %s' % (errorlogs.PathToLogs))
         except Exception as e:
-            print('  log analysis failed for: %s' % kk)
-            print(e)
+            if not silent:
+                print('  log analysis failed for: %s' % kk)
+                print(e)
         nr += 1
 
         # if simulation did not ended correctly, put it on the fail list
@@ -1161,18 +1165,27 @@ def post_launch(cases, save_iter=False):
 
     return cases_fail
 
-def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail'):
+
+def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
     is easy to re-launch them
     """
-
+    if not silent:
+        print('Following failed cases pbs_in files are copied:')
     for cname in cases_fail.keys():
         case = cases_fail[cname]
         pbs_in_fname = '%s.p' % (case['[case_id]'])
-        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
         run_dir = case['[run_dir]']
-        fname = os.path.join(run_dir, pbs_in_dir, pbs_in_fname)
+
+        src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
+
+        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
+
+        if not silent:
+            print(dst)
+        shutil.copy2(src, dst)
 
 
 def logcheck_case(errorlogs, cases, case, silent=False):
@@ -3470,7 +3483,7 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False):
+    def post_launch(self, save_iter=False, copy_pbs_failed=True):
         """
         Post Launching Maintenance
 
@@ -3479,6 +3492,10 @@ class Cases(object):
         """
         # TODO: integrate global post_launch in here
         self.cases_fail = post_launch(self.cases, save_iter=save_iter)
+
+        if copy_pbs_failed:
+            copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
+                                    silent=self.silent)
 
         if self.rem_failed:
             self.remove_failed()
@@ -5089,37 +5106,57 @@ class Results(object):
         return M_x_equiv
 
 
-class ManTurb64(object):
+class ManTurb64(prepost.prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
     mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
     """
 
     def __init__(self):
-        self.man64_exe = 'mann_turb_x64.exe'
-        self.wine = 'WINEARCH=win64 WINEPREFIX=~/.wine64 wine'
+        super(ManTurb64, self).__init__()
+        self.exe = 'time wine mann_turb_x64.exe'
+        # PBS configuration
+        self.umask = '003'
+        self.walltime = '00:59:59'
+        self.queue = 'workq'
+        self.lnodes = '1'
+        self.ppn = '1'
 
-    def run():
-        pass
-
-    def gen_pbs(cases):
+    def gen_pbs(self, cases):
 
         case0 = cases[list(cases.keys())[0]]
-        pbs = prepost.PBSScript()
-        # make sure the path's end with a trailing separator
-        pbs.pbsworkdir = os.path.join(case0['[run_dir]'], '')
-        pbs.path_pbs_e = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
-        pbs.check_dirs()
+        # make sure the path's end with a trailing separator, why??
+        self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
+#        pbs.path_pbs_e = os.path.join(case0['[pbs_out_dir]'], '')
+#        pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
+#        pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
+#        pbs.check_dirs()
         for cname, case in cases.items():
-            base = case['[case_id]']
-            pbs.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
-            pbs.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')
-            pbs.path_pbs_i = os.path.join(case['[pbs_in_dir]'], base + '.pbs')
+            base = case['[Turb base name]']
+            self.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
+            self.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')
+            self.path_pbs_i = os.path.join(case['[pbs_turb_dir]'], base + '.pbs')
 
-            pbs.execute()
-            pbs.create()
+            if case['[turb_db_dir]'] is not None:
+                self.prelude = 'cd %s' % case['[turb_db_dir]']
+            else:
+                self.prelude = 'cd %s' % case['[turb_dir]']
+
+            # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+            rpl = (case['[AlfaEpsilon]'],
+                   case['[L_mann]'],
+                   case['[Gamma]'],
+                   case['[tu_seed]'],
+                   case['[turb_nr_u]'],
+                   case['[turb_nr_v]'],
+                   case['[turb_nr_w]'],
+                   case['[turb_dx]'],
+                   case['[turb_dy]'],
+                   case['[turb_dz]'].
+                   case['[high_freq_comp]'])
+            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4 %1.4 %1.4f %i' % rpl
+            self.execution = '%s %s %s' % (self.exe, base, params)
+            self.create(check_dirs=True)
 
 
 def eigenbody(cases, debug=False):
