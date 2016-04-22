@@ -165,15 +165,15 @@ activate py27
 * Install the necessary Python dependencies using the conda package manager:
 
 ```
-conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx
-conda install scipy pandas matplotlib cython xlrd sphinx
+conda install setuptools_scm future h5py pytables pytest nose sphinx
+conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl
 ```
 
 * Not all packages are available in the conda repositories, but they can be
 easily installed with pip:
 
 ```
-pip install pyscaffold pytest
+pip install pyscaffold pytest-cov
 ```
 
 
