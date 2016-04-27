@@ -52,7 +52,7 @@ class TestGenerateInputs(unittest.TestCase):
 
         # we can not check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here
-        for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in/turb',
+        for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
                        'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)

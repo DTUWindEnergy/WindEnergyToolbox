@@ -4931,9 +4931,9 @@ class Cases(object):
                                        axis=0)
             if int_env:
                 closed_contour_int = self.int_envelope(closed_contour[:,0],\
-                                                    closed_contour[:,1],Nx=Nx)                
-                
-                
+                                                    closed_contour[:,1],Nx=Nx)
+
+
             for ich in range(2, len(ch)):
                 chix = self.res.ch_dict[ch[ich]]['chi']
                 s0 = np.array(sig[hull.vertices, chix]).reshape(-1, 1)
@@ -4943,24 +4943,24 @@ class Cases(object):
                 if int_env:
                     extra_sensor = self.int_envelope(closed_contour[:,0],\
                                                     closed_contour[:,ich],Nx=Nx)
-                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T
                     closed_contour_int = np.append(closed_contour_int,es,axis=1)
-                
+
             if int_env:
                 envelope[ch[0]] = closed_contour_int
             else:
                 envelope[ch[0]] = closed_contour
         return envelope
-        
+
     def int_envelope(ch1,ch2,Nx):
         # Function to interpolate envelopes and output arrays of same length
-    
+
         # Number of points is defined by Nx + 1, where the + 1 is needed to
         # close the curve
-    
+
         upper = []
         lower = []
-    
+
         indmax = np.argmax(ch1)
         indmin = np.argmin(ch1)
         if indmax > indmin:
@@ -4971,19 +4971,19 @@ class Cases(object):
             upper = np.array([ch1[indmax:indmin+1,:],ch2[indmax:indmin+1,:]]).T
             lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
                                 np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
-                                
-                            
+
+
         int_1 = np.linspace(min(min(upper[:,0]),min(lower[:,0])),\
                             max(max(upper[:,0]),max(upper[:,0])),Nx/2+1)
         upper = np.flipud(upper)
         int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
         int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
-    
+
         int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,\
                                 np.array([int_1[::-1],int_2_low[::-1]]).T),axis=0)
-    
+
         return int_env
-        
+
     def envelope(self, silent=False, ch_list=[], append=''):
         """
         Calculate envelopes and save them in a table.
@@ -5153,14 +5153,14 @@ class Results(object):
         return M_x_equiv
 
 
-class ManTurb64(prepost.PBSScript):
+class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
     mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
     """
 
     def __init__(self, silent=False):
-        super(ManTurb64, self).__init__()
+        super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
         # PBS configuration
         self.umask = '003'
@@ -5169,6 +5169,7 @@ class ManTurb64(prepost.PBSScript):
         self.lnodes = '1'
         self.ppn = '1'
         self.silent = silent
+        self.pbs_in_dir = 'pbs_in_turb/'
 
     def gen_pbs(self, cases):
 
@@ -5186,14 +5187,13 @@ class ManTurb64(prepost.PBSScript):
                 continue
 
             base_name = case['[Turb base name]']
-            # pbs_in/out dir can contain subdirs, only take the root
+            # pbs_in/out dir can contain subdirs, only take the inner directory
             out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
-            in_base = misc.path_split_dirs(case['[pbs_in_dir]'])[0]
             turb = case['[turb_dir]']
 
             self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
             self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
-            self.path_pbs_i = os.path.join(in_base, turb, base_name + '.p')
+            self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
 
             if case['[turb_db_dir]'] is not None:
                 self.prelude = 'cd %s' % case['[turb_db_dir]']
