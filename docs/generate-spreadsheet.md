@@ -43,5 +43,5 @@ To generate the files defining the different DLC the following lines need to be 
     python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLCs.py --folder=DLCs 
     
 the first two lines activate the virtual environment. The third calls the routine *GenerateDLCs.py * that generates the files.
-The routine should be called from the folder *htc* where also the master preadsheet *DLCs.xlsx* need to be located.
+The routine should be called from the folder *htc* where also the master spreadsheet *DLCs.xlsx* need to be located.
 The generated files are placed in the folder *DLCs*.

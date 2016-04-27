@@ -4916,7 +4916,7 @@ class Cases(object):
 
         return result
 
-    def compute_envelope(self, sig, ch_list):
+    def compute_envelope(self, sig, ch_list, int_env=False, Nx=300):
 
         envelope= {}
         for ch in ch_list:
@@ -4929,15 +4929,61 @@ class Cases(object):
             closed_contour = np.append(cloud[hull.vertices,:],
                                        cloud[hull.vertices[0],:].reshape(1,2),
                                        axis=0)
+            if int_env:
+                closed_contour_int = self.int_envelope(closed_contour[:,0],\
+                                                    closed_contour[:,1],Nx=Nx)                
+                
+                
             for ich in range(2, len(ch)):
                 chix = self.res.ch_dict[ch[ich]]['chi']
                 s0 = np.array(sig[hull.vertices, chix]).reshape(-1, 1)
                 s1 = np.array(sig[hull.vertices[0], chix]).reshape(-1, 1)
                 s0 = np.append(s0, s1, axis=0)
                 closed_contour = np.append(closed_contour, s0, axis=1)
-            envelope[ch[0]] = closed_contour
+                if int_env:
+                    extra_sensor = self.int_envelope(closed_contour[:,0],\
+                                                    closed_contour[:,ich],Nx=Nx)
+                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+                    closed_contour_int = np.append(closed_contour_int,es,axis=1)
+                
+            if int_env:
+                envelope[ch[0]] = closed_contour_int
+            else:
+                envelope[ch[0]] = closed_contour
         return envelope
-
+        
+    def int_envelope(ch1,ch2,Nx):
+        # Function to interpolate envelopes and output arrays of same length
+    
+        # Number of points is defined by Nx + 1, where the + 1 is needed to
+        # close the curve
+    
+        upper = []
+        lower = []
+    
+        indmax = np.argmax(ch1)
+        indmin = np.argmin(ch1)
+        if indmax > indmin:
+            lower = np.array([ch1[indmin:indmax+1],ch2[indmin:indmax+1]]).T
+            upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,\
+                            np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),axis=0)
+        else:
+            upper = np.array([ch1[indmax:indmin+1,:],ch2[indmax:indmin+1,:]]).T
+            lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
+                                np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
+                                
+                            
+        int_1 = np.linspace(min(min(upper[:,0]),min(lower[:,0])),\
+                            max(max(upper[:,0]),max(upper[:,0])),Nx/2+1)
+        upper = np.flipud(upper)
+        int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
+        int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
+    
+        int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,\
+                                np.array([int_1[::-1],int_2_low[::-1]]).T),axis=0)
+    
+        return int_env
+        
     def envelope(self, silent=False, ch_list=[], append=''):
         """
         Calculate envelopes and save them in a table.
