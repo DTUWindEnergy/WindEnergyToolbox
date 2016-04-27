@@ -5130,7 +5130,7 @@ class ManTurb64(prepost.PBSScript):
         # make sure the path's end with a trailing separator, why??
         self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
         if not self.silent:
-            '\nStart creating PBS files for turbulence with Mann64...'
+            print('\nStart creating PBS files for turbulence with Mann64...')
         for cname, case in cases.items():
 
             # only relevant for cases with turbulence
@@ -5147,7 +5147,7 @@ class ManTurb64(prepost.PBSScript):
 
             self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
             self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
-            self.path_pbs_i = os.path.join(in_base, turb, base_name + '.pbs')
+            self.path_pbs_i = os.path.join(in_base, turb, base_name + '.p')
 
             if case['[turb_db_dir]'] is not None:
                 self.prelude = 'cd %s' % case['[turb_db_dir]']
