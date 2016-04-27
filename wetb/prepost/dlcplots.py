@@ -12,8 +12,6 @@ from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 
-
-
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 import os
@@ -47,7 +45,7 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # do not use tex on Gorm
-if not socket.gethostname()[:2] == 'g-':
+if not socket.gethostname()[:2] in ['g-', 'je']:
     plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)

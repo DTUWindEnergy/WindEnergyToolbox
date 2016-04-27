@@ -243,6 +243,11 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
                                silent=silent, verbose=verbose)
 
     if pbs_turb:
+        # to avoid confusion and launching HAWC2 simulations and turbulence
+        # generator Mann64 at the same time, place PBS launch scripts in a
+        # different folder
+        for cname, case in cases.items():
+            case['[pbs_in_dir]'] = 'pbs_turb/'
         mann64 = sim.ManTurb64(silent=silent)
         mann64.gen_pbs(cases)
 
