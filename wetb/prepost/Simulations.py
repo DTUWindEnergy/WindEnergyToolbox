@@ -4942,7 +4942,7 @@ class Cases(object):
             upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,\
                             np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),axis=0)
         else:
-            upper = np.array([ch1[indmax:indmin+1,:],ch2[indmax:indmin+1,:]]).T
+            upper = np.array([ch1[indmax:indmin+1],ch2[indmax:indmin+1]]).T
             lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
                                 np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
                                 
