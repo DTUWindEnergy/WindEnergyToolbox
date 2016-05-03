@@ -3328,7 +3328,8 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12,Ntheta=181):
     envelope : array (Nsectors x 6), 
         Total envelope projected on the number of angles defined in Nsectors.
         The envelope is projected in Mx and My and the other cross-sectional
-        moments are fetched accordingly
+        moments and forces are fetched accordingly (at the same time step where
+        the corresponding Mx and My are occuring)
 
     """
     
@@ -3336,13 +3337,13 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12,Ntheta=181):
     cloud = np.zeros(((Nx+1)*len(envelope),6))   
     for i in range(len(envelope)):
         cloud[(Nx+1)*i:(Nx+1)*(i+1),:] = envelope[dlc_list[i]]
-    # Compute tital Hull of all the envelopes
+    # Compute total Hull of all the envelopes
     hull = scipy.spatial.ConvexHull(cloud[:,:2])
     cc = np.append(cloud[hull.vertices,:2],\
                             cloud[hull.vertices[0],:2].reshape(1,2),axis=0)
     # Interpolate full envelope
     cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0],cc[:,1],Nx=Nx)
-    # Porject full envelope on given direction
+    # Project full envelope on given direction
     cc_proj = proj_envelope(cc_x,cc_up,cc_low,cc_int,Nx,Nsectors,Ntheta)
     
     env_proj = np.zeros([len(cc_proj),6])
@@ -3403,7 +3404,7 @@ def proj_envelope(env_x,env_up,env_low,env,Nx,Nsectors,Ntheta):
     # Function to project envelope on given angles
 
     # Angles of projection is defined by Nsectors
-    # Porjections are obtained in polar coordinates and outputted in
+    # Projections are obtained in polar coordinates and outputted in
     # cartesian
 
     theta_int = np.linspace(-np.pi,np.pi,Ntheta)
