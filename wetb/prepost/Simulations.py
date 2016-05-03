@@ -3466,9 +3466,6 @@ def proj_envelope(env_x,env_up,env_low,env,Nx,Nsectors,Ntheta):
     ind = np.where(sectors==-np.pi/2)        
     proj[ind,1] = min(env[:,1])
 
-    
-    proj[-1,:] = proj[0,:]
-    
     return proj
 
 # FIXME: Cases has a memory leek somewhere, this whole thing needs to be
