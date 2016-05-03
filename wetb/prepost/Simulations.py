@@ -3316,7 +3316,7 @@ class WeibullParameters(object):
         self.Vstep = 2.
         self.shape_k = 2.
 
-def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12,Ntheta=181):
+def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     """
     The function computes load envelopes for given channels and a groups of 
     load cases starting from the envelopes computed for single simulations.
@@ -3361,12 +3361,12 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12,Ntheta=181):
         cloud[(Nx+1)*i:(Nx+1)*(i+1),:] = envelope[dlc_list[i]]
     # Compute total Hull of all the envelopes
     hull = scipy.spatial.ConvexHull(cloud[:,:2])
-    cc = np.append(cloud[hull.vertices,:2],\
-                            cloud[hull.vertices[0],:2].reshape(1,2),axis=0)
+    cc = np.append(cloud[hull.vertices,:2],
+                   cloud[hull.vertices[0],:2].reshape(1,2),axis=0)
     # Interpolate full envelope
-    cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0],cc[:,1],Nx=Nx)
+    cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0], cc[:,1], Nx=Nx)
     # Project full envelope on given direction
-    cc_proj = proj_envelope(cc_x,cc_up,cc_low,cc_int,Nx,Nsectors,Ntheta)
+    cc_proj = proj_envelope(cc_x, cc_up, cc_low, cc_int, Nx, Nsectors, Ntheta)
     
     env_proj = np.zeros([len(cc_proj),6])
     env_proj[:,:2] = cc_proj
@@ -3403,26 +3403,29 @@ def int_envelope(ch1,ch2,Nx):
     indmin = np.argmin(ch1)
     if indmax > indmin:
         lower = np.array([ch1[indmin:indmax+1],ch2[indmin:indmax+1]]).T
-        upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,\
-                        np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),axis=0)
+        upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,
+                                np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),
+                                axis=0)
     else:
         upper = np.array([ch1[indmax:indmin+1],ch2[indmax:indmin+1]]).T
-        lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
-                        np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
+        lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,
+                                np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),
+                                axis=0)
                             
                         
-    int_1 = np.linspace(min(min(upper[:,0]),min(lower[:,0])),\
-                        max(max(upper[:,0]),max(upper[:,0])),Nx/2+1)
+    int_1 = np.linspace(min(upper[:,0].min(),min(lower[:,0])),\
+                        max(upper[:,0].max(),max(upper[:,0])),Nx/2+1)
     upper = np.flipud(upper)
     int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
     int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
 
-    int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,\
-                          np.array([int_1[::-1],int_2_low[::-1]]).T),axis=0)
+    int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,
+                              np.array([int_1[::-1],int_2_low[::-1]]).T),
+                              axis=0)
 
     return int_1, int_2_up, int_2_low, int_env
 
-def proj_envelope(env_x,env_up,env_low,env,Nx,Nsectors,Ntheta):
+def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
     # Function to project envelope on given angles
 
     # Angles of projection is defined by Nsectors
@@ -3448,45 +3451,45 @@ def proj_envelope(env_x,env_up,env_low,env,Nx,Nsectors,Ntheta):
                 
     for i in range(Nsectors):
         if sectors[i]>=-np.pi and sectors[i+1]<-np.pi/2:
-            indices = np.where(np.logical_and(theta_int >= sectors[i],\
-                                                theta_int <= sectors[i+1]))
-            maxR = max(R_int[indices])
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
             proj[i+1,0] = maxR*np.cos(sectors[i+1])
             proj[i+1,1] = maxR*np.sin(sectors[i+1])
         elif sectors[i]==-np.pi/2:
             continue
         elif sectors[i]>-np.pi/2 and sectors[i+1]<=0:
-            indices = np.where(np.logical_and(theta_int >= sectors[i],\
-                                                theta_int <= sectors[i+1]))
-            maxR = max(R_int[indices])
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
             proj[i,0] = maxR*np.cos(sectors[i])
             proj[i,1] = maxR*np.sin(sectors[i])
         elif sectors[i]>=0 and sectors[i+1]<np.pi/2:
-            indices = np.where(np.logical_and(theta_int >= sectors[i],\
-                                                theta_int <= sectors[i+1]))
-            maxR = max(R_int[indices])
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
             proj[i+1,0] = maxR*np.cos(sectors[i+1])
             proj[i+1,1] = maxR*np.sin(sectors[i+1])
         elif sectors[i]==np.pi/2:
             continue
         elif sectors[i]>np.pi/2 and sectors[i+1]<=np.pi:
-            indices = np.where(np.logical_and(theta_int >= sectors[i],\
-                                                theta_int <= sectors[i+1]))
-            maxR = max(R_int[indices])
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
             proj[i,0] = maxR*np.cos(sectors[i])
             proj[i,1] = maxR*np.sin(sectors[i])
     
     ind = np.where(sectors==0)        
-    proj[ind,0] = max(env[:,0])
+    proj[ind,0] = env[:,0].max()
 
     ind = np.where(sectors==np.pi/2)        
-    proj[ind,1] = max(env[:,1])
+    proj[ind,1] = env[:,1].max()
 
     ind = np.where(sectors==-np.pi)        
-    proj[ind,0] = min(env[:,0])
+    proj[ind,0] = env[:,0].min()
 
     ind = np.where(sectors==-np.pi/2)        
-    proj[ind,1] = min(env[:,1])
+    proj[ind,1] = env[:,1].min()
 
     return proj
 
