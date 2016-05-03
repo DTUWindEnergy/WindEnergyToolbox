@@ -14,8 +14,6 @@ from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 
-
-
 import os
 import socket
 from argparse import ArgumentParser
@@ -34,7 +32,11 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
-if not socket.gethostname()[:2] == 'g-':
+if socket.gethostname()[:2] == 'g-':
+    RUNMETHOD = 'gorm'
+elif socket.gethostname()[:4] == 'jess':
+    RUNMETHOD = 'jess'
+else:
     plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
@@ -111,6 +113,22 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     master.tags['[model_zip]'] = PROJECT
     master.tags['[model_zip]'] += '_' + master.tags['[sim_id]'] + '.zip'
     # -------------------------------------------------------------------------
+    # FIXME: this is very ugly. We should read default values set in the htc
+    # master file with the HAWC2Wrapper !!
+    # default tags turbulence generator (required for 64-bit Mann generator)
+    # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+    master.tags['[AlfaEpsilon]'] = 1.0
+    master.tags['[L_mann]'] = 29.4
+    master.tags['[Gamma]'] = 3.0
+    master.tags['[tu_seed]'] = 0
+    master.tags['[turb_nr_u]'] = 8192
+    master.tags['[turb_nr_v]'] = 32
+    master.tags['[turb_nr_w]'] = 32
+    master.tags['[turb_dx]'] = 1
+    master.tags['[turb_dy]'] = 6.5
+    master.tags['[turb_dz]'] = 6.5
+    master.tags['[high_freq_comp]'] = 1
+    # -------------------------------------------------------------------------
 
     return master
 
@@ -164,7 +182,8 @@ def variable_tag_func(master, case_id_short=False):
 ### PRE- POST
 # =============================================================================
 
-def launch_dlcs_excel(sim_id, silent=False):
+def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
+                      runmethod=None, write_htc=True):
     """
     Launch load cases defined in Excel files
     """
@@ -197,12 +216,11 @@ def launch_dlcs_excel(sim_id, silent=False):
     for opt in opt_tags:
         opt['[zip_root_files]'] = f_ziproot
 
-    runmethod = 'gorm'
-#    runmethod = 'local-script'
-#    runmethod = 'windows-script'
-#    runmethod = 'jess'
+    if runmethod == None:
+        runmethod = RUNMETHOD
+
     master = master_tags(sim_id, runmethod=runmethod, silent=silent,
-                         verbose=False)
+                         verbose=verbose)
     master.tags['[sim_id]'] = sim_id
     master.output_dirs.append('[Case folder]')
     master.output_dirs.append('[Case id.]')
@@ -217,12 +235,18 @@ def launch_dlcs_excel(sim_id, silent=False):
     # variable_tag func is not required because everything is already done
     # in dlcdefs.excel_stabcon
     no_variable_tag_func = None
-    sim.prepare_launch(iter_dict, opt_tags, master, no_variable_tag_func,
-                       write_htc=True, runmethod=runmethod, verbose=False,
-                       copyback_turb=True, msg='', update_cases=False,
-                       ignore_non_unique=False, run_only_new=False,
-                       pbs_fname_appendix=False, short_job_names=False,
-                       silent=silent)
+    cases = sim.prepare_launch(iter_dict, opt_tags, master, no_variable_tag_func,
+                               write_htc=write_htc, runmethod=runmethod,
+                               copyback_turb=True, update_cases=False, msg='',
+                               ignore_non_unique=False, run_only_new=False,
+                               pbs_fname_appendix=False, short_job_names=False,
+                               silent=silent, verbose=verbose)
+
+    if pbs_turb:
+        # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
+        # MannTurb64 places PBS launch scripts in a "pbs_in_turb" folder
+        mann64 = sim.MannTurb64(silent=silent)
+        mann64.gen_pbs(cases)
 
 
 def launch_param(sim_id):
@@ -267,10 +291,13 @@ def launch_param(sim_id):
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e6, no_bins=46,
+                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
                 years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, AEP=False):
+
+    if neq < 0:
+        neq = None
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -395,7 +422,8 @@ if __name__ == '__main__':
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
     parser.add_argument('--stats', action='store_true', default=False,
-                        dest='stats', help='calculate statistics')
+                        dest='stats', help='calculate statistics and 1Hz '
+                                           'equivalent loads')
     parser.add_argument('--fatigue', action='store_true', default=False,
                         dest='fatigue', help='calculate Leq for a full DLC')
     parser.add_argument('--AEP', action='store_true', default=False,
@@ -407,8 +435,10 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=1e6, action='store',
-                        dest='neq', help='Equivalent cycles neq')
+    parser.add_argument('--neq', type=float, default=-1.0, action='store',
+                        dest='neq', help='Equivalent cycles neq, default 1 Hz '
+                                         'equivalent load (neq = simulation '
+                                         'duration in seconds)')
     parser.add_argument('--nn_twt', type=float, default=20, action='store',
                         dest='nn_twt', help='Node number tower top')
     parser.add_argument('--nn_blr', type=float, default=4, action='store',
@@ -424,12 +454,6 @@ if __name__ == '__main__':
     parser.add_argument('--envelopeturbine', default=False, action='store_true',
                         dest='envelopeturbine', help='Compute envelopeturbine')
     opt = parser.parse_args()
-
-    # auto configure directories: assume you are running in the root of the
-    # relevant HAWC2 model
-    # and assume we are in a simulation case of a certain turbine/project
-    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
-        = dlcdefs.configure_dirs(verbose=True)
 
     # TODO: use arguments to determine the scenario:
     # --plots, --report, --...
@@ -457,10 +481,16 @@ if __name__ == '__main__':
 #                saveinterval=2000, csv=True, fatigue_cycles=True, fatigue=False)
     # -------------------------------------------------------------------------
 
+    # auto configure directories: assume you are running in the root of the
+    # relevant HAWC2 model
+    # and assume we are in a simulation case of a certain turbine/project
+    P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
+        = dlcdefs.configure_dirs(verbose=True)
+
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
-        launch_dlcs_excel(sim_id)
+        launch_dlcs_excel(sim_id, silent=False)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
@@ -473,5 +503,5 @@ if __name__ == '__main__':
                     envelopeblade=opt.envelopeblade)
     if opt.dlcplot:
         sim_ids = [sim_id]
-        figdir = os.path.join(P_RUN, '..', 'figures/%s' % '-'.join(sim_ids))
+        figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
         dlcplots.plot_stats2(sim_ids, [POST_DIR], fig_dir_base=figdir)

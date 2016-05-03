@@ -46,7 +46,7 @@ def configure_dirs(verbose=False):
         raise ValueError('Could not find master file in htc/_master')
     MASTERFILE = master
     P_MASTERFILE = os.path.join(P_SOURCE, 'htc%s_master%s' % (os.sep, os.sep))
-    POST_DIR = os.path.join(p_run_root, PROJECT, 'prepost-data%s' % os.sep)
+    POST_DIR = os.path.join(p_run_root, PROJECT, sim_id, 'prepost-data%s' % os.sep)
 
     if verbose:
         print('='*79)
@@ -208,6 +208,7 @@ def tags_defaults(master):
     master.tags['[log_dir]']       = 'logfiles/'
     master.tags['[meander_dir]']   = False
     master.tags['[opt_dir]']       = False
+    master.tags['[pbs_in_dir]']    = 'pbs_in/'
     master.tags['[pbs_out_dir]']   = 'pbs_out/'
     master.tags['[res_dir]']       = 'res/'
     master.tags['[iter_dir]']      = 'iter/'

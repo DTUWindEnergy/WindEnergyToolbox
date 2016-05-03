@@ -171,7 +171,7 @@ class HTCLine(HTCContents):
                                   ("", "\t" + self.str_values())[bool(self.values)],
                                   ("", "\t" + self.comments)[bool(self.comments.strip())])
     def str_values(self):
-        return " ".join([str(v) for v in self.values])
+        return " ".join([str(v).lower() for v in self.values])
 
     def __getitem__(self, key):
         return self.values[key]
@@ -351,7 +351,10 @@ class HTCDefaults(object):
         else:
             mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)], "L, alfaeps, gamma, seed, highfrq compensation")
         if filenames is None:
-            filenames = ["./turb/turb_wsp%d_s%04d%s.bin" % (self.wind.wsp[0], seed, c) for c in ['u', 'v', 'w']]
+            fmt = "l%.1f_ae%.2f_g%.1f_h%d_%dx%dx%d_%.3fx%.2fx%.2f_s%04d%c.turb"
+            import numpy as np
+            dxyz = tuple(np.array(box_dimension) / no_grid_points)
+            filenames = ["./turb/" + fmt % ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw)) for uvw in ['u', 'v', 'w']]
         if isinstance(filenames, str):
             filenames = ["./turb/%s_s%04d%s.bin" % (filenames, seed, c) for c in ['u', 'v', 'w']]
         for filename, c in zip(filenames, ['u', 'v', 'w']):

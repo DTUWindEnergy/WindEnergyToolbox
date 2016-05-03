@@ -11,9 +11,10 @@ point to the gorm/jess wiki's
 explain the difference in the paths seen from a windows computer and the cluster
 -->
 
-WARNING: these notes contain configuration settings that are specif to the
+> WARNING: these notes contain configuration settings that are specif to the
 DTU Wind Energy cluster Gorm. Only follow this guide in another environment if
 you know what you are doing!
+
 
 Introduction
 ------------
@@ -40,7 +41,7 @@ in the Excel spreadsheets): ```[Case folder]```,  ```[Case id.]```, and
 ```[Turb base name]```.
 
 The system will always force the values of the tags to be lower case anyway, and
-when working on Windows, this might cause some confusing and unexpected behaviour.
+when working on Windows, this might cause some confusing and unexpected behavior.
 The tags themselves can have lower and upper case characters as can be seen
 in the example above.
 
@@ -75,7 +76,7 @@ On Linux/Mac connecting to the cluster is as simple as running the following
 command in the terminal:
 
 ```
-g-000 $ ssh $USER@gorm.risoe.dk
+ssh $USER@gorm.risoe.dk
 ```
 
 Use your DTU password when asked. This will give you terminal access to the
@@ -93,12 +94,13 @@ Mounting the cluster discs
 --------------------------
 
 You need to be connected to the DTU network in order for this to work. You can
-also connect to the DTU network over VPN.
+also connect to the DTU network over VPN. When doing the HAWC2 simulations, you
+will interact regularly with the cluster file system and discs.
 
-When doing the HAWC2 simulations, you will interact regularly with the cluster
-file system and discs. It is convenient to map these discs as network
-drives (in Windows terms). Map the following network drives (replace ```$USER```
-with your user name):
+### Windows
+
+It is convenient to map these discs as network drives (in Windows terms).
+Map the following network drives (replace ```$USER``` with your user name):
 
 ```
 \\mimer\hawc2sim
@@ -110,13 +112,15 @@ with the cluster discs.
 
 Note that by default Windows Explorer will hide some of the files you will need edit.
 In order to show all files on your Gorm home drive, you need to un-hide system files:
-Explorer > Organize > Folder and search options > select tab "view" > select the option to show hidden files and folders.
+Explorer > Organize > Folder and search options > select tab "view" > select the
+option to show hidden files and folders.
+
+### Unix
 
 From Linux/Mac, you should be able to mount using either of the following
 addresses:
 ```
 //mimer.risoe.dk/hawc2sim
-//mimer.risoe.dk/well/hawc2sim
 //gorm.risoe.dk/$USER
 ```
 You can use either ```sshfs``` or ```mount -t cifs``` to mount the discs.
@@ -131,61 +135,49 @@ by editing the file ```.bash_profile``` file in your Gorm’s home directory
 or create a new file with this file name in case it doesn't exist):
 
 ```
-export PATH=$PATH:/home/MET/STABCON/repositories/toolbox/pbsutils/
+export PATH=$PATH:/home/MET/repositories/toolbox/pbsutils/
 ```
 
 (The corresponding open repository is on the DTU Wind Energy Gitlab server:
-[pbsutils](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox). Please
+[pbsutils](https://gitlab.windenergy.dtu.dk/toolbox/pbsutils). Please
 considering reporting bugs and/or suggest improvements there. You're contributions
 are much appreciated!)
 
-If you have been using an old version of this how-to, you might be pointing
-to an earlier version of these tools/utils and its reference should be removed
-from your ```.bash_profile``` file:
+> If you have been using an old version of this how-to, you might be pointing
+to an earlier version of these tools/utils and any references containing
+```cluster-tools``` or ```prepost``` should be removed
+from your ```.bash_profile``` and/or ```.bashrc``` file on your gorm home drive.
 
-```
-export PATH=$PATH:/home/MET/STABCON/repositories/cluster-tools/
-```
-
-After modifying ```.bash_profile```, save and close it. Then, in the terminal, run the command:
+After modifying ```.bash_profile```, save and close it. Then, in the terminal,
+run the command (or logout and in again to be safe):
 ```
 g-000 $ source ~/.bash_profile
 ```
-In order for any changes made in ```.bash_profile``` to take effect, you need to either ```source``` it (as shown above), or log out and in again.  
 
-You will also need to configure wine and place the HAWC2 executables in a
-directory that wine knows about. First, activate the correct wine environment by
-typing in a shell in the Gorm's home directory (it can be activated with
-ssh (Linux, Mac) or putty (MS Windows)):
+You will also need to configure wine and place the HAWC2 executables in your
+local wine directory, which by default is assumed to be ```~/.wine32```, and
+```pbsutils``` contains and automatic configuration script you can run:
 
 ```
-g-000 $ WINEARCH=win32 WINEPREFIX=~/.wine32 wine test.exe
+g-000 $ config-wine-hawc2.sh
 ```
 
-Optionally, you can also make an alias (a short format for a longer, more complex
-command). In the ```.bashrc``` file in your home directory
-(```/home/$USER/.bash_profile```), add at the bottom of the file:
+If you need more information on what is going on, you can read a more detailed
+description [here]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/configure-wine.md).
 
-```
-alias wine32='WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
-```
-
-And now copy all the HAWC2 executables, DLL's (including the license manager)
-to your wine directory. You can copy all the required executables, dll's and
-the license manager are located at ```/home/MET/hawc2exe```. The following
-command will do this copying:
-
-```
-g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/windows/system32
-```
+All your HAWC2 executables and DLL's are now located
+at ```/home/$USER/.wine32/drive_c/bin```.
 
 Notice that the HAWC2 executable names are ```hawc2-latest.exe```,
 ```hawc2-118.exe```, etc. By default the latest version will be used and the user
 does not need to specify this. However, when you need to compare different version
 you can easily do so by specifying which case should be run with which
-executable. The file ```hawc2-latest.exe``` will always be the latest HAWC2
-version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
-simply copy all the files from there again to update.
+executable.
+
+Alternatively you can also include all the DLL's and executables in the root of
+your HAWC2 model folder. Executables and DLL's placed in the root folder take
+precedence over the ones placed in ```/home/$USER/.wine32/drive_c/bin```.
 
 Log out and in again from the cluster (close and restart PuTTY).
 
@@ -196,73 +188,70 @@ g-000 $ wine32 hawc2-latest htc/some-intput-file.htc
 ```
 
 
-Method A: Generating htc input files on the cluster
----------------------------------------------------
+Updating local HAWC2 executables
+--------------------------------
+
+When there is a new version of HAWC2, or when a new license manager is released,
+you can update your local wine directory as follows:
+
+```
+g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/bin/
+```
+
+The file ```hawc2-latest.exe``` will always be the latest HAWC2
+version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
+simply copy all the files from there again to update.
+
+
+HAWC2 model folder structure and results on mimer/hawc2sim
+----------------------------------------------------------
+
+See [house rules on mimer/hawc2sim]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/houserules-mimerhawc2sim.md)
+for a more detailed description.
+
+
+Method A: Generating htc input files on the cluster (recommended)
+-----------------------------------------------------------------
 
 Use ssh (Linux, Mac) or putty (MS Windows) to connect to the cluster.
 
-With qsub-wrap.py the user can wrap a PBS launch script around any executable or
-Python/Matlab/... script. In doing so, the executable/Python script will be
-immediately submitted to the cluster for execution. By default, the Anaconda
-Python environment in ```/home/MET/STABCON/miniconda``` will be activated. The
-Anaconda Python environment is not relevant, and can be safely ignored, if the
-executable does not have anything to do with Python.
+In order to simplify things, we're using ```qsub-wrap.py``` from ```pbsutils```
+(which we added under the [preparation]/(#preparation) section) in order to
+generate the htc files. It will execute, on a compute node, any given Python
+script in a pre-installed Python environment that has the Wind Energy Toolbox
+installed.
 
-In order to see the different options of this qsub-wrap utility, do:
-
-```
-g-000 $ qsub-wrap.py --help
-```
-
-For example, in order to generate the default IEC DLCs:
+For the current implementation of the DLB the following template is available:
 
 ```
-g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/prepost/dlctemplate.py -c python --prep
+/home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py
 ```
 
-Note that the following folder structure for the HAWC2 model is assumed:
+And the corresponding definitions of all the different load cases can be copied
+from here (valid for the DTU10MW):
 
 ```
-|-- control
-|   |-- ...
-|-- data
-|   |-- ...
-|-- htc
-|   |-- DLCs
-|   |   |-- dlc12_iec61400-1ed3.xlsx
-|   |   |-- dlc13_iec61400-1ed3.xlsx
-|   |   |-- ...
-|   |-- _master
-|   |   `-- dtu10mw_master_C0013.htc
+/mnt/mimer/hawc2sim/DTU10MW/C0020/htc/DLCs
 ```
 
-The load case definitions should be placed in Excel spreadsheets with a
-```*.xlsx``` extension. The above example shows one possible scenario whereby
-all the load case definitions are placed in ```htc/DLCs``` (all folder names
-are case sensitive). Alternatively, one can also place the spreadsheets in
-separate sub folders, for example:
+For example, in order to generate all the HAWC2 htc input files and the
+corresponding ```*.p``` cluster launch files using this default DLB setup with:
 
 ```
-|-- control
-|   |-- ...
-|-- data
-|   |-- ...
-|-- htc
-|   |-- dlc12_iec61400-1ed3
-|   |   |-- dlc12_iec61400-1ed3.xlsx
-|   |-- dlc13_iec61400-1ed3
-|   |   |-- dlc13_iec61400-1ed3.xlsx
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001 # folder where the hawc2 model is located
+g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
 ```
 
-In order to use this auto-configuration mode, there can only be one master file
-in ```_master``` that contains ```_master_``` in its file name.
+You could consider adding ```dlctemplate.py``` into the turbine folder or in
+the simulation set id folder for your convenience:
 
-For the NREL5MW and the DTU10MW HAWC2 models, you can find their respective
-master files and DLC definition spreadsheet files on Mimer. When connected
-to Gorm over SSH/PuTTY, you will find these files at:
 ```
-/mnt/mimer/hawc2sim # (when on Gorm)
+g-000 $ cd /mnt/mimer/hawc2sim/demo/
+# copy the dlctemplate to your turbine model folder and rename to myturbine.py
+g-000 $ cp /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py ./myturbine.py
+g-000 $ cd A0001
+g-000 $ qsub-wrap.py -f ../myturbine.py --prep
 ```
 
 
@@ -278,20 +267,17 @@ First activate the Anaconda Python environment by typing:
 
 ```bash
 # add the Anaconda Python environment paths to the system PATH
-g-000 $ export PATH=/home/MET/STABCON/miniconda/bin:$PATH
+g-000 $ export PATH=/home/python/miniconda3/bin:$PATH
 # activate the custom python environment:
-g-000 $ source activate anaconda
-# add the Pythone libraries to the PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/prepost:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/pythontoolbox/fatigue_tools:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/pythontoolbox:$PYTHONPATH
-g-000 $ export PYTHONPATH=/home/MET/STABCON/repositories/MMPE:$PYTHONPATH
+g-000 $ source activate wetb_py3
 ```
 For example, launch the auto-generation of DLCs input files:
 
 ```
-g-000 $ cd path/to/HAWC2/model # folder where the hawc2 model is located
-g-000 $ python /home/MET/STABCON/repositories/prepost/dlctemplate.py --prep
+# folder where the HAWC2 model is located
+g-000 $ cd /mnt/mimer/hawc2sim/demo/AA0001
+# assuming myturbine.py is copy of dlctemplate.py and is placed one level up
+g-000 $ python ../myturbine.py --prep
 ```
 
 Or start an interactive IPython shell:
@@ -309,16 +295,18 @@ jammed.
 Method C: Generating htc input files locally
 --------------------------------------------
 
-This approach gives you total freedom, but is also more difficult since you
-will have to have fully configured Python environment installed locally.
+This approach gives you more flexibility and room for custimizations, but you
+will need to install a Python environment with all its dependencies locally.
 Additionally, you need access to the cluster discs from your local workstation.
-Method C is not documented yet.
+
+The installation procedure for wetb is outlined in the [installation manual]
+(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/install-manual-detailed.md).
 
 
 Optional configuration
 ----------------------
 
-Optional tags that can be set in the Excel spreadsheet, and their corresponding
+Optional tags that can be set in the Excel spreadsheet and their corresponding
 default values are given below. Beside a replacement value in the master htc
 file, there are also special actions connected to these values. Consequently,
 these tags have to be present. When removed, the system will stop working properly.
@@ -362,8 +350,23 @@ This zip file will be extracted into the execution directory (```[run_dir]```).
 After the model has ran on the node, only the files that have been created
 during simulation time in the ```[log_dir]```, ```[res_dir]```,
 ```[animation_dir]```, and ```[eigenfreq_dir]``` will be copied back.
-Optionally, on can also copy back the turbulence files, and other explicitly
-defined files [TODO: expand manual here].
+
+
+### Advanced configuration options
+
+> Note that not all features are documented yet...
+
+Special tags: copy special result files from the compute node back to the HAWC2
+working directory on the network drive, and optionally rename the file in case
+it would otherwise be overwritten by other cases in your DLB:
+* ```[copyback_files] = ['ESYSMooring_init.dat']```
+* ```[copyback_frename] = ['path/to/ESYSMooring_init_vXYZ.dat']```, optionally specify
+a different file path/name
+
+Copy files from the HAWC2 working directory with a special name to the compute
+node for which the a fixed file name is assumed
+* ```[copyto_files] = ['path/to/ESYSMooring_init_vXYZ.dat']```
+* ```[copyto_generic] = ['ESYSMooring_init.dat']```
 
 
 Launching the jobs on the cluster
@@ -429,12 +432,20 @@ options:
 ```
 
 Then launch the actual jobs (each job is a ```*.p``` file in ```pbs_in```) using
-100 cpu's, and using a compute node instead of the login node (see you can exit
-the ssh/putty session without interrupting the launching process):
+100 cpu's:
 
 ```bash
-g-000 $ cd path/to/HAWC2/model
-g-000 $ launch.py -n 100 --node
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+g-000 $ launch.py -n 100 -p pbs_in/
+```
+
+If the launching process requires hours, and you have to close you SHH/PuTTY
+session before it reaches the end, you should use the ```--node``` argument so
+the launching process will take place on a dedicated node:
+
+```bash
+g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+g-000 $ launch.py -n 100 -p pbs_in/ --node
 ```
 
 
@@ -520,10 +531,11 @@ htc files, but now we set different flags. For example, for checking the log
 files, calculating the statistics, the AEP and the life time equivalent loads:
 
 ```
-g-000 $ qsub-wrap.py -f /home/MET/STABCON/repositories/prepost/dlctemplate.py -c python --years=25 --neq=1e7 --stats --check_logs --fatigue
+# myturbine.py (copy of dlctemplate.py) is assumed to be located one folder up
+g-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
 
-Other options for the ```dlctemplate.py``` script:
+Other options for the original ```dlctemplate.py``` script:
 
 ```
 usage: dlctemplate.py [-h] [--prep] [--check_logs] [--stats] [--fatigue]
@@ -536,32 +548,34 @@ optional arguments:
   -h, --help         show this help message and exit
   --prep             create htc, pbs, files (default=False)
   --check_logs       check the log files (default=False)
-  --stats            calculate statistics (default=False)
+  --stats            calculate statistics and 1Hz equivalent loads (default=False)
   --fatigue          calculate Leq for a full DLC (default=False)
   --csv              Save data also as csv file (default=False)
   --years YEARS      Total life time in years (default=20)
   --no_bins NO_BINS  Number of bins for fatigue loads (default=46)
-  --neq NEQ          Equivalent cycles neq (default=1e6)
+  --neq NEQ          Equivalent cycles neq, default 1 Hz equivalent load
+                     (neq = simulation duration in seconds)
   --envelopeblade    calculate the load envelope for sensors on the blades
   --envelopeturbine  calculate the load envelope for sensors on the turbine
 ```
 
-The load envelopes are computed for sensors specified in the 
-```dlctemplate.py``` file. The sensors are specified in a list of lists. The 
+The load envelopes are computed for sensors specified in the
+```myturbine.py``` file. The sensors are specified in a list of lists. The
 inner list contains the sensors at one location. The envelope is computed for
 the first two sensors of the inner list and the other sensors are used to
-retrieve the remaining loads defining the load state occurring at the same 
+retrieve the remaining loads defining the load state occurring at the same
 instant. The outer list is used to specify sensors at different locations.
 The default values for the blade envelopes are used to compute the Mx-My
-envelopes and retrieve the Mz-Fx-Fy-Fz loads occuring at the same moment.
+envelopes and retrieve the Mz-Fx-Fy-Fz loads occurring at the same moment.
+
 
 Debugging
 ---------
 
 Any output (everything that involves print statements) generated during the
-post-processing of the simulations using ```dlctemplate.py``` is captured in
-the ```pbs_out/qsub-wrap_dlctemplate.py.out``` file, while exceptions and errors
-are redirected to the ```pbs_out/qsub-wrap_dlctemplate.py.err``` text file.
+post-processing of the simulations using ```myturbine.py``` is captured in
+the ```pbs_out/qsub-wrap_myturbine.py.out``` file, while exceptions and errors
+are redirected to the ```pbs_out/qsub-wrap_myturbine.py.err``` text file.
 
 The output and errors of HAWC2 simulations can also be found in the ```pbs_out```
 directory. The ```.err``` and ```.out``` files will be named exactly the same

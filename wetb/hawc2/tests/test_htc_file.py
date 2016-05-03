@@ -118,9 +118,9 @@ class TestHtcFile(unittest.TestCase):
         htcfile.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
         s = """begin mann;
     create_turb_parameters\t30.1 1.1 3.3 102 0;\tL, alfaeps, gamma, seed, highfrq compensation
-    filename_u\t./turb/turb_wsp10_s0102u.bin;
-    filename_v\t./turb/turb_wsp10_s0102v.bin;
-    filename_w\t./turb/turb_wsp10_s0102w.bin;
+    filename_u\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102u.turb;
+    filename_v\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102v.turb;
+    filename_w\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102w.turb;
     box_dim_u\t4096 1.4652;
     box_dim_v\t32 3.2258;
     box_dim_w\t32 3.2258;
@@ -212,7 +212,7 @@ class TestHtcFile(unittest.TestCase):
         self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
         self.assertEqual(str(htcfile).count("exit"), 1)
-        self.assertIn('filename\t./res/oc4_p2_Load_case_eq;', str(htcfile))
+        self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile))
 
     def test_tjul_example(self):
         htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")

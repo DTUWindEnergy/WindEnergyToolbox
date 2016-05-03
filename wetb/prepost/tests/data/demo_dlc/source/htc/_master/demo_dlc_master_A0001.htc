@@ -382,7 +382,7 @@ begin wind ;
     filename_u    ./[turb_dir][Turb base name]u.bin ;
     filename_v    ./[turb_dir][Turb base name]v.bin ;
     filename_w    ./[turb_dir][Turb base name]w.bin ;
-    box_dim_u    8192 [turb_dx] ;
+    box_dim_u    512 [turb_dx] ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;

@@ -1043,10 +1043,11 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
     elif runmethod == 'none':
         pass
     else:
-        msg = 'unsupported runmethod, valid options: local, thyra, gorm or opt'
+        msg = 'unsupported runmethod, valid options: local, local-script, ' \
+              'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
 
-def post_launch(cases, save_iter=False):
+def post_launch(cases, save_iter=False, silent=False):
     """
     Do some basics checks: do all launched cases have a result and LOG file
     and are there any errors in the LOG files?
@@ -1101,8 +1102,9 @@ def post_launch(cases, save_iter=False):
     nr_tot = len(cases)
 
     tmp = list(cases.keys())[0]
-    print('checking logs, path (from a random item in cases):')
-    print(os.path.join(run_dir, log_dir))
+    if not silent:
+        print('checking logs, path (from a random item in cases):')
+        print(os.path.join(run_dir, log_dir))
 
     for k in sorted(cases.keys()):
         # a case could not have a result, but a log file might still exist
@@ -1117,12 +1119,15 @@ def post_launch(cases, save_iter=False):
         errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
         try:
             errorlogs.check(save_iter=save_iter)
-            print('checking logfile progress: ' + str(nr) + '/' + str(nr_tot))
+            if not silent:
+                print('checking logfile progress: % 6i/% 6i' % (nr, nr_tot))
         except IOError:
-            print('           no logfile for:  %s' % (errorlogs.PathToLogs))
+            if not silent:
+                print('           no logfile for:  %s' % (errorlogs.PathToLogs))
         except Exception as e:
-            print('  log analysis failed for: %s' % kk)
-            print(e)
+            if not silent:
+                print('  log analysis failed for: %s' % kk)
+                print(e)
         nr += 1
 
         # if simulation did not ended correctly, put it on the fail list
@@ -1160,6 +1165,29 @@ def post_launch(cases, save_iter=False):
     save_pickle(os.path.join(post_dir, sim_id + '_fail.pkl'), cases_fail)
 
     return cases_fail
+
+
+def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
+    """
+    Copy all the pbs_in files from failed cases to a new directory so it
+    is easy to re-launch them
+    """
+    if not silent:
+        print('Following failed cases pbs_in files are copied:')
+    for cname in cases_fail.keys():
+        case = cases_fail[cname]
+        pbs_in_fname = '%s.p' % (case['[case_id]'])
+        run_dir = case['[run_dir]']
+
+        src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
+
+        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
+
+        if not silent:
+            print(dst)
+        shutil.copy2(src, dst)
+
 
 def logcheck_case(errorlogs, cases, case, silent=False):
     """
@@ -1721,9 +1749,9 @@ class HtcMaster(object):
         # load the file:
         if not self.silent:
             print('loading master: ' + fpath)
-        FILE = open(fpath, 'r')
-        lines = FILE.readlines()
-        FILE.close()
+
+        with open(fpath, 'r') as f:
+            lines = f.readlines()
 
         # regex for finding all tags in a line
         regex = re.compile('(\\[.*?\\])')
@@ -1919,7 +1947,6 @@ class PBS(object):
         # in case you want to redirect stdout to /dev/nul
 #        self.wine_appendix = '> /dev/null 2>&1'
         self.wine_appendix = ''
-        self.wine_dir = '/home/dave/.wine32/drive_c/bin'
         # /dev/shm should be the RAM of the cluster
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
@@ -2280,11 +2307,6 @@ class PBS(object):
         self.pbs += 'echo ""\n'
         self.pbs += 'echo "Execute commands on scratch nodes"\n'
         self.pbs += 'cd %s/$USER/$PBS_JOBID\n' % self.node_run_root
-#        # also copy all the HAWC2 exe's to the scratch dir
-#        self.pbs += "cp -R %s/* ./\n" % self.wine_dir
-#        # custom name hawc2 exe
-#        self.h2_new = tag_dict['[hawc2_exe]'] + '-' + jobid + '.exe'
-#        self.pbs += "mv %s.exe %s\n" % (tag_dict['[hawc2_exe]'], self.h2_new)
 
     def ending(self, pbs_path):
         """
@@ -2669,7 +2691,7 @@ class ErrorLogs(object):
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
                 dt = float(case['[dt_sim]'])
-                time_steps = float(case['[time_stop]']) / dt
+                time_steps = int(float(case['[time_stop]']) / dt)
                 iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
             else:
                 iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
@@ -3635,7 +3657,7 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False):
+    def post_launch(self, save_iter=False, copy_pbs_failed=True):
         """
         Post Launching Maintenance
 
@@ -3644,6 +3666,10 @@ class Cases(object):
         """
         # TODO: integrate global post_launch in here
         self.cases_fail = post_launch(self.cases, save_iter=save_iter)
+
+        if copy_pbs_failed:
+            copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
+                                    silent=self.silent)
 
         if self.rem_failed:
             self.remove_failed()
@@ -4662,7 +4688,7 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
-            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
@@ -4802,7 +4828,7 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-            fname = os.path.join(run_dir, 'htc', 'DLCs', 'dlc_config.xlsx')
+            fname = os.path.join(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
@@ -5127,7 +5153,7 @@ class Cases(object):
                                                        closed_contour[:,ich],Nx)
                     es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
                     closed_contour_int = np.append(closed_contour_int,es,axis=1)
-                
+
             if int_env:
                 envelope[ch[0]] = closed_contour_int
             else:
@@ -5135,6 +5161,39 @@ class Cases(object):
                 
         return envelope
     
+    def int_envelope(ch1,ch2,Nx):
+        # Function to interpolate envelopes and output arrays of same length
+
+        # Number of points is defined by Nx + 1, where the + 1 is needed to
+        # close the curve
+
+        upper = []
+        lower = []
+
+        indmax = np.argmax(ch1)
+        indmin = np.argmin(ch1)
+        if indmax > indmin:
+            lower = np.array([ch1[indmin:indmax+1],ch2[indmin:indmax+1]]).T
+            upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,\
+                            np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),axis=0)
+        else:
+            upper = np.array([ch1[indmax:indmin+1,:],ch2[indmax:indmin+1,:]]).T
+            lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
+                                np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
+
+
+        int_1 = np.linspace(min(min(upper[:,0]),min(lower[:,0])),\
+                            max(max(upper[:,0]),max(upper[:,0])),Nx/2+1)
+        upper = np.flipud(upper)
+        int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
+        int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
+
+        int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,\
+                                np.array([int_1[::-1],int_2_low[::-1]]).T),axis=0)
+
+        return int_env
+
+>>>>>>> 243fec873030daa39e892a424570111fbeaa9963
     def envelope(self, silent=False, ch_list=[], append=''):
         """
         Calculate envelopes and save them in a table.
@@ -5304,37 +5363,68 @@ class Results(object):
         return M_x_equiv
 
 
-class ManTurb64(object):
+class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
     mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
     """
 
-    def __init__(self):
-        self.man64_exe = 'mann_turb_x64.exe'
-        self.wine = 'WINEARCH=win64 WINEPREFIX=~/.wine64 wine'
+    def __init__(self, silent=False):
+        super(MannTurb64, self).__init__()
+        self.exe = 'time wine mann_turb_x64.exe'
+        # PBS configuration
+        self.umask = '003'
+        self.walltime = '00:59:59'
+        self.queue = 'workq'
+        self.lnodes = '1'
+        self.ppn = '1'
+        self.silent = silent
+        self.pbs_in_dir = 'pbs_in_turb/'
 
-    def run():
-        pass
-
-    def gen_pbs(cases):
+    def gen_pbs(self, cases):
 
         case0 = cases[list(cases.keys())[0]]
-        pbs = prepost.PBSScript()
-        # make sure the path's end with a trailing separator
-        pbs.pbsworkdir = os.path.join(case0['[run_dir]'], '')
-        pbs.path_pbs_e = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
-        pbs.check_dirs()
+        # make sure the path's end with a trailing separator, why??
+        self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
+        if not self.silent:
+            print('\nStart creating PBS files for turbulence with Mann64...')
         for cname, case in cases.items():
-            base = case['[case_id]']
-            pbs.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
-            pbs.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')
-            pbs.path_pbs_i = os.path.join(case['[pbs_in_dir]'], base + '.pbs')
 
-            pbs.execute()
-            pbs.create()
+            # only relevant for cases with turbulence
+            if '[tu_model]' in case and int(case['[tu_model]']) == 0:
+                continue
+            if '[Turb base name]' not in case:
+                continue
+
+            base_name = case['[Turb base name]']
+            # pbs_in/out dir can contain subdirs, only take the inner directory
+            out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
+            turb = case['[turb_dir]']
+
+            self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
+            self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
+            self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
+
+            if case['[turb_db_dir]'] is not None:
+                self.prelude = 'cd %s' % case['[turb_db_dir]']
+            else:
+                self.prelude = 'cd %s' % case['[turb_dir]']
+
+            # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+            rpl = (float(case['[AlfaEpsilon]']),
+                   float(case['[L_mann]']),
+                   float(case['[Gamma]']),
+                   int(case['[tu_seed]']),
+                   int(case['[turb_nr_u]']),
+                   int(case['[turb_nr_v]']),
+                   int(case['[turb_nr_w]']),
+                   float(case['[turb_dx]']),
+                   float(case['[turb_dy]']),
+                   float(case['[turb_dz]']),
+                   int(case['[high_freq_comp]']))
+            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
+            self.execution = '%s %s %s' % (self.exe, base_name, params)
+            self.create(check_dirs=True)
 
 
 def eigenbody(cases, debug=False):
