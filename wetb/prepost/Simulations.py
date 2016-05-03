@@ -3413,7 +3413,7 @@ def int_envelope(ch1,ch2,Nx):
                                 axis=0)
                             
                         
-    int_1 = np.linspace(min(upper[:,0].min(),lower[:,0].min()),\
+    int_1 = np.linspace(min(upper[:,0].min(),lower[:,0].min()),
                         max(upper[:,0].max(),lower[:,0].max()),Nx/2+1)
     upper = np.flipud(upper)
     int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
