@@ -5193,7 +5193,6 @@ class Cases(object):
 
         return int_env
 
->>>>>>> 243fec873030daa39e892a424570111fbeaa9963
     def envelope(self, silent=False, ch_list=[], append=''):
         """
         Calculate envelopes and save them in a table.
