@@ -118,9 +118,9 @@ class TestHtcFile(unittest.TestCase):
         htcfile.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
         s = """begin mann;
     create_turb_parameters\t30.1 1.1 3.3 102 0;\tL, alfaeps, gamma, seed, highfrq compensation
-    filename_u\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102u.turb;
-    filename_v\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102v.turb;
-    filename_w\t./turb/l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102w.turb;
+    filename_u\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102u.turb;
+    filename_v\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102v.turb;
+    filename_w\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102w.turb;
     box_dim_u\t4096 1.4652;
     box_dim_v\t32 3.2258;
     box_dim_w\t32 3.2258;
