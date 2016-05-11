@@ -1043,10 +1043,11 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
     elif runmethod == 'none':
         pass
     else:
-        msg = 'unsupported runmethod, valid options: local, thyra, gorm or opt'
+        msg = 'unsupported runmethod, valid options: local, local-script, ' \
+              'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
 
-def post_launch(cases, save_iter=False):
+def post_launch(cases, save_iter=False, silent=False):
     """
     Do some basics checks: do all launched cases have a result and LOG file
     and are there any errors in the LOG files?
@@ -1101,8 +1102,9 @@ def post_launch(cases, save_iter=False):
     nr_tot = len(cases)
 
     tmp = list(cases.keys())[0]
-    print('checking logs, path (from a random item in cases):')
-    print(os.path.join(run_dir, log_dir))
+    if not silent:
+        print('checking logs, path (from a random item in cases):')
+        print(os.path.join(run_dir, log_dir))
 
     for k in sorted(cases.keys()):
         # a case could not have a result, but a log file might still exist
@@ -1117,12 +1119,15 @@ def post_launch(cases, save_iter=False):
         errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
         try:
             errorlogs.check(save_iter=save_iter)
-            print('checking logfile progress: ' + str(nr) + '/' + str(nr_tot))
+            if not silent:
+                print('checking logfile progress: % 6i/% 6i' % (nr, nr_tot))
         except IOError:
-            print('           no logfile for:  %s' % (errorlogs.PathToLogs))
+            if not silent:
+                print('           no logfile for:  %s' % (errorlogs.PathToLogs))
         except Exception as e:
-            print('  log analysis failed for: %s' % kk)
-            print(e)
+            if not silent:
+                print('  log analysis failed for: %s' % kk)
+                print(e)
         nr += 1
 
         # if simulation did not ended correctly, put it on the fail list
@@ -1161,18 +1166,27 @@ def post_launch(cases, save_iter=False):
 
     return cases_fail
 
-def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail'):
+
+def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
     is easy to re-launch them
     """
-
+    if not silent:
+        print('Following failed cases pbs_in files are copied:')
     for cname in cases_fail.keys():
         case = cases_fail[cname]
         pbs_in_fname = '%s.p' % (case['[case_id]'])
-        pbs_in_dir = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
         run_dir = case['[run_dir]']
-        fname = os.path.join(run_dir, pbs_in_dir, pbs_in_fname)
+
+        src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
+
+        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
+
+        if not silent:
+            print(dst)
+        shutil.copy2(src, dst)
 
 
 def logcheck_case(errorlogs, cases, case, silent=False):
@@ -3302,6 +3316,182 @@ class WeibullParameters(object):
         self.Vstep = 2.
         self.shape_k = 2.
 
+def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
+    """
+    The function computes load envelopes for given channels and a groups of 
+    load cases starting from the envelopes computed for single simulations.
+    The output is the envelope of the envelopes of the single simulations.
+    This total envelope is projected on defined polar directions.
+
+    Parameters
+    ----------
+
+    envelope : dict, dictionaries of interpolated envelopes of a given 
+                    channel (it's important that each entry of the dictonary
+                    contains a matrix of the same dimensions). The dictonary
+                    is organized by load case
+
+    dlc_list : list, list of load cases
+
+    Nx : int, default=300
+        Number of points for the envelope interpolation
+    
+    Nsectors: int, default=12
+        Number of sectors in which the total envelope will be divided. The
+        default is every 30deg
+    
+    Ntheta; int, default=181
+        Number of angles in which the envelope is interpolated in polar
+        coordinates.
+    
+    Returns
+    -------
+
+    envelope : array (Nsectors x 6), 
+        Total envelope projected on the number of angles defined in Nsectors.
+        The envelope is projected in Mx and My and the other cross-sectional
+        moments and forces are fetched accordingly (at the same time step where
+        the corresponding Mx and My are occuring)
+
+    """
+    
+    # Group all the single DLCs
+    cloud = np.zeros(((Nx+1)*len(envelope),6))   
+    for i in range(len(envelope)):
+        cloud[(Nx+1)*i:(Nx+1)*(i+1),:] = envelope[dlc_list[i]]
+    # Compute total Hull of all the envelopes
+    hull = scipy.spatial.ConvexHull(cloud[:,:2])
+    cc = np.append(cloud[hull.vertices,:2],
+                   cloud[hull.vertices[0],:2].reshape(1,2),axis=0)
+    # Interpolate full envelope
+    cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0], cc[:,1], Nx=Nx)
+    # Project full envelope on given direction
+    cc_proj = proj_envelope(cc_x, cc_up, cc_low, cc_int, Nx, Nsectors, Ntheta)
+    
+    env_proj = np.zeros([len(cc_proj),6])
+    env_proj[:,:2] = cc_proj
+    
+    # Based on Mx and My, gather the remaining cross-sectional forces and
+    # moments
+    for ich in range(2, 6):
+        s0 = np.array(cloud[hull.vertices, ich]).reshape(-1, 1)
+        s1 = np.array(cloud[hull.vertices[0], ich]).reshape(-1, 1)
+        s0 = np.append(s0, s1, axis=0)
+        cc = np.append(cc, s0, axis=1)
+        
+        _,_,_,extra_sensor = int_envelope(cc[:,0],cc[:,ich],Nx)
+        es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+        cc_int = np.append(cc_int,es,axis=1)
+    
+        for isec in range(Nsectors):
+            ids = (np.abs(cc_int[:,0]-cc_proj[isec,0])).argmin()
+            env_proj[isec,ich] = (cc_int[ids-1,ich]+cc_int[ids,ich]+\
+                                                    cc_int[ids+1,ich])/3
+            
+    return env_proj
+    
+def int_envelope(ch1,ch2,Nx):
+    # Function to interpolate envelopes and output arrays of same length
+
+    # Number of points is defined by Nx + 1, where the + 1 is needed to
+    # close the curve
+
+    upper = []
+    lower = []
+
+    indmax = np.argmax(ch1)
+    indmin = np.argmin(ch1)
+    if indmax > indmin:
+        lower = np.array([ch1[indmin:indmax+1],ch2[indmin:indmax+1]]).T
+        upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,
+                                np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),
+                                axis=0)
+    else:
+        upper = np.array([ch1[indmax:indmin+1],ch2[indmax:indmin+1]]).T
+        lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,
+                                np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),
+                                axis=0)
+                            
+                        
+    int_1 = np.linspace(min(upper[:,0].min(),lower[:,0].min()),
+                        max(upper[:,0].max(),lower[:,0].max()),Nx/2+1)
+    upper = np.flipud(upper)
+    int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
+    int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
+
+    int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,
+                              np.array([int_1[::-1],int_2_low[::-1]]).T),
+                              axis=0)
+
+    return int_1, int_2_up, int_2_low, int_env
+
+def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
+    # Function to project envelope on given angles
+
+    # Angles of projection is defined by Nsectors
+    # Projections are obtained in polar coordinates and outputted in
+    # cartesian
+
+    theta_int = np.linspace(-np.pi,np.pi,Ntheta)
+    sectors = np.linspace(-np.pi,np.pi,Nsectors+1)
+    proj = np.zeros([Nsectors,2])
+    
+    R_up = np.sqrt(env_x**2+env_up**2)
+    theta_up = np.arctan2(env_up,env_x)
+    
+    R_low = np.sqrt(env_x**2+env_low**2)
+    theta_low = np.arctan2(env_low,env_x)
+        
+    R = np.concatenate((R_up,R_low))
+    theta = np.concatenate((theta_up,theta_low))
+    R = R[np.argsort(theta)]
+    theta = np.sort(theta)
+    
+    R_int = np.interp(theta_int,theta,R,period=2*np.pi)
+                
+    for i in range(Nsectors):
+        if sectors[i]>=-np.pi and sectors[i+1]<-np.pi/2:
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
+            proj[i+1,0] = maxR*np.cos(sectors[i+1])
+            proj[i+1,1] = maxR*np.sin(sectors[i+1])
+        elif sectors[i]==-np.pi/2:
+            continue
+        elif sectors[i]>-np.pi/2 and sectors[i+1]<=0:
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
+            proj[i,0] = maxR*np.cos(sectors[i])
+            proj[i,1] = maxR*np.sin(sectors[i])
+        elif sectors[i]>=0 and sectors[i+1]<np.pi/2:
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
+            proj[i+1,0] = maxR*np.cos(sectors[i+1])
+            proj[i+1,1] = maxR*np.sin(sectors[i+1])
+        elif sectors[i]==np.pi/2:
+            continue
+        elif sectors[i]>np.pi/2 and sectors[i+1]<=np.pi:
+            indices = np.where(np.logical_and(theta_int >= sectors[i],
+                                              theta_int <= sectors[i+1]))
+            maxR = R_int[indices].max()
+            proj[i,0] = maxR*np.cos(sectors[i])
+            proj[i,1] = maxR*np.sin(sectors[i])
+    
+    ind = np.where(sectors==0)        
+    proj[ind,0] = env[:,0].max()
+
+    ind = np.where(sectors==np.pi/2)        
+    proj[ind,1] = env[:,1].max()
+
+    ind = np.where(sectors==-np.pi)        
+    proj[ind,0] = env[:,0].min()
+
+    ind = np.where(sectors==-np.pi/2)        
+    proj[ind,1] = env[:,1].min()
+
+    return proj
 
 # FIXME: Cases has a memory leek somewhere, this whole thing needs to be
 # reconsidered and rely on a DataFrame instead of a dict!
@@ -3470,7 +3660,7 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False):
+    def post_launch(self, save_iter=False, copy_pbs_failed=True):
         """
         Post Launching Maintenance
 
@@ -3479,6 +3669,10 @@ class Cases(object):
         """
         # TODO: integrate global post_launch in here
         self.cases_fail = post_launch(self.cases, save_iter=save_iter)
+
+        if copy_pbs_failed:
+            copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
+                                    silent=self.silent)
 
         if self.rem_failed:
             self.remove_failed()
@@ -4898,7 +5092,35 @@ class Cases(object):
 
         return result
 
-    def compute_envelope(self, sig, ch_list):
+    def compute_envelope(self, sig, ch_list, int_env=False, Nx=300):
+        """
+        The function computes load envelopes for given signals and a single 
+        load case. Starting from Mx and My moments, the other cross-sectional 
+        forces are identified.
+
+        Parameters
+        ----------
+
+        sig : list, time-series signal
+
+        ch_list : list, list of channels for enevelope computation
+            
+        int_env : boolean, default=False
+            If the logic parameter is True, the function will interpolate the 
+            envelope on a given number of points
+
+        Nx : int, default=300
+            Number of points for the envelope interpolation        
+        
+        Returns
+        -------
+
+        envelope : dictionary, 
+            The dictionary has entries refered to the channels selected.
+            Inside the dictonary under each entry there is a matrix with 6 
+            columns, each for the sectional forces and moments
+
+        """
 
         envelope= {}
         for ch in ch_list:
@@ -4906,19 +5128,73 @@ class Cases(object):
             chi1 = self.res.ch_dict[ch[1]]['chi']
             s0 = np.array(sig[:, chi0]).reshape(-1, 1)
             s1 = np.array(sig[:, chi1]).reshape(-1, 1)
+            # Compute a Convex Hull, the vertices number varies according to
+            # the shape of the poligon
             cloud =  np.append(s0, s1, axis=1)
             hull = scipy.spatial.ConvexHull(cloud)
             closed_contour = np.append(cloud[hull.vertices,:],
                                        cloud[hull.vertices[0],:].reshape(1,2),
                                        axis=0)
+            
+            # Interpolate envelope for a given number of points
+            if int_env:
+                _,_,_,closed_contour_int = int_envelope(closed_contour[:,0],
+                                                        closed_contour[:,1],Nx)                
+                
+             
+            # Based on Mx and My envelope, the other cross-sectional moments
+            # and forces components are identified and appended to the initial
+            # envelope
             for ich in range(2, len(ch)):
                 chix = self.res.ch_dict[ch[ich]]['chi']
                 s0 = np.array(sig[hull.vertices, chix]).reshape(-1, 1)
                 s1 = np.array(sig[hull.vertices[0], chix]).reshape(-1, 1)
                 s0 = np.append(s0, s1, axis=0)
                 closed_contour = np.append(closed_contour, s0, axis=1)
-            envelope[ch[0]] = closed_contour
+                if int_env:
+                    _,_,_,extra_sensor = int_envelope(closed_contour[:,0],
+                                                       closed_contour[:,ich],Nx)
+                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+                    closed_contour_int = np.append(closed_contour_int,es,axis=1)
+
+            if int_env:
+                envelope[ch[0]] = closed_contour_int
+            else:
+                envelope[ch[0]] = closed_contour
+                
         return envelope
+    
+    def int_envelope(ch1,ch2,Nx):
+        # Function to interpolate envelopes and output arrays of same length
+
+        # Number of points is defined by Nx + 1, where the + 1 is needed to
+        # close the curve
+
+        upper = []
+        lower = []
+
+        indmax = np.argmax(ch1)
+        indmin = np.argmin(ch1)
+        if indmax > indmin:
+            lower = np.array([ch1[indmin:indmax+1],ch2[indmin:indmax+1]]).T
+            upper = np.concatenate((np.array([ch1[indmax:],ch2[indmax:]]).T,\
+                            np.array([ch1[:indmin+1],ch2[:indmin+1]]).T),axis=0)
+        else:
+            upper = np.array([ch1[indmax:indmin+1,:],ch2[indmax:indmin+1,:]]).T
+            lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,\
+                                np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),axis=0)
+
+
+        int_1 = np.linspace(min(min(upper[:,0]),min(lower[:,0])),\
+                            max(max(upper[:,0]),max(upper[:,0])),Nx/2+1)
+        upper = np.flipud(upper)
+        int_2_up = np.interp(int_1,np.array(upper[:,0]),np.array(upper[:,1]))
+        int_2_low = np.interp(int_1,np.array(lower[:,0]),np.array(lower[:,1]))
+
+        int_env = np.concatenate((np.array([int_1[:-1],int_2_up[:-1]]).T,\
+                                np.array([int_1[::-1],int_2_low[::-1]]).T),axis=0)
+
+        return int_env
 
     def envelope(self, silent=False, ch_list=[], append=''):
         """
@@ -5089,37 +5365,68 @@ class Results(object):
         return M_x_equiv
 
 
-class ManTurb64(object):
+class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
     mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
     """
 
-    def __init__(self):
-        self.man64_exe = 'mann_turb_x64.exe'
-        self.wine = 'WINEARCH=win64 WINEPREFIX=~/.wine64 wine'
+    def __init__(self, silent=False):
+        super(MannTurb64, self).__init__()
+        self.exe = 'time wine mann_turb_x64.exe'
+        # PBS configuration
+        self.umask = '003'
+        self.walltime = '00:59:59'
+        self.queue = 'workq'
+        self.lnodes = '1'
+        self.ppn = '1'
+        self.silent = silent
+        self.pbs_in_dir = 'pbs_in_turb/'
 
-    def run():
-        pass
-
-    def gen_pbs(cases):
+    def gen_pbs(self, cases):
 
         case0 = cases[list(cases.keys())[0]]
-        pbs = prepost.PBSScript()
-        # make sure the path's end with a trailing separator
-        pbs.pbsworkdir = os.path.join(case0['[run_dir]'], '')
-        pbs.path_pbs_e = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_o = os.path.join(case0['[pbs_out_dir]'], '')
-        pbs.path_pbs_i = os.path.join(case0['[pbs_in_dir]'], '')
-        pbs.check_dirs()
+        # make sure the path's end with a trailing separator, why??
+        self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
+        if not self.silent:
+            print('\nStart creating PBS files for turbulence with Mann64...')
         for cname, case in cases.items():
-            base = case['[case_id]']
-            pbs.path_pbs_e = os.path.join(case['[pbs_out_dir]'], base + '.err')
-            pbs.path_pbs_o = os.path.join(case['[pbs_out_dir]'], base + '.out')
-            pbs.path_pbs_i = os.path.join(case['[pbs_in_dir]'], base + '.pbs')
 
-            pbs.execute()
-            pbs.create()
+            # only relevant for cases with turbulence
+            if '[tu_model]' in case and int(case['[tu_model]']) == 0:
+                continue
+            if '[Turb base name]' not in case:
+                continue
+
+            base_name = case['[Turb base name]']
+            # pbs_in/out dir can contain subdirs, only take the inner directory
+            out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
+            turb = case['[turb_dir]']
+
+            self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
+            self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
+            self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
+
+            if case['[turb_db_dir]'] is not None:
+                self.prelude = 'cd %s' % case['[turb_db_dir]']
+            else:
+                self.prelude = 'cd %s' % case['[turb_dir]']
+
+            # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+            rpl = (float(case['[AlfaEpsilon]']),
+                   float(case['[L_mann]']),
+                   float(case['[Gamma]']),
+                   int(case['[tu_seed]']),
+                   int(case['[turb_nr_u]']),
+                   int(case['[turb_nr_v]']),
+                   int(case['[turb_nr_w]']),
+                   float(case['[turb_dx]']),
+                   float(case['[turb_dy]']),
+                   float(case['[turb_dz]']),
+                   int(case['[high_freq_comp]']))
+            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
+            self.execution = '%s %s %s' % (self.exe, base_name, params)
+            self.create(check_dirs=True)
 
 
 def eigenbody(cases, debug=False):

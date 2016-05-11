@@ -68,6 +68,16 @@ class Logger(object):
         self.logFile.flush()
 
 
+def path_split_dirs(path):
+    """
+    Return a list with dirnames. Ignore any leading "./"
+    """
+    dirs = path.split(os.path.sep)
+    if dirs[0] == '.':
+        dirs.pop(0)
+    return dirs
+
+
 def print_both(f, text, end='\n'):
     """
     Print both to a file and the console

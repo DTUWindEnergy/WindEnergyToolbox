@@ -1,8 +1,8 @@
 ### Standard Output 
-#PBS -N dlc01_steady_wsp10_noturb 
-#PBS -o ./pbs_out/dlc01_demos/dlc01_steady_wsp10_noturb.out
+#PBS -N dlc01_steady_wsp10_s100 
+#PBS -o ./pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.out
 ### Standard Error 
-#PBS -e ./pbs_out/dlc01_demos/dlc01_steady_wsp10_noturb.err
+#PBS -e ./pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err
 #PBS -W umask=003
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
 #PBS -l walltime=04:00:00
@@ -25,9 +25,9 @@ mkdir -p htc/dlc01_demos/
 mkdir -p res/dlc01_demos/
 mkdir -p logfiles/dlc01_demos/
 mkdir -p turb/
-cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp10_noturb.htc ./htc/dlc01_demos/
-cp -R $PBS_O_WORKDIR/../turb/none*.bin turb/ 
-time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_noturb.htc  &
+cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp10_s100.htc ./htc/dlc01_demos/
+cp -R $PBS_O_WORKDIR/../turb/turb_s100_10ms*.bin turb/ 
+time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc  &
 ### wait for jobs to finish 
 wait
 echo ""

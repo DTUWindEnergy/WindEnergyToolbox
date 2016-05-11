@@ -125,7 +125,7 @@
                  opt_tags set
 -------------------------------------------------------------------------------
                  [Case folder] : dlc01_demos         
-                    [Case id.] : dlc01_steady_wsp10_noturb
+                    [Case id.] : dlc01_steady_wsp10_s100
                  [Cut-in time] : -1                  
                 [Cut-out time] : -1                  
                          [DLC] : 01                  
@@ -146,9 +146,9 @@
                           [TI] : 0.2096              
           [Time pitch runaway] : 5000                
            [Time stuck DLC22b] : -1                  
-              [Turb base name] : none                
+              [Turb base name] : turb_s100_10ms      
                    [Windspeed] : 10                  
-                     [case_id] : dlc01_steady_wsp10_noturb
+                     [case_id] : dlc01_steady_wsp10_s100
                     [data_dir] : data/               
                  [dis_setbeta] : True                
                     [duration] : 20.0                
@@ -168,10 +168,10 @@
                           [t0] : 20                  
                    [time stop] : 40                  
                    [time_stop] : 40                  
-                    [tu_model] : 0                   
-                     [tu_seed] : 0                   
-              [turb_base_name] : none                
-                     [turb_dx] : 0.048828125         
+                    [tu_model] : 1                   
+                     [tu_seed] : 100                 
+              [turb_base_name] : turb_s100_10ms      
+                     [turb_dx] : 0.78125             
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.8                 

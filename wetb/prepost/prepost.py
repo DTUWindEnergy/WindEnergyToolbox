@@ -12,9 +12,6 @@ from io import open
 from future import standard_library
 standard_library.install_aliases()
 
-
-
-
 import os
 import copy
 
@@ -36,6 +33,9 @@ class PBSScript(object):
 #PBS -lnodes=[lnodes]:ppn=[ppn]
 ### Queue name
 #PBS -q [queue]
+
+### #PBS -a [start_time]
+### #PBS -W depend=afterany:[job_id]
 
 ### Browse to current working dir
 echo ""
@@ -75,13 +75,13 @@ exit
     def __init__(self):
 
         # PBS configuration
-        self.jobname = None
+        self.jobname = 'no_name_job'
         # relative paths with respect to PBS working directory
         self.path_pbs_o = 'pbs_out/dummy.out'
         self.path_pbs_e = 'pbs_out/dummy.err'
         self.path_pbs_i = 'pbs_in/dummy.pbs'
         # absolute path of the PBS working directory
-        self.pbsworkdir = None
+        self.pbsworkdir = './'
         self.umask = '003'
         self.walltime = '00:59:59'
         self.queue = 'workq'

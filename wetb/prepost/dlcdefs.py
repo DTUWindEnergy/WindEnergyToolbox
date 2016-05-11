@@ -208,6 +208,7 @@ def tags_defaults(master):
     master.tags['[log_dir]']       = 'logfiles/'
     master.tags['[meander_dir]']   = False
     master.tags['[opt_dir]']       = False
+    master.tags['[pbs_in_dir]']    = 'pbs_in/'
     master.tags['[pbs_out_dir]']   = 'pbs_out/'
     master.tags['[res_dir]']       = 'res/'
     master.tags['[iter_dir]']      = 'iter/'

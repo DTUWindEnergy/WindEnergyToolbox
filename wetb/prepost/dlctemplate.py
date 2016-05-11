@@ -32,7 +32,11 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
-if not socket.gethostname()[:2] == 'g-':
+if socket.gethostname()[:2] == 'g-':
+    RUNMETHOD = 'gorm'
+elif socket.gethostname()[:4] == 'jess':
+    RUNMETHOD = 'jess'
+else:
     plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
@@ -109,6 +113,22 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     master.tags['[model_zip]'] = PROJECT
     master.tags['[model_zip]'] += '_' + master.tags['[sim_id]'] + '.zip'
     # -------------------------------------------------------------------------
+    # FIXME: this is very ugly. We should read default values set in the htc
+    # master file with the HAWC2Wrapper !!
+    # default tags turbulence generator (required for 64-bit Mann generator)
+    # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+    master.tags['[AlfaEpsilon]'] = 1.0
+    master.tags['[L_mann]'] = 29.4
+    master.tags['[Gamma]'] = 3.0
+    master.tags['[tu_seed]'] = 0
+    master.tags['[turb_nr_u]'] = 8192
+    master.tags['[turb_nr_v]'] = 32
+    master.tags['[turb_nr_w]'] = 32
+    master.tags['[turb_dx]'] = 1
+    master.tags['[turb_dy]'] = 6.5
+    master.tags['[turb_dz]'] = 6.5
+    master.tags['[high_freq_comp]'] = 1
+    # -------------------------------------------------------------------------
 
     return master
 
@@ -162,7 +182,8 @@ def variable_tag_func(master, case_id_short=False):
 ### PRE- POST
 # =============================================================================
 
-def launch_dlcs_excel(sim_id, silent=False):
+def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
+                      runmethod=None, write_htc=True):
     """
     Launch load cases defined in Excel files
     """
@@ -195,12 +216,11 @@ def launch_dlcs_excel(sim_id, silent=False):
     for opt in opt_tags:
         opt['[zip_root_files]'] = f_ziproot
 
-    runmethod = 'gorm'
-#    runmethod = 'local-script'
-#    runmethod = 'windows-script'
-#    runmethod = 'jess'
+    if runmethod == None:
+        runmethod = RUNMETHOD
+
     master = master_tags(sim_id, runmethod=runmethod, silent=silent,
-                         verbose=False)
+                         verbose=verbose)
     master.tags['[sim_id]'] = sim_id
     master.output_dirs.append('[Case folder]')
     master.output_dirs.append('[Case id.]')
@@ -215,12 +235,18 @@ def launch_dlcs_excel(sim_id, silent=False):
     # variable_tag func is not required because everything is already done
     # in dlcdefs.excel_stabcon
     no_variable_tag_func = None
-    sim.prepare_launch(iter_dict, opt_tags, master, no_variable_tag_func,
-                       write_htc=True, runmethod=runmethod, verbose=False,
-                       copyback_turb=True, msg='', update_cases=False,
-                       ignore_non_unique=False, run_only_new=False,
-                       pbs_fname_appendix=False, short_job_names=False,
-                       silent=silent)
+    cases = sim.prepare_launch(iter_dict, opt_tags, master, no_variable_tag_func,
+                               write_htc=write_htc, runmethod=runmethod,
+                               copyback_turb=True, update_cases=False, msg='',
+                               ignore_non_unique=False, run_only_new=False,
+                               pbs_fname_appendix=False, short_job_names=False,
+                               silent=silent, verbose=verbose)
+
+    if pbs_turb:
+        # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
+        # MannTurb64 places PBS launch scripts in a "pbs_in_turb" folder
+        mann64 = sim.MannTurb64(silent=silent)
+        mann64.gen_pbs(cases)
 
 
 def launch_param(sim_id):
@@ -464,7 +490,7 @@ if __name__ == '__main__':
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
-        launch_dlcs_excel(sim_id)
+        launch_dlcs_excel(sim_id, silent=False)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
