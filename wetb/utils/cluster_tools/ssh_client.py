@@ -8,6 +8,10 @@ from io import StringIO
 import paramiko
 import os
 import sys
+import threading
+from _collections import deque
+import time
+import traceback
 
 class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
@@ -31,6 +35,7 @@ class SSHClient(object):
         self.disconnect += 1
         if self.client is None:
             self.connect()
+        return self.client
 
     def connect(self):
         if self.password is None:
@@ -50,14 +55,20 @@ class SSHClient(object):
             self.close()
 
 
-    def download(self, remotefilepath, localfile, verbose=False):
+    def download(self, remotefilepath, localfile, verbose=False, retry=1):
         if verbose:
             print ("Download %s > %s" % (remotefilepath, str(localfile)))
         with self:
-            if isinstance(localfile, (str, bytes, int)):
-                ret = self.sftp.get(remotefilepath, localfile)
-            elif hasattr(localfile, 'write'):
-                ret = self.sftp.putfo(remotefilepath, localfile)
+            for i in range(retry):
+                try:
+                    if isinstance(localfile, (str, bytes, int)):
+                        ret = self.sftp.get(remotefilepath, localfile)
+                    elif hasattr(localfile, 'write'):
+                        ret = self.sftp.putfo(remotefilepath, localfile)
+                    break
+                except:
+                    pass
+                print ("retry", i)
         if verbose:
             print (ret)
 
@@ -96,8 +107,12 @@ class SSHClient(object):
 
         if verbose:
             print (">>> " + command)
-        with self:
-            stdin, stdout, stderr = self.client.exec_command(command)
+        with self as ssh:
+            if ssh is None:
+                exc_info = sys.exc_info()
+                traceback.print_exception(*exc_info)
+                raise Exception("ssh_client exe ssh is NOne")
+            stdin, stdout, stderr = ssh.exec_command(command)
             if feed_password:
                 stdin.write(self.password + "\n")
                 stdin.flush()
@@ -142,6 +157,39 @@ class SSHClient(object):
                 files.append(file.strip())
         return files
 
+
+class SharedSSHClient(SSHClient):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None):
+        SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase)
+        self.shared_ssh_lock = threading.RLock()
+        self.shared_ssh_queue = deque()
+        self.next = None
+
+
+    def execute(self, command, sudo=False, verbose=False):
+        res = SSHClient.execute(self, command, sudo=sudo, verbose=verbose)
+        return res
+
+    def __enter__(self):
+        with self.shared_ssh_lock:
+            if self.next == threading.currentThread():
+                return self.client
+            self.shared_ssh_queue.append(threading.current_thread())
+            if self.next is None:
+                self.next = self.shared_ssh_queue.popleft()
+
+        while self.next != threading.currentThread():
+            time.sleep(1)
+        return self.client
+
+    def __exit__(self, *args):
+        with self.shared_ssh_lock:
+            if next != threading.current_thread():
+                with self.shared_ssh_lock:
+                    if len(self.shared_ssh_queue) > 0:
+                        self.next = self.shared_ssh_queue.popleft()
+                    else:
+                        self.next = None
 
 if __name__ == "__main__":
     from mmpe.ui.qt_ui import QtInputUI

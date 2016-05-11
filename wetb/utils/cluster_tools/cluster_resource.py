@@ -9,7 +9,9 @@ import threading
 import psutil
 
 from wetb.utils.cluster_tools import pbswrap
-from wetb.utils.cluster_tools.ssh_client import SSHClient
+from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
+from _collections import deque
+import time
 
 
 class Resource(object):
@@ -44,8 +46,10 @@ class Resource(object):
 class SSHPBSClusterResource(Resource, SSHClient):
     def __init__(self, host, username, password, port, min_cpu, min_free):
         Resource.__init__(self, min_cpu, min_free)
+        self.shared_ssh = SharedSSHClient(host, username, password, port)
         SSHClient.__init__(self, host, username, password, port=port)
         self.lock = threading.Lock()
+
 
     def new_ssh_connection(self):
         return SSHClient(self.host, self.username, self.password, self.port)
@@ -87,6 +91,8 @@ class SSHPBSClusterResource(Resource, SSHClient):
 
 
 
+
+
 class LocalResource(Resource):
     def __init__(self, process_name):
         N = max(1, multiprocessing.cpu_count() / 2)
@@ -97,11 +103,11 @@ class LocalResource(Resource):
     def check_resources(self):
         def name(i):
             try:
-                return psutil.Process(i).name
-            except (psutil._error.AccessDenied, psutil._error.NoSuchProcess):
+                return psutil.Process(i).name()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
                 return ""
 
         no_cpu = multiprocessing.cpu_count()
-        cpu_free = no_cpu - self.acquired  #(1 - psutil.cpu_percent(.5) / 100) * no_cpu
-        no_current_process = len([i for i in psutil.get_pid_list() if name(i).lower().startswith(self.process_name.lower())])
-        return no_cpu, cpu_free, no_current_process
+        cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
+        no_current_process = len([i for i in psutil.pids() if name(i).lower().startswith(self.process_name.lower())])
+        return no_cpu, cpu_free, self.acquired
