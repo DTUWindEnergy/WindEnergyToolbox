@@ -101,7 +101,7 @@ class LogInterpreter(object):
                     i1 = simulation_txt.rfind("Global time")
                     if i1 > -1:
                         self.current_time = self.extract_time(simulation_txt[i1:])
-                    if self.time_stop > 0:
+                    if self.current_time is not None and self.time_stop > 0:
                         self.pct = int(100 * self.current_time // self.time_stop)
                     try:
                         self.remaining_time = (time.time() - self.start_time[1]) / (self.current_time - self.start_time[0]) * (self.time_stop - self.current_time)
@@ -123,11 +123,11 @@ class LogInterpreter(object):
         if self.remaining_time:
             if self.remaining_time < 3600:
                 m, s = divmod(self.remaining_time, 60)
-                return "%02d:%02d" % (m, math.ceil(s))
+                return "%02d:%02d" % (m, int(s))
             else:
                 h, ms = divmod(self.remaining_time, 3600)
                 m, s = divmod(ms, 60)
-                return "%d:%02d:%02d" % (h, m, math.ceil(s))
+                return "%d:%02d:%02d" % (h, m, int(s))
         else:
             return "--:--"
 
