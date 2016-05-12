@@ -2543,12 +2543,12 @@ class ErrorLogs(object):
 
     # TODO: move to the HAWC2 plugin for cases
 
-    def __init__(self, silent=False, cases=None):
+    def __init__(self, silent=False, cases=None, resultfile='ErrorLog.csv'):
 
         self.silent = silent
         # specify folder which contains the log files
         self.PathToLogs = ''
-        self.ResultFile = 'ErrorLog.csv'
+        self.ResultFile = resultfile
 
         self.cases = cases
 
@@ -2863,7 +2863,7 @@ class ErrorLogs(object):
         else:
             self.save(appendlog=appendlog)
 
-    def save(self, appendlog=False):
+    def save(self, appendlog=False, suffix=None):
 
         # write the results in a file, start with a header
         contents = 'file name;' + 'lnr;msg;'*(self.init_cols)
@@ -2882,7 +2882,11 @@ class ErrorLogs(object):
             contents = contents + '\n'
 
         # write csv file to disk, append to facilitate more logfile analysis
-        fname = os.path.join(self.PathToLogs, str(self.ResultFile))
+        if isinstance(suffix, str):
+            tmp = self.ResultFile.replace('.csv', '_%s.csv' % suffix)
+            fname = os.path.join(self.PathToLogs, tmp)
+        else:
+            fname = os.path.join(self.PathToLogs, str(self.ResultFile))
         if not self.silent:
             print('Error log analysis saved at:')
             print(fname)
@@ -3318,7 +3322,7 @@ class WeibullParameters(object):
 
 def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     """
-    The function computes load envelopes for given channels and a groups of 
+    The function computes load envelopes for given channels and a groups of
     load cases starting from the envelopes computed for single simulations.
     The output is the envelope of the envelopes of the single simulations.
     This total envelope is projected on defined polar directions.
@@ -3326,7 +3330,7 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     Parameters
     ----------
 
-    envelope : dict, dictionaries of interpolated envelopes of a given 
+    envelope : dict, dictionaries of interpolated envelopes of a given
                     channel (it's important that each entry of the dictonary
                     contains a matrix of the same dimensions). The dictonary
                     is organized by load case
@@ -3335,28 +3339,28 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
 
     Nx : int, default=300
         Number of points for the envelope interpolation
-    
+
     Nsectors: int, default=12
         Number of sectors in which the total envelope will be divided. The
         default is every 30deg
-    
+
     Ntheta; int, default=181
         Number of angles in which the envelope is interpolated in polar
         coordinates.
-    
+
     Returns
     -------
 
-    envelope : array (Nsectors x 6), 
+    envelope : array (Nsectors x 6),
         Total envelope projected on the number of angles defined in Nsectors.
         The envelope is projected in Mx and My and the other cross-sectional
         moments and forces are fetched accordingly (at the same time step where
         the corresponding Mx and My are occuring)
 
     """
-    
+
     # Group all the single DLCs
-    cloud = np.zeros(((Nx+1)*len(envelope),6))   
+    cloud = np.zeros(((Nx+1)*len(envelope),6))
     for i in range(len(envelope)):
         cloud[(Nx+1)*i:(Nx+1)*(i+1),:] = envelope[dlc_list[i]]
     # Compute total Hull of all the envelopes
@@ -3367,10 +3371,10 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0], cc[:,1], Nx=Nx)
     # Project full envelope on given direction
     cc_proj = proj_envelope(cc_x, cc_up, cc_low, cc_int, Nx, Nsectors, Ntheta)
-    
+
     env_proj = np.zeros([len(cc_proj),6])
     env_proj[:,:2] = cc_proj
-    
+
     # Based on Mx and My, gather the remaining cross-sectional forces and
     # moments
     for ich in range(2, 6):
@@ -3378,18 +3382,18 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
         s1 = np.array(cloud[hull.vertices[0], ich]).reshape(-1, 1)
         s0 = np.append(s0, s1, axis=0)
         cc = np.append(cc, s0, axis=1)
-        
+
         _,_,_,extra_sensor = int_envelope(cc[:,0],cc[:,ich],Nx)
-        es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+        es = np.atleast_2d(np.array(extra_sensor[:,1])).T
         cc_int = np.append(cc_int,es,axis=1)
-    
+
         for isec in range(Nsectors):
             ids = (np.abs(cc_int[:,0]-cc_proj[isec,0])).argmin()
             env_proj[isec,ich] = (cc_int[ids-1,ich]+cc_int[ids,ich]+\
                                                     cc_int[ids+1,ich])/3
-            
+
     return env_proj
-    
+
 def int_envelope(ch1,ch2,Nx):
     # Function to interpolate envelopes and output arrays of same length
 
@@ -3411,8 +3415,8 @@ def int_envelope(ch1,ch2,Nx):
         lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,
                                 np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),
                                 axis=0)
-                            
-                        
+
+
     int_1 = np.linspace(min(upper[:,0].min(),lower[:,0].min()),
                         max(upper[:,0].max(),lower[:,0].max()),Nx/2+1)
     upper = np.flipud(upper)
@@ -3435,20 +3439,20 @@ def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
     theta_int = np.linspace(-np.pi,np.pi,Ntheta)
     sectors = np.linspace(-np.pi,np.pi,Nsectors+1)
     proj = np.zeros([Nsectors,2])
-    
+
     R_up = np.sqrt(env_x**2+env_up**2)
     theta_up = np.arctan2(env_up,env_x)
-    
+
     R_low = np.sqrt(env_x**2+env_low**2)
     theta_low = np.arctan2(env_low,env_x)
-        
+
     R = np.concatenate((R_up,R_low))
     theta = np.concatenate((theta_up,theta_low))
     R = R[np.argsort(theta)]
     theta = np.sort(theta)
-    
+
     R_int = np.interp(theta_int,theta,R,period=2*np.pi)
-                
+
     for i in range(Nsectors):
         if sectors[i]>=-np.pi and sectors[i+1]<-np.pi/2:
             indices = np.where(np.logical_and(theta_int >= sectors[i],
@@ -3478,17 +3482,17 @@ def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
             maxR = R_int[indices].max()
             proj[i,0] = maxR*np.cos(sectors[i])
             proj[i,1] = maxR*np.sin(sectors[i])
-    
-    ind = np.where(sectors==0)        
+
+    ind = np.where(sectors==0)
     proj[ind,0] = env[:,0].max()
 
-    ind = np.where(sectors==np.pi/2)        
+    ind = np.where(sectors==np.pi/2)
     proj[ind,1] = env[:,1].max()
 
-    ind = np.where(sectors==-np.pi)        
+    ind = np.where(sectors==-np.pi)
     proj[ind,0] = env[:,0].min()
 
-    ind = np.where(sectors==-np.pi/2)        
+    ind = np.where(sectors==-np.pi/2)
     proj[ind,1] = env[:,1].min()
 
     return proj
@@ -5094,8 +5098,8 @@ class Cases(object):
 
     def compute_envelope(self, sig, ch_list, int_env=False, Nx=300):
         """
-        The function computes load envelopes for given signals and a single 
-        load case. Starting from Mx and My moments, the other cross-sectional 
+        The function computes load envelopes for given signals and a single
+        load case. Starting from Mx and My moments, the other cross-sectional
         forces are identified.
 
         Parameters
@@ -5104,20 +5108,20 @@ class Cases(object):
         sig : list, time-series signal
 
         ch_list : list, list of channels for enevelope computation
-            
+
         int_env : boolean, default=False
-            If the logic parameter is True, the function will interpolate the 
+            If the logic parameter is True, the function will interpolate the
             envelope on a given number of points
 
         Nx : int, default=300
-            Number of points for the envelope interpolation        
-        
+            Number of points for the envelope interpolation
+
         Returns
         -------
 
-        envelope : dictionary, 
+        envelope : dictionary,
             The dictionary has entries refered to the channels selected.
-            Inside the dictonary under each entry there is a matrix with 6 
+            Inside the dictonary under each entry there is a matrix with 6
             columns, each for the sectional forces and moments
 
         """
@@ -5135,13 +5139,13 @@ class Cases(object):
             closed_contour = np.append(cloud[hull.vertices,:],
                                        cloud[hull.vertices[0],:].reshape(1,2),
                                        axis=0)
-            
+
             # Interpolate envelope for a given number of points
             if int_env:
                 _,_,_,closed_contour_int = int_envelope(closed_contour[:,0],
-                                                        closed_contour[:,1],Nx)                
-                
-             
+                                                        closed_contour[:,1],Nx)
+
+
             # Based on Mx and My envelope, the other cross-sectional moments
             # and forces components are identified and appended to the initial
             # envelope
@@ -5154,16 +5158,16 @@ class Cases(object):
                 if int_env:
                     _,_,_,extra_sensor = int_envelope(closed_contour[:,0],
                                                        closed_contour[:,ich],Nx)
-                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T
                     closed_contour_int = np.append(closed_contour_int,es,axis=1)
 
             if int_env:
                 envelope[ch[0]] = closed_contour_int
             else:
                 envelope[ch[0]] = closed_contour
-                
+
         return envelope
-    
+
     def int_envelope(ch1,ch2,Nx):
         # Function to interpolate envelopes and output arrays of same length
 
