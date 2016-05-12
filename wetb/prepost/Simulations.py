@@ -3664,7 +3664,7 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False, copy_pbs_failed=True):
+    def post_launch(self, save_iter=False, copy_pbs_failed=True, suffix=None):
         """
         Post Launching Maintenance
 
@@ -3672,7 +3672,8 @@ class Cases(object):
         accounted for.
         """
         # TODO: integrate global post_launch in here
-        self.cases_fail = post_launch(self.cases, save_iter=save_iter)
+        self.cases_fail = post_launch(self.cases, save_iter=save_iter,
+                                      suffix=suffix)
 
         if copy_pbs_failed:
             copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
