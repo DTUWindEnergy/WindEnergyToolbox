@@ -1047,7 +1047,7 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
               'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
 
-def post_launch(cases, save_iter=False, silent=False):
+def post_launch(cases, save_iter=False, silent=False, suffix=None):
     """
     Do some basics checks: do all launched cases have a result and LOG file
     and are there any errors in the LOG files?
@@ -1154,7 +1154,7 @@ def post_launch(cases, save_iter=False, silent=False):
     errorlogs.ResultFile = sim_id + '_ErrorLog.csv'
     # save the log file analysis in the run_dir instead of the log_dir
     errorlogs.PathToLogs = run_dir# + log_dir
-    errorlogs.save()
+    errorlogs.save(suffix=suffix)
 
     # save the error LOG list, this is redundant, since it already exists in
     # the general LOG file (but only as a print, not the python variable)
