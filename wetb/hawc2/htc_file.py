@@ -146,8 +146,10 @@ class HTCFile(HTCContents, HTCDefaults):
         if 'soil' in self:
             if 'soil_element' in self.soil:
                 files.append(self.soil.soil_element.get('datafile', [None])[0])
-        if 'force' in self:
-            files.append(self.force.get('dll', [None])[0])
+        try:
+            files.append(self.force.dll.dll[0])
+        except:
+            pass
 
         return [f for f in set(files) if f]
 
