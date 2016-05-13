@@ -1171,7 +1171,7 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
     return cases_fail
 
 
-def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
+def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
     is easy to re-launch them
@@ -1185,7 +1185,7 @@ def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
 
         src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
 
-        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', path)
         dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
 
         if not silent:
@@ -2685,11 +2685,22 @@ class ErrorLogs(object):
             tempLog = []
             tempLog.append(fname)
             exit_correct, found_error = False, False
+
+            subcols_sim = 4
+            subcols_init = 2
             # create empty list item for the different messages and line
             # number. Include one column for non identified messages
-            for j in range(self.init_cols + self.sim_cols + 1):
-                tempLog.append('')
-                tempLog.append('')
+            for j in range(self.init_cols):
+                # 2 sub-columns per message: nr, msg
+                for k in range(subcols_init):
+                    tempLog.append('')
+            for j in range(self.sim_cols):
+                # 4 sub-columns per message: first, last, nr, msg
+                for k in range(subcols_sim):
+                    tempLog.append('')
+            # and two more columns at the end for messages of unknown origin
+            tempLog.append('')
+            tempLog.append('')
 
             # if there is a cases object, see how many time steps we expect
             if self.cases is not None:
@@ -2733,32 +2744,51 @@ class ErrorLogs(object):
                     # if string is shorter, we just get a shorter string.
                     # checking presence in dict is faster compared to checking
                     # the length of the string
+                    # first, last, nr, msg
                     if msg in self.err_init:
-                        col_nr = self.err_init[msg]
-                        # 2nd item is the column position of the message
-                        tempLog[2*(col_nr+1)] = line
-                        # line number of the message
-                        tempLog[2*col_nr+1] += '%i, ' % j
+                        # icol=0 -> fname
+                        icol = subcols_init*self.err_init[msg] + 1
+                        # 0: number of occurances
+                        if tempLog[icol] == '':
+                            tempLog[icol] = '1'
+                        else:
+                            tempLog[icol] = str(int(tempLog[icol]) + 1)
+                        # 1: the error message itself
+                        tempLog[icol+1] = line
                         found_error = True
 
                 # find errors that can occur during simulation
                 elif msg in self.err_sim:
-                    col_nr = self.err_sim[msg] + self.init_cols
-                    # 2nd item is the column position of the message
-                    tempLog[2*(col_nr+1)] = line
+                    icol = subcols_sim*self.err_sim[msg]
+                    icol += subcols_init*self.init_cols + 1
                     # in case stuff already goes wrong on the first time step
                     if time_step == -1:
                         time_step = 0
-                    # line number of the message
-                    tempLog[2*col_nr+1] += '%i, ' % time_step
+
+                    # 1: time step of first occurance
+                    if tempLog[icol]  == '':
+                        tempLog[icol] = '%i' % time_step
+                    # 2: time step of last occurance
+                    tempLog[icol+1] = '%i' % time_step
+                    # 3: number of occurances
+                    if tempLog[icol+2] == '':
+                        tempLog[icol+2] = '1'
+                    else:
+                        tempLog[icol+2] = str(int(tempLog[icol+2]) + 1)
+                    # 4: the error message itself
+                    tempLog[icol+3] = line
+
                     found_error = True
                     iterations[time_step,2] = 1
 
                 # method of last resort, we have no idea what message
                 elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
-                    tempLog[-2] = line
+                    icol = subcols_sim*self.sim_cols
+                    icol += subcols_init*self.init_cols + 1
                     # line number of the message
-                    tempLog[-1] = j
+                    tempLog[icol] = j
+                    # and message
+                    tempLog[icol+1] = line
                     found_error = True
                     # in case stuff already goes wrong on the first time step
                     if time_step == -1:
@@ -2870,8 +2900,8 @@ class ErrorLogs(object):
     def save(self, appendlog=False, suffix=None):
 
         # write the results in a file, start with a header
-        contents = 'file name;' + 'lnr;msg;'*(self.init_cols)
-        contents += 'iter_nr;msg;'*(self.sim_cols)
+        contents = 'file name;' + 'nr;msg;'*(self.init_cols)
+        contents += 'first_tstep;last_tstep;nr;msg;'*(self.sim_cols)
         contents += 'lnr;msg;'
         # and add headers for elapsed time, nr of iterations, and sec/iteration
         contents += 'Elapsted time;last time step;Simulation time;'
@@ -3681,7 +3711,7 @@ class Cases(object):
                                       suffix=suffix, path_errorlog=path_errorlog)
 
         if copy_pbs_failed:
-            copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
+            copy_pbs_in_failedcases(self.cases_fail, path='pbs_in_fail',
                                     silent=silent)
 
         if self.rem_failed:
