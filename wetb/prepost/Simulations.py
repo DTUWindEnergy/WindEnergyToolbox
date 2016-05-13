@@ -3660,7 +3660,7 @@ class Cases(object):
             self.cases.pop(k)
 
     def launch(self, runmethod='local', verbose=False, copyback_turb=True,
-           silent=False, check_log=True):
+               silent=False, check_log=True):
         """
         Launch all cases
         """
@@ -3669,7 +3669,7 @@ class Cases(object):
                check_log=check_log, copyback_turb=copyback_turb)
 
     def post_launch(self, save_iter=False, copy_pbs_failed=True, suffix=None,
-                    path_errorlog=None):
+                    path_errorlog=None, silent=False):
         """
         Post Launching Maintenance
 
@@ -3682,7 +3682,7 @@ class Cases(object):
 
         if copy_pbs_failed:
             copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
-                                    silent=self.silent)
+                                    silent=silent)
 
         if self.rem_failed:
             self.remove_failed()
