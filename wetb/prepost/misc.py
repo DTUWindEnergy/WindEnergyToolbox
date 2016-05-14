@@ -726,7 +726,7 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
     df_list = {}
     # find all dlc defintions in the subfolders
     for root, dirs, files in os.walk(proot):
-        for file_name in files:
+        for file_name in sorted(files):
             if not file_name.split('.')[-1] == fext:
                 continue
             f_target = os.path.join(root, file_name)
