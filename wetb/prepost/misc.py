@@ -716,17 +716,16 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
     Returns
     -------
 
-    df_list : list
-        A list of pandas DataFrames. Each DataFrame corresponds to the
-        contents of a single Excel file that was found in proot or one of
-        its sub-directories
+    df_list : dictionary
+        A dictionary with the Excel file name (excluding 'fext') as key, and
+        the corresponding pandas DataFrame as value.
 
     """
 
     df_list = {}
     # find all dlc defintions in the subfolders
     for root, dirs, files in os.walk(proot):
-        for file_name in sorted(files):
+        for file_name in files:
             if not file_name.split('.')[-1] == fext:
                 continue
             f_target = os.path.join(root, file_name)

@@ -240,8 +240,8 @@ def tags_defaults(master):
     return master
 
 
-def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
-                  pinclude=None, silent=False):
+def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
+                  silent=False):
     """
     Read all MS Excel files that hold load case definitions according to
     the team STABCON definitions. Save each case in a list according to the
@@ -250,6 +250,9 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
     names: res, logfiles, htc, pbs_out, pbs_in, iter. Further some tags
     are added to be compatible with the tag convention in the Simulations
     module.
+
+    The opt_tags case list is sorted according to the Excel file names, and
+    follows the same ordering as in each of the different Excel files.
 
 
     Parameters
@@ -272,25 +275,32 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, sheet=0,
         Name or index of the Excel sheet to be considered. By default, the
         first sheet (index=0) is taken.
 
+    Returns
+    -------
+
+    opt_tags : list of dicts
+        A list of case dictionaries, where each case dictionary holds all
+        the tag/value key pairs for a single given case.
+
     """
     if not silent:
         print('looking for DLC spreadsheet definitions at:')
         print(proot)
-    df_list = misc.read_excel_files(proot, fext=fext, pignore=pignore,
+    dict_dfs = misc.read_excel_files(proot, fext=fext, pignore=pignore,
                                     sheet=sheet, pinclude=pinclude,
                                     silent=silent)
 
     if not silent:
-        print('found %i Excel file(s), ' % len(df_list), end='')
+        print('found %i Excel file(s), ' % len(dict_dfs), end='')
     k = 0
-    for df in df_list:
+    for df in dict_dfs:
         k += len(df)
     if not silent:
         print('in which a total of %s cases are defined.' % k)
 
     opt_tags = []
 
-    for (dlc, df) in viewitems(df_list):
+    for (dlc, df) in sorted(viewitems(dict_dfs)):
         # replace ';' with False, and Nan(='') with True
         # this is more easy when testing for the presence of stuff compared
         # to checking if a value is either True/False or ''/';'
