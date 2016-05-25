@@ -771,12 +771,12 @@ class MappingsH2HS2(object):
     def _body_structure_modes_hs(self, fname):
         self.body_freq_hs = hs2.results().load_cmb_df(fname)
 
-    def save(self, fpath):
+    def save(self, fpath, fname_prefix):
         """Save all the HAWC2 mappings created to fixed width text files
         similar to HAWCStab2.
         """
 
-        fname = 'hawc2_ss_mean_power_curve.txt'
+        fname = '%shawc2_ss_mean_power_curve.txt' % fname_prefix
         tmp = self.pwr_h2_mean.copy()
         tmp.set_index('windspeed', inplace=True)
         tmp.index.name = 'windspeed'
@@ -785,7 +785,7 @@ class MappingsH2HS2(object):
         np.savetxt(os.path.join(fpath, fname), tmp.to_records(), header=header,
                    fmt='% 01.06e  ')
 
-        fname = 'hawc2_ss_std_power_curve.txt'
+        fname = '%shawc2_ss_std_power_curve.txt' % fname_prefix
         tmp = self.pwr_h2_mean.copy()
         tmp.set_index('windspeed', inplace=True)
         tmp.index.name = 'windspeed'
