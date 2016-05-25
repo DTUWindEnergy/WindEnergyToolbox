@@ -4517,7 +4517,8 @@ class Cases(object):
                 # TODO: test this first
                 fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
                 dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                                   csv=csv, xlsx=xlsx, check_datatypes=False)
+                                   csv=csv, xlsx=xlsx, check_datatypes=False,
+                                   complib=self.complib)
 
                 df_dict2 = None
                 df_dict = None
@@ -4539,7 +4540,8 @@ class Cases(object):
             # TODO: test this first
             fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
             dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                               csv=csv, xlsx=xlsx, check_datatypes=False)
+                               csv=csv, xlsx=xlsx, check_datatypes=False,
+                               complib=self.complib)
 
         return dfs
 
@@ -4806,7 +4808,8 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_Leq')
         df_Leq = misc.dict2df(dict_Leq, fname, save=save, update=update,
-                              csv=csv, check_datatypes=True, xlsx=xlsx)
+                              csv=csv, check_datatypes=True, xlsx=xlsx,
+                              complib=self.complib)
 
         # only keep the ones that do not have nan's (only works with index)
         return df_Leq
@@ -4928,7 +4931,8 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_AEP')
         df_AEP = misc.dict2df(dict_AEP, fname, update=update, csv=csv,
-                              save=save, check_datatypes=True, xlsx=xlsx)
+                              save=save, check_datatypes=True, xlsx=xlsx,
+                              complib=self.complib)
 
         return df_AEP
 
