@@ -2585,7 +2585,7 @@ class ErrorLogs(object):
         self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
         #  *** ERROR *** In body actions
         self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
-        #  *** ERROR *** Command unknown
+        #  *** ERROR *** Command unknown and ignored
         self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
         #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
         self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
@@ -3615,6 +3615,7 @@ class Cases(object):
         self.loadstats = kwargs.get('loadstats', False)
         self.rem_failed = kwargs.get('rem_failed', True)
         self.config = kwargs.get('config', {})
+        self.complib = kwargs.get('complib', 'blosc')
         # determine the input argument scenario
         if len(args) == 1:
             if type(args[0]).__name__ == 'dict':
@@ -3853,7 +3854,7 @@ class Cases(object):
         return
 
     def cases2df(self):
-        """Convert the cases dict to a DataFrame and save as excel sheet"""
+        """Convert the cases dict to a DataFrame and check data types"""
 
         tag_set = []
 
@@ -4371,7 +4372,7 @@ class Cases(object):
                 fname = os.path.join(respath, resfile + '_postres.h5')
                 print('    saving post-processed res: %s...' % fname, end='')
                 df_new_sigs.to_hdf(fname, 'table', mode='w', format='table',
-                                   complevel=9, complib='blosc')
+                                   complevel=9, complib=self.complib)
                 print('done!')
                 del df_new_sigs
 
@@ -4588,18 +4589,18 @@ class Cases(object):
                 print('updating statistics: %s ...' % (post_dir + sim_id), end='')
                 try:
                     dfs.to_hdf('%s.h5' % fpath, 'table', mode='r+', append=True,
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=self.complib)
                 except IOError:
                     print('Can not update, file does not exist. Saving instead'
                           '...', end='')
                     dfs.to_hdf('%s.h5' % fpath, 'table', mode='w',
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=self.complib)
             else:
                 print('saving statistics: %s ...' % (post_dir + sim_id), end='')
                 if csv:
                     dfs.to_csv('%s.csv' % fpath)
                 dfs.to_hdf('%s.h5' % fpath, 'table', mode='w',
-                           format='table', complevel=9, complib='blosc')
+                           format='table', complevel=9, complib=self.complib)
 
             print('DONE!!\n')
 
