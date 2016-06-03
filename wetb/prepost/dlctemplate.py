@@ -363,7 +363,8 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                           'hub3-blade3-node-%03i-momentvec-y' % nn_blr]]
         i0, i1 = 0, -1
 
-        tags = list(cc.cases[list(cc.cases.keys())[0]].keys())
+        # in addition, sim_id and case_id are always added by default
+        tags = ['[Case folder]']
         add = None
         # general statistics for all channels channel
         df_stats = cc.statistics(calc_mech_power=True, i0=i0, i1=i1,
