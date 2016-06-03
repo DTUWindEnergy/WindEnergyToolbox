@@ -50,13 +50,13 @@ or know how set up such an environment, you skip to
 ```wetb``` contains extensions that need to be compiled.
 On Windows things are complicated because you need to use the same compiler as
 the one used for Python. This means that for compiling extensions on:
-    * Python 2.7 you need [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
+* Python 2.7 you need [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
 or the [direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
-    * Python 3.4 you need MS Visual Studio 2010
-    * Python 3.5 (and later) you need MS Visual Studio 2015
-    * You can install Microsoft Visual C++ Compiler for Python 2.7 alongside
-    MS Visual Studio 2010, but you can not install Visual Studio 2010 and 2015
-    in parallel.
+* Python 3.4 you need MS Visual Studio 2010
+* Python 3.5 (and later) you need MS Visual Studio 2015
+* You can install Microsoft Visual C++ Compiler for Python 2.7 alongside
+MS Visual Studio 2010, but you can not install Visual Studio 2010 and 2015
+in parallel.
 
 You can find more background information and installation instructions
 [here](https://packaging.python.org/en/latest/extensions/#setting-up-a-build-environment-on-windows),
