@@ -180,11 +180,14 @@ class DLCHighLevel(object):
         return fatigue_dist
 
     def files_dict(self):
+        fatigue_dlcs = self.dlc_df[['F' in str(l).upper() for l in self.dlc_df['load']]]['dlc']
+        if len(fatigue_dlcs) == 0:
+            return {}
         if not hasattr(self, "res_folder") or self.res_folder == "":
             files = glob.glob(os.path.join(self.res_path, "*.sel")) + glob.glob(os.path.join(self.res_path, "*/*.sel"))
         else:
             files = []
-            fatigue_dlcs = self.dlc_df[['F' in str(l).upper() for l in self.dlc_df['load']]]['dlc']
+
             for dlc_id in fatigue_dlcs:
                 dlc_id = str(dlc_id)
                 if "%" in self.res_folder:
