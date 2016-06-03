@@ -1047,7 +1047,8 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
               'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
 
-def post_launch(cases, save_iter=False, silent=False):
+def post_launch(cases, save_iter=False, silent=False, suffix=None,
+                path_errorlog=None):
     """
     Do some basics checks: do all launched cases have a result and LOG file
     and are there any errors in the LOG files?
@@ -1153,8 +1154,11 @@ def post_launch(cases, save_iter=False, silent=False):
     # but put in one level up, so in the logfiles folder directly
     errorlogs.ResultFile = sim_id + '_ErrorLog.csv'
     # save the log file analysis in the run_dir instead of the log_dir
-    errorlogs.PathToLogs = run_dir# + log_dir
-    errorlogs.save()
+    if path_errorlog is None:
+        errorlogs.PathToLogs = run_dir# + log_dir
+    else:
+        errorlogs.PathToLogs = path_errorlog
+    errorlogs.save(suffix=suffix)
 
     # save the error LOG list, this is redundant, since it already exists in
     # the general LOG file (but only as a print, not the python variable)
@@ -1167,7 +1171,7 @@ def post_launch(cases, save_iter=False, silent=False):
     return cases_fail
 
 
-def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
+def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
     is easy to re-launch them
@@ -1181,7 +1185,7 @@ def copy_pbs_in_failedcases(cases_fail, pbs_fail='pbs_in_fail', silent=True):
 
         src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
 
-        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', pbs_fail)
+        pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', path)
         dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
 
         if not silent:
@@ -2543,12 +2547,12 @@ class ErrorLogs(object):
 
     # TODO: move to the HAWC2 plugin for cases
 
-    def __init__(self, silent=False, cases=None):
+    def __init__(self, silent=False, cases=None, resultfile='ErrorLog.csv'):
 
         self.silent = silent
         # specify folder which contains the log files
         self.PathToLogs = ''
-        self.ResultFile = 'ErrorLog.csv'
+        self.ResultFile = resultfile
 
         self.cases = cases
 
@@ -2581,7 +2585,7 @@ class ErrorLogs(object):
         self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
         #  *** ERROR *** In body actions
         self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
-        #  *** ERROR *** Command unknown
+        #  *** ERROR *** Command unknown and ignored
         self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
         #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
         self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
@@ -2681,11 +2685,22 @@ class ErrorLogs(object):
             tempLog = []
             tempLog.append(fname)
             exit_correct, found_error = False, False
+
+            subcols_sim = 4
+            subcols_init = 2
             # create empty list item for the different messages and line
             # number. Include one column for non identified messages
-            for j in range(self.init_cols + self.sim_cols + 1):
-                tempLog.append('')
-                tempLog.append('')
+            for j in range(self.init_cols):
+                # 2 sub-columns per message: nr, msg
+                for k in range(subcols_init):
+                    tempLog.append('')
+            for j in range(self.sim_cols):
+                # 4 sub-columns per message: first, last, nr, msg
+                for k in range(subcols_sim):
+                    tempLog.append('')
+            # and two more columns at the end for messages of unknown origin
+            tempLog.append('')
+            tempLog.append('')
 
             # if there is a cases object, see how many time steps we expect
             if self.cases is not None:
@@ -2729,32 +2744,51 @@ class ErrorLogs(object):
                     # if string is shorter, we just get a shorter string.
                     # checking presence in dict is faster compared to checking
                     # the length of the string
+                    # first, last, nr, msg
                     if msg in self.err_init:
-                        col_nr = self.err_init[msg]
-                        # 2nd item is the column position of the message
-                        tempLog[2*(col_nr+1)] = line
-                        # line number of the message
-                        tempLog[2*col_nr+1] += '%i, ' % j
+                        # icol=0 -> fname
+                        icol = subcols_init*self.err_init[msg] + 1
+                        # 0: number of occurances
+                        if tempLog[icol] == '':
+                            tempLog[icol] = '1'
+                        else:
+                            tempLog[icol] = str(int(tempLog[icol]) + 1)
+                        # 1: the error message itself
+                        tempLog[icol+1] = line
                         found_error = True
 
                 # find errors that can occur during simulation
                 elif msg in self.err_sim:
-                    col_nr = self.err_sim[msg] + self.init_cols
-                    # 2nd item is the column position of the message
-                    tempLog[2*(col_nr+1)] = line
+                    icol = subcols_sim*self.err_sim[msg]
+                    icol += subcols_init*self.init_cols + 1
                     # in case stuff already goes wrong on the first time step
                     if time_step == -1:
                         time_step = 0
-                    # line number of the message
-                    tempLog[2*col_nr+1] += '%i, ' % time_step
+
+                    # 1: time step of first occurance
+                    if tempLog[icol]  == '':
+                        tempLog[icol] = '%i' % time_step
+                    # 2: time step of last occurance
+                    tempLog[icol+1] = '%i' % time_step
+                    # 3: number of occurances
+                    if tempLog[icol+2] == '':
+                        tempLog[icol+2] = '1'
+                    else:
+                        tempLog[icol+2] = str(int(tempLog[icol+2]) + 1)
+                    # 4: the error message itself
+                    tempLog[icol+3] = line
+
                     found_error = True
                     iterations[time_step,2] = 1
 
                 # method of last resort, we have no idea what message
                 elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
-                    tempLog[-2] = line
+                    icol = subcols_sim*self.sim_cols
+                    icol += subcols_init*self.init_cols + 1
                     # line number of the message
-                    tempLog[-1] = j
+                    tempLog[icol] = j
+                    # and message
+                    tempLog[icol+1] = line
                     found_error = True
                     # in case stuff already goes wrong on the first time step
                     if time_step == -1:
@@ -2863,11 +2897,11 @@ class ErrorLogs(object):
         else:
             self.save(appendlog=appendlog)
 
-    def save(self, appendlog=False):
+    def save(self, appendlog=False, suffix=None):
 
         # write the results in a file, start with a header
-        contents = 'file name;' + 'lnr;msg;'*(self.init_cols)
-        contents += 'iter_nr;msg;'*(self.sim_cols)
+        contents = 'file name;' + 'nr;msg;'*(self.init_cols)
+        contents += 'first_tstep;last_tstep;nr;msg;'*(self.sim_cols)
         contents += 'lnr;msg;'
         # and add headers for elapsed time, nr of iterations, and sec/iteration
         contents += 'Elapsted time;last time step;Simulation time;'
@@ -2882,7 +2916,11 @@ class ErrorLogs(object):
             contents = contents + '\n'
 
         # write csv file to disk, append to facilitate more logfile analysis
-        fname = os.path.join(self.PathToLogs, str(self.ResultFile))
+        if isinstance(suffix, str):
+            tmp = self.ResultFile.replace('.csv', '_%s.csv' % suffix)
+            fname = os.path.join(self.PathToLogs, tmp)
+        else:
+            fname = os.path.join(self.PathToLogs, str(self.ResultFile))
         if not self.silent:
             print('Error log analysis saved at:')
             print(fname)
@@ -3318,7 +3356,7 @@ class WeibullParameters(object):
 
 def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     """
-    The function computes load envelopes for given channels and a groups of 
+    The function computes load envelopes for given channels and a groups of
     load cases starting from the envelopes computed for single simulations.
     The output is the envelope of the envelopes of the single simulations.
     This total envelope is projected on defined polar directions.
@@ -3326,7 +3364,7 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     Parameters
     ----------
 
-    envelope : dict, dictionaries of interpolated envelopes of a given 
+    envelope : dict, dictionaries of interpolated envelopes of a given
                     channel (it's important that each entry of the dictonary
                     contains a matrix of the same dimensions). The dictonary
                     is organized by load case
@@ -3335,28 +3373,28 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
 
     Nx : int, default=300
         Number of points for the envelope interpolation
-    
+
     Nsectors: int, default=12
         Number of sectors in which the total envelope will be divided. The
         default is every 30deg
-    
+
     Ntheta; int, default=181
         Number of angles in which the envelope is interpolated in polar
         coordinates.
-    
+
     Returns
     -------
 
-    envelope : array (Nsectors x 6), 
+    envelope : array (Nsectors x 6),
         Total envelope projected on the number of angles defined in Nsectors.
         The envelope is projected in Mx and My and the other cross-sectional
         moments and forces are fetched accordingly (at the same time step where
         the corresponding Mx and My are occuring)
 
     """
-    
+
     # Group all the single DLCs
-    cloud = np.zeros(((Nx+1)*len(envelope),6))   
+    cloud = np.zeros(((Nx+1)*len(envelope),6))
     for i in range(len(envelope)):
         cloud[(Nx+1)*i:(Nx+1)*(i+1),:] = envelope[dlc_list[i]]
     # Compute total Hull of all the envelopes
@@ -3367,10 +3405,10 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
     cc_x,cc_up,cc_low,cc_int= int_envelope(cc[:,0], cc[:,1], Nx=Nx)
     # Project full envelope on given direction
     cc_proj = proj_envelope(cc_x, cc_up, cc_low, cc_int, Nx, Nsectors, Ntheta)
-    
+
     env_proj = np.zeros([len(cc_proj),6])
     env_proj[:,:2] = cc_proj
-    
+
     # Based on Mx and My, gather the remaining cross-sectional forces and
     # moments
     for ich in range(2, 6):
@@ -3378,18 +3416,18 @@ def compute_env_of_env(envelope, dlc_list, Nx=300, Nsectors=12, Ntheta=181):
         s1 = np.array(cloud[hull.vertices[0], ich]).reshape(-1, 1)
         s0 = np.append(s0, s1, axis=0)
         cc = np.append(cc, s0, axis=1)
-        
+
         _,_,_,extra_sensor = int_envelope(cc[:,0],cc[:,ich],Nx)
-        es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+        es = np.atleast_2d(np.array(extra_sensor[:,1])).T
         cc_int = np.append(cc_int,es,axis=1)
-    
+
         for isec in range(Nsectors):
             ids = (np.abs(cc_int[:,0]-cc_proj[isec,0])).argmin()
             env_proj[isec,ich] = (cc_int[ids-1,ich]+cc_int[ids,ich]+\
                                                     cc_int[ids+1,ich])/3
-            
+
     return env_proj
-    
+
 def int_envelope(ch1,ch2,Nx):
     # Function to interpolate envelopes and output arrays of same length
 
@@ -3411,8 +3449,8 @@ def int_envelope(ch1,ch2,Nx):
         lower = np.concatenate((np.array([ch1[indmin:],ch2[indmin:]]).T,
                                 np.array([ch1[:indmax+1],ch2[:indmax+1]]).T),
                                 axis=0)
-                            
-                        
+
+
     int_1 = np.linspace(min(upper[:,0].min(),lower[:,0].min()),
                         max(upper[:,0].max(),lower[:,0].max()),Nx/2+1)
     upper = np.flipud(upper)
@@ -3435,20 +3473,20 @@ def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
     theta_int = np.linspace(-np.pi,np.pi,Ntheta)
     sectors = np.linspace(-np.pi,np.pi,Nsectors+1)
     proj = np.zeros([Nsectors,2])
-    
+
     R_up = np.sqrt(env_x**2+env_up**2)
     theta_up = np.arctan2(env_up,env_x)
-    
+
     R_low = np.sqrt(env_x**2+env_low**2)
     theta_low = np.arctan2(env_low,env_x)
-        
+
     R = np.concatenate((R_up,R_low))
     theta = np.concatenate((theta_up,theta_low))
     R = R[np.argsort(theta)]
     theta = np.sort(theta)
-    
+
     R_int = np.interp(theta_int,theta,R,period=2*np.pi)
-                
+
     for i in range(Nsectors):
         if sectors[i]>=-np.pi and sectors[i+1]<-np.pi/2:
             indices = np.where(np.logical_and(theta_int >= sectors[i],
@@ -3478,17 +3516,17 @@ def proj_envelope(env_x, env_up, env_low, env, Nx, Nsectors, Ntheta):
             maxR = R_int[indices].max()
             proj[i,0] = maxR*np.cos(sectors[i])
             proj[i,1] = maxR*np.sin(sectors[i])
-    
-    ind = np.where(sectors==0)        
+
+    ind = np.where(sectors==0)
     proj[ind,0] = env[:,0].max()
 
-    ind = np.where(sectors==np.pi/2)        
+    ind = np.where(sectors==np.pi/2)
     proj[ind,1] = env[:,1].max()
 
-    ind = np.where(sectors==-np.pi)        
+    ind = np.where(sectors==-np.pi)
     proj[ind,0] = env[:,0].min()
 
-    ind = np.where(sectors==-np.pi/2)        
+    ind = np.where(sectors==-np.pi/2)
     proj[ind,1] = env[:,1].min()
 
     return proj
@@ -3577,6 +3615,7 @@ class Cases(object):
         self.loadstats = kwargs.get('loadstats', False)
         self.rem_failed = kwargs.get('rem_failed', True)
         self.config = kwargs.get('config', {})
+        self.complib = kwargs.get('complib', 'blosc')
         # determine the input argument scenario
         if len(args) == 1:
             if type(args[0]).__name__ == 'dict':
@@ -3652,7 +3691,7 @@ class Cases(object):
             self.cases.pop(k)
 
     def launch(self, runmethod='local', verbose=False, copyback_turb=True,
-           silent=False, check_log=True):
+               silent=False, check_log=True):
         """
         Launch all cases
         """
@@ -3660,7 +3699,8 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False, copy_pbs_failed=True):
+    def post_launch(self, save_iter=False, copy_pbs_failed=True, suffix=None,
+                    path_errorlog=None, silent=False):
         """
         Post Launching Maintenance
 
@@ -3668,11 +3708,12 @@ class Cases(object):
         accounted for.
         """
         # TODO: integrate global post_launch in here
-        self.cases_fail = post_launch(self.cases, save_iter=save_iter)
+        self.cases_fail = post_launch(self.cases, save_iter=save_iter,
+                                      suffix=suffix, path_errorlog=path_errorlog)
 
         if copy_pbs_failed:
-            copy_pbs_in_failedcases(self.cases_fail, pbs_in_fail='pbs_in_fail',
-                                    silent=self.silent)
+            copy_pbs_in_failedcases(self.cases_fail, path='pbs_in_fail',
+                                    silent=silent)
 
         if self.rem_failed:
             self.remove_failed()
@@ -3813,7 +3854,7 @@ class Cases(object):
         return
 
     def cases2df(self):
-        """Convert the cases dict to a DataFrame and save as excel sheet"""
+        """Convert the cases dict to a DataFrame and check data types"""
 
         tag_set = []
 
@@ -4331,7 +4372,7 @@ class Cases(object):
                 fname = os.path.join(respath, resfile + '_postres.h5')
                 print('    saving post-processed res: %s...' % fname, end='')
                 df_new_sigs.to_hdf(fname, 'table', mode='w', format='table',
-                                   complevel=9, complib='blosc')
+                                   complevel=9, complib=self.complib)
                 print('done!')
                 del df_new_sigs
 
@@ -4476,7 +4517,8 @@ class Cases(object):
                 # TODO: test this first
                 fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
                 dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                                   csv=csv, xlsx=xlsx, check_datatypes=False)
+                                   csv=csv, xlsx=xlsx, check_datatypes=False,
+                                   complib=self.complib)
 
                 df_dict2 = None
                 df_dict = None
@@ -4498,7 +4540,8 @@ class Cases(object):
             # TODO: test this first
             fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
             dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
-                               csv=csv, xlsx=xlsx, check_datatypes=False)
+                               csv=csv, xlsx=xlsx, check_datatypes=False,
+                               complib=self.complib)
 
         return dfs
 
@@ -4548,18 +4591,18 @@ class Cases(object):
                 print('updating statistics: %s ...' % (post_dir + sim_id), end='')
                 try:
                     dfs.to_hdf('%s.h5' % fpath, 'table', mode='r+', append=True,
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=self.complib)
                 except IOError:
                     print('Can not update, file does not exist. Saving instead'
                           '...', end='')
                     dfs.to_hdf('%s.h5' % fpath, 'table', mode='w',
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=self.complib)
             else:
                 print('saving statistics: %s ...' % (post_dir + sim_id), end='')
                 if csv:
                     dfs.to_csv('%s.csv' % fpath)
                 dfs.to_hdf('%s.h5' % fpath, 'table', mode='w',
-                           format='table', complevel=9, complib='blosc')
+                           format='table', complevel=9, complib=self.complib)
 
             print('DONE!!\n')
 
@@ -4765,7 +4808,8 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_Leq')
         df_Leq = misc.dict2df(dict_Leq, fname, save=save, update=update,
-                              csv=csv, check_datatypes=True, xlsx=xlsx)
+                              csv=csv, check_datatypes=True, xlsx=xlsx,
+                              complib=self.complib)
 
         # only keep the ones that do not have nan's (only works with index)
         return df_Leq
@@ -4887,7 +4931,8 @@ class Cases(object):
         # make consistent data types, and convert to DataFrame
         fname = os.path.join(post_dir, sim_id + '_AEP')
         df_AEP = misc.dict2df(dict_AEP, fname, update=update, csv=csv,
-                              save=save, check_datatypes=True, xlsx=xlsx)
+                              save=save, check_datatypes=True, xlsx=xlsx,
+                              complib=self.complib)
 
         return df_AEP
 
@@ -5094,8 +5139,8 @@ class Cases(object):
 
     def compute_envelope(self, sig, ch_list, int_env=False, Nx=300):
         """
-        The function computes load envelopes for given signals and a single 
-        load case. Starting from Mx and My moments, the other cross-sectional 
+        The function computes load envelopes for given signals and a single
+        load case. Starting from Mx and My moments, the other cross-sectional
         forces are identified.
 
         Parameters
@@ -5104,20 +5149,20 @@ class Cases(object):
         sig : list, time-series signal
 
         ch_list : list, list of channels for enevelope computation
-            
+
         int_env : boolean, default=False
-            If the logic parameter is True, the function will interpolate the 
+            If the logic parameter is True, the function will interpolate the
             envelope on a given number of points
 
         Nx : int, default=300
-            Number of points for the envelope interpolation        
-        
+            Number of points for the envelope interpolation
+
         Returns
         -------
 
-        envelope : dictionary, 
+        envelope : dictionary,
             The dictionary has entries refered to the channels selected.
-            Inside the dictonary under each entry there is a matrix with 6 
+            Inside the dictonary under each entry there is a matrix with 6
             columns, each for the sectional forces and moments
 
         """
@@ -5135,13 +5180,13 @@ class Cases(object):
             closed_contour = np.append(cloud[hull.vertices,:],
                                        cloud[hull.vertices[0],:].reshape(1,2),
                                        axis=0)
-            
+
             # Interpolate envelope for a given number of points
             if int_env:
                 _,_,_,closed_contour_int = int_envelope(closed_contour[:,0],
-                                                        closed_contour[:,1],Nx)                
-                
-             
+                                                        closed_contour[:,1],Nx)
+
+
             # Based on Mx and My envelope, the other cross-sectional moments
             # and forces components are identified and appended to the initial
             # envelope
@@ -5154,16 +5199,16 @@ class Cases(object):
                 if int_env:
                     _,_,_,extra_sensor = int_envelope(closed_contour[:,0],
                                                        closed_contour[:,ich],Nx)
-                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T                                        
+                    es = np.atleast_2d(np.array(extra_sensor[:,1])).T
                     closed_contour_int = np.append(closed_contour_int,es,axis=1)
 
             if int_env:
                 envelope[ch[0]] = closed_contour_int
             else:
                 envelope[ch[0]] = closed_contour
-                
+
         return envelope
-    
+
     def int_envelope(ch1,ch2,Nx):
         # Function to interpolate envelopes and output arrays of same length
 

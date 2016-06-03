@@ -459,7 +459,7 @@ class Sims(object):
 
         return tune_tags
 
-    def post_processing(self, statistics=True, resdir=None,
+    def post_processing(self, statistics=True, resdir=None, complib='blosc',
                         calc_mech_power=False):
         """
         Parameters
@@ -478,7 +478,7 @@ class Sims(object):
         # logfile analysis is written to a csv file in logfiles directory
         # =========================================================================
         # load the file saved in post_dir
-        cc = sim.Cases(post_dir, self.sim_id, rem_failed=False)
+        cc = sim.Cases(post_dir, self.sim_id, rem_failed=False, complib=complib)
 
         if resdir is None:
             # we keep the run_dir as defined during launch
@@ -770,6 +770,29 @@ class MappingsH2HS2(object):
 
     def _body_structure_modes_hs(self, fname):
         self.body_freq_hs = hs2.results().load_cmb_df(fname)
+
+    def save(self, fpath, fname_prefix):
+        """Save all the HAWC2 mappings created to fixed width text files
+        similar to HAWCStab2.
+        """
+
+        fname = '%shawc2_ss_mean_power_curve.txt' % fname_prefix
+        tmp = self.pwr_h2_mean.copy()
+        tmp.set_index('windspeed', inplace=True)
+        tmp.index.name = 'windspeed'
+        header = ''.join(['%16s' % k for k in self.pwr_h2_mean.columns])
+        header = '  windspeed' + header
+        np.savetxt(os.path.join(fpath, fname), tmp.to_records(), header=header,
+                   fmt='% 01.06e  ')
+
+        fname = '%shawc2_ss_std_power_curve.txt' % fname_prefix
+        tmp = self.pwr_h2_mean.copy()
+        tmp.set_index('windspeed', inplace=True)
+        tmp.index.name = 'windspeed'
+        header = ''.join(['%16s' % k for k in self.pwr_h2_mean.columns])
+        header = '  windspeed' + header
+        np.savetxt(os.path.join(fpath, fname), tmp.to_records(), header=header,
+                   fmt='% 01.06e  ')
 
 
 class Plots(object):

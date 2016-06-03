@@ -716,10 +716,9 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
     Returns
     -------
 
-    df_list : list
-        A list of pandas DataFrames. Each DataFrame corresponds to the
-        contents of a single Excel file that was found in proot or one of
-        its sub-directories
+    df_list : dictionary
+        A dictionary with the Excel file name (excluding 'fext') as key, and
+        the corresponding pandas DataFrame as value.
 
     """
 
@@ -1025,7 +1024,8 @@ def df_dict_check_datatypes(df_dict):
 
 
 def dict2df(df_dict, fname, save=True, update=False, csv=False, colsort=None,
-            check_datatypes=False, rowsort=None, csv_index=False, xlsx=False):
+            check_datatypes=False, rowsort=None, csv_index=False, xlsx=False,
+            complib='blosc'):
         """
         Convert the df_dict to df and save/update if required. If converting
         to df fails, pickle the object. Optionally save as csv too.
@@ -1089,12 +1089,12 @@ def dict2df(df_dict, fname, save=True, update=False, csv=False, colsort=None,
                 print('updating: %s ...' % (fname), end='')
                 try:
                     dfs.to_hdf('%s.h5' % fname, 'table', mode='r+', append=True,
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=complib)
                 except IOError:
                     print('Can not update, file does not exist. Saving instead'
                           '...', end='')
                     dfs.to_hdf('%s.h5' % fname, 'table', mode='w',
-                               format='table', complevel=9, complib='blosc')
+                               format='table', complevel=9, complib=complib)
             else:
                 print('saving: %s ...' % (fname), end='')
                 if csv:
@@ -1102,7 +1102,7 @@ def dict2df(df_dict, fname, save=True, update=False, csv=False, colsort=None,
                 if xlsx:
                     dfs.to_excel('%s.xlsx' % fname, index=csv_index)
                 dfs.to_hdf('%s.h5' % fname, 'table', mode='w',
-                           format='table', complevel=9, complib='blosc')
+                           format='table', complevel=9, complib=complib)
 
             print('DONE!!\n')
 
