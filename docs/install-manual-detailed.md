@@ -98,6 +98,13 @@ if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
 
 * Anaconda is a professional grade, full blown scientific Python distribution.
 
+* Download and install Anaconda from
+[https://www.continuum.io/downloads](https://www.continuum.io/downloads).
+
+> Note: the choice of Anaconda for Python 2.7 or Python 3.5 only affects the
+root environment. You can always create additional environments using other
+Python versions, see below.
+
 * Update the root Anaconda environment (type in a terminal):
 
 ```
