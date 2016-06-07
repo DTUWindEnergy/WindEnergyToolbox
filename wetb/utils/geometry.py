@@ -168,9 +168,9 @@ def abvrel2xyz(alpha, beta, vrel):
     Parameters
     ----------
     alpha : array_like
-        Pitot tube angle of attack. Zero: Parallel to pitot tube. Positive: Flow from wind side (pressure side)
+        Pitot tube angle of attack [rad]. Zero: Parallel to pitot tube. Positive: Flow from wind side (pressure side)
     beta : array_like
-        Pitot tube side slip angle. Zero: Parallel to pitot tube. Positive: Flow from root side
+        Pitot tube side slip angle [rad]. Zero: Parallel to pitot tube. Positive: Flow from root side
     vrel : array_like
         Pitot tube relative velocity. Positive: flow towards pitot tube
 
