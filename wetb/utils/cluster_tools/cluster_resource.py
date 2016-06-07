@@ -24,7 +24,10 @@ class Resource(object):
 
     def ok2submit(self):
         """Always ok to have min_cpu cpus and ok to have more if there are min_free free cpus"""
-        total, free, user = self.check_resources()
+        try:
+            total, free, user = self.check_resources()
+        except:
+            return False
 
         if user < self.min_cpu:
             return True
@@ -75,9 +78,7 @@ class SSHPBSClusterResource(Resource, SSHClient):
                 cpu_free, nodeSum = pbswrap.count_cpus(users, host, pbsnodes)
 
                 return nodeSum['used_cpu'] + cpu_free, cpu_free, cpu_user
-            except IOError as e:
-                raise e
-            except:
+            except Exception as e:
                 raise EnvironmentError("check resources failed")
 
     def jobids(self, jobname_prefix):
