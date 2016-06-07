@@ -18,6 +18,10 @@ Installation instructions follow in alphabetical orderby platorm.
 
 ## Linux
 
+* Basic dependencies:
+
+> python (3.5 recommended) git gcc gcc-fortran (gfortran)
+
 * Use either your system package manager, pip + virtualenv, or Anaconda to
 install the following python dependencies:
 
@@ -27,25 +31,37 @@ install the following python dependencies:
 Note that often the pytables packages is called python-tables instead of
 python-pytables.
 
-* Other tools you will need:
 
-> git gcc gcc-fortran (gfortran)
-
-
-## Mac
+## Dependencies on Mac
 
 People who now how to handle Python on the Mac side are kindly requested to
 complete this guide :-)
 
 
-## Windows
+## Dependencies on Windows
 
 A Python installation with compilers is required. If you already have this,
 or know how set up such an environment, you skip to
 [here](install-manual-detailed.md#and-finally-install-wetb).
 
 
-### Microsft Visual Studio 2010
+### Microsft Visual Studio 2010 Compiler
+
+```wetb``` contains extensions that need to be compiled.
+On Windows things are complicated because you need to use the same compiler as
+the one used for Python. This means that for compiling extensions on:
+* Python 2.7 you need [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
+or the [direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
+* Python 3.4 you need MS Visual Studio 2010
+* Python 3.5 (and later) you need MS Visual Studio 2015
+* You can install Microsoft Visual C++ Compiler for Python 2.7 alongside
+MS Visual Studio 2010, but you can not install Visual Studio 2010 and 2015
+in parallel.
+
+You can find more background information and installation instructions
+[here](https://packaging.python.org/en/latest/extensions/#setting-up-a-build-environment-on-windows),
+[here](https://blogs.msdn.microsoft.com/pythonengineering/2016/04/11/unable-to-find-vcvarsall-bat/),
+or [here](http://stevedower.id.au/blog/building-for-python-3-5-part-two/).
 
 
 ### Command line
@@ -76,39 +92,50 @@ if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
 [tortoisegit](https://tortoisegit.org/)
 
 
-### Option 1: Anaconda (large download)
+## Recommended python distribution: Anaconda
+
+### Installing Anaconda, activate root environment
 
 * Anaconda is a professional grade, full blown scientific Python distribution.
 
-* Download Anaconda Python 2.7 for Windows [here](https://www.continuum.io/downloads).
-Depening on whether you already have a Python system installation, or another
-Anaconda version, you can should chose wisely between the two offered options:
+* Download and install Anaconda from
+[https://www.continuum.io/downloads](https://www.continuum.io/downloads).
 
-    * Add Anaconda to the system PATH: you can only have one Anaconda installation
-added to your path, but you can have multiple Anaconda or Miniconda installations
-in parallelel.
+> Note: the choice of Anaconda for Python 2.7 or Python 3.5 only affects the
+root environment. You can always create additional environments using other
+Python versions, see below.
 
-    * Set as your Python default system installation (you can only have one Python
-installation set as your systems default).
-
-
-* Although the ```wetb``` module is Python 3.5 compatible, compiling it under
-Windows requires MS Visual Studio 2015. When using Visual Studio 2010, you can
-compile extensions for both Python 2.7 and Python 3.4. If you want to use
-Python 3+, we recommend to use 3.4 for the time being, unless if you know what
-you are doing (and wouldn't care to share installation instructions):
-
-* Update the root Anaconda environment:
+* Update the root Anaconda environment (type in a terminal):
 
 ```
 conda update --all
 ```
 
-* You can now create an independent environment with a specific python version:
+* Activate the Anaconda root environment in a terminal as follows:
+
+```
+activate
+```
+
+and your terminal will do something like:
+```
+C:\Users\> activate
+[Anaconda3] C:\Users\>
+```
+note that the name of the environment is now a prefix before the current path.
+
+use ```deactivate``` to deactivate the environment.
+
+
+### Optionally, create other independent Anaconda environments
+
+* By using environments you can manage different Python installations with
+different versions on your system. Creating environments is as easy as:
 
 ```
 conda create -n py27 python=2.7
 conda create -n py34 python=3.4
+conda create -n py35 python=3.5
 ```
 
 * These environments can be activated as follows:
@@ -116,48 +143,10 @@ conda create -n py34 python=3.4
 ```
 activate py27
 activate py34
+activate py35
 ```
 
 use ```deactivate``` to deactivate the environment.
-
-
-* You can only have the full Anaconda distribution in the root environment.
-When creating new environments you will have to manually install all packages
-you require for that specific environment.
-
-
-### Option 2: Miniconda (smaller download)
-
-* MS Visual Studio 2010
-
-* For building Python packages with Python 2.7,
-[http://aka.ms/vcpython27](http://aka.ms/vcpython27), here's the
-[direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
-
-* Download the latest Python 3 (!!) Miniconda installer for your platform
-[here](http://conda.pydata.org/miniconda.html)
-
-* No need to worry about Python 2 or 3 at this stage. You can still use the
-Python 3 installer for creating Python 2 conda environments
-
-* Before creating/activation/updating any specific miniconda environemnt,
-update the global miniconda environment (conda, pip, etc)
-
-```
-conda update --all
-```
-
-* Create a a new environment
-```
-conda create -n py27 python=2.7
-conda create -n py34 python=3.4
-```
-
-* Activate the envirnment
-
-```
-activate py27
-```
 
 
 ### Install dependencies with conda and pip
@@ -165,7 +154,7 @@ activate py27
 * Install the necessary Python dependencies using the conda package manager:
 
 ```
-conda install setuptools_scm future h5py pytables pytest nose sphinx blosc
+conda install setuptools_scm future h5py pytables pytest nose sphinx
 conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl
 ```
 
@@ -182,11 +171,12 @@ pip install pyscaffold pytest-cov --no-deps
 ```
 git clone https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox.git
 cd WindEnergyToolbox
-pip install -e .
+pip install -e . --no-deps
 ```
 
-Note that ```pip install -e .``` will install ```wetb``` in the source directory.
-This works best if you are also developing and regularly updating this package.
+Note that ```pip install -e . --no-deps``` will install ```wetb``` in the source
+directory. This works best if you are also developing and regularly updating
+this package.
 
 You can run the tests cases from the source root directory:
 
