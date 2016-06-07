@@ -150,8 +150,11 @@ class LogFile(LogInterpreter):
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(self.filename)):
             os.makedirs(os.path.dirname(self.filename))  #, exist_ok=True)
-        with open(self.filename, 'w', encoding='utf-8'):
-            pass
+        try:
+            with open(self.filename, 'w', encoding='utf-8'):
+                pass
+        except PermissionError as e:
+            raise PermissionError(str(e) + "\nLog file cannot be cleared. Check if it is open in another program")
         LogInterpreter.clear(self)
 
     def update_status(self):

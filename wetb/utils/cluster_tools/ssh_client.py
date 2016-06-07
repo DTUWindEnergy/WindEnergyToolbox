@@ -25,6 +25,8 @@ class SSHClient(object):
         self.key = key
         self.disconnect = 0
         self.client = None
+        self.sftp = None
+        self.transport = None
         if key is not None:
             self.key = paramiko.RSAKey.from_private_key(StringIO(key), password=passphrase)
 
@@ -33,7 +35,8 @@ class SSHClient(object):
 
     def __enter__(self):
         self.disconnect += 1
-        if self.client is None:
+        if self.client is None or self.client._transport is None or self.client._transport.is_active() is False:
+            self.close()
             self.connect()
         return self.client
 
@@ -44,9 +47,7 @@ class SSHClient(object):
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
         assert self.client is not None
-        self.transport = paramiko.Transport((self.host, self.port))
-        self.transport.connect(username=self.username, password=self.password)
-        self.sftp = paramiko.SFTPClient.from_transport(self.transport)
+        self.sftp = paramiko.SFTPClient.from_transport(self.client._transport)
         return self
 
     def __exit__(self, *args):
@@ -85,11 +86,12 @@ class SSHClient(object):
             print (ret)
 
     def close(self):
-        if self.client is not None:
-            self.client.close()
-            self.client = None
-        self.sftp.close()
-        self.transport.close()
+        for x in ["sftp", "client" ]:
+            try:
+                getattr(self, x).close()
+                setattr(self, x, None)
+            except:
+                pass
         self.disconnect = False
 
     def file_exists(self, filename):
@@ -180,6 +182,7 @@ class SharedSSHClient(SSHClient):
 
         while self.next != threading.currentThread():
             time.sleep(1)
+        SSHClient.__enter__(self)
         return self.client
 
     def __exit__(self, *args):
