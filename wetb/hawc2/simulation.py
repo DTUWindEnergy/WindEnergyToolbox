@@ -79,6 +79,7 @@ class Simulation(object):
     status = QUEUED
     def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
         self.modelpath = os.path.abspath(modelpath) + "/"
+        self.tmp_modelpath = self.modelpath
         self.folder = os.path.dirname(htcfilename)
         if not os.path.isabs(htcfilename):
             htcfilename = os.path.join(modelpath, htcfilename)
@@ -106,7 +107,8 @@ class Simulation(object):
         self.non_blocking_simulation_thread = Thread(target=self.simulate_distributed)
         self.updateStatusThread = UpdateStatusThread(self)
         self.host = LocalSimulationHost(self)
-
+        self.stdout = ""
+        self.returncode = 0
 
     def start(self, update_interval=1):
         """Start non blocking distributed simulation"""
@@ -207,7 +209,7 @@ class Simulation(object):
         self.update_status()
         self.is_simulating = False
         if self.host.returncode or self.errors:
-            raise Exception("Simulation error:\n" + "\n".join(self.errors))
+            raise Exception("Simulation error:\nReturn code: %d\n%s" % (self.host.returncode, "\n".join(self.errors)))
         elif self.logFile.status != log_file.DONE or self.logFile.errors:
             raise Warning("Simulation succeded with errors:\nLog status:%s\nErrors:\n%s" % (self.logFile.status, "\n".join(self.logFile.errors)))
         else:
@@ -325,7 +327,7 @@ class Simulation(object):
     def show_message(self, msg, title="Information"):
         print (msg)
 
-    def set_id(self):
+    def set_id(self, *args, **kwargs):
         pass
 
 
@@ -401,6 +403,7 @@ class LocalSimulationHost(SimulationResource):
         #must be called through simulation object
         self.returncode, self.stdout = 1, "Simulation failed"
         self.simulationThread.start()
+        self.sim.set_id(self.sim.simulation_id, "Localhost(pid:%d)" % self.simulationThread.process.pid, self.tmp_modelpath)
         self.simulationThread.join()
         self.returncode, self.stdout = self.simulationThread.res
         self.logFile.update_status()

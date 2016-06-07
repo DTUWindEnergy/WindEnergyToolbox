@@ -218,6 +218,8 @@ class HTCOutputSection(HTCSection):
 
 
     def line_from_line(self, lines):
+        while lines[0].strip() == "":
+            lines.pop(0)
         name = lines[0].split()[0].strip()
         if name in ['filename', 'data_format', 'buffer', 'time']:
             return HTCLine.from_lines(lines)
@@ -242,6 +244,8 @@ class HTCOutputAtTimeSection(HTCOutputSection):
     type = None
     time = None
     def __init__(self, name, begin_comments="", end_comments=""):
+        if len(name.split()) < 3:
+            raise ValueError('"keyword" and "time" arguments required for output_at_time command:\n%s' % name)
         name, self.type, time = name.split()
         self.time = float(time)
         HTCOutputSection.__init__(self, name, begin_comments=begin_comments, end_comments=end_comments)
@@ -270,9 +274,11 @@ class HTCSensor(HTCLine):
         if len(line.split()) > 2:
             _3to2list5 = list(line.split())
             type, sensor, values, = _3to2list5[:2] + [_3to2list5[2:]]
-        else:
+        elif len(line.split()) == 2:
             type, sensor = line.split()
             values = []
+        else:
+            type, sensor, values = "", "", []
         def fmt(v):
             try:
                 if int(float(v)) == float(v):

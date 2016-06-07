@@ -14,6 +14,7 @@ from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
+
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -210,7 +211,14 @@ class HTCFile(HTCContents, HTCDefaults):
         hawc2exe = exe
         errorcode, stdout, stderr, cmd = pexec([hawc2exe, htcfile], self.modelpath)
 
-        if errorcode or 'Elapsed time' not in stderr:
+        if "logfile" in self.simulation:
+            with open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
+                log = fid.read()
+        else:
+            log = stderr
+
+
+        if errorcode or 'Elapsed time' not in log:
             raise Exception (str(stdout) + str(stderr))
 
 if "__main__" == __name__:
