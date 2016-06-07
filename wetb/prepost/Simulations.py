@@ -1190,6 +1190,8 @@ def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
 
         if not silent:
             print(dst)
+        if not os.path.exists(os.path.dirname(dst)):
+            os.makedirs(os.path.dirname(dst))
         shutil.copy2(src, dst)
 
 
@@ -4664,7 +4666,9 @@ class Cases(object):
         hours each case contributes to its life time.
 
         This approach can only work reliably if the common DLC folder
-        structure is followed.
+        structure is followed. This also means that a 'dlc_config.xlsx' Excel
+        file is required in the HAWC2 root directory (as defined in the
+        [run_dir] tag).
 
         Parameters
         ----------
