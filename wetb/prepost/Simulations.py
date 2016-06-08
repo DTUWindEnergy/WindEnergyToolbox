@@ -4661,7 +4661,7 @@ class Cases(object):
     def fatigue_lifetime(self, dfs, neq_life, res_dir='res/', fh_lst=None,
                          dlc_folder="dlc%s_iec61400-1ed3/", extra_cols=[],
                          save=False, update=False, csv=False, new_sim_id=False,
-                         xlsx=False, years=20.0):
+                         xlsx=False, years=20.0, silent=False):
         """
         Cacluate the fatigue over a selection of cases and indicate how many
         hours each case contributes to its life time.
@@ -4715,14 +4715,15 @@ class Cases(object):
             Pandas DataFrame with the life time equivalent load for the given
             neq, all the channels, and a range of material parameters m.
         """
-
-        print('Calculating life time fatigue load')
+        if not silent:
+            print('Calculating life time fatigue load')
 
         # get some basic parameters required to calculate statistics
         try:
             case = list(self.cases.keys())[0]
         except IndexError:
-            print('no cases to select so no statistics, aborting ...')
+            if not silent:
+                print('no cases to select so no statistics, aborting ...')
             return None
         post_dir = self.cases[case]['[post_dir]']
         if not new_sim_id:
@@ -4783,7 +4784,8 @@ class Cases(object):
             try:
                 sel_sort = gr.loc[case_ids]
             except KeyError:
-                print('    ignore sensor for Leq:', grname)
+                if not silent:
+                    print('    ignore sensor for Leq:', grname)
             for col in extra_cols_:
                 # at this stage we already should have one case, so its
                 # identifiers should also be.
