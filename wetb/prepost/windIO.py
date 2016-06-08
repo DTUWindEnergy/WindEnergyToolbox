@@ -863,6 +863,17 @@ class LoadResults(ReadHawc2):
 
         return np.array(zvals), np.array(yvals)
 
+    def save_chan_names(self, fname):
+        """Save unique channel names to text file.
+        """
+        channels = self.ch_df.ch_name.values
+        channels.sort()
+        np.savetxt(fname, channels, fmt='%-100s')
+
+    def load_chan_names(self, fname):
+        dtype = np.dtype('U100')
+        return np.genfromtxt(fname, dtype=dtype, delimiter=';').tolist()
+
     def save_csv(self, fname, fmt='%.18e', delimiter=','):
         """
         Save to csv and use the unified channel names as columns
