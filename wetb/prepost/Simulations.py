@@ -4802,10 +4802,11 @@ class Cases(object):
             for m in ms:
                 # sel_sort[m] holds the equivalent loads for each of the DLC
                 # cases: such all the different wind speeds for dlc1.2
-                R_eq_mod = np.power(sel_sort[m].values, m) * neq_1hz
+                m_ = float(m.split('=')[1])
+                R_eq_mod = np.power(sel_sort[m].values, m_) * neq_1hz
                 tmp = (R_eq_mod*np.array(hours)).sum()
                 # the effective Leq for each of the material constants
-                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/float(m[2:])))
+                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/m_))
                 # the following is twice as slow:
                 # [i*j for (i,j) in zip(sel_sort[m].values.tolist(),hours)]
 
