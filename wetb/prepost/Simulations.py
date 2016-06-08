@@ -4412,14 +4412,15 @@ class Cases(object):
                 chi = ch_dict[ch_id]['chi']
                 signal = self.sig[:,chi]
                 if neq is None:
-                    neq = float(case['[duration]'])
-
-                eq = self.res.calc_fatigue(signal, no_bins=no_bins,
-                                           neq=neq, m=m)
+                    neq_ = float(case['[duration]'])
+                else:
+                    neq_ = neq
+                eq = self.res.calc_fatigue(signal, no_bins=no_bins, neq=neq_,
+                                           m=m)
 
                 # save in the fatigue results
                 fatigue[ch_id] = {}
-                fatigue[ch_id]['neq'] = neq
+                fatigue[ch_id]['neq'] = neq_
                 # when calc_fatigue succeeds, we should have as many items
                 # as in m
                 if len(eq) == len(m):
@@ -4684,7 +4685,7 @@ class Cases(object):
 
         res_dir : str, default='res/'
             Base directory of the results. Results would be located in
-            res/dlc_folder/*.sel
+            res/dlc_folder/*.sel. Only relevant when fh_lst is None.
 
         dlc_folder : str, default="dlc%s_iec61400-1ed3/"
             String with the DLC subfolder names. One string substitution is
@@ -4702,7 +4703,7 @@ class Cases(object):
             [(filename, hours),...] where, filename is the name of the file
             (can be a full path, but only the base path is considered), hours
             is the number of hours over the life time. When fh_lst is set,
-            dlc_folder and dlc_name are not used.
+            res_dir, dlc_folder and dlc_name are not used.
 
         years : float, default=20
             Total life time expressed in years.
