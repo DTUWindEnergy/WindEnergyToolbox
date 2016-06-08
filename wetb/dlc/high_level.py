@@ -179,11 +179,28 @@ class DLCHighLevel(object):
             fatigue_dist[str(dlc)] = [self.distribution(value_key, dist_key, row) for dist_key, value_key in self.dist_value_keys]
         return fatigue_dist
 
-    def files_dict(self):
+    def files_dict(self, files=None):
+        """
+        Parameters
+        ----------
+
+        files : list, default=None
+            When files is None, files_dict will search for files defined in
+            the res_folder or res_path attribute if the former is absence.
+
+        Returns
+        -------
+
+        files_dict : dict
+            Dictionary holding the file name, total run hours as key, value
+            pairs.
+        """
         fatigue_dlcs = self.dlc_df[['F' in str(l).upper() for l in self.dlc_df['load']]]['dlc']
         if len(fatigue_dlcs) == 0:
             return {}
-        if not hasattr(self, "res_folder") or self.res_folder == "":
+        if isinstance(files, list):
+            pass
+        elif not hasattr(self, "res_folder") or self.res_folder == "":
             files = glob.glob(os.path.join(self.res_path, "*.sel")) + glob.glob(os.path.join(self.res_path, "*/*.sel"))
         else:
             files = []
@@ -230,7 +247,7 @@ class DLCHighLevel(object):
                 total_prop *= prop
         return total_prop
 
-    def file_hour_lst(self, years=20):
+    def file_hour_lst(self, years=20, files_dict=None, dist_dict=None):
         """Create a list of (filename, hours_pr_year) that can be used as input for LifeTimeEqLoad
 
         Returns
@@ -242,8 +259,10 @@ class DLCHighLevel(object):
         """
 
         fh_lst = []
-        dist_dict = self.fatigue_distribution()
-        files_dict = self.files_dict()
+        if dist_dict is None:
+            dist_dict = self.fatigue_distribution()
+        if files_dict is None:
+            files_dict = self.files_dict()
 
         for dlc_id in sorted(dist_dict.keys()):
             dlc_id = str(dlc_id)
