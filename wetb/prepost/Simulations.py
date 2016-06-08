@@ -4760,10 +4760,11 @@ class Cases(object):
             if key[:2] == 'm=':
                 ms.append(key)
         # when multiple DLC cases are included, add extra cols to identify each
-        # DLC group.
-        extra_cols.append('channel')
+        # DLC group. Make a copy, because extra_cols does not get re-initiated
+        # when defined as an optional keyword argument
+        extra_cols_ = copy.copy(extra_cols + ['channel'])
         cols = copy.copy(ms)
-        cols.extend(extra_cols)
+        cols.extend(extra_cols_)
         # ---------------------------------------------------------------------
 
         # Built the DataFrame, we do not have a unqique channel index
@@ -4783,7 +4784,7 @@ class Cases(object):
                 sel_sort = gr.loc[case_ids]
             except KeyError:
                 print('    ignore sensor for Leq:', grname)
-            for col in extra_cols:
+            for col in extra_cols_:
                 # at this stage we already should have one case, so its
                 # identifiers should also be.
                 val_unique = sel_sort[col].unique()
