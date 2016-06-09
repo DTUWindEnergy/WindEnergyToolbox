@@ -57,8 +57,8 @@ class TestsLoadResults(unittest.TestCase):
         self.assertFalse(hasattr(res, 'sig'))
 
         np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,28))
-        self.assertEqual(res.ch_df.ch_name.values[0], 'Time')
-        self.assertEqual(res.ch_df.ch_name.values[27],
+        self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
+        self.assertEqual(res.ch_df.unique_ch_name.values[27],
                          'windspeed-global-Vy--2.50-1.00--52.50')
 
 

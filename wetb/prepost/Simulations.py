@@ -4396,7 +4396,7 @@ class Cases(object):
             # By default, just take all channels in the result file.
             if ch_sel_init is None:
                 ch_sel = list(ch_dict.keys())
-#                ch_sel = ch_df.ch_name.tolist()
+#                ch_sel = ch_df.unique_ch_name.tolist()
 #                ch_sel = [str(k) for k in ch_sel]
                 print('    selecting all channels for statistics')
 
@@ -4459,7 +4459,7 @@ class Cases(object):
                 chi = ch_dict[ch_id]['chi']
                 # ch_name is not unique anymore, this doesn't work obviously!
                 # use the channel index instead, that is unique
-#                chi = ch_df[ch_df.ch_name==ch_id].chi.values[0]
+#                chi = ch_df[ch_df.unique_ch_name==ch_id].chi.values[0]
 
                 # sig_stat = [(0=value,1=index),statistic parameter, channel]
                 # stat params = 0 max, 1 min, 2 mean, 3 std, 4 range, 5 abs max
