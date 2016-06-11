@@ -114,6 +114,10 @@ def match_axis_ticks(ax1, ax2, ax1_format=None, ax2_format=None):
 
 
 def one_legend(*args, **kwargs):
+    """First list all the axes as arguments. Any keyword arguments will be
+    passed on to ax.legend(). Legend will be placed on the last axes that was
+    passed as an argument.
+    """
     # or more general: not only simple line plots (bars, hist, ...)
     objs = []
     for ax in args:
