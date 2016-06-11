@@ -1925,9 +1925,12 @@ class PBS(object):
         if server == 'gorm':
             self.maxcpu = 1
             self.secperiter = 0.012
+            self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
+            self.wine = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+            self.wine += 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
 
@@ -1947,9 +1950,6 @@ class PBS(object):
         # the actual script starts empty
         self.pbs = ''
 
-        # FIXME: this goes wrong when Morten does it directly on the cluster
-        # the resulting PBS script has too many slashes !
-        self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         # in case you want to redirect stdout to /dev/nul
 #        self.wine_appendix = '> /dev/null 2>&1'
         self.wine_appendix = ''
