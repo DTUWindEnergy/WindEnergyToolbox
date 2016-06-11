@@ -1487,7 +1487,8 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # create the zipfile object locally
-        zf = zipfile.ZipFile(model_dir_local + self.tags['[model_zip]'],'w')
+        fname = os.path.join(model_dir_local, self.tags['[model_zip]'])
+        zf = zipfile.ZipFile(fname, 'w')
 
         # empty folders, the'll hold the outputs
         # zf.write(source, target in zip, )
@@ -1576,8 +1577,8 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # copy zip file to the server, this will be used on the nodes
-        src = model_dir_local  + self.tags['[model_zip]']
-        dst = model_dir_server + self.tags['[model_zip]']
+        src = os.path.join(model_dir_local, self.tags['[model_zip]'])
+        dst = os.path.join(model_dir_server, self.tags['[model_zip]'])
 
         # in case we are running local and the model dir is the server dir
         # we do not need to copy the zip file, it is already on location
