@@ -2616,6 +2616,11 @@ class ErrorLogs(object):
         self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
         # *** ERROR *** The DLL subroutine
         self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
+        # *** ERROR *** Mann turbulence length scale must be larger than zero!
+        # *** ERROR *** Mann turbulence alpha eps value must be larger than zero!
+        # *** ERROR *** Mann turbulence gamma value must be larger than zero!
+        self.err_init[' *** ERROR *** Mann turbule'] = len(self.err_init)
+
         # *** WARNING *** Shear center x location not in elastic center, set to zero
         self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
         # Turbulence file ./xyz.bin does not exist
