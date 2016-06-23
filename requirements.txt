@@ -11,4 +11,5 @@ h5py
 pandas
 tables
 future
+paramiko
 

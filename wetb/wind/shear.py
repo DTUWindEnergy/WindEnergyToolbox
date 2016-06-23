@@ -51,7 +51,7 @@ def fit_power_shear(z_u_lst):
 
     Parameters
     ----------
-    z_u_lst : [(z_ref, u_z_ref), (z1, u_z1),...]
+    z_u_lst : [(z_ref, u_z_ref), (z1, u_z1)]
         - z_ref: Reference height\n
         - u_z_ref: Wind speeds or mean wind speed at z_ref
         - z1: another height
@@ -73,7 +73,7 @@ def fit_power_shear(z_u_lst):
     return alpha
 
 def fit_power_shear_ref(z_u_lst, z_ref):
-    """Estimate power shear parameter, alpha, from two or morea specific reference height using polynomial fit.
+    """Estimate power shear parameter, alpha, from two or more specific reference heights using polynomial fit.
 
     Parameters
     ----------
@@ -99,7 +99,8 @@ def fit_power_shear_ref(z_u_lst, z_ref):
     """
     def shear_error(x, z_u_lst, z_ref):
         alpha, u_ref = x
-        return np.sum([(np.mean(u) - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
+        return np.sum([(u - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
+    z_u_lst = [(z, np.mean(u)) for z, u in z_u_lst]
     return fmin(shear_error, (.1, 10), (z_u_lst, z_ref), disp=False)
 
 
