@@ -34,6 +34,14 @@ def parse_next_line(lines):
         comments += "\n%s" % lines.pop(0).rstrip()
     return line.strip(), comments
 
+def fmt_value(v):
+    try:
+        if int(float(v)) == float(v):
+            return int(float(v))
+        return float(v)
+    except ValueError:
+        return v
+
 class HTCContents(object):
     lines = []
     contents = None
@@ -63,9 +71,13 @@ class HTCContents(object):
 
     def __setattr__(self, *args, **kwargs):
         _3to2list1 = list(args)
-        k, v, = _3to2list1[:1] + [_3to2list1[1:]]
+        k, v, = _3to2list1[:1] + _3to2list1[1:]
         if k in dir(self):  # in ['section', 'filename', 'lines']:
             return object.__setattr__(self, *args, **kwargs)
+        if isinstance(v, str):
+            v = [fmt_value(v) for v in v.split()]
+        if not isinstance(v, (list, tuple)):
+            v = [v]
         self.contents[k] = HTCLine(k, v, "")
 
     def __delattr__(self, *args, **kwargs):
@@ -158,7 +170,7 @@ class HTCLine(HTCContents):
         if "__" in name:
             name = name[:name.index("__")]
         self.name_ = name
-        self.values = values
+        self.values = list(values)
         self.comments = comments
 
     def __repr__(self):
@@ -185,15 +197,10 @@ class HTCLine(HTCContents):
         else:
             name = line
             values = []
-        def fmt(v):
-            try:
-                if int(float(v)) == float(v):
-                    return int(float(v))
-                return float(v)
-            except ValueError:
-                return v
-        values = [fmt(v) for v in values]
+
+        values = [fmt_value(v) for v in values]
         return HTCLine(name, values, end_comments)
+
 
     def remove(self):
         self.name_ = ""
