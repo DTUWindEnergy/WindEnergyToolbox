@@ -84,6 +84,14 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.simulation.time_stop[0], 2 * time_stop)
         self.assertEqual(htcfile.simulation.time_stop.__class__, HTCLine)
 
+        htcfile.output.time = 10, 20
+        self.assertEqual(htcfile.output.time[:2], [10, 20])
+        self.assertEqual(str(htcfile.output.time), "time\t10 20;\n")
+        htcfile.output.time = [11, 21]
+        self.assertEqual(htcfile.output.time[:2], [11, 21])
+        htcfile.output.time = "12 22"
+        self.assertEqual(htcfile.output.time[:2], [12, 22])
+
     def test_htc_file_set_key(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.simulation.name = "value"
@@ -99,9 +107,21 @@ class TestHtcFile(unittest.TestCase):
             pass
 
     def test_htcfile_setname(self):
-        htcfile = HTCFile()
-        htcfile.set_name("mytest")
-        self.assertEqual(htcfile.filename, '../htc/mytest.htc')
+        htcfile = HTCFile(self.testfilepath + "test.htc")
+        htcfile.set_name("mytest", htc_folder="htcfiles")
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'mytest.htc')
+        self.assertEqual(htcfile.simulation.logfile[0], './log/mytest.log')
+        self.assertEqual(htcfile.output.filename[0], './res/mytest')
+
+
+
+    def test_set_time(self):
+        htcfile = HTCFile(self.testfilepath + "test.htc")
+        htcfile.set_time(10, 20, 0.2)
+        self.assertEqual(htcfile.simulation.time_stop[0], 20)
+        self.assertEqual(htcfile.simulation.newmark.deltat[0], 0.2)
+        self.assertEqual(htcfile.wind.scale_time_start[0], 10)
+        self.assertEqual(htcfile.output.time[:2], [10, 20])
 
 
 
@@ -124,7 +144,7 @@ class TestHtcFile(unittest.TestCase):
     box_dim_u\t4096 1.4652;
     box_dim_v\t32 3.2258;
     box_dim_w\t32 3.2258;
-    std_scaling\t1.000000 0.800000 0.500000;"""
+    std_scaling\t1 0.8 0.5;"""
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
@@ -220,6 +240,7 @@ class TestHtcFile(unittest.TestCase):
 
     def test_ansi(self):
         htcfile = HTCFile(self.testfilepath + "./ansi.htc")
+
 
 
 

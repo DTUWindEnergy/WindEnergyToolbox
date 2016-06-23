@@ -104,16 +104,28 @@ class HTCFile(HTCContents, HTCDefaults):
         with open(filename, 'w', encoding='utf-8') as fid:
             fid.write(str(self))
 
-    def set_name(self, name, folder="htc/"):
+    def set_name(self, name, htc_folder="htc", log_folder="log", res_folder="res"):
         #if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
-        folder = "./" + os.path.relpath(folder).replace("\\", "/")
+        fmt_folder = lambda folder : "./" + os.path.relpath(folder).replace("\\", "/")
 
-        self.filename = os.path.relpath(os.path.join(self.modelpath, folder, "%s.htc" % name)).replace("\\", "/")
+        self.filename = os.path.abspath(os.path.join(self.modelpath, fmt_folder(htc_folder), "%s.htc" % name)).replace("\\", "/")
         if 'simulation' in self and 'logfile' in self.simulation:
-            self.simulation.logfile = os.path.join(folder.replace("htc", "log", 1), "%s.log" % name).replace("\\", "/")
-        elif 'test_structure' in self and 'logfile' in self.test_structure:
-            self.test_structure.logfile = os.path.join(folder.replace("htc", "log", 1), "%s.log" % name).replace("\\", "/")
-        self.output.filename = os.path.join(folder.replace("htc", "res", 1), "%s" % name).replace("\\", "/")
+            self.simulation.logfile = os.path.join(fmt_folder(log_folder), "%s.log" % name).replace("\\", "/")
+        elif 'test_structure' in self and 'logfile' in self.test_structure:  # hawc2aero
+            self.test_structure.logfile = os.path.join(fmt_folder(log_folder), "%s.log" % name).replace("\\", "/")
+        self.output.filename = os.path.join(fmt_folder(res_folder), "%s" % name).replace("\\", "/")
+
+    def set_time(self, start=None, stop=None, step=None):
+        if stop is not None:
+            self.simulation.time_stop = stop
+        else:
+            stop = self.simulation.time_stop[0]
+        if step is not None:
+            self.simulation.newmark.deltat = step
+        if start is not None:
+            self.output.time = start, stop
+            if "wind" in self and self.wind.turb_format[0] > 0:
+                self.wind.scale_time_start = start
 
     def input_files(self):
         files = self.htc_inputfiles
