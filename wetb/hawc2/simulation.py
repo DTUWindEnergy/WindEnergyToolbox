@@ -454,10 +454,16 @@ class SimulationThread(Thread):
         stdout = self.sim.stdout_filename
         if not os.path.isdir(os.path.dirname(self.modelpath + self.sim.stdout_filename)):
             os.makedirs(os.path.dirname(self.modelpath + self.sim.stdout_filename))
-        if os.name == "nt":
-            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+        #if os.name == "nt":
+        #    self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+        #else:
+        #    self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
+
+        if isinstance(hawc2exe, tuple):
+            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % hawc2exe + (htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
         else:
-            self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
+            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+
         Thread.start(self)
 
 
@@ -629,7 +635,7 @@ cp -R . /scratch/$USER/$PBS_JOBID
 cd /scratch/$USER/$PBS_JOBID
 pwd
 echo "---------------------"
-python -c "from wetb.hawc2.cluster_simulation import ClusterSimulation;ClusterSimulation('.','%s', '%s')"
+%s -c "from wetb.hawc2.cluster_simulation import ClusterSimulation;ClusterSimulation('.','%s', ('%s',%s'))"
 echo "---------------------"
 echo $?
 echo "---------------------"
@@ -639,7 +645,7 @@ cd /scratch/$USER/$PBS_JOBID
 echo $PBS_JOBID
 cd /scratch/
 ### rm -r $PBS_JOBID
-exit""" % (self.simulation_id, self.stdout_filename, rel_htcfilename, self.hawc2exe, cp_back)
+exit""" % (self.simulation_id, self.stdout_filename, self.resource.python_cmd, rel_htcfilename, self.resource.wine_cmd, self.hawc2exe, cp_back)
 
 
 
