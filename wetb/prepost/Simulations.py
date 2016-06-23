@@ -1190,6 +1190,8 @@ def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
 
         if not silent:
             print(dst)
+        if not os.path.exists(os.path.dirname(dst)):
+            os.makedirs(os.path.dirname(dst))
         shutil.copy2(src, dst)
 
 
@@ -1485,7 +1487,8 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # create the zipfile object locally
-        zf = zipfile.ZipFile(model_dir_local + self.tags['[model_zip]'],'w')
+        fname = os.path.join(model_dir_local, self.tags['[model_zip]'])
+        zf = zipfile.ZipFile(fname, 'w')
 
         # empty folders, the'll hold the outputs
         # zf.write(source, target in zip, )
@@ -1574,8 +1577,8 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # copy zip file to the server, this will be used on the nodes
-        src = model_dir_local  + self.tags['[model_zip]']
-        dst = model_dir_server + self.tags['[model_zip]']
+        src = os.path.join(model_dir_local, self.tags['[model_zip]'])
+        dst = os.path.join(model_dir_server, self.tags['[model_zip]'])
 
         # in case we are running local and the model dir is the server dir
         # we do not need to copy the zip file, it is already on location
@@ -1923,9 +1926,12 @@ class PBS(object):
         if server == 'gorm':
             self.maxcpu = 1
             self.secperiter = 0.012
+            self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
+            self.wine = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+            self.wine += 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
 
@@ -1945,9 +1951,6 @@ class PBS(object):
         # the actual script starts empty
         self.pbs = ''
 
-        # FIXME: this goes wrong when Morten does it directly on the cluster
-        # the resulting PBS script has too many slashes !
-        self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         # in case you want to redirect stdout to /dev/nul
 #        self.wine_appendix = '> /dev/null 2>&1'
         self.wine_appendix = ''
@@ -2613,6 +2616,11 @@ class ErrorLogs(object):
         self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
         # *** ERROR *** The DLL subroutine
         self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
+        # *** ERROR *** Mann turbulence length scale must be larger than zero!
+        # *** ERROR *** Mann turbulence alpha eps value must be larger than zero!
+        # *** ERROR *** Mann turbulence gamma value must be larger than zero!
+        self.err_init[' *** ERROR *** Mann turbule'] = len(self.err_init)
+
         # *** WARNING *** Shear center x location not in elastic center, set to zero
         self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
         # Turbulence file ./xyz.bin does not exist
@@ -4394,7 +4402,7 @@ class Cases(object):
             # By default, just take all channels in the result file.
             if ch_sel_init is None:
                 ch_sel = list(ch_dict.keys())
-#                ch_sel = ch_df.ch_name.tolist()
+#                ch_sel = ch_df.unique_ch_name.tolist()
 #                ch_sel = [str(k) for k in ch_sel]
                 print('    selecting all channels for statistics')
 
@@ -4410,14 +4418,15 @@ class Cases(object):
                 chi = ch_dict[ch_id]['chi']
                 signal = self.sig[:,chi]
                 if neq is None:
-                    neq = float(case['[duration]'])
-
-                eq = self.res.calc_fatigue(signal, no_bins=no_bins,
-                                           neq=neq, m=m)
+                    neq_ = float(case['[duration]'])
+                else:
+                    neq_ = neq
+                eq = self.res.calc_fatigue(signal, no_bins=no_bins, neq=neq_,
+                                           m=m)
 
                 # save in the fatigue results
                 fatigue[ch_id] = {}
-                fatigue[ch_id]['neq'] = neq
+                fatigue[ch_id]['neq'] = neq_
                 # when calc_fatigue succeeds, we should have as many items
                 # as in m
                 if len(eq) == len(m):
@@ -4456,7 +4465,7 @@ class Cases(object):
                 chi = ch_dict[ch_id]['chi']
                 # ch_name is not unique anymore, this doesn't work obviously!
                 # use the channel index instead, that is unique
-#                chi = ch_df[ch_df.ch_name==ch_id].chi.values[0]
+#                chi = ch_df[ch_df.unique_ch_name==ch_id].chi.values[0]
 
                 # sig_stat = [(0=value,1=index),statistic parameter, channel]
                 # stat params = 0 max, 1 min, 2 mean, 3 std, 4 range, 5 abs max
@@ -4658,13 +4667,15 @@ class Cases(object):
     def fatigue_lifetime(self, dfs, neq_life, res_dir='res/', fh_lst=None,
                          dlc_folder="dlc%s_iec61400-1ed3/", extra_cols=[],
                          save=False, update=False, csv=False, new_sim_id=False,
-                         xlsx=False, years=20.0):
+                         xlsx=False, years=20.0, silent=False):
         """
         Cacluate the fatigue over a selection of cases and indicate how many
         hours each case contributes to its life time.
 
         This approach can only work reliably if the common DLC folder
-        structure is followed.
+        structure is followed. This also means that a 'dlc_config.xlsx' Excel
+        file is required in the HAWC2 root directory (as defined in the
+        [run_dir] tag).
 
         Parameters
         ----------
@@ -4680,7 +4691,7 @@ class Cases(object):
 
         res_dir : str, default='res/'
             Base directory of the results. Results would be located in
-            res/dlc_folder/*.sel
+            res/dlc_folder/*.sel. Only relevant when fh_lst is None.
 
         dlc_folder : str, default="dlc%s_iec61400-1ed3/"
             String with the DLC subfolder names. One string substitution is
@@ -4698,7 +4709,7 @@ class Cases(object):
             [(filename, hours),...] where, filename is the name of the file
             (can be a full path, but only the base path is considered), hours
             is the number of hours over the life time. When fh_lst is set,
-            dlc_folder and dlc_name are not used.
+            res_dir, dlc_folder and dlc_name are not used.
 
         years : float, default=20
             Total life time expressed in years.
@@ -4710,14 +4721,15 @@ class Cases(object):
             Pandas DataFrame with the life time equivalent load for the given
             neq, all the channels, and a range of material parameters m.
         """
-
-        print('Calculating life time fatigue load')
+        if not silent:
+            print('Calculating life time fatigue load')
 
         # get some basic parameters required to calculate statistics
         try:
             case = list(self.cases.keys())[0]
         except IndexError:
-            print('no cases to select so no statistics, aborting ...')
+            if not silent:
+                print('no cases to select so no statistics, aborting ...')
             return None
         post_dir = self.cases[case]['[post_dir]']
         if not new_sim_id:
@@ -4755,10 +4767,11 @@ class Cases(object):
             if key[:2] == 'm=':
                 ms.append(key)
         # when multiple DLC cases are included, add extra cols to identify each
-        # DLC group.
-        extra_cols.append('channel')
+        # DLC group. Make a copy, because extra_cols does not get re-initiated
+        # when defined as an optional keyword argument
+        extra_cols_ = copy.copy(extra_cols + ['channel'])
         cols = copy.copy(ms)
-        cols.extend(extra_cols)
+        cols.extend(extra_cols_)
         # ---------------------------------------------------------------------
 
         # Built the DataFrame, we do not have a unqique channel index
@@ -4777,8 +4790,9 @@ class Cases(object):
             try:
                 sel_sort = gr.loc[case_ids]
             except KeyError:
-                print('    ignore sensor for Leq:', grname)
-            for col in extra_cols:
+                if not silent:
+                    print('    ignore sensor for Leq:', grname)
+            for col in extra_cols_:
                 # at this stage we already should have one case, so its
                 # identifiers should also be.
                 val_unique = sel_sort[col].unique()
@@ -4797,10 +4811,11 @@ class Cases(object):
             for m in ms:
                 # sel_sort[m] holds the equivalent loads for each of the DLC
                 # cases: such all the different wind speeds for dlc1.2
-                R_eq_mod = np.power(sel_sort[m].values, m) * neq_1hz
+                m_ = float(m.split('=')[1])
+                R_eq_mod = np.power(sel_sort[m].values, m_) * neq_1hz
                 tmp = (R_eq_mod*np.array(hours)).sum()
                 # the effective Leq for each of the material constants
-                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/float(m[2:])))
+                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/m_))
                 # the following is twice as slow:
                 # [i*j for (i,j) in zip(sel_sort[m].values.tolist(),hours)]
 

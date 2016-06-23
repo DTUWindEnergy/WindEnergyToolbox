@@ -61,6 +61,7 @@ in parallel.
 You can find more background information and installation instructions
 [here](https://packaging.python.org/en/latest/extensions/#setting-up-a-build-environment-on-windows),
 [here](https://blogs.msdn.microsoft.com/pythonengineering/2016/04/11/unable-to-find-vcvarsall-bat/),
+[here](https://matthew-brett.github.io/pydagogue/python_msvc.html),
 or [here](http://stevedower.id.au/blog/building-for-python-3-5-part-two/).
 
 

@@ -304,7 +304,7 @@ class LoadResults(ReadHawc2):
 #                    'blade_nr', 'units', 'output_type', 'io_nr', 'io', 'dll',
 #                    'azimuth', 'flap_nr'])
         df_dict = {col: [] for col in self.cols}
-        df_dict['ch_name'] = []
+        df_dict['unique_ch_name'] = []
 
         # scan through all channels and see which can be converted
         # to sensible unified name
@@ -710,7 +710,7 @@ class LoadResults(ReadHawc2):
             # the remainder columns we have not had yet. Fill in blank
             for col in (self.cols - cols_ch):
                 df_dict[col].append('')
-            df_dict['ch_name'].append(tag)
+            df_dict['unique_ch_name'].append(tag)
 
         self.ch_df = pd.DataFrame(df_dict)
         self.ch_df.set_index('chi', inplace=True)
@@ -727,7 +727,7 @@ class LoadResults(ReadHawc2):
             cols.update(set(channelinfo.keys()))
 
         df_dict = {col: [] for col in cols}
-        df_dict['ch_name'] = []
+        df_dict['unique_ch_name'] = []
         for ch_name, channelinfo in self.ch_dict.items():
             cols_ch = set(channelinfo.keys())
             for col in cols_ch:
@@ -735,7 +735,7 @@ class LoadResults(ReadHawc2):
             # the remainder columns we have not had yet. Fill in blank
             for col in (cols - cols_ch):
                 df_dict[col].append('')
-            df_dict['ch_name'].append(ch_name)
+            df_dict['unique_ch_name'].append(ch_name)
 
         self.ch_df = pd.DataFrame(df_dict)
         self.ch_df.set_index('chi', inplace=True)
@@ -862,6 +862,36 @@ class LoadResults(ReadHawc2):
             chiy.append(db.dict_sel[key]['chi'])
 
         return np.array(zvals), np.array(yvals)
+
+    def save_chan_names(self, fname):
+        """Save unique channel names to text file.
+        """
+        channels = self.ch_df.ch_name.values
+        channels.sort()
+        np.savetxt(fname, channels, fmt='%-100s')
+
+    def save_channel_info(self, fname):
+        """Save all channel info: unique naming + HAWC2 description from *.sel.
+        """
+        p1 = self.ch_df.copy()
+        # but ignore the units column, we already have that
+        p2 = pd.DataFrame(self.ch_details,
+                            columns=['Description1', 'units', 'Description2'])
+        # merge on the index
+        tmp = pd.merge(p1, p2, right_index=True, how='outer', left_index=True)
+        tmp.to_excel(fname)
+
+        # for a fixed-with text format instead of csv
+#        header = ''.join(['%100s' % k for k in tmp.columns])
+#        header = '  windspeed' + header
+#        np.savetxt(fname, tmp.to_records(), header=header,
+#                   fmt='% 01.06e  ')
+
+        return tmp
+
+    def load_chan_names(self, fname):
+        dtype = np.dtype('U100')
+        return np.genfromtxt(fname, dtype=dtype, delimiter=';').tolist()
 
     def save_csv(self, fname, fmt='%.18e', delimiter=','):
         """

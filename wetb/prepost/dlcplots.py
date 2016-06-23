@@ -555,6 +555,157 @@ def plot_stats2(sim_ids, post_dirs, fig_dir_base=None, labels=None,
             fig2.clear()
             print('saved: %s' % fig_path)
 
+def plot_stats3(df_stats, plot_chans, fig_dir_base, labels=None):
+    """
+    Same as plot_stats2, but give a df with the stats of that sim_id and the
+    relevant channels.
+
+    df_stats columns:
+        * [DLC]
+        * [run_dir]
+        * channel
+        * stat parameters
+    """
+
+    mfcs1 = ['k', 'w']
+    mfcs2 = ['b', 'w']
+    mfcs3 = ['r', 'w']
+    stds = ['r', 'b']
+
+    # first, take each DLC appart
+    for dlc_name, gr_dlc in df_stats.groupby(df_stats['[DLC]']):
+        # cycle through all the target plot channels
+        for ch_dscr, ch_names in plot_chans.items():
+            # second, group per channel. Note that when the channel names are not
+            # identical, we need to manually pick them.
+            # figure file name will be the first channel
+            if isinstance(ch_names, list):
+                df_chan = gr_dlc[gr_dlc.channel == ch_names[0]]
+                fname_base = ch_names[0].replace(' ', '_')
+                try:
+                    df2 = gr_dlc[gr_dlc.channel == ch_names[1]]
+                    df_chan = pd.concat([df_chan, df2], ignore_index=True)
+                except IndexError:
+                    pass
+            else:
+                ch_name = ch_names
+                ch_names = [ch_name]
+                df_chan = gr_dlc[gr_dlc.channel == ch_names]
+                fname_base = ch_names.replace(' ', '_')
+
+            # if not, than we are missing a channel description, or the channel
+            # is simply not available in the given result set
+#            if not len(df_chan.channel.unique()) == len(ch_names):
+#                continue
+            lens = []
+            for key, gr_ch_dlc_sid in df_chan.groupby(df_chan['[run_dir]']):
+                lens.append(len(gr_ch_dlc_sid))
+            # when the channel is simply not present
+            if len(lens) == 0:
+                continue
+            # when only one of the channels was present, but the set is still
+            # complete.
+            # FIXME: what if both channels are present?
+            if len(ch_names) > 1 and (lens[0] < 1 or lens[1] < 1):
+                continue
+
+            print('start plotting:  %s %s' % (str(dlc_name).ljust(7), ch_dscr))
+
+            fig, axes = mplutils.make_fig(nrows=1, ncols=1,
+                                           figsize=(11,7.15), dpi=120)
+            ax = axes[0,0]
+            # seperate figure for the standard deviations
+            fig2, axes2 = mplutils.make_fig(nrows=1, ncols=1,
+                                             figsize=(11,7.15), dpi=120)
+            ax2 = axes2[0,0]
+
+            # if we have a list of different cases, we also need to group those
+            # because the sim_id wasn't saved before in the data frame,
+            # we need to derive that from the run dir
+            # if there is only one run dir nothing changes
+            ii = 0
+            sid_names = []
+            for run_dir, gr_ch_dlc_sid in df_chan.groupby(df_chan['[run_dir]']):
+                if labels is None:
+                    sid_name = run_dir.split(os.path.sep)[-2]
+                else:
+                    sid_name = labels[ii]
+                sid_names.append(sid_name)
+                print('   sim_id/label:', sid_name)
+                # FIXME: will this go wrong in PY3?
+                if str(dlc_name) in ['61', '62']:
+                    xdata = gr_ch_dlc_sid['[wdir]'].values
+                    xlabel = 'wind direction [deg]'
+                    xlims = [0, 360]
+                else:
+                    xdata = gr_ch_dlc_sid['[Windspeed]'].values
+                    xlabel = 'Wind speed [m/s]'
+                    xlims = [3, 27]
+                dmin = gr_ch_dlc_sid['min'].values
+                dmean = gr_ch_dlc_sid['mean'].values
+                dmax = gr_ch_dlc_sid['max'].values
+                dstd = gr_ch_dlc_sid['std'].values
+                lab1 = 'mean %s' % sid_name
+                lab2 = 'min %s' % sid_name
+                lab3 = 'max %s' % sid_name
+                lab4 = 'std %s' % sid_name
+                mfc1 = mfcs1[ii]
+                mfc2 = mfcs2[ii]
+                mfc3 = mfcs3[ii]
+                ax.errorbar(xdata, dmean, mec='k', marker='o', mfc=mfc1, ls='',
+                            label=lab1, alpha=0.7, yerr=dstd)
+                ax.plot(xdata, dmin, mec='b', marker='^', mfc=mfc2, ls='',
+                        label=lab2, alpha=0.7)
+                ax.plot(xdata, dmax, mec='r', marker='v', mfc=mfc3, ls='',
+                        label=lab3, alpha=0.7)
+
+                ax2.plot(xdata, dstd, mec=stds[ii], marker='s', mfc=stds[ii],
+                        ls='', label=lab4, alpha=0.7)
+
+                ii += 1
+
+#            for wind, gr_wind in  gr_ch_dlc.groupby(df_stats['[Windspeed]']):
+#                wind = gr_wind['[Windspeed]'].values
+#                dmin = gr_wind['min'].values#.mean()
+#                dmean = gr_wind['mean'].values#.mean()
+#                dmax = gr_wind['max'].values#.mean()
+##                dstd = gr_wind['std'].mean()
+#                ax.plot(wind, dmean, 'ko', label='mean', alpha=0.7)
+#                ax.plot(wind, dmin, 'b^', label='min', alpha=0.7)
+#                ax.plot(wind, dmax, 'rv', label='max', alpha=0.7)
+##                ax.errorbar(wind, dmean, c='k', ls='', marker='s', mfc='w',
+##                        label='mean and std', yerr=dstd)
+            ax.grid()
+            ax.set_xlim(xlims)
+            leg = ax.legend(loc='best', ncol=3)
+            leg.get_frame().set_alpha(0.7)
+            ax.set_title(r'{DLC%s} $%s$' % (dlc_name, ch_dscr))
+            ax.set_xlabel(xlabel)
+            fig.tight_layout()
+            fig.subplots_adjust(top=0.92)
+
+            fig_path = os.path.join(fig_dir_base, 'dlc%s/' % dlc_name)
+            if not os.path.exists(fig_path):
+                os.makedirs(fig_path)
+            fname = os.path.join(fig_path, fname_base + '.png')
+            fig.savefig(fname)#.encode('latin-1')
+            fig.clear()
+            print('saved: %s' % fname)
+
+            ax2.grid()
+            ax2.set_xlim(xlims)
+            leg = ax2.legend(loc='best', ncol=3)
+            leg.get_frame().set_alpha(0.7)
+            ax2.set_title(r'{DLC%s} $%s$' % (dlc_name, ch_dscr))
+            ax2.set_xlabel('Wind speed [m/s]')
+            fig2.tight_layout()
+            fig2.subplots_adjust(top=0.92)
+
+            fname = os.path.join(fig_path, fname_base + '_std.png')
+            fig2.savefig(fname)#.encode('latin-1')
+            fig2.clear()
+            print('saved: %s' % fname)
+
 
 class PlotStats(object):
 
