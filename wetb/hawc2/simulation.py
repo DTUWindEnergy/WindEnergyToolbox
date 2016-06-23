@@ -635,7 +635,7 @@ cp -R . /scratch/$USER/$PBS_JOBID
 cd /scratch/$USER/$PBS_JOBID
 pwd
 echo "---------------------"
-%s -c "from wetb.hawc2.cluster_simulation import ClusterSimulation;ClusterSimulation('.','%s', ('%s',%s'))"
+%s -c "from wetb.hawc2.cluster_simulation import ClusterSimulation;ClusterSimulation('.','%s', ('%s','%s'))"
 echo "---------------------"
 echo $?
 echo "---------------------"
