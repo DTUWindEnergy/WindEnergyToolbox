@@ -460,7 +460,7 @@ class SimulationThread(Thread):
         #    self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
 
         if isinstance(hawc2exe, tuple):
-            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % hawc2exe + (htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
+            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % (hawc2exe + (htcfile, stdout)), stdout=None, stderr=None, shell=True, cwd=modelpath)
         else:
             self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
 
