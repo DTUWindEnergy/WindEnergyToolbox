@@ -41,7 +41,7 @@ class SSHClient(object):
         return self.client
 
     def connect(self):
-        if self.password is None:
+        if self.password is None or self.password == "":
             raise IOError("Password not set")
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
