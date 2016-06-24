@@ -3,6 +3,7 @@ from builtins import zip
 from builtins import range
 from builtins import str
 from future import standard_library
+from wetb.utils.timing import print_time
 standard_library.install_aliases()
 import warnings
 from wetb.gtsdf.unix_time import from_unix
@@ -15,6 +16,8 @@ import numpy as np
 import numpy.ma as ma
 block_name_fmt = "block%04d"
 
+
+@print_time
 def load(filename, dtype=None):
     """Load a 'General Time Series Data Format'-hdf5 datafile
 
