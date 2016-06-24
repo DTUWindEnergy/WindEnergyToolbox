@@ -6,12 +6,10 @@ Created on 04/04/2016
 import multiprocessing
 import threading
 
-import psutil
+
 
 from wetb.utils.cluster_tools import pbswrap
 from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
-from _collections import deque
-import time
 
 
 class Resource(object):
@@ -102,6 +100,7 @@ class LocalResource(Resource):
         self.host = 'Localhost'
 
     def check_resources(self):
+        import psutil
         def name(i):
             try:
                 return psutil.Process(i).name()
@@ -111,4 +110,5 @@ class LocalResource(Resource):
         no_cpu = multiprocessing.cpu_count()
         cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
         no_current_process = len([i for i in psutil.pids() if name(i).lower().startswith(self.process_name.lower())])
-        return no_cpu, cpu_free, self.acquired
+        used = max(self.acquired, no_cpu - cpu_free, no_current_process)
+        return no_cpu, cpu_free, used
