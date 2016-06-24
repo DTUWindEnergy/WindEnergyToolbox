@@ -12,3 +12,4 @@ pandas
 tables
 future
 paramiko
+psutil
