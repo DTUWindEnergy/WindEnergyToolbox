@@ -234,6 +234,9 @@ class HTCFile(HTCContents, HTCDefaults):
             raise Exception (str(stdout) + str(stderr))
 
 if "__main__" == __name__:
-    f = HTCFile(r"C:\mmpe\HAWC2\models\PhaseIJacketv30\htc", "../../")
+    f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc", "../")
+    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
 
+    f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
+    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
 
