@@ -28,8 +28,7 @@ Update the ```wetb_py3``` environment:
 conda update --all
 ```
 
-Pull latest wetb changes and create re-distributable binary wheel package for
-```wetb_py3```:
+Pull latest wetb changes and create re-distributable binary wheel package for ```wetb_py3```:
 
 ```
 cd /home/MET/repositories/tooblox/WindEnergyToolbox
