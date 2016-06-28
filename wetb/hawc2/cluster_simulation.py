@@ -1,5 +1,5 @@
 from wetb.hawc2.simulation import Simulation, SimulationThread
-import os  
+import os
 import sys
 from threading import  Thread
 class ClusterSimulation(Simulation):
@@ -17,7 +17,7 @@ class ClusterSimulation(Simulation):
 
     def update_status(self, *args, **kwargs):
         Simulation.update_status(self, *args, **kwargs)
-        with open("/home/mmpe/.hawc2launcher/status_%s" % self.simulation_id, 'w') as fid:
+        with open("/home/%s/.hawc2launcher/status_%s" % (os.environ['USER'], self.simulation_id), 'w') as fid:
             fid.write (";".join([self.simulation_id, self.status] + [str(getattr(self.logFile, v)) for v in ['status', 'pct', 'remaining_time', 'lastline']]) + "\n")
 
     def show_status(self):
