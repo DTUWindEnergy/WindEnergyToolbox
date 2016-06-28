@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
 import pkg_resources
-test = "TEST"
+test = "TEST" 
 try:
     __version__ = pkg_resources.get_distribution(__name__).version
 except:
