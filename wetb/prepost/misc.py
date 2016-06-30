@@ -769,6 +769,13 @@ def check_df_dict(df_dict):
     """
     Verify if the dictionary that needs to be transferred to a Pandas DataFrame
     makes sense
+
+    Returns
+    -------
+
+    collens : dict
+        Dictionary with df_dict keys as keys, len(df_dict[key]) as column.
+        In other words: the length of each column (=rows) of the soon to be df.
     """
     collens = {}
     for col, values in df_dict.items():
@@ -976,6 +983,20 @@ def histfit(hist, bin_edges, xnew):
     width = np.diff(x_hist).mean()
     pdf_fit = pdf_fit / (pdf_fit * width).sum()
     return shape_out, scale_out, pdf_fit
+
+
+def hist_centers2edges(centers):
+    """Given the centers of bins, return its edges and bin widths.
+    """
+
+    binw_c = centers[1:] - centers[:-1]
+    edges = np.ndarray((len(centers)+1,))
+    edges[0] = centers[0] - binw_c[0]/2.0
+    edges[-1] = centers[-1] + binw_c[-1]/2.0
+    edges[1:-1] = centers[1:] - binw_c/2.0
+    binw_e = edges[1:] - edges[:-1]
+
+    return edges, binw_e
 
 
 def df_dict_check_datatypes(df_dict):
