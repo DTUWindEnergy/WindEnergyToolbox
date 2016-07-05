@@ -72,7 +72,9 @@ class HTCFile(HTCContents, HTCDefaults):
         self.htc_inputfiles.append(filename)
         htc_lines = []
         with open(filename, encoding='cp1252') as fid:
-            lines = fid.readlines()
+            lines = list(fid.readlines())
+        if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
+            lines[0] = lines[0][3:]
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()

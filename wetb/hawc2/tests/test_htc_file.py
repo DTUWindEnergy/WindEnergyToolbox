@@ -241,6 +241,11 @@ class TestHtcFile(unittest.TestCase):
     def test_ansi(self):
         htcfile = HTCFile(self.testfilepath + "./ansi.htc")
 
+    def test_file_with_BOM(self):
+        htcfile = HTCFile(self.testfilepath + 'DLC15_wsp11_wdir000_s0000_phi000_Free_v2_visual.htc')
+        self.assertEqual(str(htcfile)[0], ";")
+
+
 
 
 
