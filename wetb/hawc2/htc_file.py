@@ -14,6 +14,7 @@ from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
+from wetb.gtsdf.unix_time import from_unix
 
 standard_library.install_aliases()
 from collections import OrderedDict
@@ -68,13 +69,18 @@ class HTCFile(HTCContents, HTCDefaults):
                     break
         #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
-    def readlines(self, filename):
-        self.htc_inputfiles.append(filename)
-        htc_lines = []
+
+    def readfilelines(self, filename):
         with open(filename, encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]
+        return lines
+
+    def readlines(self, filename):
+        self.htc_inputfiles.append(filename)
+        htc_lines = []
+        lines = self.readfilelines(filename)
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()
@@ -103,7 +109,7 @@ class HTCFile(HTCContents, HTCDefaults):
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))  #, exist_ok=True)
-        with open(filename, 'w', encoding='utf-8') as fid:
+        with open(filename, 'w', encoding='cp1252') as fid:
             fid.write(str(self))
 
     def set_name(self, name, htc_folder="htc", log_folder="log", res_folder="res"):
@@ -219,7 +225,21 @@ class HTCFile(HTCContents, HTCDefaults):
             return [res_filename + ".sel", res_filename + ".dat"]
 
 
-    def simulate(self, exe):
+    def simulate(self, exe, skip_if_up_to_date=False):
+        if skip_if_up_to_date:
+            from os.path import isfile, getmtime, isabs
+            res_file = os.path.join(self.modelpath, self.res_file_lst()[0])
+            htc_file = os.path.join(self.modelpath, self.filename)
+            if isabs(exe):
+                exe_file = exe
+            else:
+                exe_file = os.path.join(self.modelpath, exe)
+            #print (from_unix(getmtime(res_file)), from_unix(getmtime(htc_file)))
+            if (isfile(htc_file) and isfile(res_file) and isfile(exe_file) and
+                getmtime(res_file) > getmtime(htc_file) and getmtime(res_file) > getmtime(exe_file)):
+                if "".join(self.readfilelines(htc_file)) == str(self):
+                        return
+
         self.save()
         htcfile = os.path.relpath(self.filename, self.modelpath)
         hawc2exe = exe
