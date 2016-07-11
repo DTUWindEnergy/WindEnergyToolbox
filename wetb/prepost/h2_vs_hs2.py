@@ -727,7 +727,7 @@ class MappingsH2HS2(object):
             msg = 'HAWC2 sensor type "%s" is missing, are they defined?'
             raise ValueError(msg % sensortype)
         sel.sort_values(['radius'], inplace=True)
-        tors_e_channels = sel.ch_name.tolist()
+        tors_e_channels = sel.unique_ch_name.tolist()
 
         # find the current case in the statistics DataFrame
         case = fname.replace('.htc', '')
@@ -737,7 +737,7 @@ class MappingsH2HS2(object):
         # join the stats with the channel descriptions DataFrames, have the
         # same name on the joining column
         df_tors_e.set_index('channel', inplace=True)
-        sel.set_index('ch_name', inplace=True)
+        sel.set_index('unique_ch_name', inplace=True)
 
         # joining happens on the index, and for which the same channel has been
         # used: the unique HAWC2 channel naming scheme
