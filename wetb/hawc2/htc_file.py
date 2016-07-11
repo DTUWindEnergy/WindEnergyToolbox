@@ -14,8 +14,6 @@ from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
-from wetb.gtsdf.unix_time import from_unix
-
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -71,7 +69,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
 
     def readfilelines(self, filename):
-        with open(filename, encoding='cp1252') as fid:
+        with open(filename.lower(), encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]
@@ -254,6 +252,27 @@ class HTCFile(HTCContents, HTCDefaults):
 
         if errorcode or 'Elapsed time' not in log:
             raise Exception (str(stdout) + str(stderr))
+
+class H2aeroHTCFile(HTCFile):
+    def __init__(self, filename=None, modelpath="../"):
+        HTCFile.__init__(self, filename=filename, modelpath=modelpath)
+
+    @property
+    def simulation(self):
+        return self.test_structure
+
+    def set_time(self, start=None, stop=None, step=None):
+        if stop is not None:
+            self.test_structure.time_stop = stop
+        else:
+            stop = self.simulation.time_stop[0]
+        if step is not None:
+            self.test_structure.deltat = step
+        if start is not None:
+            self.output.time = start, stop
+            if "wind" in self and self.wind.turb_format[0] > 0:
+                self.wind.scale_time_start = start
+
 
 if "__main__" == __name__:
     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc", "../")
