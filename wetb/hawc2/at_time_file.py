@@ -42,7 +42,7 @@ class AtTimeFile(object):
         for column, att_name in enumerate(self.attribute_names):
             setattr(self, att_name, func_factory(column))
 
-    def radius(self, radius=None):
+    def curved_radius(self, radius=None):
         """Radius of calculation point(s)
 
         Parameters
