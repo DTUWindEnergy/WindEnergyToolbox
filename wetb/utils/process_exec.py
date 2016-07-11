@@ -74,7 +74,7 @@ def unix_filename(filename):
     Filename
 
     """
-    filename = os.path.realpath(filename).replace("\\", "/")
+    filename = os.path.realpath(filename.replace("\\", "/")).replace("\\", "/")
     ufn, rest = os.path.splitdrive(filename)
     ufn += "/"
     for f in rest[1:].split("/"):
