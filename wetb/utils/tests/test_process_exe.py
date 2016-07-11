@@ -12,7 +12,9 @@ class Test(unittest.TestCase):
 
 
     def testUnix_filename(self):
-        print (unix_filename(os.path.dirname(__file__) + r"../../../..\windenergytoolbox/wetb/HAWC2/hawc2io.py"))
+        ufn = "WindEnergyToolbox/wetb/hawc2/Hawc2io.py"
+        f = os.path.join(os.path.dirname(__file__), r"../../../..\windenergytoolbox/wetb/HAWC2/hawc2io.py")
+        self.assertEqual(unix_filename(f)[-len(ufn):], ufn)
 
 
 if __name__ == "__main__":
