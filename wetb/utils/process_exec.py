@@ -36,7 +36,7 @@ def pexec(args, cwd=None):
     stdout, stderr = proc.communicate()
     errorcode = proc.returncode
 
-    return errorcode, stdout.decode(), stderr.decode(), cmd
+    return errorcode, stdout.decode('cp1252'), stderr.decode('cp1252'), cmd
 
 
 def process(args, cwd=None):
@@ -58,5 +58,32 @@ def exec_process(process):
     errorcode = process.returncode
 
     return errorcode, stdout.decode(), stderr.decode()
+
+def unix_filename(filename):
+    """Convert case insensitive filename into unix case sensitive filename
+
+    I more than one case insensitive matching file or folder is found, case sensitive matching is used
+
+    Parameters
+    ---------
+    x : str
+        Case insensitive filename
+
+    Returns
+    -------
+    Filename
+
+    """
+    filename = os.path.realpath(filename).replace("\\", "/")
+    ufn, rest = os.path.splitdrive(filename)
+    ufn += "/"
+    for f in rest[1:].split("/"):
+        f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
+        if len(f_lst) > 1:
+            f_lst = [f_ for f_ in f_lst if f_ == f]
+        if len(f_lst) == 0:
+            raise IOError("'%s' not found in '%s'" % (f, ufn))
+        ufn = os.path.join(ufn, f_lst[0])
+    return ufn.replace("\\", "/")
 
 
