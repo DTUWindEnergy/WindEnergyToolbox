@@ -69,7 +69,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
 
     def readfilelines(self, filename):
-        with open(filename.lower(), encoding='cp1252') as fid:
+        with open(filename, encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]
@@ -81,7 +81,7 @@ class HTCFile(HTCContents, HTCDefaults):
         lines = self.readfilelines(filename)
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
-                filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip()
+                filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip().lower()
                 filename = os.path.join(self.modelpath, filename)
 
                 for line in self.readlines(filename):
