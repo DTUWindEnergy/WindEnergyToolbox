@@ -1306,32 +1306,32 @@ class UserWind(object):
 
         u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
         """
-        blok = 0
-        bloks = {}
+        # read the header
         with opent(fname) as f:
             for i, line in enumerate(f.readlines()):
-                if line.strip()[0] == '#' and blok > 0:
-                    bloks[blok] = i
-                    blok += 1
-                elif line.strip()[0] == '#':
-                    continue
-                elif blok == 0:
-                    items = line.split(' ')
-                    items = misc.remove_items(items, '')
-                    nr_hor, nr_vert = int(items[0]), int(items[1])
-                    blok += 1
-#        nr_lines = i
+                if line.strip()[0] != '#':
+                    nr_v, nr_w = misc.remove_items(line.split('#')[0].split(), '')
+                    nr_hor, nr_vert = int(nr_v), int(nr_w)
+                    i_header = i
+                    break
 
-        k = nr_hor + 4*nr_vert + 7
-        v_comp = np.genfromtxt(fname, skiprows=3, skip_footer=i-3-3-nr_vert)
-        u_comp = np.genfromtxt(fname, skiprows=3+1+nr_vert,
-                               skip_footer=i-3-3-nr_vert*2)
-        w_comp = np.genfromtxt(fname, skiprows=3+2+nr_vert*2,
-                               skip_footer=i-3-3-nr_vert*3)
-        v_coord = np.genfromtxt(fname, skiprows=3+3+nr_vert*3,
-                                skip_footer=i-3-3-nr_vert*3-3)
-        w_coord = np.genfromtxt(fname, skiprows=3+3+nr_vert*3+4,
-                                skip_footer=i-k)
+        # u,v and w components on 2D grid
+        tmp = np.genfromtxt(fname, skip_header=i_header+1, comments='#',
+                            max_rows=nr_vert*3)
+        if not tmp.shape == (nr_vert*3, nr_hor):
+            raise AssertionError('user defined shear input file inconsistent')
+        v_comp = tmp[:nr_vert,:]
+        u_comp = tmp[nr_vert:nr_vert*2,:]
+        w_comp = tmp[nr_vert*2:nr_vert*3,:]
+
+        # coordinates of the 2D grid
+        tmp = np.genfromtxt(fname, skip_header=3*(nr_vert+1)+2,
+                            max_rows=nr_hor+nr_vert)
+        if not tmp.shape == (nr_vert+nr_hor,):
+            raise AssertionError('user defined shear input file inconsistent')
+        v_coord = tmp[:nr_hor]
+        w_coord = tmp[nr_hor:]
+
         phi_deg = np.arctan(v_comp[:, 0]/u_comp[:, 0])*180.0/np.pi
 
         return u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
@@ -1376,6 +1376,9 @@ class WindProfiles(object):
 
     def __init__(self):
         pass
+
+    def logarithmic(self, z, z_ref, r_0):
+        return np.log10(z/r_0)/np.log10(z_ref/r_0)
 
     def powerlaw(self, z, z_ref, a):
         profile = np.power(z/z_ref, a)
