@@ -168,7 +168,7 @@ class LogFile(LogInterpreter):
                 fid.seek(self.position)
                 txt = fid.read()
             self.position += len(txt)
-            txt = txt.decode(encoding='utf_8', errors='strict')
+            txt = txt.decode(encoding='cp1252', errors='strict')
             if txt != "":
                 LogInterpreter.update_status(self, txt)
 

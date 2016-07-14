@@ -15,7 +15,7 @@ import subprocess
 import sys
 import time
 from wetb.hawc2 import log_file
-from wetb.hawc2.htc_file import HTCFile
+from wetb.hawc2.htc_file import HTCFile, H2aeroHTCFile
 from wetb.hawc2.log_file import LogFile, LogInfo
 
 from future import standard_library
@@ -26,6 +26,7 @@ from wetb.utils.cluster_tools.cluster_resource import LocalResource
 from wetb.utils.cluster_tools.pbsjob import SSHPBSJob, DONE, NOT_SUBMITTED
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 from wetb.utils.timing import print_time
+from _datetime import datetime
 standard_library.install_aliases()
 from threading import Thread
 
@@ -84,7 +85,7 @@ class Simulation(object):
         if not os.path.isabs(htcfilename):
             htcfilename = os.path.join(modelpath, htcfilename)
         self.filename = os.path.basename(htcfilename)
-        self.htcFile = HTCFile(htcfilename)
+        self.htcFile = H2aeroHTCFile(htcfilename)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
@@ -174,7 +175,7 @@ class Simulation(object):
             assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
             return src
         input_patterns = [fmt(src) for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + self.additional_files().get('input', [])]
-        input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.modelpath, pattern))])
+        input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.modelpath, pattern)) if os.path.isfile(f)])
         if not os.path.isdir(os.path.dirname(self.modelpath + self.stdout_filename)):
             os.makedirs(os.path.dirname(self.modelpath + self.stdout_filename))
         self.host._prepare_simulation(input_files)
@@ -190,6 +191,7 @@ class Simulation(object):
 
     def simulate(self):
         #starts blocking simulation
+        #self.simulation_start_time = self.host.get_datetime()
         self.is_simulating = True
         self.errors = []
         self.status = INITIALIZING
@@ -376,6 +378,8 @@ class LocalSimulationHost(SimulationResource):
         self.resource = resource
         self.simulationThread = SimulationThread(self.sim)
 
+    def get_datetime(self):
+        return datetime.now()
 
     def glob(self, path):
         return glob.glob(path)
@@ -478,7 +482,7 @@ class SimulationThread(Thread):
         self.process.communicate()
         errorcode = self.process.returncode
 
-        with open(self.modelpath + self.sim.stdout_filename, encoding='utf-8') as fid:
+        with open(self.modelpath + self.sim.stdout_filename, encoding='cp1252') as fid:
             stdout = fid.read()
         self.res = errorcode, stdout
 
@@ -497,6 +501,11 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
     hawc2exe = property(lambda self : os.path.basename(self.sim.hawc2exe))
 
 
+    def get_datetime(self):
+        v, out, err = self.execute('date "+%Y,%m,%d,%H,%M,%S"')
+        if v == 0:
+            return datetime.strptime(out.strip(), "%Y,%m,%d,%H,%M,%S")
+
     def _prepare_simulation(self, input_files):
         with self:
             self.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
@@ -514,6 +523,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
             self.execute("mkdir -p .hawc2launcher/%s/%s" % (self.simulation_id, os.path.dirname(self.stdout_filename)))
             remote_log_filename = "%s%s" % (self.tmp_modelpath, self.log_filename)
             self.execute("rm -f %s" % remote_log_filename)
+
 
 
 
