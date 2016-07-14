@@ -100,7 +100,8 @@ class StFile(object):
 
 
 if __name__ == "__main__":
-    st = StFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\data/DTU_10MW_RWT_Blade_st.dat")
+    import os
+    st = StFile(os.path.dirname(__file__) + r"/tests/test_files/DTU_10MW_RWT_Blade_st.dat")
     print (st.m())
     print (st.E(radius=36, mset=1, set=1))  # Elastic blade
     print (st.E(radius=36, mset=1, set=2))  # stiff blade
