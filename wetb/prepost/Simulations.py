@@ -749,7 +749,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     # create directory if post_dir does not exists
     try:
-        os.mkdir(post_dir)
+        os.makedirs(post_dir)
     except OSError:
         pass
     FILE = open(fpath_post_base + '.pkl', 'wb')
@@ -976,7 +976,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 
     # create directory if post_dir does not exists
     try:
-        os.mkdir(post_dir)
+        os.makedirs(post_dir)
     except OSError:
         pass
     FILE = open(post_dir + master.tags['[sim_id]'] + '.pkl', 'wb')
@@ -2143,10 +2143,11 @@ class PBS(object):
             self.pbs += "mkdir -p " + self.htc_dir + '\n'
             self.pbs += "mkdir -p " + self.results_dir + '\n'
             self.pbs += "mkdir -p " + self.logs_dir + '\n'
-            self.pbs += "mkdir -p " + self.TurbDirName + '\n'
-            if self.WakeDirName:
+            if self.TurbDirName is not None or self.TurbDirName != 'None':
+                self.pbs += "mkdir -p " + self.TurbDirName + '\n'
+            if self.WakeDirName and self.WakeDirName != self.TurbDirName:
                 self.pbs += "mkdir -p " + self.WakeDirName + '\n'
-            if self.MeanderDirName:
+            if self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
                 self.pbs += "mkdir -p " + self.MeanderDirName + '\n'
             if self.hydro_dir:
                 self.pbs += "mkdir -p " + self.hydro_dir + '\n'
@@ -5143,7 +5144,7 @@ class Cases(object):
                 raise ValueError('name should be either ojf or hawc2')
             # create the torque_constant dir if it doesn't exists
             try:
-                os.mkdir(fpath)
+                os.makedirs(fpath)
             except OSError:
                 pass
 
