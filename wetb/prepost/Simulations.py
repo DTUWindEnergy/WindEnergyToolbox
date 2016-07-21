@@ -4483,7 +4483,7 @@ class Cases(object):
                    tags=['[turb_seed]','[windspeed]'], calc_mech_power=False,
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
-                   chs_resultant=[], i0=0, i1=-1, saveinterval=1000,
+                   chs_resultant=[], i0=0, i1=None, saveinterval=1000,
                    csv=True, suffix=None, A=None,
                    ch_wind=None, save_new_sigs=False, xlsx=False):
         """
