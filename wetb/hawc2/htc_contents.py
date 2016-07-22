@@ -41,7 +41,7 @@ def fmt_value(v):
         return float(v)
     except ValueError:
         return v
-
+c = 0
 class HTCContents(object):
     lines = []
     contents = None
@@ -63,7 +63,7 @@ class HTCContents(object):
         else:
             return self.values[key]
 
-    def __getattribute__(self, *args, **kwargs):
+    def __getattr__(self, *args, **kwargs):
         try:
             return object.__getattribute__(self, *args, **kwargs)
         except:
