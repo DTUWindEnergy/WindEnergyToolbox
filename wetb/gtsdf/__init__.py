@@ -39,6 +39,15 @@ from .gtsdf import load
 from .gtsdf import append_block
 from .gtsdf import load_pandas
 
+class Dataset(object):
+    def __init__(self, filename):
+        self.time, self.data, self.info = load(filename)
+    def __call__(self, name):
+        if name == "Time":
+            return self.time
+        return self.data[:, self.info['attribute_names'].index(name)]
+
+
 __all__ = sorted([m for m in set(dir()) - set(d)])
 
 
