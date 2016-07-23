@@ -484,6 +484,16 @@ your running HAWC2 model (replace 123456 with the relevant job id):
 g-000 $ cd /scratch/$USER/123456.g-000.risoe.dk
 ```
 
+You can find what HAWC2 (or whatever other executable you are running) is
+outputting to the command line in the file:
+```
+/var/lib/torque/spool/JOBID.jess.dtu.dk.OU
+```
+Or when watch what is happening at the end in real time
+```
+tail -f /var/lib/torque/spool/JOBID.jess.dtu.dk.OU
+```
+
 
 Re-launching failed jobs
 ------------------------
