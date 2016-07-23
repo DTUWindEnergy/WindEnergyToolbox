@@ -817,6 +817,83 @@ class LoadResults(ReadHawc2):
         stats['int'] = integrate.trapz(sig[i0:i1, :], x=sig[i0:i1, 0], axis=0)
         return stats
 
+    def statsdel_df(self, i0=0, i1=None, statchans='all', delchans='all',
+                    m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46):
+        """Calculate statistics and equivalent loads for the current loaded
+        signal.
+
+        Parameters
+        ----------
+
+        i0 : int, default=0
+
+        i1 : int, default=None
+
+        channels : list, default='all'
+            all channels are selected if set to 'all', otherwise define a list
+            using the unique channel defintions.
+
+        neq : int, default=1
+
+        no_bins : int, default=46
+
+        Return
+        ------
+
+        statsdel : pd.DataFrame
+            Pandas DataFrame with the statistical parameters and the different
+            fatigue coefficients as columns, and channels as rows. As index the
+            unique channel name is used.
+
+        """
+
+        stats = ['max', 'min', 'mean', 'std', 'range', 'absmax', 'rms', 'int']
+        if statchans == 'all':
+            statchans = self.ch_df['unique_ch_name'].tolist()
+            statchis = self.ch_df['unique_ch_name'].index.values
+        else:
+            sel = self.ch_df['unique_ch_name']
+            statchis = self.ch_df[sel.isin(statchans)].index.values
+
+        if delchans == 'all':
+            delchans = self.ch_df['unique_ch_name'].tolist()
+            delchis = self.ch_df.index.values
+        else:
+            sel = self.ch_df['unique_ch_name']
+            delchis = self.ch_df[sel.isin(delchans)].index.values
+
+        # delchans has to be a subset of statchans!
+        if len(set(delchans) - set(statchans)) > 0:
+            raise ValueError('delchans has to be a subset of statchans')
+
+        tmp = np.ndarray((len(statchans), len(stats+m)))
+        tmp[:,:] = np.nan
+        m_cols = ['m=%i' % m_ for m_ in m]
+        statsdel = pd.DataFrame(tmp, columns=stats+m_cols)
+        statsdel.index = statchans
+
+        datasel = self.sig[i0:i1,statchis]
+        time = self.sig[i0:i1,0]
+        statsdel['max'] = datasel.max(axis=0)
+        statsdel['min'] = datasel.min(axis=0)
+        statsdel['mean'] = datasel.mean(axis=0)
+        statsdel['std'] = datasel.std(axis=0)
+        statsdel['range'] = statsdel['max'] - statsdel['min']
+        statsdel['absmax'] = np.abs(datasel).max(axis=0)
+        statsdel['rms'] = np.sqrt(np.mean(datasel*datasel, axis=0))
+        statsdel['int'] = integrate.trapz(datasel, x=time, axis=0)
+        statsdel['intabs'] = integrate.trapz(np.abs(datasel), x=time, axis=0)
+
+        if neq is None:
+            neq = self.sig[-1,0] - self.sig[0,0]
+
+        for chi, chan in zip(delchis, delchans):
+            signal = self.sig[i0:i1,chi]
+            eq = self.calc_fatigue(signal, no_bins=no_bins, neq=neq, m=m)
+            statsdel.loc[chan][m_cols] = eq
+
+        return statsdel
+
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_fatigue(self, signal, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1):
         """
