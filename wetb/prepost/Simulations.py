@@ -1200,6 +1200,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
 
         # create hard links for all the turbulence files
         turb_dir_base = os.path.join(os.path.commonpath(list(turb_dirs)), '')
+        pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
         pbs += 'echo "hard-linking all turb files into CPU dirs"\n'
         for k in range(ppn):
             rpl = (turb_dir_base, k)
@@ -1209,6 +1213,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # finally we can run find+xargs!!!
         pbs += '\n'
         pbs += 'echo "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % pbase
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
         pbs += 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
