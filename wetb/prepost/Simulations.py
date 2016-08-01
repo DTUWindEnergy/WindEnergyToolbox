@@ -1107,6 +1107,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
 
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
 
+        pbs_in_base = os.path.commonpath(df['[pbs_in_dir]'].unique().tolist())
+        pbs_in_base = os.path.join(pbs_in_base, '')
+        htc_base = os.path.commonpath(df['[htc_dir]'].unique().tolist())
+        htc_base = os.path.join(htc_base, '')
+
         # =====================================================================
         # PBS HEADER
         pbs = copy.copy(pbs_tmplate)
@@ -1209,9 +1214,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         for k in range(ppn):
             dst = os.path.join('%i' % k, '.')
             pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
+        # get all the *.p files from one of the extracted zip files
         pbs += '# copy pbs_in from the first CPU to sim_id/pbs_in\n'
-        pbs += 'cp -r %s %s' % (os.path.join('0', pbs_in_dir, '*'),
-                                os.path.join(sim_id, pbs_in_dir))
+        pbs += 'cp -r %s %s' % (os.path.join('0', pbs_in_base, '*'),
+                                os.path.join(sim_id, pbs_in_base))
 
         # =====================================================================
         # finally we can run find+xargs!!!
@@ -1220,14 +1226,15 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
         pbs += 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
-        pbs += 'echo "following cases will be run:"\n'
+        pbs += 'echo "following cases will be run from following path:"\n'
+        pbs += 'echo "%s"' % (os.path.join(sim_id, pbs_in_base))
         pbs += 'export LAUNCH_PBS_MODE=false\n'
-        rpl = (cmd_find, os.path.join(sim_id, pbs_in_dir))
+        rpl = (cmd_find, os.path.join(sim_id, pbs_in_base))
         pbs += "%s %s -type f -name '*.p' | sort -z\n" % rpl
         pbs += '\n'
         pbs += 'echo "number of files to be launched: "'
-        pbs += '`find %s -type f | wc -l`\n' % pbs_in_dir
-        rpl = (cmd_find, os.path.join(sim_id, pbs_in_dir), cmd_xargs, ppn)
+        pbs += '`find %s -type f | wc -l`\n' % pbs_in_base
+        rpl = (cmd_find, os.path.join(sim_id, pbs_in_base), cmd_xargs, ppn)
         cmd = ("%s %s -type f -name '*.p' -print0 | sort -z | %s -0 -I{} "
                "--process-slot-var=CPU_NR -n 1 -P %i sh {}\n" % rpl)
         pbs += cmd
@@ -1239,18 +1246,16 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += '\n'
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += 'echo "Results saved at sim_id directory:"\n'
-        # FIXME: DO NOT USE HARDCODED PATHS !!!!
-        rpl = (sim_id, 'pbs_in/*', 'htc/*')
+        rpl = (sim_id, os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
         pbs += 'find %s/. -not -iname "%s" -not -iname "%s"\n' % rpl
         pbs += 'echo "move results back from node scratch/sim_id to origin, '
         pbs += 'but ignore htc, and pbs_in directories."\n'
 
         tmp = os.path.join(sim_id, '*')
         pbs += 'echo "copy from %s to $PBS_O_WORKDIR/"\n' % tmp
-        pbs += 'time rsync -au --remove-source-files %s $PBS_O_WORKDIR/ \\ \n' % tmp
-        # FIXME: DO NOT USE HARDCODED PATHS !!!!
-        pbs += '    --exclude pbs_in/* \\ \n'
-        pbs += '    --exclude htc/* \n'
+        pbs += 'time rsync -au --remove-source-files %s $PBS_O_WORKDIR/ \\\n' % tmp
+        pbs += '    --exclude %s \\\n' % os.path.join(pbs_in_base, '*')
+        pbs += '    --exclude %s \n' % os.path.join(htc_base, '*')
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
         pbs += 'source deactivate\n'
@@ -1279,7 +1284,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     sim_id = df['[sim_id]'].iloc[0]
     run_dir = df['[run_dir]'].iloc[0]
     model_zip = df['[model_zip]'].iloc[0]
-    pbs_in_dir = df['[pbs_in_dir]'].iloc[0]
     nodes = 1
     for ii, dfi in enumerate(df_iter):
         fname = make_zip_chunks(dfi, ii, sim_id, run_dir, model_zip)
