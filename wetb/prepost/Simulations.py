@@ -1188,9 +1188,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # =====================================================================
         # browse back to the scratch directory
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
-        pbs += "echo 'current working directory:'\n"
-        pbs += 'pwd\n'
         pbs += 'echo "unzip chunk, create dirs in cpu and sim_id folders"\n'
         # unzip chunk, this contains all relevant folders already, and also
         # contains files defined in [copyto_files]
@@ -1201,12 +1198,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # create hard links for all the turbulence files
         turb_dir_base = os.path.join(os.path.commonpath(list(turb_dirs)), '')
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "hard-linking all turb files into CPU dirs"\n'
         for k in range(ppn):
-            rpl = (turb_dir_base, k)
+            rpl = (os.path.join(sim_id, turb_dir_base), k)
             pbs += 'find %s -iname *.bin -exec ln {} %s/{}\n' % rpl
 
         # =====================================================================
