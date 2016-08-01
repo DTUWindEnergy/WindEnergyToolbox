@@ -2513,7 +2513,7 @@ class PBS(object):
             self.pbs += '# ' + '-'*60 + '\n'
 
             self.pbs += 'echo ""\n'
-            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set'
+            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
             # the hawc2 execution commands via wine, in PBS mode fork and wait
             param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
