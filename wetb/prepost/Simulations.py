@@ -1133,10 +1133,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # =====================================================================
         # create all necessary directories at CPU_NR dirs, turb db dirs, sim_id
         # browse to scratch directory
+        pbs += '\necho "%s"\n' % ('-'*70)
         pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n\n'
-        # initialize CPU directories on the scratch disk
+        pbs += 'echo "create CPU directories on the scratch disk"\n'
         pbs += 'mkdir -p %s\n' % os.path.join(pbase, sim_id, '')
         for k in range(ppn):
             pbs += 'mkdir -p %s\n' % os.path.join(pbase, '%i' % k, '')
@@ -1146,9 +1147,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
-        # initizialize turb_db directories
-        pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += "echo 'create turb db directories:'\n"
+        pbs += 'echo "create turb_db directories"\n'
         db_dir_tags = ['[turb_db_dir]', '[meand_db_dir]', '[wake_db_dir]']
         turb_dirs = []
         for tag in db_dir_tags:
@@ -1163,10 +1162,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # get the zip-chunk file from the PBS_O_WORKDIR
         pbs += '\n'
         pbs += 'echo "%s"\n' % ('-'*70)
-        pbs += '# get the zip-chunk file from the PBS_O_WORKDIR\n'
         pbs += 'cd $PBS_O_WORKDIR\n'
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
+        pbs += 'echo "get the zip-chunk file from the PBS_O_WORKDIR"\n'
         # copy the relevant zip chunk file to the scratch main directory
         rpl = (os.path.join('./', chunks_dir, jobid), os.path.join(pbase, ''))
         pbs += 'cp %s.zip %s\n' % rpl
