@@ -1187,6 +1187,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # =====================================================================
         # browse back to the scratch directory
         pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % pbase
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
         pbs += 'echo "unzip chunk, create dirs in cpu and sim_id folders"\n'
         # unzip chunk, this contains all relevant folders already, and also
         # contains files defined in [copyto_files]
