@@ -1227,7 +1227,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
         pbs += 'echo "following cases will be run from following path:"\n'
-        pbs += 'echo "%s"' % (os.path.join(sim_id, pbs_in_base))
+        pbs += 'echo "%s"\n' % (os.path.join(sim_id, pbs_in_base))
         pbs += 'export LAUNCH_PBS_MODE=false\n'
         rpl = (cmd_find, os.path.join(sim_id, pbs_in_base))
         pbs += "%s %s -type f -name '*.p' | sort -z\n" % rpl
