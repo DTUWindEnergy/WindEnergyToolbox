@@ -2187,7 +2187,8 @@ class PBS(object):
     """
 
     def __init__(self, cases, server='gorm', qsub='time', silent=False,
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
+                 pyenv='wetb_py3'):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -2219,6 +2220,7 @@ class PBS(object):
         self.server = server
         self.verbose = verbose
         self.silent = silent
+        self.pyenv = pyenv
 
 #        if server == 'thyra':
 #            self.maxcpu = 4
@@ -2536,8 +2538,15 @@ class PBS(object):
             param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
             self.pbs += "%s %s ./%s %s &\n" % param
 
-            self.pbs += '# POST-PROCESSING\n'
+            self.pbs += 'echo ""\n'
+            self.pbs += 'echo "POST-PROCESSING"\n'
+            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+            self.pbs += '  source activate %s\n' % self.pyenv
+            self.pbs += "  "
+            self.postprocessing()
+            self.pbs += '  source deactivate\n'
+            self.pbs += "else\n"
             self.pbs += "  "
             self.postprocessing()
             self.pbs += "fi\n"
