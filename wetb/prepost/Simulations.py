@@ -1216,7 +1216,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         cmd = ("%s %s -type f -name '*.p' -print0 | sort -z | %s -0 -I{} "
                "--process-slot-var=CPU_NR -n 1 -P %i sh {}\n" % rpl)
         pbs += cmd
-        pbs += 'wait\n'
         pbs += 'echo "END OF JOBS IN find+xargs MODE"\n'
 
         # =====================================================================
