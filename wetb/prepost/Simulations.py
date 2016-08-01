@@ -1205,8 +1205,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'pwd\n'
         pbs += 'echo "hard-linking all turb files into CPU dirs"\n'
         for k in range(ppn):
-            rpl = (os.path.join(sim_id, turb_dir_base), k)
-            pbs += 'find %s -iname *.bin -exec ln {} %s/{}\\;\n' % rpl
+            rpl = (os.path.relpath(os.path.join(sim_id, turb_dir_base)), k)
+            pbs += 'find %s -iname *.bin -exec ln {} %s/{} \\;\n' % rpl
 
         # =====================================================================
         # finally we can run find+xargs!!!
