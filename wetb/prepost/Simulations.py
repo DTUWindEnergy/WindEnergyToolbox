@@ -1157,25 +1157,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
                     dirnames.append(dirname)
         for dirname in set(dirnames):
             pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
-        # all results will be collected in the sim_id directory, so create all
-        # necessary directories
-        pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'echo "create all model dirs in the sim_id folder"\n'
-        dirtags = ['[htc_dir]', '[res_dir]','[log_dir]','[animation_dir]',
-                   '[pbs_in_dir]', '[eigenfreq_dir]','[turb_dir]','[wake_dir]',
-                   '[meander_dir]','[hydro_dir]', '[mooring_dir]', '[pbs_out_dir]']
-        dirnames = []
-        for tag in dirtags:
-            for dirname in set(df[tag].unique().tolist()):
-                if not dirname or dirname.lower() not in ['false', 'none', 0]:
-                    dirnames.append(dirname)
-        dirname_unique = set(dirnames)
-        try:
-            dirname_unique.remove(0)
-        except KeyError:
-            pass
-        for dirname in sorted(dirname_unique):
-            pbs += 'mkdir -p %s\n' % dirname
 
         # =====================================================================
         # get the zip-chunk file from the PBS_O_WORKDIR
@@ -1209,15 +1190,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
+        pbs += 'echo "unzip chunk, create dirs in cpu and sim_id folders"\n'
         # unzip chunk, this contains all relevant folders already, and also
         # contains files defined in [copyto_files]
-        for k in range(ppn):
-            dst = os.path.join('%i' % k, '.')
+        for k in list(range(ppn)) + [sim_id]:
+            dst = os.path.join('%s' % k, '.')
             pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
-        # get all the *.p files from one of the extracted zip files
-        pbs += '# copy pbs_in from the first CPU to sim_id/pbs_in\n'
-        pbs += 'cp -r %s %s' % (os.path.join('0', pbs_in_base, '*'),
-                                os.path.join(sim_id, pbs_in_base))
 
         # =====================================================================
         # finally we can run find+xargs!!!
