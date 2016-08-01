@@ -2512,19 +2512,28 @@ class PBS(object):
             self.pbs += "fi\n"
             self.pbs += '# ' + '-'*60 + '\n'
 
-            # the hawc2 execution commands via wine
-            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
-            self.pbs += "%s %s ./%s %s &\n" % param
-
             self.pbs += 'echo ""\n'
-            self.pbs += 'echo "POST-PROCESSING"\n'
             self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
-            self.pbs += '  source activate %s\n' % self.pyenv
-            self.pbs += "  "
-            self.postprocessing()
-            self.pbs += '  source deactivate\n'
+            # the hawc2 execution commands via wine, in PBS mode fork and wait
+            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+            self.pbs += '  echo "execute HAWC2, fork to background"\n'
+            self.pbs += "  %s %s ./%s %s &\n" % param
+            # FIXME: running post-processing will only work when 1 HAWC2 job
+            # per PBS file, otherwise you have to wait for each job to finish
+            # first and then run the post-processing for all those cases
+            if self.maxcpu == 1:
+                self.pbs += '  wait\n'
+                self.pbs += '  echo "POST-PROCESSING"\n'
+                self.pbs += '  source activate %s\n' % self.pyenv
+                self.pbs += "  "
+                self.postprocessing()
+                self.pbs += '  source deactivate\n'
             self.pbs += "else\n"
+            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+            self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
+            self.pbs += "  %s %s ./%s %s \n" % param
+            self.pbs += '  echo "POST-PROCESSING"\n'
             self.pbs += "  "
             self.postprocessing()
             self.pbs += "fi\n"
@@ -2652,13 +2661,13 @@ class PBS(object):
         self.pbs += "\n\n"
         self.pbs += '# ' + "="*78 + "\n"
         self.pbs += "### Epilogue\n"
-        self.pbs += "### wait for jobs to finish \n"
-        self.pbs += "wait\n"
-        self.pbs += 'echo ""\n'
-        self.pbs += '# ' + '-'*78 + '\n'
         # evaluates to true if LAUNCH_PBS_MODE is NOT set
         self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
         self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+        self.pbs += "  ### wait for jobs to finish \n"
+        self.pbs += "  wait\n"
+        self.pbs += '  echo ""\n'
+        self.pbs += '# ' + '-'*78 + '\n'
         self.pbs += '  echo "Copy back from scratch directory" \n'
         for i in range(1, self.maxcpu+1, 1):
 
@@ -2860,7 +2869,7 @@ class PBS(object):
     def postprocessing(self):
         """Run post-processing just after HAWC2 has ran
         """
-        self.pbs += 'wait; python -c "from wetb.prepost import statsdel; '
+        self.pbs += 'python -c "from wetb.prepost import statsdel; '
         fsrc = os.path.join(self.results_dir, self.case)
         rpl = (fsrc, str(self.case_duration), '.csv')
         self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[3, 4, 6, 8, 10, 12], '
