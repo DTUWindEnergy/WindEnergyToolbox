@@ -1150,12 +1150,13 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += "echo 'create turb db directories:'\n"
         db_dir_tags = ['[turb_db_dir]', '[meand_db_dir]', '[wake_db_dir]']
-        dirnames = []
+        turb_dirs = []
         for tag in db_dir_tags:
             for dirname in set(df[tag].unique().tolist()):
                 if not dirname or dirname.lower() not in ['false', 'none']:
-                    dirnames.append(dirname)
-        for dirname in set(dirnames):
+                    turb_dirs.append(dirname)
+        turb_dirs = set(turb_dirs)
+        for dirname in turb_dirs:
             pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
 
         # =====================================================================
@@ -1197,6 +1198,13 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
             dst = os.path.join('%s' % k, '.')
             pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
 
+        # create hard links for all the turbulence files
+        turb_dir_base = os.path.join(os.path.commonpath(list(turb_dirs)), '')
+        pbs += 'echo "hard-linking all turb files into CPU dirs"\n'
+        for k in range(ppn):
+            rpl = (turb_dir_base, k)
+            pbs += 'find %s -iname *.bin -exec ln {} %s/{}\n' % rpl
+
         # =====================================================================
         # finally we can run find+xargs!!!
         pbs += '\n'
@@ -1211,7 +1219,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += "%s %s -type f -name '*.p' | sort -z\n" % rpl
         pbs += '\n'
         pbs += 'echo "number of files to be launched: "'
-        pbs += '`find %s -type f | wc -l`\n' % pbs_in_base
+        pbs += '`find %s -type f | wc -l`\n' % os.path.join(sim_id, pbs_in_base)
         rpl = (cmd_find, os.path.join(sim_id, pbs_in_base), cmd_xargs, ppn)
         cmd = ("%s %s -type f -name '*.p' -print0 | sort -z | %s -0 -I{} "
                "--process-slot-var=CPU_NR -n 1 -P %i sh {}\n" % rpl)
