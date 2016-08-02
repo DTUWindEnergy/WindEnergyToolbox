@@ -2541,6 +2541,8 @@ class PBS(object):
                 self.pbs += '  echo "POST-PROCESSING"\n'
                 self.pbs += '  source activate %s\n' % self.pyenv
                 self.pbs += "  "
+                self.checklogs()
+                self.pbs += "  "
                 self.postprocessing()
                 self.pbs += '  source deactivate\n'
             self.pbs += "else\n"
@@ -2548,6 +2550,8 @@ class PBS(object):
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
             self.pbs += "  %s %s ./%s %s \n" % param
             self.pbs += '  echo "POST-PROCESSING"\n'
+            self.pbs += "  "
+            self.checklogs()
             self.pbs += "  "
             self.postprocessing()
             self.pbs += "fi\n"
@@ -2880,6 +2884,13 @@ class PBS(object):
             self.pbs += '  find .\n'
         self.pbs += '# ' + '-'*78 + '\n'
 
+    def checklogs(self):
+        """
+        """
+        self.pbs += 'python -c "from wetb.prepost import statsdel; '
+        rpl = (os.path.join(self.logs_dir, self.case+'.log'))
+        self.pbs += 'statsdel.logcheck(\'%s\')"\n' % rpl
+
     def postprocessing(self):
         """Run post-processing just after HAWC2 has ran
         """
@@ -2968,11 +2979,12 @@ class ErrorLogs(windIO.LogFile):
     def __init__(self, silent=False, cases=None, resultfile='ErrorLog.csv'):
 
         # call init from base class
-        super(ErrorLogs, self).__init__(silent=silent)
+        super(ErrorLogs, self).__init__()
 
         self.PathToLogs = ''
         self.ResultFile = resultfile
         self.cases = cases
+        self.silent = silent
 
     # TODO: save this not a csv text string but a df_dict, and save as excel
     # and DataFrame!

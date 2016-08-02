@@ -23,6 +23,20 @@ import os
 from wetb.prepost import windIO
 
 
+def logcheck(fname, fsave=None, mode='w'):
+    """Check the log file of a single HAWC2 simulation and save results to
+    textfile.
+    """
+
+    logf = windIO.LogFile()
+    logf.readlog(fname)
+    contents = logf._msglistlog2csv('')
+    if fsave is None:
+        fsave = fname.replace('.log', '.csv')
+    with open(fsave, mode) as f:
+        f.write(contents)
+
+
 def calc(fpath, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=None, i0=0, i1=None,
          ftype=False, fsave=False):
     """

@@ -45,9 +45,8 @@ class LogFile(object):
     """Check a HAWC2 log file for errors.
     """
 
-    def __init__(self, silent=False):
+    def __init__(self):
 
-        self.silent = silent
         # the total message list log:
         self.MsgListLog = []
         # a smaller version, just indication if there are errors:
@@ -324,7 +323,7 @@ class LogFile(object):
 
         # save the iterations in the results folder
         if save_iter:
-            fiter = fname.replace('.log', '.iter')
+            fiter = os.path.basename(fname).replace('.log', '.iter')
             fmt = ['%12.06f', '%4i', '%4i']
             if case is not None:
                 fpath = os.path.join(case['[run_dir]'], case['[iter_dir]'])
