@@ -2929,7 +2929,7 @@ class PBS(object):
 # TODO: rewrite the error log analysis to something better. Take different
 # approach: start from the case and see if the results are present. Than we
 # also have the tags_dict available when log-checking a certain case
-class ErrorLogs(object):
+class ErrorLogs(windIO.LogFile):
     """
     Analyse all HAWC2 log files in any given directory
     ==================================================
@@ -2966,106 +2966,20 @@ class ErrorLogs(object):
 
     def __init__(self, silent=False, cases=None, resultfile='ErrorLog.csv'):
 
-        self.silent = silent
-        # specify folder which contains the log files
+        # call init from base class
+        super(ErrorLogs, self).__init__(silent=silent)
+
         self.PathToLogs = ''
         self.ResultFile = resultfile
-
         self.cases = cases
-
-        # the total message list log:
-        self.MsgListLog = []
-        # a smaller version, just indication if there are errors:
-        self.MsgListLog2 = dict()
-
-        # specify which message to look for. The number track's the order.
-        # this makes it easier to view afterwards in spreadsheet:
-        # every error will have its own column
-
-        # error messages that appear during initialisation
-        self.err_init = {}
-        self.err_init[' *** ERROR *** Error in com'] = len(self.err_init)
-        self.err_init[' *** ERROR ***  in command '] = len(self.err_init)
-        #  *** WARNING *** A comma "," is written within the command line
-        self.err_init[' *** WARNING *** A comma ",'] = len(self.err_init)
-        #  *** ERROR *** Not correct number of parameters
-        self.err_init[' *** ERROR *** Not correct '] = len(self.err_init)
-        #  *** INFO *** End of file reached
-        self.err_init[' *** INFO *** End of file r'] = len(self.err_init)
-        #  *** ERROR *** No line termination in command line
-        self.err_init[' *** ERROR *** No line term'] = len(self.err_init)
-        #  *** ERROR *** MATRIX IS NOT DEFINITE
-        self.err_init[' *** ERROR *** MATRIX IS NO'] = len(self.err_init)
-        #  *** ERROR *** There are unused relative
-        self.err_init[' *** ERROR *** There are un'] = len(self.err_init)
-        #  *** ERROR *** Error finding body based
-        self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
-        #  *** ERROR *** In body actions
-        self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
-        #  *** ERROR *** Command unknown and ignored
-        self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
-        #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
-        self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
-        #  *** ERROR *** The program will stop
-        self.err_init[' *** ERROR *** The program '] = len(self.err_init)
-        #  *** ERROR *** Unknown begin command in topologi.
-        self.err_init[' *** ERROR *** Unknown begi'] = len(self.err_init)
-        #  *** ERROR *** Not all needed topologi main body commands present
-        self.err_init[' *** ERROR *** Not all need'] = len(self.err_init)
-        #  *** ERROR ***  opening timoschenko data file
-        self.err_init[' *** ERROR ***  opening tim'] = len(self.err_init)
-        #  *** ERROR *** Error opening AE data file
-        self.err_init[' *** ERROR *** Error openin'] = len(self.err_init)
-        #  *** ERROR *** Requested blade _ae set number not found in _ae file
-        self.err_init[' *** ERROR *** Requested bl'] = len(self.err_init)
-        #  Error opening PC data file
-        self.err_init[' Error opening PC data file'] = len(self.err_init)
-        #  *** ERROR *** error reading mann turbulence
-        self.err_init[' *** ERROR *** error readin'] = len(self.err_init)
-        #  *** INFO *** The DLL subroutine
-        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
-        #  ** WARNING: FROM ESYS ELASTICBAR: No keyword
-        self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init)
-        #  *** ERROR *** DLL ./control/killtrans.dll could not be loaded - error!
-        self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
-        # *** ERROR *** The DLL subroutine
-        self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
-        # *** ERROR *** Mann turbulence length scale must be larger than zero!
-        # *** ERROR *** Mann turbulence alpha eps value must be larger than zero!
-        # *** ERROR *** Mann turbulence gamma value must be larger than zero!
-        self.err_init[' *** ERROR *** Mann turbule'] = len(self.err_init)
-
-        # *** WARNING *** Shear center x location not in elastic center, set to zero
-        self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
-        # Turbulence file ./xyz.bin does not exist
-        self.err_init[' Turbulence file '] = len(self.err_init)
-        self.err_init[' *** WARNING ***'] = len(self.err_init)
-        self.err_init[' *** ERROR ***'] = len(self.err_init)
-        self.err_init[' WARNING'] = len(self.err_init)
-        self.err_init[' ERROR'] = len(self.err_init)
-
-        # error messages that appear during simulation
-        self.err_sim = {}
-        #  *** ERROR *** Wind speed requested inside
-        self.err_sim[' *** ERROR *** Wind speed r'] = len(self.err_sim)
-        #  Maximum iterations exceeded at time step:
-        self.err_sim[' Maximum iterations exceede'] = len(self.err_sim)
-        #  Solver seems not to converge:
-        self.err_sim[' Solver seems not to conver'] = len(self.err_sim)
-        #  *** ERROR *** Out of x bounds:
-        self.err_sim[' *** ERROR *** Out of x bou'] = len(self.err_sim)
-        #  *** ERROR *** Out of limits in user defined shear field - limit value used
-        self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim)
-
-        # TODO: error message from a non existing channel output/input
-        # add more messages if required...
-
-        self.init_cols = len(self.err_init)
-        self.sim_cols = len(self.err_sim)
 
     # TODO: save this not a csv text string but a df_dict, and save as excel
     # and DataFrame!
     def check(self, appendlog=False, save_iter=False):
+        """Check all log files that are to be found in the directory
+        ErrorLogs.PathToLogs, or check the specific log file if
+        ErrorLogs.PathToLogs points to a specific log file.
+        """
 
         # MsgListLog = []
 
@@ -3100,208 +3014,12 @@ class ErrorLogs(object):
 
             # open the current log file
             f_log = os.path.join(self.PathToLogs, str(fname_lower))
-            with open(f_log, 'r') as f:
-                lines = f.readlines()
 
-            # keep track of the messages allready found in this file
-            tempLog = []
-            tempLog.append(fname)
-            exit_correct, found_error = False, False
-
-            subcols_sim = 4
-            subcols_init = 2
-            # create empty list item for the different messages and line
-            # number. Include one column for non identified messages
-            for j in range(self.init_cols):
-                # 2 sub-columns per message: nr, msg
-                for k in range(subcols_init):
-                    tempLog.append('')
-            for j in range(self.sim_cols):
-                # 4 sub-columns per message: first, last, nr, msg
-                for k in range(subcols_sim):
-                    tempLog.append('')
-            # and two more columns at the end for messages of unknown origin
-            tempLog.append('')
-            tempLog.append('')
-
-            # if there is a cases object, see how many time steps we expect
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
-                dt = float(case['[dt_sim]'])
-                time_steps = int(float(case['[time_stop]']) / dt)
-                iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
             else:
-                iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
-                dt = False
-            iterations[:,0:2] = -1
-            iterations[:,2] = 0
-
-            # keep track of the time_step number
-            time_step, init_block = -1, True
-            # check for messages in the current line
-            # for speed: delete from message watch list if message is found
-            for j, line in enumerate(lines):
-                # all id's of errors are 27 characters long
-                msg = line[:27]
-                # remove the line terminator, this seems to take 2 characters
-                # on PY2, but only one in PY3
-                line = line.replace('\n', '')
-
-                # keep track of the number of iterations
-                if line[:12] == ' Global time':
-                    time_step += 1
-                    iterations[time_step,0] = float(line[14:40])
-                    # for PY2, new line is 2 characters, for PY3 it is one char
-                    iterations[time_step,1] = int(line[-6:])
-                    # time step is the first time stamp
-                    if not dt:
-                        dt = float(line[15:40])
-                    # no need to look for messages if global time is mentioned
-                    continue
-
-                elif line[:20] == ' Starting simulation':
-                    init_block = False
-
-                elif init_block:
-                    # if string is shorter, we just get a shorter string.
-                    # checking presence in dict is faster compared to checking
-                    # the length of the string
-                    # first, last, nr, msg
-                    if msg in self.err_init:
-                        # icol=0 -> fname
-                        icol = subcols_init*self.err_init[msg] + 1
-                        # 0: number of occurances
-                        if tempLog[icol] == '':
-                            tempLog[icol] = '1'
-                        else:
-                            tempLog[icol] = str(int(tempLog[icol]) + 1)
-                        # 1: the error message itself
-                        tempLog[icol+1] = line
-                        found_error = True
-
-                # find errors that can occur during simulation
-                elif msg in self.err_sim:
-                    icol = subcols_sim*self.err_sim[msg]
-                    icol += subcols_init*self.init_cols + 1
-                    # in case stuff already goes wrong on the first time step
-                    if time_step == -1:
-                        time_step = 0
-
-                    # 1: time step of first occurance
-                    if tempLog[icol]  == '':
-                        tempLog[icol] = '%i' % time_step
-                    # 2: time step of last occurance
-                    tempLog[icol+1] = '%i' % time_step
-                    # 3: number of occurances
-                    if tempLog[icol+2] == '':
-                        tempLog[icol+2] = '1'
-                    else:
-                        tempLog[icol+2] = str(int(tempLog[icol+2]) + 1)
-                    # 4: the error message itself
-                    tempLog[icol+3] = line
-
-                    found_error = True
-                    iterations[time_step,2] = 1
-
-                # method of last resort, we have no idea what message
-                elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
-                    icol = subcols_sim*self.sim_cols
-                    icol += subcols_init*self.init_cols + 1
-                    # line number of the message
-                    tempLog[icol] = j
-                    # and message
-                    tempLog[icol+1] = line
-                    found_error = True
-                    # in case stuff already goes wrong on the first time step
-                    if time_step == -1:
-                        time_step = 0
-                    iterations[time_step,2] = 1
-
-            # simulation and simulation output time
-            if self.cases is not None:
-                t_stop = float(case['[time_stop]'])
-                duration = float(case['[duration]'])
-            else:
-                t_stop = -1
-                duration = -1
-
-            # see if the last line holds the sim time
-            if line[:15] ==  ' Elapsed time :':
-                exit_correct = True
-                elapsed_time = float(line[15:-1])
-                tempLog.append( elapsed_time )
-            # in some cases, Elapsed time is not given, and the last message
-            # might be: " Closing of external type2 DLL"
-            elif line[:20] == ' Closing of external':
-                exit_correct = True
-                elapsed_time = iterations[time_step,0]
-                tempLog.append( elapsed_time )
-            elif np.allclose(iterations[time_step,0], t_stop):
-                exit_correct = True
-                elapsed_time = iterations[time_step,0]
-                tempLog.append( elapsed_time )
-            else:
-                elapsed_time = -1
-                tempLog.append('')
-
-            # give the last recorded time step
-            tempLog.append('%1.11f' % iterations[time_step,0])
-
-            # simulation and simulation output time
-            tempLog.append('%1.01f' % t_stop)
-            tempLog.append('%1.04f' % (t_stop/elapsed_time))
-            tempLog.append('%1.01f' % duration)
-
-            # as last element, add the total number of iterations
-            itertotal = np.nansum(iterations[:,1])
-            tempLog.append('%i' % itertotal)
-
-            # the delta t used for the simulation
-            if dt:
-                tempLog.append('%1.7f' % dt)
-            else:
-                tempLog.append('failed to find dt')
-
-            # number of time steps
-            tempLog.append('%i' % len(iterations) )
-
-            # if the simulation didn't end correctly, the elapsed_time doesn't
-            # exist. Add the average and maximum nr of iterations per step
-            # or, if only the structural and eigen analysis is done, we have 0
-            try:
-                ratio = float(elapsed_time)/float(itertotal)
-                tempLog.append('%1.6f' % ratio)
-            except (UnboundLocalError, ZeroDivisionError, ValueError) as e:
-                tempLog.append('')
-            # when there are no time steps (structural analysis only)
-            try:
-                tempLog.append('%1.2f' % iterations[:,1].mean() )
-                tempLog.append('%1.2f' % iterations[:,1].max() )
-            except ValueError:
-                tempLog.append('')
-                tempLog.append('')
-
-            # save the iterations in the results folder
-            if save_iter:
-                fiter = fname.replace('.log', '.iter')
-                fmt = ['%12.06f', '%4i', '%4i']
-                if self.cases is not None:
-                    fpath = os.path.join(case['[run_dir]'], case['[iter_dir]'])
-                    # in case it has subdirectories
-                    for tt in [3,2,1]:
-                        tmp = os.path.sep.join(fpath.split(os.path.sep)[:-tt])
-                        if not os.path.exists(tmp):
-                            os.makedirs(tmp)
-                    if not os.path.exists(fpath):
-                        os.makedirs(fpath)
-                    np.savetxt(fpath + fiter, iterations, fmt=fmt)
-                else:
-                    np.savetxt(os.path.join(self.PathToLogs, fiter), iterations,
-                               fmt=fmt)
-
-            # append the messages found in the current file to the overview log
-            self.MsgListLog.append(tempLog)
-            self.MsgListLog2[fname] = [found_error, exit_correct]
+                case = None
+            self.readlog(f_log, case=case, save_iter=save_iter)
             i += 1
 
 #            # if no messages are found for the current file, than say so:
@@ -3321,21 +3039,8 @@ class ErrorLogs(object):
 
     def save(self, appendlog=False, suffix=None):
 
-        # write the results in a file, start with a header
-        contents = 'file name;' + 'nr;msg;'*(self.init_cols)
-        contents += 'first_tstep;last_tstep;nr;msg;'*(self.sim_cols)
-        contents += 'lnr;msg;'
-        # and add headers for elapsed time, nr of iterations, and sec/iteration
-        contents += 'Elapsted time;last time step;Simulation time;'
-        contents += 'real sim time;Sim output time;'
-        contents += 'total iterations;dt;nr time steps;'
-        contents += 'seconds/iteration;average iterations/time step;'
-        contents += 'maximum iterations/time step;\n'
-        for k in self.MsgListLog:
-            for n in k:
-                contents = contents + str(n) + ';'
-            # at the end of each line, new line symbol
-            contents = contents + '\n'
+        contents = self._header()
+        contents = self._msglistlog2csv(contents)
 
         # write csv file to disk, append to facilitate more logfile analysis
         if isinstance(suffix, str):
