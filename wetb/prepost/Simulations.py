@@ -1111,6 +1111,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs_in_base = os.path.join(pbs_in_base, '')
         htc_base = os.path.commonpath(df['[htc_dir]'].unique().tolist())
         htc_base = os.path.join(htc_base, '')
+        res_base = os.path.commonpath(df['[res_dir]'].unique().tolist())
+        res_base = os.path.join(res_base, '')
+        log_base = os.path.commonpath(df['[log_dir]'].unique().tolist())
+        log_base = os.path.join(log_base, '')
 
         # =====================================================================
         # PBS HEADER
@@ -1236,9 +1240,46 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # move results back from the node sim_id dir to the origin
         pbs += '\n'
         pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % os.path.join(pbase, sim_id)
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
         pbs += 'echo "Results saved at sim_id directory:"\n'
-        rpl = (sim_id, os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
-        pbs += 'find %s/. -not -iname "%s" -not -iname "%s"\n' % rpl
+        rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
+        pbs += 'find -not -iname "%s" -not -iname "%s"\n' % rpl
+
+        # compress all result files into an archive
+        pbs += '\necho "move results into compressed archive"\n'
+        pbs += 'find %s -iname "*.dat" -iname "*.sel" -print0 ' % res_base
+        fname = 'resfiles_chunk_%05i' % ii
+        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        pbs += 'xz -z2 -T 15 %s.tar\n'
+
+        # compress all logfiles into an archive
+        pbs += '\necho "move logfiles into compressed archive"\n'
+        pbs += 'find %s -iname "*.log" -print0 ' % log_base
+        fname = 'logfiles_chunk_%05i' % ii
+        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        pbs += 'xz -z2 -T 15 %s.tar\n' % fname
+
+        # compress all post-processing results (saved as csv's) into an archive
+        pbs += '\necho "move statsdel into compressed archive"\n'
+        pbs += 'find %s -iname "*.csv" -print0 ' % res_base
+        fname = os.path.join(post_dir, 'statsdel_chunk_%05i' % ii)
+        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        pbs += 'xz -z2 -T 15 %s.tar\n' % fname
+
+        # compress all post-processing results (saved as csv's) into an archive
+        pbs += '\necho "move log analysis into compressed archive"\n'
+        pbs += 'find %s -iname "*.csv" -print0 ' % log_base
+        fname = os.path.join(post_dir, 'loganalysis_chunk_%05i' % ii)
+        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        pbs += 'xz -z2 -T 15 %s.tar\n' % fname
+
+        pbs += '\n'
+        pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % pbase
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
         pbs += 'echo "move results back from node scratch/sim_id to origin, '
         pbs += 'but ignore htc, and pbs_in directories."\n'
 
@@ -1275,6 +1316,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     sim_id = df['[sim_id]'].iloc[0]
     run_dir = df['[run_dir]'].iloc[0]
     model_zip = df['[model_zip]'].iloc[0]
+    post_dir = df['[post_dir]'].iloc[0]
     nodes = 1
     for ii, dfi in enumerate(df_iter):
         fname = make_zip_chunks(dfi, ii, sim_id, run_dir, model_zip)
