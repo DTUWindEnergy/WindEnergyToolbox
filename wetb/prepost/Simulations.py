@@ -2220,6 +2220,7 @@ class PBS(object):
             self.maxcpu = 1
             self.secperiter = 0.012
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
+            self.winefix = ''
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
