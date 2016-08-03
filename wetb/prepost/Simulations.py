@@ -1009,6 +1009,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
     def make_zip_chunks(df, ii, sim_id, run_dir, model_zip):
+        """Create zip cunks and also create an index
+        """
 
         # create a new zip file, give index of the first element. THis is
         # quasi random due to the sorting we applied earlier
@@ -1040,6 +1042,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # HTC files
         df_src = df['[run_dir]'] + df['[htc_dir]'] + df['[case_id]']
         df_dst = df['[htc_dir]'] + df['[case_id]']
+        # create an index so given the htc file, we can find the chunk nr
+        df_index = pd.DataFrame(index=df['[case_id]'].copy(),
+                                columns=['chunk_nr'], dtype=np.int32)
+        df_index['chunk_nr'] = ii
         # Since df_src and df_dst are already Series, iterating is fast an it
         # is slower to first convert to a list
         for src, dst_rel in zip(df_src, df_dst):
@@ -1076,7 +1082,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
 
         zf.close()
 
-        return fname
+        return fname, df_index
 
     pbs_tmplate ="""
 ### Standard Output
@@ -1320,10 +1326,18 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     model_zip = df['[model_zip]'].iloc[0]
     post_dir = df['[post_dir]'].iloc[0]
     nodes = 1
+    df_ind = pd.DataFrame(columns=['chunk_nr'], dtype=np.int32)
+    df_ind.index.name = '[case_id]'
     for ii, dfi in enumerate(df_iter):
-        fname = make_zip_chunks(dfi, ii, sim_id, run_dir, model_zip)
+        fname, ind = make_zip_chunks(dfi, ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, ii, sim_id, run_dir, model_zip)
+        df_ind = df_ind.append(ind)
         print(fname)
+
+    fname = os.path.join(post_dir, 'case_id-chunk-index')
+    df_ind['chunk_nr'] = df_ind['chunk_nr'].astype(np.int32)
+    df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
+    df_ind.to_csv(fname+'.csv')
 
 
 def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
