@@ -4,7 +4,7 @@
 #PBS -o ./pbs_out/turb/turb_s100_10ms.out
 ### Standard Error
 #PBS -e ./pbs_out/turb/turb_s100_10ms.err
-#PBS -W umask=003
+#PBS -W umask=0003
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
 #PBS -l walltime=00:59:59
 #PBS -lnodes=1:ppn=1
