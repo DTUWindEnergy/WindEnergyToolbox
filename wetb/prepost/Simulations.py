@@ -1254,7 +1254,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'find %s -iname "*.dat" -iname "*.sel" -print0 ' % res_base
         fname = 'resfiles_chunk_%05i' % ii
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-        pbs += 'xz -z2 -T 15 %s.tar\n'
+        pbs += 'xz -z2 -T 15 %s.tar\n' % fname
 
         # compress all logfiles into an archive
         pbs += '\necho "move logfiles into compressed archive"\n'
