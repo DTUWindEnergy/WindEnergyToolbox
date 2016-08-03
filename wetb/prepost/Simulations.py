@@ -1207,10 +1207,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
-        pbs += 'echo "hard-linking all turb files into CPU dirs"\n'
+        pbs += 'echo "copy all turb files into CPU dirs"\n'
         for k in range(ppn):
             rpl = (os.path.relpath(os.path.join(sim_id, turb_dir_base)), k)
-            pbs += 'find %s -iname *.bin -exec ln {} %s/{} \\;\n' % rpl
+            pbs += 'find %s -iname *.bin -exec cp {} %s/{} \\;\n' % rpl
 
         # =====================================================================
         # finally we can run find+xargs!!!
@@ -1240,6 +1240,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # move results back from the node sim_id dir to the origin
         pbs += '\n'
         pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += "echo 'total scratch disk usage:'\n"
+        pbs += 'du -hs %s\n' % pbase
         pbs += 'cd %s\n' % os.path.join(pbase, sim_id)
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
