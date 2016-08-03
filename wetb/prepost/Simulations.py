@@ -1112,6 +1112,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         jobid = '%s_chunk_%05i' % (sim_id, ii)
 
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
+        post_dir_base = post_dir.split(sim_id)[1]
+        if post_dir_base[0] == os.path.sep:
+            post_dir_base = post_dir_base[1:]
 
         pbs_in_base = os.path.commonpath(df['[pbs_in_dir]'].unique().tolist())
         pbs_in_base = os.path.join(pbs_in_base, '')
@@ -1272,14 +1275,14 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move statsdel into compressed archive"\n'
         pbs += 'find %s -iname "*.csv" -print0 ' % res_base
-        fname = os.path.join(post_dir, 'statsdel_chunk_%05i' % ii)
+        fname = os.path.join(post_dir_base, 'statsdel_chunk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         pbs += 'xz -z2 -T 15 %s.tar\n' % fname
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move log analysis into compressed archive"\n'
         pbs += 'find %s -iname "*.csv" -print0 ' % log_base
-        fname = os.path.join(post_dir, 'loganalysis_chunk_%05i' % ii)
+        fname = os.path.join(post_dir_base, 'loganalysis_chunk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         pbs += 'xz -z2 -T 15 %s.tar\n' % fname
 
