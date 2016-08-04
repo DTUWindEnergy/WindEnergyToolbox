@@ -1260,7 +1260,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'pwd\n'
         pbs += 'echo "Results saved at sim_id directory:"\n'
         rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
-        pbs += 'find -not -iname "%s" -not -iname "%s"\n' % rpl
+        pbs += 'find \n'
 
         # compress all result files into an archive
         pbs += '\necho "move results into compressed archive"\n'
