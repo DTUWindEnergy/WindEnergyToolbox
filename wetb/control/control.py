@@ -19,7 +19,8 @@ class Control(object):
         """
 
         Function to compute the gains of the pitch controller of the Basic DTU
-        Wind Energy Controller.
+        Wind Energy Controller with the pole placement technique implemented
+        in HAWCStab2.
 
         Parameters
         ----------
@@ -27,19 +28,15 @@ class Control(object):
             Pitch angle [deg]
         I: array
             Drivetrain inertia [kg*m**2]
-
         dQdt: array
             Partial derivative of the aerodynamic torque with respect to the
-            pitch angle [kNm/deg]
+            pitch angle [kNm/deg]. Can be computed with HAWCStab2.
         P: float
             Rated power [kW]. Set to zero in case of constant torque regulation
-
         Omr: float
             Rated rotational speed [rpm]
-
         om: float
             Freqeuncy of regulator mode [Hz]
-
         csi: float
             Damping ratio of regulator mode
 
