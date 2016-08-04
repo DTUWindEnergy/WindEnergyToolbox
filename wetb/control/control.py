@@ -42,7 +42,6 @@ class Control(object):
 
         Returns
         -------
-
         kp: float
             Proportional gain [rad/(rad/s)]
         ki: float
@@ -54,11 +53,11 @@ class Control(object):
 
 
         """
-        pitch *= np.pi/180.
-        I *= 1e-3
-        dQdt *= 180./np.pi
-        Omr *= np.pi/30.
-        om *= 2.*np.pi
+        pitch = pitch * np.pi/180.
+        I = I * 1e-3
+        dQdt = dQdt * 180./np.pi
+        Omr = Omr * np.pi/30.
+        om = om * 2.*np.pi
 
         # Quadratic fitting of dQdt
         A = np.ones([dQdt.shape[0], 3])
@@ -73,8 +72,8 @@ class Control(object):
         kp = -(2*csi*om*I[0] - P/(Omr**2))/x[2]
         ki = -(om**2*I[0])/x[2]
 
-        K1 = x[2]/x[0] * (180./np.pi)
-        K2 = x[2]/x[1] * (180./np.pi)**2
+        K1 = x[2]/x[1]*(180./np.pi)
+        K2 = x[2]/x[0]*(180./np.pi)**2
 
         return kp, ki, K1, K2
 

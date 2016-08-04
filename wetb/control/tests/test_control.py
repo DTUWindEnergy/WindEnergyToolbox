@@ -61,10 +61,10 @@ class TestControl(unittest.TestCase):
                                                      self.dQdt[i:],
                                                      P, Omr, om, csi)
 
-        self.assertEqual(kp, 1.5960902436444313)
-        self.assertEqual(ki, 0.71632362627138402)
-        self.assertEqual(K1, 10.463887621856747)
-        self.assertEqual(K2, 573.59471652017498)
+        self.assertEqual(kp, 1.596090243644432)
+        self.assertEqual(ki, 0.71632362627138424)
+        self.assertEqual(K1, 10.01111637532056)
+        self.assertEqual(K2, 599.53659803157643)
 
 if __name__ == "__main__":
 
