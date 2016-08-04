@@ -1039,6 +1039,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
             if dirname != 0:
                 zf.write('.', os.path.join(dirname, '.'))
 
+        # and the post-processing data
+        # FIXME: do not use hard coded paths!
+        zf.write('.', 'prepost-data/')
+
         # HTC files
         df_src = df['[run_dir]'] + df['[htc_dir]'] + df['[case_id]']
         df_dst = df['[htc_dir]'] + df['[case_id]']
