@@ -1262,11 +1262,17 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
         pbs += 'find \n'
 
-        # compress all result files into an archive
+        # compress all result files into an archive, first *.sel files
+        # FIXME: why doesn this work with -name "*.sel" -o -name "*.dat"??
         pbs += '\necho "move results into compressed archive"\n'
-        pbs += 'find %s -name "*.dat" -o -name "*.sel" -print0 ' % res_base
+        pbs += 'find %s -name "*.sel" -print0 ' % res_base
         fname = os.path.join(res_base, 'resfiles_chunk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        # now add the *.dat files to the archive
+        pbs += 'find %s -name "*.dat" -print0 ' % res_base
+        fname = os.path.join(res_base, 'resfiles_chunk_%05i' % ii)
+        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+
         pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
         # compress all logfiles into an archive
