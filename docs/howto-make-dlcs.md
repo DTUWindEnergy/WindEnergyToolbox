@@ -443,7 +443,8 @@ options:
                         consider using --crontab instead. Default=False
   --sort                Sort pbs file list. Default=False
   --crontab             Crontab mode. Implies --cache, and not compatible with
-                        --node. Default=False
+                        --node. When all jobs are done, crontab -r will remove
+                        all the user's current crontab jobs. Default=False
   --debug               Debug print statements. Default=False
 
 ```
@@ -459,10 +460,11 @@ g-000 $ launch.py -n 100 -p pbs_in/
 If the launching process requires hours, and you have to close you SHH/PuTTY
 session before it reaches the end, you can either use the ```--node``` or the
 ```--crontab``` argument. When using ```--node```, ```launch.py``` will run on
-a dedicated cluster note, submitted as a PBS job. When using ```--crontab```,
+a dedicated cluster node, submitted as a PBS job. When using ```--crontab```,
 ```launch.py``` will be run once every 5 minutes as a ```crontab``` job on the
 login node. This is preferred since you are not occupying a node with a very
-simple and light job.
+simple and light job. ```launch.py``` will remove all the users crontab jobs
+at the end with ```crontab -r```.
 
 ```bash
 g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
