@@ -406,8 +406,13 @@ them by using the help function (the output is included for your convenience):
 
 ```bash
 g-000 $ launch.py --help
+usage:
 
-usage: launch.py -n nr_cpus
+launch.py -n nr_cpus
+
+launch.py --crontab when running a single iteration of launch.py as a crontab job every 5 minutes.
+File list is read from "launch_pbs_filelist.txt", and the configuration can be changed on the fly
+by editing the file "launch_scheduler_config.txt".
 
 options:
   -h, --help            show this help message and exit
@@ -426,9 +431,21 @@ options:
   --cpu_free=CPU_FREE   No more jobs will be launched when the cluster does
                         not have the specified amount of cpus free. This will
                         make sure there is room for others on the cluster, but
-                        might mean less cpus available for you. Default=48.
+                        might mean less cpus available for you. Default=48
+  --cpu_user_queue=CPU_USER_QUEUE
+                        No more jobs will be launched after having
+                        cpu_user_queue number of jobs in the queue. This
+                        prevents users from filling the queue, while still
+                        allowing to aim for a high cpu_free target.
+                        Default=500
   --qsub_cmd=QSUB_CMD   Is set automatically by --node flag
-  --node                If executed on dedicated node.
+  --node                If executed on dedicated node. Although this works,
+                        consider using --crontab instead. Default=False
+  --sort                Sort pbs file list. Default=False
+  --crontab             Crontab mode. Implies --cache, and not compatible with
+                        --node. Default=False
+  --debug               Debug print statements. Default=False
+
 ```
 
 Then launch the actual jobs (each job is a ```*.p``` file in ```pbs_in```) using
@@ -440,12 +457,16 @@ g-000 $ launch.py -n 100 -p pbs_in/
 ```
 
 If the launching process requires hours, and you have to close you SHH/PuTTY
-session before it reaches the end, you should use the ```--node``` argument so
-the launching process will take place on a dedicated node:
+session before it reaches the end, you can either use the ```--node``` or the
+```--crontab``` argument. When using ```--node```, ```launch.py``` will run on
+a dedicated cluster note, submitted as a PBS job. When using ```--crontab```,
+```launch.py``` will be run once every 5 minutes as a ```crontab``` job on the
+login node. This is preferred since you are not occupying a node with a very
+simple and light job.
 
 ```bash
 g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
-g-000 $ launch.py -n 100 -p pbs_in/ --node
+g-000 $ launch.py -n 100 -p pbs_in/ --crontab
 ```
 
 
@@ -510,11 +531,11 @@ g-000 $ launch.py -n 100 --node -p pbs_in_failed
 ```
 
 2. Use the ```--cache``` option, and edit the PBS file list in the file
-```pbs_in_file_cache.txt``` so that only the simulations remain that have to be
-run again. Note that the ```pbs_in_file_cache.txt``` file is created every time
-you run a ```launch.py```. Note that you can use the option ```--dry``` to make
-a practice launch run, and that will create a ```pbs_in_file_cache.txt``` file,
-but not a single job will be launched.
+```launch_pbs_filelist.txt``` so that only the simulations remain that have to be
+run again. ```launch_pbs_filelist.txt``` is created every time you run
+```launch.py```. You can use the option ```--dry``` to make a practice launch
+run, and that will create a ```launch_pbs_filelist.txt``` file, but not a single
+job will be launched.
 
 3. Each pbs file can be launched manually as follows:
 ```
