@@ -25,7 +25,8 @@ class Control(object):
         Parameters
         ----------
         pitch: array
-            Pitch angle [deg]
+            Pitch angle [deg]. The values should only be those of the full load
+            region.
         I: array
             Drivetrain inertia [kg*m**2]
         dQdt: array
