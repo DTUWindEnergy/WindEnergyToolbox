@@ -514,7 +514,10 @@ outputting to the command line in the file:
 ```
 Or when watch what is happening at the end in real time
 ```
+# on Jess:
 tail -f /var/lib/torque/spool/JOBID.jess.dtu.dk.OU
+# on Gorm:
+tail -f /var/spool/pbs/spool/JOBID.g-000.risoe.dk.OU
 ```
 
 
