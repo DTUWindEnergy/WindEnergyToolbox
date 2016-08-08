@@ -66,6 +66,70 @@ class TestControl(unittest.TestCase):
         self.assertEqual(K1, 10.01111637532056)
         self.assertEqual(K2, 599.53659803157643)
 
+    def test_regions(self):
+
+        crt = control.Control()
+
+        pitch = np.array([0.,-2.,-2.,-2.,-2.,-2.,-2.,-1., 0., ])
+        omega = np.array([1., 1., 1., 2., 3., 3., 3., 3., 3., ])
+        power = np.array([1., 2., 3., 4., 5., 6., 7., 7., 7., ])
+
+        istart, iend = 0, -1
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 2)
+        self.assertEqual(i2, 4)
+        self.assertEqual(i3, 6)
+
+        istart, iend = 3, -1
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 1)
+        self.assertEqual(i3, 3)
+
+        istart, iend = 5, -1
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 0)
+        self.assertEqual(i3, 1)
+
+        istart, iend = 6, -1
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 0)
+        self.assertEqual(i3, 0)
+
+        istart, iend = 5, -2
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 0)
+        self.assertEqual(i3, 1)
+
+        istart, iend = 3, -3
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 1)
+        self.assertEqual(i3, 2)
+
+        istart, iend = 2, -4
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 2)
+        self.assertEqual(i3, 2)
+
+        istart, iend = 0, 3
+        i1, i2, i3 = crt.select_regions(pitch[istart:iend], omega[istart:iend],
+                                        power[istart:iend])
+        self.assertEqual(i1, 0)
+        self.assertEqual(i2, 0)
+        self.assertEqual(i3, 2)
+
 if __name__ == "__main__":
 
     unittest.main()

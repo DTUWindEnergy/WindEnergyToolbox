@@ -78,6 +78,41 @@ class Control(object):
 
         return kp, ki, K1, K2
 
+    def K_omega2(V, P, R, TSR):
+
+        Va = np.array(V)
+        Pa = np.array(P)
+        Ra = np.array(R)
+        TSRa = np.array(TSR)
+        K = Ra**3 * np.mean(Pa/(TSRa*Va)**3)
+
+        return K
+
+    def select_regions(self, pitch, omega, power):
+
+        i12 = 0
+
+        n = len(pitch)
+
+        for i in range(n-1):
+            if (abs(power[i]/power[i+1] - 1.) > 0.01):
+                if (abs(omega[i] / omega[i+1] - 1.) > 0.01):
+                    i12 = i
+                    break
+        i23 = n-1
+        for i in range(i12, n-1):
+            if (abs(omega[i] / omega[i+1] - 1.) < 0.01):
+                i23 = i
+                break
+
+        i34 = i23
+        for i in range(i23, n-1):
+            if (abs(power[i]/power[i+1] - 1.) > 0.01):
+                if (abs(omega[i] / omega[i+1] - 1.) < 0.01):
+                    i34 = i+1
+
+        return i12, i23, i34
+
 
 if __name__ == '__main__':
 
