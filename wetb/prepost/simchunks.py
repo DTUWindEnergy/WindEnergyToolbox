@@ -22,9 +22,12 @@ from builtins import object
 import os
 import zipfile
 import copy
+import tarfile
+import glob
 
 import numpy as np
 import pandas as pd
+#from tqdm import tqdm
 
 from wetb.prepost.Simulations import Cases
 
@@ -389,6 +392,63 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     df_ind['chunk_nr'] = df_ind['chunk_nr'].astype(np.int32)
     df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
     df_ind.to_csv(fname+'.csv')
+
+
+def merge_from_tarfiles(df_fname, path, pattern, tarmode='r:xz',
+                        tqdm=False, header='infer', sep=','):
+    """Merge all csv files from various tar archives into a big pd.DataFrame
+    store.
+
+    Parameters
+    ----------
+
+    df_fname : str
+        file name of the pd.DataFrame h5 store in which all chunks will be
+        merged. Names usually used are:
+            * [sim_id]_ErrorLogs.h5
+            * [sim_id]_statistics.h5
+
+    path : str
+        Directory in which all chunks are located.
+
+    pattern : str
+        Search pattern used to select (using glob.glob) files in path
+
+    tarmode : str, default='r:xz'
+        File opening mode for tarfile (used when opening each of the chunks).
+
+    tqdm : boolean, default=False
+       If True, an interactive progress bar will be displayed (requires the
+       tqdm module). If set to False no progress bar will be displayed.
+
+    header : str, default='infer'
+        Argument passed on to pandas.read_csv. Set to None if the compressed
+        chunks do not contain any headers.
+
+    sep : str, default=','
+        Argument passed on to pandas.read_csv. Set to ';' when handling the
+        ErrorLogs.
+
+    """
+
+    store = pd.HDFStore(os.path.join(path, df_fname), mode='w', format='table',
+                        complevel=9, complib='zlib')
+
+    if tqdm:
+        from tqdm import tqdm
+    else:
+        def tqdm(itereable):
+            return itereable
+
+    for tar_fname in tqdm(glob.glob(os.path.join(path, pattern))):
+        with tarfile.open(tar_fname, mode=tarmode) as tar:
+            df = pd.DataFrame()
+            for tarinfo in tar.getmembers():
+                fileobj = tar.extractfile(tarinfo)
+                df = df.append(pd.read_csv(fileobj, header=header, sep=sep))
+        store.append('table', df, min_itemsize={})
+    store.close()
+
 
 if __name__ == '__main__':
     pass
