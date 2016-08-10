@@ -394,6 +394,53 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     df_ind.to_csv(fname+'.csv')
 
 
+def regroup_tarfiles(cc):
+    """Re-group all chunks again per [Case folder] compressed file. First all
+    chunks are copied to the node scratch disc, then start working on them.
+    This only works on a node with PBS stuff.
+
+    Make sure to maintain the same location as defined by the tags!
+
+    [res_dir] and [Case folder] could be multiple directories deep, bu the
+    final archive will only contain the files (no directory structure), and
+    the name of the archive is that of the last directory:
+        /[res_dir]/[Case folder]/[Case folder].tar.xz
+        /res/dir/case/folder/dlcname/dlcname.tar.xz
+
+    Parameters
+    ----------
+
+    path_pattern : str
+        /path/to/files/*.tar.xz
+
+    """
+
+    USER = os.getenv('USER')
+    PBS_JOBID = os.getenv('PBS_JOBID')
+    scratch = os.path.join('/scratch', USER, PBS_JOBID)
+    src = os.getenv('PBS_O_WORKDIR')
+
+    path_pattern = '/home/dave/SimResults/NREL5MW/D0022/prepost-data/*.xz'
+
+    for ffname in tqdm(glob.glob(path_pattern)):
+        appendix = os.path.basename(ffname).split('_')[0]
+        with tarfile.open(ffname, mode='r:xz') as tar:
+            # create new tar files if necessary for each [Case folder]
+            for tarinfo in tar.getmembers():
+                t2_name = os.path.basename(os.path.dirname(tarinfo.name))
+                t2_dir = os.path.join(os.path.dirname(path_pattern), t2_name)
+                if not os.path.isdir(t2_dir):
+                    os.makedirs(t2_dir)
+                t2_path = os.path.join(t2_dir, t2_name + '_%s.tar' % appendix)
+                fileobj = tar.extractfile(tarinfo)
+                # change the location of the file in the new archive:
+                # the location of the archive is according to the folder
+                # structure as defined in the tags, remove any subfolders
+                tarinfo.name = os.basename(tarinfo.name)
+                with tarfile.open(t2_path, mode='a') as t2:
+                    t2.addfile(tarinfo, fileobj)
+
+
 def merge_from_tarfiles(df_fname, path, pattern, tarmode='r:xz', tqdm=False,
                         header='infer', names=None, sep=',', min_itemsize={},
                         verbose=False, dtypes={}):
