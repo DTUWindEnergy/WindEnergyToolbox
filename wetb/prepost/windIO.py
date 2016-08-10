@@ -429,6 +429,7 @@ class LogFile(object):
         # str and float datatypes for
         msg_cols = ['msg_%i' % i for i in range(30)]
         msg_cols.extend(['msg_%i' % i for i in range(100,105,1)])
+        msg_cols.append('msg_extra')
         dtypes.update({k:str for k in msg_cols})
         # make the message/str columns long enough
         min_itemsize = {'msg_%i' % i : 100 for i in range(30)}
