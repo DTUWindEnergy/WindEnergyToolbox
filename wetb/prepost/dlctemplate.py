@@ -249,46 +249,6 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
         mann64.gen_pbs(cases)
 
 
-def launch_param(sim_id):
-    """
-    Launch parameter variations defined according to the Simulations syntax
-    """
-    # MODEL SOURCES, exchanche file sources
-#    p_local = '/mnt/vea-group/AED/STABCON/SIM/NREL5MW'
-#    p_local = '%s/%s' % (P_SOURCE, PROJECT)
-    # target run dir (is defined in the master_tags)
-#    p_root = '/mnt/gorm/HAWC2/NREL5MW'
-
-    iter_dict = dict()
-    iter_dict['[Windspeed]'] = [False]
-
-    opt_tags = []
-
-    runmethod = 'gorm'
-#    runmethod = 'local'
-#    runmethod = 'linux-script'
-#    runmethod = 'windows-script'
-#    runmethod = 'jess'
-    master = master_tags(sim_id, runmethod=runmethod)
-    master.tags['[hawc2_exe]'] = 'hawc2-latest'
-    master.tags['[sim_id]'] = sim_id
-    master.output_dirs.append('[Case folder]')
-    master.output_dirs.append('[Case id.]')
-
-    # TODO: copy master and DLC exchange files to p_root too!!
-
-    # all tags set in master_tags will be overwritten by the values set in
-    # variable_tag_func(), iter_dict and opt_tags
-    # values set in iter_dict have precedence over opt_tags
-    # variable_tag_func() has precedense over iter_dict, which has precedence
-    # over opt_tags. So opt_tags comes last
-    sim.prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
-                       write_htc=True, runmethod=runmethod, verbose=False,
-                       copyback_turb=False, msg='', update_cases=False,
-                       ignore_non_unique=False, run_only_new=False,
-                       pbs_fname_appendix=False, short_job_names=False)
-
-
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
                 m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
