@@ -49,11 +49,6 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   echo "execute HAWC2, fork to background"
   time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc  &
   wait
-  echo "POST-PROCESSING"
-  source activate wetb_py3
-  python -c "from wetb.prepost import statsdel; statsdel.logcheck('logfiles/dlc01_demos/dlc01_steady_wsp9_noturb.log')"
-  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp9_noturb', no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=20.0, i0=0, i1=None, ftype='.csv')"
-  source deactivate
 else
   echo "execute HAWC2, do not fork and wait"
   time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc  
