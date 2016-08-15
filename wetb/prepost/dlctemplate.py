@@ -241,7 +241,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
-                               silent=silent, verbose=verbose)
+                               silent=silent, verbose=verbose, pyenv=None)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
