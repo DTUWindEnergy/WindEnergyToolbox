@@ -61,10 +61,10 @@ class TestControl(unittest.TestCase):
                                                      self.dQdt[i:],
                                                      P, Omr, om, csi)
 
-        self.assertEqual(kp, 1.596090243644432)
-        self.assertEqual(ki, 0.71632362627138424)
-        self.assertEqual(K1, 10.01111637532056)
-        self.assertEqual(K2, 599.53659803157643)
+        self.assertAlmostEqual(kp, 1.596090243644432, places=10)
+        self.assertAlmostEqual(ki, 0.71632362627138424, places=10)
+        self.assertAlmostEqual(K1, 10.01111637532056, places=10)
+        self.assertAlmostEqual(K2, 599.53659803157643, places=10)
 
     def test_regions(self):
 
