@@ -558,7 +558,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
                 run_only_new=False, windows_nr_cpus=2, qsub='',
                 pbs_fname_appendix=True, short_job_names=True,
-                update_model_data=True, maxcpu=1):
+                update_model_data=True, maxcpu=1, pyenv='wetb_py3'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -793,7 +793,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
            copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
-           pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu)
+           pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
+           pyenv=pyenv)
 
     return cases
 
@@ -994,7 +995,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1):
+           maxcpu=1, pyenv='wetb_py3'):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1029,7 +1030,7 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, server=runmethod, short_job_names=short_job_names,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent)
+                  verbose=verbose, silent=silent, pyenv=pyenv)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
@@ -2247,13 +2248,14 @@ class PBS(object):
             # first and then run the post-processing for all those cases
             if self.maxcpu == 1:
                 self.pbs += '  wait\n'
-                self.pbs += '  echo "POST-PROCESSING"\n'
-                self.pbs += '  source activate %s\n' % self.pyenv
-                self.pbs += "  "
-                self.checklogs()
-                self.pbs += "  "
-                self.postprocessing()
-                self.pbs += '  source deactivate\n'
+                if self.pyenv is not None:
+                    self.pbs += '  echo "POST-PROCESSING"\n'
+                    self.pbs += '  source activate %s\n' % self.pyenv
+                    self.pbs += "  "
+                    self.checklogs()
+                    self.pbs += "  "
+                    self.postprocessing()
+                    self.pbs += '  source deactivate\n'
             self.pbs += "else\n"
             param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
