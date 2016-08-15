@@ -26,6 +26,7 @@ from matplotlib import pyplot as plt
 from wetb.prepost import Simulations as sim
 from wetb.prepost import dlcdefs
 from wetb.prepost import dlcplots
+from wetb.prepost.simchunks import create_chunks_htc_pbs
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -183,7 +184,7 @@ def variable_tag_func(master, case_id_short=False):
 # =============================================================================
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
-                      runmethod=None, write_htc=True):
+                      runmethod=None, write_htc=True, zipchunks=False):
     """
     Launch load cases defined in Excel files
     """
@@ -247,6 +248,17 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
         # MannTurb64 places PBS launch scripts in a "pbs_in_turb" folder
         mann64 = sim.MannTurb64(silent=silent)
         mann64.gen_pbs(cases)
+
+    if zipchunks:
+        # create chunks
+        # sort so we have minimal copying turb files from mimer to node/scratch
+        sorts_on = ['[DLC]', '[Windspeed]']
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
+                              nr_procs_series=9, processes=1,
+                              walltime='20:00:00', chunks_dir='zip-chunks-jess')
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
+                              nr_procs_series=15, processes=1,
+                              walltime='20:00:00', chunks_dir='zip-chunks-gorm')
 
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
@@ -414,6 +426,9 @@ if __name__ == '__main__':
                         dest='envelopeblade', help='Compute envelopeblade')
     parser.add_argument('--envelopeturbine', default=False, action='store_true',
                         dest='envelopeturbine', help='Compute envelopeturbine')
+    parser.add_argument('--zipchunks', default=False, action='store_true',
+                        dest='zipchunks', help='Create PBS launch files for'
+                        'running in zip-chunk find+xargs mode.')
     opt = parser.parse_args()
 
     # TODO: use arguments to determine the scenario:
@@ -451,7 +466,7 @@ if __name__ == '__main__':
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
-        launch_dlcs_excel(sim_id, silent=False)
+        launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
