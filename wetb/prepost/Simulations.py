@@ -5316,9 +5316,9 @@ class MannTurb64(prepost.PBSScript):
                 self.prelude = 'cd %s' % case['[turb_dir]']
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-            rpl = (float(case['[AlfaEpsilon]']),
-                   float(case['[L_mann]']),
-                   float(case['[Gamma]']),
+            rpl = (float(case['[MannAlfaEpsilon]']),
+                   float(case['[MannL]']),
+                   float(case['[MannGamma]']),
                    int(case['[tu_seed]']),
                    int(case['[turb_nr_u]']),
                    int(case['[turb_nr_v]']),

@@ -118,9 +118,9 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     # master file with the HAWC2Wrapper !!
     # default tags turbulence generator (required for 64-bit Mann generator)
     # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-    master.tags['[AlfaEpsilon]'] = 1.0
-    master.tags['[L_mann]'] = 29.4
-    master.tags['[Gamma]'] = 3.0
+    master.tags['[MannAlfaEpsilon]'] = 1.0
+    master.tags['[MannL]'] = 29.4
+    master.tags['[MannGamma]'] = 3.0
     master.tags['[tu_seed]'] = 0
     master.tags['[turb_nr_u]'] = 8192
     master.tags['[turb_nr_v]'] = 32
