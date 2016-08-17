@@ -65,6 +65,8 @@ def calc(fpath, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=None, i0=0, i1=None,
     elif ftype == '.h5':
         statsdel.to_hdf(fpath+ftype, 'table', complib='zlib', complevel=9)
 
+    return res, statsdel
+
 
 if __name__ == '__main__':
     pass
