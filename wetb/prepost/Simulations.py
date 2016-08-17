@@ -4062,7 +4062,7 @@ class Cases(object):
             if not silent:
                 pc = '%6.2f' % (float(ii)*100.0/float(nrcases))
                 pc += ' %'
-                print('stats progress: %4i/%i %s' % (ii, nrcases, pc))
+                print('stats progress: %4i/%i %s | %s' % (ii, nrcases, pc, cname))
 
             # make sure the selected tags exist
             if len(tags) != len(set(case) and tags):
