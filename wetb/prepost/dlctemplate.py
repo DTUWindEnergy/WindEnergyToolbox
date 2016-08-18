@@ -264,12 +264,9 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
                 m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
-                years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
+                years=20.0, fatigue=True, A=None, AEP=False,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
-                save_iter=False, AEP=False):
-
-    if neq < 0:
-        neq = None
+                save_iter=False):
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -303,36 +300,6 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     df_stats, df_AEP, df_Leq = None, None, None
 
     if statistics:
-        # for the default load case analysis, add mechanical power
-#        add = {'ch1_name':'shaft-shaft-node-004-momentvec-z',
-#               'ch2_name':'Omega',
-#               'ch_name_add':'mechanical-power-floater-floater-001',
-#               'factor':1.0, 'operator':'*'}
-        # for the AVATAR DLB, following resultants are defined:
-        chs_resultant = [['tower-tower-node-%03i-momentvec-x' % nn_twb,
-                          'tower-tower-node-%03i-momentvec-y' % nn_twb],
-                         ['tower-tower-node-%03i-momentvec-x' % nn_twt,
-                          'tower-tower-node-%03i-momentvec-y' % nn_twt],
-                         ['shaft-shaft-node-004-momentvec-x',
-                          'shaft-shaft-node-004-momentvec-z'],
-                         ['shaft-shaft-node-004-momentvec-y',
-                          'shaft-shaft-node-004-momentvec-z'],
-                         ['shaft_nonrotate-shaft-node-004-momentvec-x',
-                          'shaft_nonrotate-shaft-node-004-momentvec-z'],
-                         ['shaft_nonrotate-shaft-node-004-momentvec-y',
-                          'shaft_nonrotate-shaft-node-004-momentvec-z'],
-                         ['blade1-blade1-node-%03i-momentvec-x' % nn_blr,
-                          'blade1-blade1-node-%03i-momentvec-y' % nn_blr],
-                         ['blade2-blade2-node-%03i-momentvec-x' % nn_blr,
-                          'blade2-blade2-node-%03i-momentvec-y' % nn_blr],
-                         ['blade3-blade3-node-%03i-momentvec-x' % nn_blr,
-                          'blade3-blade3-node-%03i-momentvec-y' % nn_blr],
-                         ['hub1-blade1-node-%03i-momentvec-x' % nn_blr,
-                          'hub1-blade1-node-%03i-momentvec-y' % nn_blr],
-                         ['hub2-blade2-node-%03i-momentvec-x' % nn_blr,
-                          'hub2-blade2-node-%03i-momentvec-y' % nn_blr],
-                         ['hub3-blade3-node-%03i-momentvec-x' % nn_blr,
-                          'hub3-blade3-node-%03i-momentvec-y' % nn_blr]]
         i0, i1 = 0, -1
 
         # in addition, sim_id and case_id are always added by default
@@ -344,7 +311,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=neq, no_bins=no_bins,
-                                 chs_resultant=chs_resultant, A=A)
+                                 chs_resultant=[], A=A)
         # annual energy production
         if AEP:
             df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
@@ -408,15 +375,11 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=-1.0, action='store',
+    parser.add_argument('--neq', type=float, default=None, action='store',
                         dest='neq', help='Equivalent cycles neq, default 1 Hz '
                                          'equivalent load (neq = simulation '
                                          'duration in seconds)')
-    parser.add_argument('--nn_twt', type=float, default=20, action='store',
-                        dest='nn_twt', help='Node number tower top')
-    parser.add_argument('--nn_blr', type=float, default=4, action='store',
-                        dest='nn_blr', help='Node number blade root')
-    parser.add_argument('--rotarea', type=float, default=4, action='store',
+    parser.add_argument('--rotarea', type=float, default=None, action='store',
                         dest='rotarea', help='Rotor area for C_T, C_P')
     parser.add_argument('--save_new_sigs', default=False, action='store_true',
                         dest='save_new_sigs', help='Save post-processed sigs')
