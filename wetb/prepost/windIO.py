@@ -29,8 +29,9 @@ from time import time
 import codecs
 from itertools import chain
 
-import scipy.integrate as integrate
 import numpy as np
+import scipy as sp
+import scipy.integrate as integrate
 import pandas as pd
 
 # misc is part of prepost, which is available on the dtu wind gitlab server:
@@ -1603,7 +1604,7 @@ class UserWind(object):
         pass
 
     def __call__(self, z_h, r_blade_tip, a_phi=None, shear_exp=None, nr_hor=3,
-                 nr_vert=20, h_ME=500.0, fname=None, wdir=None):
+                 nr_vert=20, h_ME=500.0, io=None, wdir=None):
         """
 
         Parameters
@@ -1629,8 +1630,8 @@ class UserWind(object):
             Modified Ekman parameter. Take roughly 500 for off shore sites,
             1000 for on shore sites.
 
-        fname : str, default=None
-            When specified, the HAWC2 user defined veer input file will be
+        io : str or io buffer, default=None
+            When specified, the HAWC2 user defined shear input file will be
             written.
 
         wdir : float, default=None
@@ -1640,14 +1641,14 @@ class UserWind(object):
         Returns
         -------
 
-        None
+        uu, vv, ww, xx, zz
 
         """
 
         x, z = self.create_coords(z_h, r_blade_tip, nr_vert=nr_vert,
                                   nr_hor=nr_hor)
         if a_phi is not None:
-            phi_rad = self.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
+            phi_rad = WindProfiles.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
             assert len(phi_rad) == nr_vert
         else:
             nr_vert = len(z)
@@ -1656,21 +1657,34 @@ class UserWind(object):
         if wdir is not None:
             # because wdir cw positive, and phi veer ccw positive
             phi_rad -= (wdir*np.pi/180.0)
-        u, v, w, xx, zz = self.decompose_veer(phi_rad, x, z)
-        # scale the shear on top of that
-        if shear_exp is not None:
-            shear = self.shear_powerlaw(zz, z_h, shear_exp)
+        u, v, w = self.decompose_veer(phi_rad, nr_hor)
+        # when no shear is defined
+        if shear_exp is None:
+            uu = u
+            vv = v
+            ww = w
+        else:
+            # scale the shear on top of the veer
+            shear = WindProfiles.powerlaw(z, z_h, shear_exp)
             uu = u*shear[:,np.newaxis]
             vv = v*shear[:,np.newaxis]
             ww = w*shear[:,np.newaxis]
         # and write to a file
-        if fname is not None:
-            self.write_user_defined_shear(fname, uu, vv, ww, xx, zz)
+        if isinstance(io, str):
+            with open(io, 'wb') as fid:
+                fid = self.write(fid, uu, vv, ww, x, z)
+            self.fid =None
+        elif io is not None:
+            io = self.write(io, uu, vv, ww, x, z)
+            self.fid = io
+
+        return uu, vv, ww, x, z
 
     def create_coords(self, z_h, r_blade_tip, nr_vert=3, nr_hor=20):
         """
         Utility to create the coordinates of the wind field based on hub heigth
-        and blade length.
+        and blade length. Add 15% to r_blade_tip to make sure horizontal edges
+        are defined wide enough.
         """
         # take 15% extra space after the blade tip
         z = np.linspace(0, z_h + r_blade_tip*1.15, nr_vert)
@@ -1679,80 +1693,88 @@ class UserWind(object):
 
         return x, z
 
-    def shear_powerlaw(self, z, z_ref, a):
-        profile = np.power(z/z_ref, a)
-        # when a negative, make sure we return zero and not inf
-        profile[np.isinf(profile)] = 0.0
-        return profile
-
-    def veer_ekman_mod(self, z, z_h, h_ME=500.0, a_phi=0.5):
-        """
-        Modified Ekman veer profile, as defined by Mark C. Kelly in email on
-        10 October 2014 15:10 (RE: veer profile)
-
-        .. math::
-            \\varphi(z) - \\varphi(z_H) \\approx a_{\\varphi}
-            e^{-\sqrt{z_H/h_{ME}}}
-            \\frac{z-z_H}{\sqrt{z_H*h_{ME}}}
-            \\left( 1 - \\frac{z-z_H}{2 \sqrt{z_H h_{ME}}}
-            - \\frac{z-z_H}{4z_H} \\right)
-
-        where:
-        :math:`h_{ME} \\equiv \\frac{\\kappa u_*}{f}`
-        and :math:`f = 2 \Omega \sin \\varphi` is the coriolis parameter,
-        and :math:`\\kappa = 0.41` as the von Karman constant,
-        and :math:`u_\\star = \\sqrt{\\frac{\\tau_w}{\\rho}}` friction velocity.
-
-        For on shore, :math:`h_{ME} \\approx 1000`, for off-shore,
-        :math:`h_{ME} \\approx 500`
-
-        :math:`a_{\\varphi} \\approx 0.5`
+    def deltaphi2aphi(self, d_phi, z_h, r_blade_tip, h_ME=500.0):
+        """For a given `\\Delta \\varphi` over the rotor diameter, estimate
+        the corresponding `a_{\\varphi}`.
 
         Parameters
         ----------
 
-        :math:`a_{\\varphi} \\approx 0.5` parameter for the modified
-            Ekman veer distribution. Values vary between -1.2 and 0.5.
+        `\\Delta \\varphi` : ndarray or float
+            Veer angle difference over the rotor plane from lowest to highest
+            blade tip position.
 
-        returns
-        -------
+        z_h : float
+            Hub height in meters.
 
-        phi_rad : ndarray
-            veer angle in radians
+        r_blade_tip : float
+            Blade tip radius/length.
 
-        """
-
-        t1 = np.exp(-math.sqrt(z_h / h_ME))
-        t2 = (z - z_h) / math.sqrt(z_h * h_ME)
-        t3 = (1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h))
-
-        return a_phi * t1 * t2 * t3
-
-    def decompose_veer(self, phi_rad, x, z):
-        """
-        Convert a veer angle into u, v, and w components, ready for the
-        HAWC2 user defined veer input file.
-
-        Paramters
-        ---------
-
-        phi_rad : ndarray
-            veer angle in radians
-
-        method : str, default=linear
-            'linear' for a linear veer, 'ekman_mod' for modified ekman method
+        h_ME : float, default=500.0
+            Modified Ekman parameter. For on shore,
+            :math:`h_{ME} \\approx 1000`, for off-shore,
+            :math:`h_{ME} \\approx 500`
 
         Returns
         -------
 
-        u, v, w, v_coord, w_coord
+        `a_{\\varphi}` : ndarray or float
 
         """
 
-        nr_hor = len(x)
-        nr_vert = len(z)
-        assert len(phi_rad) == nr_vert
+        t1 = r_blade_tip * 2.0 * np.exp(-z_h/(h_ME))
+        a_phi = d_phi * np.sqrt(h_ME*z_h) / t1
+        return a_phi
 
+    def deltaphi2aphi_opt(self, deltaphi, z, z_h, r_blade_tip, h_ME):
+        """
+        convert delta_phi over a given interval z to a_phi using
+        scipy.optimize.fsolve on veer_ekman_mod.
+
+        Parameters
+        ----------
+
+        deltaphi : float
+            Desired delta phi in rad over interval z[0] at bottom to z[1] at
+            the top.
+
+
+        """
+
+        def func(a_phi, z, z_h, h_ME, deltaphi_target):
+            phis = WindProfiles.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
+            return np.abs(deltaphi_target - (phis[1] - phis[0]))
+
+        args = (z, z_h, h_ME, deltaphi)
+        return sp.optimize.fsolve(func, [0], args=args)[0]
+
+    def decompose_veer(self, phi_rad, nr_hor):
+        """
+        Convert a veer angle into u, v, and w components, ready for the
+        HAWC2 user defined veer input file. nr_vert refers to the number of
+        vertical grid points.
+
+        Paramters
+        ---------
+
+        phi_rad : ndarray(nr_vert)
+            veer angle in radians as function of height
+
+        nr_hor : int
+            Number of horizontal grid points
+
+        Returns
+        -------
+
+        u : ndarray(nr_hor, nr_vert)
+
+        v : ndarray(nr_hor, nr_vert)
+
+        w : ndarray(nr_hor, nr_vert)
+
+        """
+
+        nr_vert = len(phi_rad)
         tan_phi = np.tan(phi_rad)
 
         # convert veer angles to veer components in v, u. Make sure the
@@ -1777,11 +1799,11 @@ class UserWind(object):
         v_full = v[:, np.newaxis] + np.zeros((3,))[np.newaxis, :]
         w_full = np.zeros((nr_vert, nr_hor))
 
-        return u_full, v_full, w_full, x, z
+        return u_full, v_full, w_full
 
-    def load_user_defined_veer(self, fname):
+    def read(self, fname):
         """
-        Load a user defined veer and shear file as used for HAWC2
+        Read a user defined shear input file as used for HAWC2.
 
         Returns
         -------
@@ -1818,9 +1840,9 @@ class UserWind(object):
 
         return u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
 
-    def write_user_defined_shear(self, fname, u, v, w, v_coord, w_coord,
-                                 fmt_uvw='% 08.05f', fmt_coord='% 8.02f'):
-        """
+    def write(self, fid, u, v, w, v_coord, w_coord, fmt_uvw='% 08.05f',
+              fmt_coord='% 8.02f'):
+        """Write a user defined shear input file for HAWC2.
         """
         nr_hor = len(v_coord)
         nr_vert = len(w_coord)
@@ -1835,40 +1857,37 @@ class UserWind(object):
                              'nr_hor and nr_vert: u.shape: %s, nr_hor: %i, '
                              'nr_vert: %i' % (str(u.shape), nr_hor, nr_vert))
 
-        # and create the input file
-        with open(fname, 'wb') as fid:
-            fid.write(b'# User defined shear file\n')
-            fid.write(b'%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
-            h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
-            fid.write(b'# v component, %s\n' % h1)
-            np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
-            fid.write(b'# u component, %s\n' % h1)
-            np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
-            fid.write(b'# w component, %s\n' % h1)
-            np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
-            h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
-            fid.write(b'%s\n' % h2)
-            np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
-            h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
-            fid.write(b'%s\n' % h3)
-            np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
+        fid.write(b'# User defined shear file\n')
+        fid.write(b'%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
+        h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
+        fid.write(b'# v component, %s\n' % h1)
+        np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
+        fid.write(b'# u component, %s\n' % h1)
+        np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
+        fid.write(b'# w component, %s\n' % h1)
+        np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
+        h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
+        fid.write(b'%s\n' % h2)
+        np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
+        h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
+        fid.write(b'%s\n' % h3)
+        np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
+
+        return fid
 
 
 class WindProfiles(object):
 
-    def __init__(self):
-        pass
-
-    def logarithmic(self, z, z_ref, r_0):
+    def logarithmic(z, z_ref, r_0):
         return np.log10(z/r_0)/np.log10(z_ref/r_0)
 
-    def powerlaw(self, z, z_ref, a):
+    def powerlaw(z, z_ref, a):
         profile = np.power(z/z_ref, a)
         # when a negative, make sure we return zero and not inf
         profile[np.isinf(profile)] = 0.0
         return profile
 
-    def veer_ekman_mod(self, z, z_h, h_ME=500.0, a_phi=0.5):
+    def veer_ekman_mod(z, z_h, h_ME=500.0, a_phi=0.5):
         """
         Modified Ekman veer profile, as defined by Mark C. Kelly in email on
         10 October 2014 15:10 (RE: veer profile)
@@ -1894,20 +1913,29 @@ class WindProfiles(object):
         Parameters
         ----------
 
-        :math:`a_{\\varphi} \\approx 0.5` parameter for the modified
-            Ekman veer distribution. Values vary between -1.2 and 0.5.
+        z : ndarray(n)
+            z-coordinates (height) of the grid on which the veer angle should
+            be calculated.
 
-        returns
+        z_h : float
+            Hub height in meters.
+
+        :math:`a_{\\varphi}` : default=0.5
+            Parameter for the modified Ekman veer distribution. Value varies
+            between -1.2 and 0.5.
+
+        Returns
         -------
 
         phi_rad : ndarray
-            veer angle in radians as function of height
+            Veer angle in radians as function of z.
+
 
         """
 
         t1 = np.exp(-math.sqrt(z_h / h_ME))
         t2 = (z - z_h) / math.sqrt(z_h * h_ME)
-        t3 = ( 1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h) )
+        t3 = (1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h))
 
         return a_phi * t1 * t2 * t3
 
