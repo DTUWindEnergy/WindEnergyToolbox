@@ -1858,7 +1858,8 @@ class UserWind(object):
                              'nr_vert: %i' % (str(u.shape), nr_hor, nr_vert))
 
         fid.write(b'# User defined shear file\n')
-        fid.write(b'%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
+        tmp = '%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert)
+        fid.write(tmp.encode())
         h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
         fid.write(b'# v component, %s\n' % h1)
         np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
