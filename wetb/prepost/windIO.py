@@ -1860,18 +1860,18 @@ class UserWind(object):
         fid.write(b'# User defined shear file\n')
         tmp = '%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert)
         fid.write(tmp.encode())
-        h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
-        fid.write(b'# v component, %s\n' % h1)
+        h1 = 'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
+        fid.write(('# v component, %s\n' % h1).encode())
         np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
-        fid.write(b'# u component, %s\n' % h1)
+        fid.write(('# u component, %s\n' % h1).encode())
         np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
-        fid.write(b'# w component, %s\n' % h1)
+        fid.write(('# w component, %s\n' % h1).encode())
         np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
-        h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
-        fid.write(b'%s\n' % h2)
+        h2 = '# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
+        fid.write(('%s\n' % h2).encode())
         np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
-        h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
-        fid.write(b'%s\n' % h3)
+        h3 = '# w coordinates (zero is at ground level, height, nr_hor)'
+        fid.write(('%s\n' % h3).encode())
         np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
 
         return fid
