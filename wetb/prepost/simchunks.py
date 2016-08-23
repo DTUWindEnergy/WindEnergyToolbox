@@ -89,8 +89,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         df_dst = df['[htc_dir]'] + df['[case_id]']
         # create an index so given the htc file, we can find the chunk nr
         df_index = pd.DataFrame(index=df['[case_id]'].copy(),
-                                columns=['chunk_nr'], dtype=np.int32)
+                                columns=['chunk_nr', 'name'])
         df_index['chunk_nr'] = ii
+        df_index['name'] = os.path.join(chunks_dir, '%s_chunk_%05i' % rpl)
         # Since df_src and df_dst are already Series, iterating is fast an it
         # is slower to first convert to a list
         for src, dst_rel in zip(df_src, df_dst):
@@ -355,6 +356,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'source deactivate\n'
         pbs += 'echo "DONE !!"\n'
         pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += '# in case wine has crashed, kill any remaining wine servers\n'
+        pbs += '# caution: ALL the users wineservers will die on this node!\n'
+        pbs += 'echo "following wineservers are still running:"\n'
+        pbs += 'ps -u $USER -U $USER | grep wineserver\n'
+        pbs += 'killall -u $USER wineserver\n'
         pbs += 'exit\n'
 
         rpl = (sim_id, ii)
@@ -525,6 +531,7 @@ def merge_from_tarfiles(df_fname, path, pattern, tarmode='r:xz', tqdm=False,
     store.close()
     return None, None
 
+
 # TODO: make this class more general so you can also just give a list of files
 # to be merged, excluding the tar archives.
 class AppendDataFrames(object):
@@ -546,7 +553,7 @@ class AppendDataFrames(object):
         """
         """
 
-        # TODO: it seems that with treading you could parallelize this kind
+        # TODO: it seems that with threading you could parallelize this kind
         # of work: http://stackoverflow.com/q/23598063/3156685
         # http://stackoverflow.com/questions/23598063/
         # multithreaded-web-scraper-to-store-values-to-pandas-dataframe
@@ -585,6 +592,8 @@ class AppendDataFrames(object):
 #                    df = pd.DataFrame()
         return store
 
+    # FIXME: when merging log file analysis (files with header), we are still
+    # skipping over one case
     def txt2txt(self, fjoined, path, tarmode='r:xz', header=None, sep=';',
                 fname_col=False):
         """Read as strings, write to another file as strings.
