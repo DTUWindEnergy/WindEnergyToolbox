@@ -5127,7 +5127,7 @@ class Cases(object):
             print('='*79)
             print('statistics for %s, nr cases: %i' % (sim_id, nrcases))
 
-        fname = os.path.join(post_dir, sim_id, '_envelope' + append + '.h5')
+        fname = os.path.join(post_dir, sim_id + '_envelope' + append + '.h5')
         h5f = tbl.openFile(fname, mode="w", title=str(sim_id),
                            filters=tbl.Filters(complevel=9))
 
