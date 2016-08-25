@@ -57,7 +57,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # quasi random due to the sorting we applied earlier
 #        ii = df.index[0]
         rpl = (sim_id, ii)
-        fname = os.path.join(run_dir, chunks_dir, '%s_chunk_%05i' % rpl)
+        fname = os.path.join(run_dir, chunks_dir, '%s_chnk_%05i' % rpl)
         zf = zipfile.ZipFile(fname+'.zip', 'w', compression=zipfile.ZIP_STORED)
 
         # start with appending the base model zip file
@@ -89,9 +89,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         df_dst = df['[htc_dir]'] + df['[case_id]']
         # create an index so given the htc file, we can find the chunk nr
         df_index = pd.DataFrame(index=df['[case_id]'].copy(),
-                                columns=['chunk_nr', 'name'])
-        df_index['chunk_nr'] = ii
-        df_index['name'] = os.path.join(chunks_dir, '%s_chunk_%05i' % rpl)
+                                columns=['chnk_nr', 'name'])
+        df_index['chnk_nr'] = ii
+        df_index['name'] = os.path.join(chunks_dir, '%s_chnk_%05i' % rpl)
         # Since df_src and df_dst are already Series, iterating is fast an it
         # is slower to first convert to a list
         for src, dst_rel in zip(df_src, df_dst):
@@ -155,7 +155,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
 #        ii = df.index[0]
         cmd_find = '/home/MET/sysalt/bin/find'
         cmd_xargs = '/home/MET/sysalt/bin/xargs'
-        jobid = '%s_chunk_%05i' % (sim_id, ii)
+        jobid = '%s_chnk_%05i' % (sim_id, ii)
 
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
         post_dir_base = post_dir.split(sim_id)[1]
@@ -308,11 +308,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # FIXME: why doesn this work with -name "*.sel" -o -name "*.dat"??
         pbs += '\necho "move results into compressed archive"\n'
         pbs += 'find %s -name "*.sel" -print0 ' % res_base
-        fname = os.path.join(res_base, 'resfiles_chunk_%05i' % ii)
+        fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         # now add the *.dat files to the archive
         pbs += 'find %s -name "*.dat" -print0 ' % res_base
-        fname = os.path.join(res_base, 'resfiles_chunk_%05i' % ii)
+        fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
 
         pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
@@ -320,21 +320,21 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # compress all logfiles into an archive
         pbs += '\necho "move logfiles into compressed archive"\n'
         pbs += 'find %s -name "*.log" -print0 ' % log_base
-        fname = os.path.join(log_base, 'logfiles_chunk_%05i' % ii)
+        fname = os.path.join(log_base, 'logfiles_chnk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move statsdel into compressed archive"\n'
         pbs += 'find %s -name "*.csv" -print0 ' % res_base
-        fname = os.path.join(post_dir_base, 'statsdel_chunk_%05i' % ii)
+        fname = os.path.join(post_dir_base, 'statsdel_chnk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move log analysis into compressed archive"\n'
         pbs += 'find %s -name "*.csv" -print0 ' % log_base
-        fname = os.path.join(post_dir_base, 'loganalysis_chunk_%05i' % ii)
+        fname = os.path.join(post_dir_base, 'loganalysis_chnk_%05i' % ii)
         pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
         pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
@@ -364,7 +364,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         pbs += 'exit\n'
 
         rpl = (sim_id, ii)
-        fname = os.path.join(run_dir, chunks_dir, '%s_chunk_%05i' % rpl)
+        fname = os.path.join(run_dir, chunks_dir, '%s_chnk_%05i' % rpl)
         with open(fname+'.p', 'w') as f:
             f.write(pbs)
 
@@ -386,7 +386,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     model_zip = df['[model_zip]'].iloc[0]
     post_dir = df['[post_dir]'].iloc[0]
     nodes = 1
-    df_ind = pd.DataFrame(columns=['chunk_nr'], dtype=np.int32)
+    df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
     df_ind.index.name = '[case_id]'
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, ii, sim_id, run_dir, model_zip)
@@ -395,7 +395,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         print(fname)
 
     fname = os.path.join(post_dir, 'case_id-chunk-index')
-    df_ind['chunk_nr'] = df_ind['chunk_nr'].astype(np.int32)
+    df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
     df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
     df_ind.to_csv(fname+'.csv')
 
