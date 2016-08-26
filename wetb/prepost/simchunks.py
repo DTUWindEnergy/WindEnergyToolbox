@@ -175,8 +175,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # PBS HEADER
         pbs = copy.copy(pbs_tmplate)
         pbs = pbs.replace('[job_name]', jobid)
-        pbs = pbs.replace('[std_out]', './%s.out' % jobid)
-        pbs = pbs.replace('[std_err]', './%s.err' % jobid)
+        pbs = pbs.replace('[std_out]', './pbs_out_chunks/%s.out' % jobid)
+        pbs = pbs.replace('[std_err]', './pbs_out_chunks/%s.err' % jobid)
         pbs = pbs.replace('[umask]', '0003')
         pbs = pbs.replace('[walltime]', walltime)
         pbs = pbs.replace('[nodes]', str(nodes))
@@ -188,6 +188,16 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # activate the python environment
         pbs += 'echo "activate python environment %s"\n' % pyenv
         pbs += 'source activate %s\n' % pyenv
+        # sometimes activating an environment fails due to a FileExistsError
+        # is this because it is activated at the same time on another node?
+        # check twice if the environment got activated for real
+        pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
+        pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
+        pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
+        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
 
         # =====================================================================
         # create all necessary directories at CPU_NR dirs, turb db dirs, sim_id
@@ -367,6 +377,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         fname = os.path.join(run_dir, chunks_dir, '%s_chnk_%05i' % rpl)
         with open(fname+'.p', 'w') as f:
             f.write(pbs)
+
+    def make_pbs_postpro_chunks():
+        """When only the post-processing has to be re-done for a chunk.
+        """
+        pass
+
 
     cc = Cases(cases)
     df = cc.cases2df()
