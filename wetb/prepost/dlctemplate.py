@@ -183,7 +183,7 @@ def variable_tag_func(master, case_id_short=False):
 ### PRE- POST
 # =============================================================================
 
-def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
+def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False):
     """
     Launch load cases defined in Excel files
@@ -392,6 +392,13 @@ if __name__ == '__main__':
     parser.add_argument('--zipchunks', default=False, action='store_true',
                         dest='zipchunks', help='Create PBS launch files for'
                         'running in zip-chunk find+xargs mode.')
+    parser.add_argument('--pbs_turb', default=False, action='store_true',
+                        dest='pbs_turb', help='Create PBS launch files to '
+                        'create the turbulence boxes in stand alone mode '
+                        'using the 64-bit Mann turbulence box generator. '
+                        'This can be usefull if your turbulence boxes are too '
+                        'big for running in HAWC2 32-bit mode. Only works on '
+                        'Jess. ')
     opt = parser.parse_args()
 
     # TODO: use arguments to determine the scenario:
@@ -429,7 +436,8 @@ if __name__ == '__main__':
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
-        launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks)
+        launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
+                          pbs_turb=opt.pbs_turb)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
