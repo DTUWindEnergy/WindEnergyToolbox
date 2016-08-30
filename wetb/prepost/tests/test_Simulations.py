@@ -48,7 +48,8 @@ class TestGenerateInputs(unittest.TestCase):
             shutil.rmtree(os.path.join(p_root, tmpl.PROJECT, 'remote'))
 
         tmpl.force_dir = tmpl.P_RUN
-        tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm')
+        tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm',
+                               pbs_turb=True)
 
         # we can not check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here

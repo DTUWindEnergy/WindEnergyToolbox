@@ -27,9 +27,11 @@ import struct
 import math
 from time import time
 import codecs
+from itertools import chain
 
-import scipy.integrate as integrate
 import numpy as np
+import scipy as sp
+import scipy.integrate as integrate
 import pandas as pd
 
 # misc is part of prepost, which is available on the dtu wind gitlab server:
@@ -39,6 +41,410 @@ from wetb.prepost import misc
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 from wetb.hawc2.Hawc2io import ReadHawc2
 from wetb.fatigue_tools.fatigue import eq_load
+
+
+class LogFile(object):
+    """Check a HAWC2 log file for errors.
+    """
+
+    def __init__(self):
+
+        # the total message list log:
+        self.MsgListLog = []
+        # a smaller version, just indication if there are errors:
+        self.MsgListLog2 = dict()
+
+        # specify which message to look for. The number track's the order.
+        # this makes it easier to view afterwards in spreadsheet:
+        # every error will have its own column
+
+        # error messages that appear during initialisation
+        self.err_init = {}
+        self.err_init[' *** ERROR *** Error in com'] = len(self.err_init)
+        self.err_init[' *** ERROR ***  in command '] = len(self.err_init)
+        #  *** WARNING *** A comma "," is written within the command line
+        self.err_init[' *** WARNING *** A comma ",'] = len(self.err_init)
+        #  *** ERROR *** Not correct number of parameters
+        self.err_init[' *** ERROR *** Not correct '] = len(self.err_init)
+        #  *** INFO *** End of file reached
+        self.err_init[' *** INFO *** End of file r'] = len(self.err_init)
+        #  *** ERROR *** No line termination in command line
+        self.err_init[' *** ERROR *** No line term'] = len(self.err_init)
+        #  *** ERROR *** MATRIX IS NOT DEFINITE
+        self.err_init[' *** ERROR *** MATRIX IS NO'] = len(self.err_init)
+        #  *** ERROR *** There are unused relative
+        self.err_init[' *** ERROR *** There are un'] = len(self.err_init)
+        #  *** ERROR *** Error finding body based
+        self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
+        #  *** ERROR *** In body actions
+        self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
+        #  *** ERROR *** Command unknown and ignored
+        self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
+        #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
+        self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
+        #  *** ERROR *** The program will stop
+        self.err_init[' *** ERROR *** The program '] = len(self.err_init)
+        #  *** ERROR *** Unknown begin command in topologi.
+        self.err_init[' *** ERROR *** Unknown begi'] = len(self.err_init)
+        #  *** ERROR *** Not all needed topologi main body commands present
+        self.err_init[' *** ERROR *** Not all need'] = len(self.err_init)
+        #  *** ERROR ***  opening timoschenko data file
+        self.err_init[' *** ERROR ***  opening tim'] = len(self.err_init)
+        #  *** ERROR *** Error opening AE data file
+        self.err_init[' *** ERROR *** Error openin'] = len(self.err_init)
+        #  *** ERROR *** Requested blade _ae set number not found in _ae file
+        self.err_init[' *** ERROR *** Requested bl'] = len(self.err_init)
+        #  Error opening PC data file
+        self.err_init[' Error opening PC data file'] = len(self.err_init)
+        #  *** ERROR *** error reading mann turbulence
+        self.err_init[' *** ERROR *** error readin'] = len(self.err_init)
+        #  *** INFO *** The DLL subroutine
+        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
+        #  ** WARNING: FROM ESYS ELASTICBAR: No keyword
+        self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init)
+        #  *** ERROR *** DLL ./control/killtrans.dll could not be loaded - error!
+        self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
+        # *** ERROR *** The DLL subroutine
+        self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
+        # *** ERROR *** Mann turbulence length scale must be larger than zero!
+        # *** ERROR *** Mann turbulence alpha eps value must be larger than zero!
+        # *** ERROR *** Mann turbulence gamma value must be larger than zero!
+        self.err_init[' *** ERROR *** Mann turbule'] = len(self.err_init)
+
+        # *** WARNING *** Shear center x location not in elastic center, set to zero
+        self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
+        # Turbulence file ./xyz.bin does not exist
+        self.err_init[' Turbulence file '] = len(self.err_init)
+        self.err_init[' *** WARNING ***'] = len(self.err_init)
+        self.err_init[' *** ERROR ***'] = len(self.err_init)
+        self.err_init[' WARNING'] = len(self.err_init)
+        self.err_init[' ERROR'] = len(self.err_init)
+
+        # error messages that appear during simulation
+        self.err_sim = {}
+        #  *** ERROR *** Wind speed requested inside
+        self.err_sim[' *** ERROR *** Wind speed r'] = len(self.err_sim)
+        #  Maximum iterations exceeded at time step:
+        self.err_sim[' Maximum iterations exceede'] = len(self.err_sim)
+        #  Solver seems not to converge:
+        self.err_sim[' Solver seems not to conver'] = len(self.err_sim)
+        #  *** ERROR *** Out of x bounds:
+        self.err_sim[' *** ERROR *** Out of x bou'] = len(self.err_sim)
+        #  *** ERROR *** Out of limits in user defined shear field - limit value used
+        self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim)
+
+        # TODO: error message from a non existing channel output/input
+        # add more messages if required...
+
+        self.init_cols = len(self.err_init)
+        self.sim_cols = len(self.err_sim)
+        self.header = None
+
+    def readlog(self, fname, case=None, save_iter=False):
+        """
+        """
+        # open the current log file
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+
+        # keep track of the messages allready found in this file
+        tempLog = []
+        tempLog.append(fname)
+        exit_correct, found_error = False, False
+
+        subcols_sim = 4
+        subcols_init = 2
+        # create empty list item for the different messages and line
+        # number. Include one column for non identified messages
+        for j in range(self.init_cols):
+            # 2 sub-columns per message: nr, msg
+            for k in range(subcols_init):
+                tempLog.append('')
+        for j in range(self.sim_cols):
+            # 4 sub-columns per message: first, last, nr, msg
+            for k in range(subcols_sim):
+                tempLog.append('')
+        # and two more columns at the end for messages of unknown origin
+        tempLog.append('')
+        tempLog.append('')
+
+        # if there is a cases object, see how many time steps we expect
+        if case is not None:
+            dt = float(case['[dt_sim]'])
+            time_steps = int(float(case['[time_stop]']) / dt)
+            iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
+        else:
+            iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
+            dt = False
+        iterations[:,0:2] = -1
+        iterations[:,2] = 0
+
+        # keep track of the time_step number
+        time_step, init_block = -1, True
+        # check for messages in the current line
+        # for speed: delete from message watch list if message is found
+        for j, line in enumerate(lines):
+            # all id's of errors are 27 characters long
+            msg = line[:27]
+            # remove the line terminator, this seems to take 2 characters
+            # on PY2, but only one in PY3
+            line = line.replace('\n', '')
+
+            # keep track of the number of iterations
+            if line[:12] == ' Global time':
+                time_step += 1
+                iterations[time_step,0] = float(line[14:40])
+                # for PY2, new line is 2 characters, for PY3 it is one char
+                iterations[time_step,1] = int(line[-6:])
+                # time step is the first time stamp
+                if not dt:
+                    dt = float(line[15:40])
+                # no need to look for messages if global time is mentioned
+                continue
+
+            elif line[:20] == ' Starting simulation':
+                init_block = False
+
+            elif init_block:
+                # if string is shorter, we just get a shorter string.
+                # checking presence in dict is faster compared to checking
+                # the length of the string
+                # first, last, nr, msg
+                if msg in self.err_init:
+                    # icol=0 -> fname
+                    icol = subcols_init*self.err_init[msg] + 1
+                    # 0: number of occurances
+                    if tempLog[icol] == '':
+                        tempLog[icol] = '1'
+                    else:
+                        tempLog[icol] = str(int(tempLog[icol]) + 1)
+                    # 1: the error message itself
+                    tempLog[icol+1] = line
+                    found_error = True
+
+            # find errors that can occur during simulation
+            elif msg in self.err_sim:
+                icol = subcols_sim*self.err_sim[msg]
+                icol += subcols_init*self.init_cols + 1
+                # in case stuff already goes wrong on the first time step
+                if time_step == -1:
+                    time_step = 0
+
+                # 1: time step of first occurance
+                if tempLog[icol]  == '':
+                    tempLog[icol] = '%i' % time_step
+                # 2: time step of last occurance
+                tempLog[icol+1] = '%i' % time_step
+                # 3: number of occurances
+                if tempLog[icol+2] == '':
+                    tempLog[icol+2] = '1'
+                else:
+                    tempLog[icol+2] = str(int(tempLog[icol+2]) + 1)
+                # 4: the error message itself
+                tempLog[icol+3] = line
+
+                found_error = True
+                iterations[time_step,2] = 1
+
+            # method of last resort, we have no idea what message
+            elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
+                icol = subcols_sim*self.sim_cols
+                icol += subcols_init*self.init_cols + 1
+                # line number of the message
+                tempLog[icol] = j
+                # and message
+                tempLog[icol+1] = line
+                found_error = True
+                # in case stuff already goes wrong on the first time step
+                if time_step == -1:
+                    time_step = 0
+                iterations[time_step,2] = 1
+
+        # simulation and simulation output time
+        if case is not None:
+            t_stop = float(case['[time_stop]'])
+            duration = float(case['[duration]'])
+        else:
+            t_stop = -1
+            duration = -1
+
+        # see if the last line holds the sim time
+        if line[:15] ==  ' Elapsed time :':
+            exit_correct = True
+            elapsed_time = float(line[15:-1])
+            tempLog.append( elapsed_time )
+        # in some cases, Elapsed time is not given, and the last message
+        # might be: " Closing of external type2 DLL"
+        elif line[:20] == ' Closing of external':
+            exit_correct = True
+            elapsed_time = iterations[time_step,0]
+            tempLog.append( elapsed_time )
+        elif np.allclose(iterations[time_step,0], t_stop):
+            exit_correct = True
+            elapsed_time = iterations[time_step,0]
+            tempLog.append( elapsed_time )
+        else:
+            elapsed_time = -1
+            tempLog.append('')
+
+        # give the last recorded time step
+        tempLog.append('%1.11f' % iterations[time_step,0])
+
+        # simulation and simulation output time
+        tempLog.append('%1.01f' % t_stop)
+        tempLog.append('%1.04f' % (t_stop/elapsed_time))
+        tempLog.append('%1.01f' % duration)
+
+        # as last element, add the total number of iterations
+        itertotal = np.nansum(iterations[:,1])
+        tempLog.append('%i' % itertotal)
+
+        # the delta t used for the simulation
+        if dt:
+            tempLog.append('%1.7f' % dt)
+        else:
+            tempLog.append('failed to find dt')
+
+        # number of time steps
+        tempLog.append('%i' % len(iterations) )
+
+        # if the simulation didn't end correctly, the elapsed_time doesn't
+        # exist. Add the average and maximum nr of iterations per step
+        # or, if only the structural and eigen analysis is done, we have 0
+        try:
+            ratio = float(elapsed_time)/float(itertotal)
+            tempLog.append('%1.6f' % ratio)
+        except (UnboundLocalError, ZeroDivisionError, ValueError) as e:
+            tempLog.append('')
+        # when there are no time steps (structural analysis only)
+        try:
+            tempLog.append('%1.2f' % iterations[:,1].mean())
+            tempLog.append('%1.2f' % iterations[:,1].max())
+        except ValueError:
+            tempLog.append('')
+            tempLog.append('')
+
+        # save the iterations in the results folder
+        if save_iter:
+            fiter = os.path.basename(fname).replace('.log', '.iter')
+            fmt = ['%12.06f', '%4i', '%4i']
+            if case is not None:
+                fpath = os.path.join(case['[run_dir]'], case['[iter_dir]'])
+                # in case it has subdirectories
+                for tt in [3,2,1]:
+                    tmp = os.path.sep.join(fpath.split(os.path.sep)[:-tt])
+                    if not os.path.exists(tmp):
+                        os.makedirs(tmp)
+                if not os.path.exists(fpath):
+                    os.makedirs(fpath)
+                np.savetxt(fpath + fiter, iterations, fmt=fmt)
+            else:
+                logpath = os.path.dirname(fname)
+                np.savetxt(os.path.join(logpath, fiter), iterations, fmt=fmt)
+
+        # append the messages found in the current file to the overview log
+        self.MsgListLog.append(tempLog)
+        self.MsgListLog2[fname] = [found_error, exit_correct]
+
+    def _msglistlog2csv(self, contents):
+        """Write LogFile.MsgListLog to a csv file. Use LogFile._header to
+        create a header.
+        """
+        for k in self.MsgListLog:
+            for n in k:
+                contents = contents + str(n) + ';'
+            # at the end of each line, new line symbol
+            contents = contents + '\n'
+        return contents
+
+    def csv2df(self, fname):
+        """Read a csv log file analysis and convert to a pandas.DataFrame
+        """
+        colnames, min_itemsize, dtypes = self.headers4df()
+        df = pd.read_csv(fname, header=0, names=colnames, sep=';', )
+        for col, dtype in dtypes.items():
+            df[col] = df[col].astype(dtype)
+            # replace nan with empty for str columns
+            if dtype == str:
+                df[col] = df[col].str.replace('nan', '')
+        return df
+
+    def _header(self):
+        """Header for log analysis csv file
+        """
+
+        # write the results in a file, start with a header
+        contents = 'file name;' + 'nr;msg;'*(self.init_cols)
+        contents += 'first_tstep;last_tstep;nr;msg;'*(self.sim_cols)
+        contents += 'lnr;msg;'
+        # and add headers for elapsed time, nr of iterations, and sec/iteration
+        contents += 'Elapsted time;last time step;Simulation time;'
+        contents += 'real sim time;Sim output time;'
+        contents += 'total iterations;dt;nr time steps;'
+        contents += 'seconds/iteration;average iterations/time step;'
+        contents += 'maximum iterations/time step;\n'
+
+        return contents
+
+    def headers4df(self):
+        """Create header and a minimum itemsize for string columns when
+        converting a Log check analysis to a pandas.DataFrame
+
+        Returns
+        -------
+
+        header : list
+            List of column names as generated by WindIO.LogFile._header
+
+        min_itemsize : dict
+            Dictionary with column names as keys, and the minimum string lenght
+            as values.
+
+        dtypes : dict
+            Dictionary with column names as keys, and data types as values
+        """
+        chain_iter = chain.from_iterable
+
+        colnames = ['file_name']
+        colnames.extend(list(chain_iter(('nr_%i' % i, 'msg_%i' % i)
+                      for i in range(31))) )
+
+        gr = ('first_tstep_%i', 'last_step_%i', 'nr_%i', 'msg_%i')
+        colnames.extend(list(chain_iter( (k % i for k in gr)
+                           for i in range(100,105,1))) )
+        colnames.extend(['nr_extra', 'msg_extra'])
+        colnames.extend(['elapsted_time',
+                       'last_time_step',
+                       'simulation_time',
+                       'real_sim_time',
+                       'sim_output_time',
+                       'total_iterations',
+                       'dt',
+                       'nr_time_steps',
+                       'seconds_p_iteration',
+                       'mean_iters_p_time_step',
+                       'max_iters_p_time_step',
+                       'sim_id'])
+        dtypes = {}
+
+        # str and float datatypes for
+        msg_cols = ['msg_%i' % i for i in range(30)]
+        msg_cols.extend(['msg_%i' % i for i in range(100,105,1)])
+        msg_cols.append('msg_extra')
+        dtypes.update({k:str for k in msg_cols})
+        # make the message/str columns long enough
+        min_itemsize = {'msg_%i' % i : 100 for i in range(30)}
+
+        # column names holding the number of occurances of messages
+        nr_cols = ['nr_%i' % i for i in range(30)]
+        nr_cols.extend(['nr_%i' % i for i in range(100,105,1)])
+        # other float values
+        nr_cols.extend(['elapsted_time', 'total_iterations'])
+        # NaN only exists in float arrays, not integers (NumPy limitation)
+        # so use float instead of int
+        dtypes.update({k:np.float64 for k in nr_cols})
+
+        return colnames, min_itemsize, dtypes
 
 
 class LoadResults(ReadHawc2):
@@ -817,6 +1223,83 @@ class LoadResults(ReadHawc2):
         stats['int'] = integrate.trapz(sig[i0:i1, :], x=sig[i0:i1, 0], axis=0)
         return stats
 
+    def statsdel_df(self, i0=0, i1=None, statchans='all', delchans='all',
+                    m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46):
+        """Calculate statistics and equivalent loads for the current loaded
+        signal.
+
+        Parameters
+        ----------
+
+        i0 : int, default=0
+
+        i1 : int, default=None
+
+        channels : list, default='all'
+            all channels are selected if set to 'all', otherwise define a list
+            using the unique channel defintions.
+
+        neq : int, default=1
+
+        no_bins : int, default=46
+
+        Return
+        ------
+
+        statsdel : pd.DataFrame
+            Pandas DataFrame with the statistical parameters and the different
+            fatigue coefficients as columns, and channels as rows. As index the
+            unique channel name is used.
+
+        """
+
+        stats = ['max', 'min', 'mean', 'std', 'range', 'absmax', 'rms', 'int']
+        if statchans == 'all':
+            statchans = self.ch_df['unique_ch_name'].tolist()
+            statchis = self.ch_df['unique_ch_name'].index.values
+        else:
+            sel = self.ch_df['unique_ch_name']
+            statchis = self.ch_df[sel.isin(statchans)].index.values
+
+        if delchans == 'all':
+            delchans = self.ch_df['unique_ch_name'].tolist()
+            delchis = self.ch_df.index.values
+        else:
+            sel = self.ch_df['unique_ch_name']
+            delchis = self.ch_df[sel.isin(delchans)].index.values
+
+        # delchans has to be a subset of statchans!
+        if len(set(delchans) - set(statchans)) > 0:
+            raise ValueError('delchans has to be a subset of statchans')
+
+        tmp = np.ndarray((len(statchans), len(stats+m)))
+        tmp[:,:] = np.nan
+        m_cols = ['m=%i' % m_ for m_ in m]
+        statsdel = pd.DataFrame(tmp, columns=stats+m_cols)
+        statsdel.index = statchans
+
+        datasel = self.sig[i0:i1,statchis]
+        time = self.sig[i0:i1,0]
+        statsdel['max'] = datasel.max(axis=0)
+        statsdel['min'] = datasel.min(axis=0)
+        statsdel['mean'] = datasel.mean(axis=0)
+        statsdel['std'] = datasel.std(axis=0)
+        statsdel['range'] = statsdel['max'] - statsdel['min']
+        statsdel['absmax'] = np.abs(datasel).max(axis=0)
+        statsdel['rms'] = np.sqrt(np.mean(datasel*datasel, axis=0))
+        statsdel['int'] = integrate.trapz(datasel, x=time, axis=0)
+        statsdel['intabs'] = integrate.trapz(np.abs(datasel), x=time, axis=0)
+
+        if neq is None:
+            neq = self.sig[-1,0] - self.sig[0,0]
+
+        for chi, chan in zip(delchis, delchans):
+            signal = self.sig[i0:i1,chi]
+            eq = self.calc_fatigue(signal, no_bins=no_bins, neq=neq, m=m)
+            statsdel.loc[chan][m_cols] = eq
+
+        return statsdel
+
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_fatigue(self, signal, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1):
         """
@@ -1121,7 +1604,7 @@ class UserWind(object):
         pass
 
     def __call__(self, z_h, r_blade_tip, a_phi=None, shear_exp=None, nr_hor=3,
-                 nr_vert=20, h_ME=500.0, fname=None, wdir=None):
+                 nr_vert=20, h_ME=500.0, io=None, wdir=None):
         """
 
         Parameters
@@ -1147,8 +1630,8 @@ class UserWind(object):
             Modified Ekman parameter. Take roughly 500 for off shore sites,
             1000 for on shore sites.
 
-        fname : str, default=None
-            When specified, the HAWC2 user defined veer input file will be
+        io : str or io buffer, default=None
+            When specified, the HAWC2 user defined shear input file will be
             written.
 
         wdir : float, default=None
@@ -1158,14 +1641,14 @@ class UserWind(object):
         Returns
         -------
 
-        None
+        uu, vv, ww, xx, zz
 
         """
 
         x, z = self.create_coords(z_h, r_blade_tip, nr_vert=nr_vert,
                                   nr_hor=nr_hor)
         if a_phi is not None:
-            phi_rad = self.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
+            phi_rad = WindProfiles.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
             assert len(phi_rad) == nr_vert
         else:
             nr_vert = len(z)
@@ -1174,21 +1657,34 @@ class UserWind(object):
         if wdir is not None:
             # because wdir cw positive, and phi veer ccw positive
             phi_rad -= (wdir*np.pi/180.0)
-        u, v, w, xx, zz = self.decompose_veer(phi_rad, x, z)
-        # scale the shear on top of that
-        if shear_exp is not None:
-            shear = self.shear_powerlaw(zz, z_h, shear_exp)
+        u, v, w = self.decompose_veer(phi_rad, nr_hor)
+        # when no shear is defined
+        if shear_exp is None:
+            uu = u
+            vv = v
+            ww = w
+        else:
+            # scale the shear on top of the veer
+            shear = WindProfiles.powerlaw(z, z_h, shear_exp)
             uu = u*shear[:,np.newaxis]
             vv = v*shear[:,np.newaxis]
             ww = w*shear[:,np.newaxis]
         # and write to a file
-        if fname is not None:
-            self.write_user_defined_shear(fname, uu, vv, ww, xx, zz)
+        if isinstance(io, str):
+            with open(io, 'wb') as fid:
+                fid = self.write(fid, uu, vv, ww, x, z)
+            self.fid =None
+        elif io is not None:
+            io = self.write(io, uu, vv, ww, x, z)
+            self.fid = io
+
+        return uu, vv, ww, x, z
 
     def create_coords(self, z_h, r_blade_tip, nr_vert=3, nr_hor=20):
         """
         Utility to create the coordinates of the wind field based on hub heigth
-        and blade length.
+        and blade length. Add 15% to r_blade_tip to make sure horizontal edges
+        are defined wide enough.
         """
         # take 15% extra space after the blade tip
         z = np.linspace(0, z_h + r_blade_tip*1.15, nr_vert)
@@ -1197,80 +1693,88 @@ class UserWind(object):
 
         return x, z
 
-    def shear_powerlaw(self, z, z_ref, a):
-        profile = np.power(z/z_ref, a)
-        # when a negative, make sure we return zero and not inf
-        profile[np.isinf(profile)] = 0.0
-        return profile
-
-    def veer_ekman_mod(self, z, z_h, h_ME=500.0, a_phi=0.5):
-        """
-        Modified Ekman veer profile, as defined by Mark C. Kelly in email on
-        10 October 2014 15:10 (RE: veer profile)
-
-        .. math::
-            \\varphi(z) - \\varphi(z_H) \\approx a_{\\varphi}
-            e^{-\sqrt{z_H/h_{ME}}}
-            \\frac{z-z_H}{\sqrt{z_H*h_{ME}}}
-            \\left( 1 - \\frac{z-z_H}{2 \sqrt{z_H h_{ME}}}
-            - \\frac{z-z_H}{4z_H} \\right)
-
-        where:
-        :math:`h_{ME} \\equiv \\frac{\\kappa u_*}{f}`
-        and :math:`f = 2 \Omega \sin \\varphi` is the coriolis parameter,
-        and :math:`\\kappa = 0.41` as the von Karman constant,
-        and :math:`u_\\star = \\sqrt{\\frac{\\tau_w}{\\rho}}` friction velocity.
-
-        For on shore, :math:`h_{ME} \\approx 1000`, for off-shore,
-        :math:`h_{ME} \\approx 500`
-
-        :math:`a_{\\varphi} \\approx 0.5`
+    def deltaphi2aphi(self, d_phi, z_h, r_blade_tip, h_ME=500.0):
+        """For a given `\\Delta \\varphi` over the rotor diameter, estimate
+        the corresponding `a_{\\varphi}`.
 
         Parameters
         ----------
 
-        :math:`a_{\\varphi} \\approx 0.5` parameter for the modified
-            Ekman veer distribution. Values vary between -1.2 and 0.5.
+        `\\Delta \\varphi` : ndarray or float
+            Veer angle difference over the rotor plane from lowest to highest
+            blade tip position.
 
-        returns
-        -------
+        z_h : float
+            Hub height in meters.
 
-        phi_rad : ndarray
-            veer angle in radians
+        r_blade_tip : float
+            Blade tip radius/length.
 
-        """
-
-        t1 = np.exp(-math.sqrt(z_h / h_ME))
-        t2 = (z - z_h) / math.sqrt(z_h * h_ME)
-        t3 = (1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h))
-
-        return a_phi * t1 * t2 * t3
-
-    def decompose_veer(self, phi_rad, x, z):
-        """
-        Convert a veer angle into u, v, and w components, ready for the
-        HAWC2 user defined veer input file.
-
-        Paramters
-        ---------
-
-        phi_rad : ndarray
-            veer angle in radians
-
-        method : str, default=linear
-            'linear' for a linear veer, 'ekman_mod' for modified ekman method
+        h_ME : float, default=500.0
+            Modified Ekman parameter. For on shore,
+            :math:`h_{ME} \\approx 1000`, for off-shore,
+            :math:`h_{ME} \\approx 500`
 
         Returns
         -------
 
-        u, v, w, v_coord, w_coord
+        `a_{\\varphi}` : ndarray or float
 
         """
 
-        nr_hor = len(x)
-        nr_vert = len(z)
-        assert len(phi_rad) == nr_vert
+        t1 = r_blade_tip * 2.0 * np.exp(-z_h/(h_ME))
+        a_phi = d_phi * np.sqrt(h_ME*z_h) / t1
+        return a_phi
 
+    def deltaphi2aphi_opt(self, deltaphi, z, z_h, r_blade_tip, h_ME):
+        """
+        convert delta_phi over a given interval z to a_phi using
+        scipy.optimize.fsolve on veer_ekman_mod.
+
+        Parameters
+        ----------
+
+        deltaphi : float
+            Desired delta phi in rad over interval z[0] at bottom to z[1] at
+            the top.
+
+
+        """
+
+        def func(a_phi, z, z_h, h_ME, deltaphi_target):
+            phis = WindProfiles.veer_ekman_mod(z, z_h, h_ME=h_ME, a_phi=a_phi)
+            return np.abs(deltaphi_target - (phis[1] - phis[0]))
+
+        args = (z, z_h, h_ME, deltaphi)
+        return sp.optimize.fsolve(func, [0], args=args)[0]
+
+    def decompose_veer(self, phi_rad, nr_hor):
+        """
+        Convert a veer angle into u, v, and w components, ready for the
+        HAWC2 user defined veer input file. nr_vert refers to the number of
+        vertical grid points.
+
+        Paramters
+        ---------
+
+        phi_rad : ndarray(nr_vert)
+            veer angle in radians as function of height
+
+        nr_hor : int
+            Number of horizontal grid points
+
+        Returns
+        -------
+
+        u : ndarray(nr_hor, nr_vert)
+
+        v : ndarray(nr_hor, nr_vert)
+
+        w : ndarray(nr_hor, nr_vert)
+
+        """
+
+        nr_vert = len(phi_rad)
         tan_phi = np.tan(phi_rad)
 
         # convert veer angles to veer components in v, u. Make sure the
@@ -1295,11 +1799,11 @@ class UserWind(object):
         v_full = v[:, np.newaxis] + np.zeros((3,))[np.newaxis, :]
         w_full = np.zeros((nr_vert, nr_hor))
 
-        return u_full, v_full, w_full, x, z
+        return u_full, v_full, w_full
 
-    def load_user_defined_veer(self, fname):
+    def read(self, fname):
         """
-        Load a user defined veer and shear file as used for HAWC2
+        Read a user defined shear input file as used for HAWC2.
 
         Returns
         -------
@@ -1336,9 +1840,9 @@ class UserWind(object):
 
         return u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
 
-    def write_user_defined_shear(self, fname, u, v, w, v_coord, w_coord,
-                                 fmt_uvw='% 08.05f', fmt_coord='% 8.02f'):
-        """
+    def write(self, fid, u, v, w, v_coord, w_coord, fmt_uvw='% 08.05f',
+              fmt_coord='% 8.02f'):
+        """Write a user defined shear input file for HAWC2.
         """
         nr_hor = len(v_coord)
         nr_vert = len(w_coord)
@@ -1353,40 +1857,38 @@ class UserWind(object):
                              'nr_hor and nr_vert: u.shape: %s, nr_hor: %i, '
                              'nr_vert: %i' % (str(u.shape), nr_hor, nr_vert))
 
-        # and create the input file
-        with open(fname, 'wb') as fid:
-            fid.write(b'# User defined shear file\n')
-            fid.write(b'%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert))
-            h1 = b'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
-            fid.write(b'# v component, %s\n' % h1)
-            np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
-            fid.write(b'# u component, %s\n' % h1)
-            np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
-            fid.write(b'# w component, %s\n' % h1)
-            np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
-            h2 = b'# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
-            fid.write(b'%s\n' % h2)
-            np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
-            h3 = b'# w coordinates (zero is at ground level, height, nr_hor)'
-            fid.write(b'%s\n' % h3)
-            np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
+        fid.write(b'# User defined shear file\n')
+        tmp = '%i %i # nr_hor (v), nr_vert (w)\n' % (nr_hor, nr_vert)
+        fid.write(tmp.encode())
+        h1 = 'normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns'
+        fid.write(('# v component, %s\n' % h1).encode())
+        np.savetxt(fid, v, fmt=fmt_uvw, delimiter='  ')
+        fid.write(('# u component, %s\n' % h1).encode())
+        np.savetxt(fid, u, fmt=fmt_uvw, delimiter='  ')
+        fid.write(('# w component, %s\n' % h1).encode())
+        np.savetxt(fid, w, fmt=fmt_uvw, delimiter='  ')
+        h2 = '# v coordinates (along the horizontal, nr_hor, 0 rotor center)'
+        fid.write(('%s\n' % h2).encode())
+        np.savetxt(fid, v_coord.reshape((v_coord.size, 1)), fmt=fmt_coord)
+        h3 = '# w coordinates (zero is at ground level, height, nr_hor)'
+        fid.write(('%s\n' % h3).encode())
+        np.savetxt(fid, w_coord.reshape((w_coord.size, 1)), fmt=fmt_coord)
+
+        return fid
 
 
 class WindProfiles(object):
 
-    def __init__(self):
-        pass
-
-    def logarithmic(self, z, z_ref, r_0):
+    def logarithmic(z, z_ref, r_0):
         return np.log10(z/r_0)/np.log10(z_ref/r_0)
 
-    def powerlaw(self, z, z_ref, a):
+    def powerlaw(z, z_ref, a):
         profile = np.power(z/z_ref, a)
         # when a negative, make sure we return zero and not inf
         profile[np.isinf(profile)] = 0.0
         return profile
 
-    def veer_ekman_mod(self, z, z_h, h_ME=500.0, a_phi=0.5):
+    def veer_ekman_mod(z, z_h, h_ME=500.0, a_phi=0.5):
         """
         Modified Ekman veer profile, as defined by Mark C. Kelly in email on
         10 October 2014 15:10 (RE: veer profile)
@@ -1412,20 +1914,29 @@ class WindProfiles(object):
         Parameters
         ----------
 
-        :math:`a_{\\varphi} \\approx 0.5` parameter for the modified
-            Ekman veer distribution. Values vary between -1.2 and 0.5.
+        z : ndarray(n)
+            z-coordinates (height) of the grid on which the veer angle should
+            be calculated.
 
-        returns
+        z_h : float
+            Hub height in meters.
+
+        :math:`a_{\\varphi}` : default=0.5
+            Parameter for the modified Ekman veer distribution. Value varies
+            between -1.2 and 0.5.
+
+        Returns
         -------
 
         phi_rad : ndarray
-            veer angle in radians as function of height
+            Veer angle in radians as function of z.
+
 
         """
 
         t1 = np.exp(-math.sqrt(z_h / h_ME))
         t2 = (z - z_h) / math.sqrt(z_h * h_ME)
-        t3 = ( 1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h) )
+        t3 = (1.0 - (z-z_h)/(2.0*math.sqrt(z_h*h_ME)) - (z-z_h)/(4.0*z_h))
 
         return a_phi * t1 * t2 * t3
 

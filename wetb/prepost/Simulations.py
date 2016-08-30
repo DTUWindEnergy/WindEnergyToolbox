@@ -6,6 +6,7 @@ Created on Tue Nov  1 15:16:34 2011
 __author__ = "David Verelst <dave@dtu.dk>"
 __license__ = "GPL-2+"
 """
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import unicode_literals
@@ -19,10 +20,6 @@ from builtins import int
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
-
-
-
-#print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 # standard python library
 import os
@@ -42,6 +39,7 @@ from operator import itemgetter
 from time import time
 #import Queue
 #import threading
+#from multiprocessing import Pool
 
 # numpy and scipy only used in HtcMaster._all_in_one_blade_tag
 import numpy as np
@@ -560,7 +558,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
                 run_only_new=False, windows_nr_cpus=2, qsub='',
                 pbs_fname_appendix=True, short_job_names=True,
-                update_model_data=True):
+                update_model_data=True, maxcpu=1, pyenv='wetb_py3'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -749,7 +747,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     # create directory if post_dir does not exists
     try:
-        os.mkdir(post_dir)
+        os.makedirs(post_dir)
     except OSError:
         pass
     FILE = open(fpath_post_base + '.pkl', 'wb')
@@ -795,7 +793,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
            copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
-           pbs_fname_appendix=pbs_fname_appendix, silent=silent)
+           pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
+           pyenv=pyenv)
 
     return cases
 
@@ -976,7 +975,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 
     # create directory if post_dir does not exists
     try:
-        os.mkdir(post_dir)
+        os.makedirs(post_dir)
     except OSError:
         pass
     FILE = open(post_dir + master.tags['[sim_id]'] + '.pkl', 'wb')
@@ -993,10 +992,10 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
     return cases_new
 
 
-
 def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
-           wine_appendix='', pbs_fname_appendix=True, short_job_names=True):
+           wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
+           maxcpu=1, pyenv='wetb_py3'):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1031,10 +1030,11 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, server=runmethod, short_job_names=short_job_names,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent)
+                  verbose=verbose, silent=silent, pyenv=pyenv)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
+        pbs.maxcpu = maxcpu
         pbs.create()
     elif runmethod == 'local':
         cases = run_local(cases, silent=silent, check_log=check_log)
@@ -1046,6 +1046,7 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
         msg = 'unsupported runmethod, valid options: local, local-script, ' \
               'linux-script, windows-script, local-ram, none'
         raise ValueError(msg)
+
 
 def post_launch(cases, save_iter=False, silent=False, suffix=None,
                 path_errorlog=None):
@@ -1887,7 +1888,8 @@ class PBS(object):
     """
 
     def __init__(self, cases, server='gorm', qsub='time', silent=False,
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
+                 pyenv='wetb_py3'):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1919,6 +1921,7 @@ class PBS(object):
         self.server = server
         self.verbose = verbose
         self.silent = silent
+        self.pyenv = pyenv
 
 #        if server == 'thyra':
 #            self.maxcpu = 4
@@ -1927,11 +1930,12 @@ class PBS(object):
             self.maxcpu = 1
             self.secperiter = 0.012
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
+            self.winefix = ''
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
-            self.wine = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
-            self.wine += 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
+            self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+            self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
 
@@ -2040,6 +2044,8 @@ class PBS(object):
             # load all relevant dir settings: the result/logfile/turbulence/zip
             # they are now also available for starting() and ending() parts
             hawc2_exe = tag_dict['[hawc2_exe]']
+            self.case = case.replace('.htc', '')
+            self.sim_id = tag_dict['[sim_id]']
             self.results_dir = tag_dict['[res_dir]']
             self.eigenfreq_dir = tag_dict['[eigenfreq_dir]']
             self.logs_dir = tag_dict['[log_dir]']
@@ -2061,6 +2067,7 @@ class PBS(object):
             self.pbs_queue_command = tag_dict['[pbs_queue_command]']
             self.walltime = tag_dict['[walltime]']
             self.dyn_walltime = tag_dict['[auto_walltime]']
+            self.case_duration = tag_dict['[duration]']
 
             # create the pbs_out_dir if necesary
             try:
@@ -2133,29 +2140,42 @@ class PBS(object):
             # -----------------------------------------------------------------
             # WRITING THE ACTUAL JOB PARAMETERS
 
+            # browse to the curren scratch directory
+            self.pbs += "\n\n"
+            self.pbs += '# ' + '-'*60 + '\n'
+            # evaluates to true if LAUNCH_PBS_MODE is NOT set
+            self.pbs += "# evaluates to true if LAUNCH_PBS_MODE is NOT set\n"
+            self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+            self.pbs += "  echo \n"
+            self.pbs += "  echo 'Execute commands on scratch nodes'\n"
+            self.pbs += "  cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
+            self.pbs += "  # create unique dir for each CPU\n"
+            self.pbs += '  mkdir "%i"; cd "%i"\n' % (count1, count1)
+
             # output the current scratch directory
-            self.pbs += "pwd\n"
+            self.pbs += "  pwd\n"
             # zip file has been copied to the node before (in start_pbs())
-            # unzip now in the node
-            self.pbs += "/usr/bin/unzip " + self.ModelZipFile + '\n'
+            # unzip now in the CPU scratch directory (zip file is one level up)
+            self.pbs += "  /usr/bin/unzip ../" + self.ModelZipFile + '\n'
             # create all directories, especially relevant if there are case
             # dependent sub directories that are not present in the ZIP file
-            self.pbs += "mkdir -p " + self.htc_dir + '\n'
-            self.pbs += "mkdir -p " + self.results_dir + '\n'
-            self.pbs += "mkdir -p " + self.logs_dir + '\n'
-            self.pbs += "mkdir -p " + self.TurbDirName + '\n'
-            if self.WakeDirName:
-                self.pbs += "mkdir -p " + self.WakeDirName + '\n'
-            if self.MeanderDirName:
-                self.pbs += "mkdir -p " + self.MeanderDirName + '\n'
+            self.pbs += "  mkdir -p " + self.htc_dir + '\n'
+            self.pbs += "  mkdir -p " + self.results_dir + '\n'
+            self.pbs += "  mkdir -p " + self.logs_dir + '\n'
+            if self.TurbDirName is not None or self.TurbDirName != 'None':
+                self.pbs += "  mkdir -p " + self.TurbDirName + '\n'
+            if self.WakeDirName and self.WakeDirName != self.TurbDirName:
+                self.pbs += "  mkdir -p " + self.WakeDirName + '\n'
+            if self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
+                self.pbs += "  mkdir -p " + self.MeanderDirName + '\n'
             if self.hydro_dir:
-                self.pbs += "mkdir -p " + self.hydro_dir + '\n'
+                self.pbs += "  mkdir -p " + self.hydro_dir + '\n'
             # create the eigen analysis dir just in case that is necessary
             if self.eigenfreq_dir:
-                self.pbs += 'mkdir -p %s \n' % self.eigenfreq_dir
+                self.pbs += '  mkdir -p %s \n' % self.eigenfreq_dir
 
             # and copy the htc file to the node
-            self.pbs += "cp -R $PBS_O_WORKDIR/" + self.htc_dir \
+            self.pbs += "  cp -R $PBS_O_WORKDIR/" + self.htc_dir \
                 + case +" ./" + self.htc_dir + '\n'
 
             # if there is a turbulence file data base dir, copy from there
@@ -2168,16 +2188,16 @@ class PBS(object):
             # names: turb_base_name_xxx_u.bin, turb_base_name_xxx_v.bin
             if self.turb_base_name is not None:
                 turb_src = os.path.join(turb_dir_src, self.turb_base_name)
-                self.pbs += "cp -R %s*.bin %s \n" % (turb_src, self.TurbDirName)
+                self.pbs += "  cp -R %s*.bin %s \n" % (turb_src, self.TurbDirName)
             # more generally, literally define the names of the boxes for u,v,w
             # components
             elif '[turb_fname_u]' in tag_dict:
                 turb_u = os.path.join(turb_dir_src, tag_dict['[turb_fname_u]'])
                 turb_v = os.path.join(turb_dir_src, tag_dict['[turb_fname_v]'])
                 turb_w = os.path.join(turb_dir_src, tag_dict['[turb_fname_w]'])
-                self.pbs += "cp %s %s \n" % (turb_u, self.TurbDirName)
-                self.pbs += "cp %s %s \n" % (turb_v, self.TurbDirName)
-                self.pbs += "cp %s %s \n" % (turb_w, self.TurbDirName)
+                self.pbs += "  cp %s %s \n" % (turb_u, self.TurbDirName)
+                self.pbs += "  cp %s %s \n" % (turb_v, self.TurbDirName)
+                self.pbs += "  cp %s %s \n" % (turb_w, self.TurbDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.wakeDb and self.WakeDirName:
@@ -2186,7 +2206,7 @@ class PBS(object):
                 wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.WakeDirName)
             if self.wake_base_name is not None:
                 wake_src = os.path.join(wake_dir_src, self.wake_base_name)
-                self.pbs += "cp -R %s*.bin %s \n" % (wake_src, self.WakeDirName)
+                self.pbs += "  cp -R %s*.bin %s \n" % (wake_src, self.WakeDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.meandDb and self.MeanderDirName:
@@ -2195,16 +2215,57 @@ class PBS(object):
                 meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.MeanderDirName)
             if self.meand_base_name is not None:
                 meand_src = os.path.join(meand_dir_src, self.meand_base_name)
-                self.pbs += "cp -R %s*.bin %s \n" % (meand_src, self.MeanderDirName)
+                self.pbs += "  cp -R %s*.bin %s \n" % (meand_src, self.MeanderDirName)
 
             # copy and rename input files with given versioned name to the
             # required non unique generic version
             for fname, fgen in zip(self.copyto_files, self.copyto_generic):
-                self.pbs += "cp -R $PBS_O_WORKDIR/%s ./%s \n" % (fname, fgen)
+                self.pbs += "  cp -R $PBS_O_WORKDIR/%s ./%s \n" % (fname, fgen)
 
-            # the hawc2 execution commands via wine
+            # only apply the wine fix in PBS mode
+            self.pbs += '  ' + self.winefix
+            # TODO: activate python env, calculate post-processing
+#            self.pbs += 'echo `python -c "import wetb; print(wetb.__version__)"`\n'
+
+            # end of the file copying in PBS mode
+            self.pbs += '# ' + '-'*60 + '\n'
+            self.pbs += "else\n"
+            # when in find+xargs mode, browse to the relevant CPU
+            self.pbs += '  # with find+xargs we first browse to CPU folder\n'
+            self.pbs += '  cd "$CPU_NR"\n'
+            self.pbs += "fi\n"
+            self.pbs += '# ' + '-'*60 + '\n'
+
+            self.pbs += 'echo ""\n'
+            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+            self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+            # the hawc2 execution commands via wine, in PBS mode fork and wait
             param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
-            self.pbs += "%s %s ./%s %s &\n" % param
+            self.pbs += '  echo "execute HAWC2, fork to background"\n'
+            self.pbs += "  %s %s ./%s %s &\n" % param
+            # FIXME: running post-processing will only work when 1 HAWC2 job
+            # per PBS file, otherwise you have to wait for each job to finish
+            # first and then run the post-processing for all those cases
+            if self.maxcpu == 1:
+                self.pbs += '  wait\n'
+                if self.pyenv is not None:
+                    self.pbs += '  echo "POST-PROCESSING"\n'
+                    self.pbs += '  source activate %s\n' % self.pyenv
+                    self.pbs += "  "
+                    self.checklogs()
+                    self.pbs += "  "
+                    self.postprocessing()
+                    self.pbs += '  source deactivate\n'
+            self.pbs += "else\n"
+            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+            self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
+            self.pbs += "  %s %s ./%s %s \n" % param
+            self.pbs += '  echo "POST-PROCESSING"\n'
+            self.pbs += "  "
+            self.checklogs()
+            self.pbs += "  "
+            self.postprocessing()
+            self.pbs += "fi\n"
 
             #self.pbs += "wine get_mac_adresses" + '\n'
             # self.pbs += "cp -R ./*.mac  $PBS_O_WORKDIR/." + '\n'
@@ -2256,7 +2317,7 @@ class PBS(object):
         self.pbs += "### Standard Error" + ' \n'
         self.pbs += "#PBS -e ./" + self.pbs_out_dir + case_id + ".err" + '\n'
         # self.pbs += "#PBS -e ./pbs_out/" + jobid + ".err" + '\n'
-        self.pbs += '#PBS -W umask=003\n'
+        self.pbs += '#PBS -W umask=0003\n'
         self.pbs += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
 #        self.pbs += "#PBS -l walltime=" + self.walltime + '\n'
         self.pbs += "#PBS -l walltime=[walltime]\n"
@@ -2292,143 +2353,63 @@ class PBS(object):
         # short walltime queue (shorter than an hour): '#PBS -q xpresq'
         # or otherwise for longer jobs: '#PBS -q workq'
         self.pbs += self.pbs_queue_command + '\n'
+        self.pbs += '\n' + '# ' + '='*78 + '\n'
 
-        self.pbs += "### Create scratch directory and copy data to it \n"
+        # ignore all the file copying when running in xargs mode:
+        # when varibale LAUNCH_PBS_MODE is set, file copying is ignored
+        # and will have to be done elsewhere
+        # we do this so the same launch script can be used either with the node
+        # scheduler and the PBS system (for example when re-running cases)
+        # evaluates to true if LAUNCH_PBS_MODE is NOT set
+        self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+
+        self.pbs += "  ### Create scratch directory and copy data to it \n"
         # output the current directory
-        self.pbs += "cd $PBS_O_WORKDIR" + '\n'
-        self.pbs += 'echo "current working dir (pwd):"\n'
-        self.pbs += "pwd \n"
+        self.pbs += "  cd $PBS_O_WORKDIR" + '\n'
+        self.pbs += '  echo "current working dir (pwd):"\n'
+        self.pbs += "  pwd \n"
         # The batch system on Gorm allows more than one job per node.
         # Because of this the scratch directory name includes both the
         # user name and the job ID, that is /scratch/$USER/$PBS_JOBID
         # if not scratch, make the dir
         if self.node_run_root != '/scratch':
-            self.pbs += 'mkdir -p %s/$USER\n' % self.node_run_root
-            self.pbs += 'mkdir -p %s/$USER/$PBS_JOBID\n' % self.node_run_root
+            self.pbs += '  mkdir -p %s/$USER\n' % self.node_run_root
+            self.pbs += '  mkdir -p %s/$USER/$PBS_JOBID\n' % self.node_run_root
 
         # copy the zip files to the scratch dir on the node
-        self.pbs += "cp -R ./" + self.ModelZipFile + \
+        self.pbs += "  cp -R ./" + self.ModelZipFile + \
             ' %s/$USER/$PBS_JOBID\n' % (self.node_run_root)
-
-        self.pbs += '\n\n'
-        self.pbs += 'echo ""\n'
-        self.pbs += 'echo "Execute commands on scratch nodes"\n'
-        self.pbs += 'cd %s/$USER/$PBS_JOBID\n' % self.node_run_root
+        self.pbs += "fi\n"
+        self.pbs += '# ' + '-'*78 + '\n'
 
     def ending(self, pbs_path):
         """
         Last part of the pbs script, including command to write script to disc
         COPY BACK: from node to
         """
-
-        self.pbs += "### wait for jobs to finish \n"
-        self.pbs += "wait\n"
-        self.pbs += 'echo ""\n'
-        self.pbs += 'echo "Copy back from scratch directory" \n'
-        for i in range(1,self.maxcpu+1,1):
+        self.pbs += "\n\n"
+        self.pbs += '# ' + "="*78 + "\n"
+        self.pbs += "### Epilogue\n"
+        # evaluates to true if LAUNCH_PBS_MODE is NOT set
+        self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+        self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
+        self.pbs += "  ### wait for jobs to finish \n"
+        self.pbs += "  wait\n"
+        self.pbs += '  echo ""\n'
+        self.pbs += '# ' + '-'*78 + '\n'
+        self.pbs += '  echo "Copy back from scratch directory" \n'
+        for i in range(1, self.maxcpu+1, 1):
 
             # navigate to the cpu dir on the node
             # The batch system on Gorm allows more than one job per node.
             # Because of this the scratch directory name includes both the
             # user name and the job ID, that is /scratch/$USER/$PBS_JOBID
-            # NB! This is different from Thyra!
-            self.pbs += "cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
-
-            # create the log, res etc dirs in case they do not exist
-            self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.results_dir + "\n"
-            self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.logs_dir + "\n"
-            if self.animation_dir:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.animation_dir + "\n"
-            if self.copyback_turb and self.TurbDb:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.TurbDb + "\n"
-            elif self.copyback_turb:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.TurbDirName + "\n"
-            if self.copyback_turb and self.wakeDb:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.wakeDb + "\n"
-            elif self.WakeDirName:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.WakeDirName + "\n"
-            if self.copyback_turb and self.meandDb:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.meandDb + "\n"
-            elif self.MeanderDirName:
-                self.pbs += "mkdir -p $PBS_O_WORKDIR/" + self.MeanderDirName + "\n"
-
-            # and copy the results and log files frome the node to the
-            # thyra home dir
-            self.pbs += "cp -R " + self.results_dir + \
-                ". $PBS_O_WORKDIR/" + self.results_dir + ".\n"
-            self.pbs += "cp -R " + self.logs_dir + \
-                ". $PBS_O_WORKDIR/" + self.logs_dir + ".\n"
-            if self.animation_dir:
-                self.pbs += "cp -R " + self.animation_dir + \
-                    ". $PBS_O_WORKDIR/" + self.animation_dir + ".\n"
-
-            if self.eigenfreq_dir:
-                # just in case the eig dir has subdirs for the results, only
-                # select the base path and cp -r will take care of the rest
-                p1 = self.eigenfreq_dir.split('/')[0]
-                self.pbs += "cp -R %s/. $PBS_O_WORKDIR/%s/. \n" % (p1, p1)
-                # for eigen analysis with floater, modes are in root
-                eig_dir_sys = '%ssystem/' % self.eigenfreq_dir
-                self.pbs += 'mkdir -p $PBS_O_WORKDIR/%s \n' % eig_dir_sys
-                self.pbs += "cp -R mode* $PBS_O_WORKDIR/%s. \n" % eig_dir_sys
-
-            # only copy the turbulence files back if they do not exist
-            # for all *.bin files on the node
-            cmd = 'for i in `ls *.bin`; do  if [ -e $PBS_O_WORKDIR/%s$i ]; '
-            cmd += 'then echo "$i exists no copyback"; else echo "$i copyback"; '
-            cmd += 'cp $i $PBS_O_WORKDIR/%s; fi; done\n'
-            # copy back turbulence file?
-            # browse to the node turb dir
-            self.pbs += '\necho ""\n'
-            self.pbs += 'echo "COPY BACK TURB IF APPLICABLE"\n'
-            if self.TurbDirName:
-                self.pbs += 'cd %s\n' % self.TurbDirName
-            if self.copyback_turb and self.TurbDb:
-                tmp = (self.TurbDb, self.TurbDb)
-                self.pbs += cmd % tmp
-            elif self.copyback_turb:
-                tmp = (self.TurbDirName, self.TurbDirName)
-                self.pbs += cmd % tmp
-            if self.TurbDirName:
-                # and back to normal model root
-                self.pbs += "cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
-
-            if self.WakeDirName:
-                self.pbs += 'cd %s\n' % self.WakeDirName
-            if self.copyback_turb and self.wakeDb:
-                tmp = (self.wakeDb, self.wakeDb)
-                self.pbs += cmd % tmp
-            elif self.copyback_turb and self.WakeDirName:
-                tmp = (self.WakeDirName, self.WakeDirName)
-                self.pbs += cmd % tmp
-            if self.WakeDirName:
-                # and back to normal model root
-                self.pbs += "cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
-
-            if self.MeanderDirName:
-                self.pbs += 'cd %s\n' % self.MeanderDirName
-            if self.copyback_turb and self.meandDb:
-                tmp = (self.meandDb, self.meandDb)
-                self.pbs += cmd % tmp
-            elif self.copyback_turb and self.MeanderDirName:
-                tmp = (self.MeanderDirName, self.MeanderDirName)
-                self.pbs += cmd % tmp
-            if self.MeanderDirName:
-                # and back to normal model root
-                self.pbs += "cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
-            self.pbs += 'echo "END COPY BACK TURB"\n'
-            self.pbs += 'echo ""\n\n'
-
-            # copy back any other kind of file specified
-            if len(self.copyback_frename) == 0:
-                self.copyback_frename = self.copyback_files
-            for fname, fnew in zip(self.copyback_files, self.copyback_frename):
-                self.pbs += "cp -R %s $PBS_O_WORKDIR/%s \n" % (fname, fnew)
-
-            # check what is left
-            self.pbs += 'echo ""\n'
-            self.pbs += 'echo "following files are on the node (find .):"\n'
-            self.pbs += 'find .\n'
+            self.copyback_all_files("pbs_mode", i)
+            # find+xargs mode only makes sense when maxcpu==1, cpu handling
+            # for this mode is handled elsewhere
+            if self.maxcpu == 1:
+                self.pbs += 'else\n'
+                self.copyback_all_files("find+xargs", None)
 
 #            # and delete it all (but that is not allowed)
 #            self.pbs += 'cd ..\n'
@@ -2439,6 +2420,9 @@ class PBS(object):
             # Delete the batch file at the end. However, is this possible since
             # the batch file is still open at this point????
             # self.pbs += "rm "
+
+        # end of PBS/find+xargs mode switching if/else
+        self.pbs += 'fi\n'
 
         # base walltime on the longest simulation in the batch
         nr_time_steps = max(self.nr_time_steps)
@@ -2474,6 +2458,158 @@ class PBS(object):
         write_file(pbs_path, self.pbs, 'w')
         # make the string empty again, for memory
         self.pbs = ''
+
+    def copyback_all_files(self, mode, cpu_nr):
+        """Copy back all the files from either scratch to run_dir (PBS mode),
+        or from CPU sub-directory back to main directory in find+xargs mode.
+        """
+        if mode=="find+xargs":
+            foper = "rsync -a --remove-source-files" # move files instead of copy
+            dst = os.path.join('..', self.sim_id, '')
+            dst_db = '../'
+            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
+                                                  '$PBS_JOBID', '$CPU_NR', '')
+            pbs_mode = False
+        else:
+            foper = "cp -R"
+            dst = "$PBS_O_WORKDIR/"
+            dst_db = dst
+            pbs_mode = True
+            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
+                                                  '$PBS_JOBID', '%i' % cpu_nr, '')
+
+        # navigate to the cpu dir on the node
+        # The batch system on Gorm/Jess allows more than one job per node.
+        # Because of this the scratch directory name includes both the
+        # user name and the job ID, that is /scratch/$USER/$PBS_JOBID/CPU_NR
+        self.pbs += cd2model
+
+        # create the log, res etc dirs in case they do not exist. Only relevant
+        # for pbs_mode, they are created in advance in find+xargs
+        if pbs_mode:
+            mk = '  mkdir -p'
+            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.results_dir))
+            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.logs_dir))
+            if self.animation_dir:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.animation_dir))
+            if self.copyback_turb and self.TurbDb:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDb))
+            elif self.copyback_turb:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDirName))
+            if self.copyback_turb and self.wakeDb:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.wakeDb))
+            elif self.WakeDirName and self.WakeDirName != self.TurbDirName:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.WakeDirName))
+            if self.copyback_turb and self.meandDb:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.meandDb))
+            elif self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
+                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.MeanderDirName))
+
+        # and copy the results and log files frome the scratch to dst
+        res_dst = os.path.join(dst, self.results_dir, ".")
+        self.pbs += "  %s %s. %s\n" % (foper, self.results_dir, res_dst)
+        log_dst = os.path.join(dst, self.logs_dir, ".")
+        self.pbs += "  %s %s. %s\n" % (foper, self.logs_dir, log_dst)
+        if self.animation_dir:
+            ani_dst = os.path.join(dst, self.animation_dir, ".")
+            self.pbs += "  %s %s. %s\n" % (foper, self.animation_dir, ani_dst)
+
+        if self.eigenfreq_dir:
+            # just in case the eig dir has subdirs for the results, only
+            # select the base path and cp -r will take care of the rest
+            p1 = self.eigenfreq_dir.split('/')[0]
+            p2 = os.path.join(dst, p1, ".")
+            self.pbs += "  cp -R %s/. %s \n" % (p1, p2)
+            # for eigen analysis with floater, modes are in root
+            eig_dir_sys = os.path.join(dst, self.eigenfreq_dir, 'system/', '.')
+            self.pbs += '  mkdir -p %s \n' % eig_dir_sys
+            self.pbs += "  cp -R mode* %s \n" % eig_dir_sys
+            self.pbs += "  %s mode* %s \n" % (foper, eig_dir_sys)
+
+        # only copy the turbulence files back if they do not exist
+        # for all *.bin files on the node
+        cmd = '  for i in `ls *.bin`; do  if [ -e %s$i ]; '
+        cmd += 'then echo "$i exists no copyback"; else echo "$i copyback"; '
+        cmd += 'cp $i %s; fi; done\n'
+        # copy back turbulence file?
+        # browse to the node turb dir
+        self.pbs += '\n  echo ""\n'
+        self.pbs += '  echo "COPY BACK TURB IF APPLICABLE"\n'
+        if self.copyback_turb and self.TurbDb:
+            self.pbs += '  cd %s\n' % self.TurbDirName
+            tmp = (os.path.join(dst_db, self.TurbDb, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+        elif self.copyback_turb:
+            self.pbs += '  cd %s\n' % self.TurbDirName
+            tmp = (os.path.join(dst, self.TurbDirName, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+
+        if self.copyback_turb and self.wakeDb:
+            self.pbs += '  cd %s\n' % self.WakeDirName
+            tmp = (os.path.join(dst_db, self.wakeDb, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+        elif self.copyback_turb and self.WakeDirName:
+            self.pbs += '  cd %s\n' % self.WakeDirName
+            tmp = (os.path.join(dst, self.WakeDirName, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+
+        if self.copyback_turb and self.meandDb:
+            self.pbs += '  cd %s\n' % self.MeanderDirName
+            tmp = (os.path.join(dst_db, self.meandDb, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+        elif self.copyback_turb and self.MeanderDirName:
+            self.pbs += '  cd %s\n' % self.MeanderDirName
+            tmp = (os.path.join(dst, self.MeanderDirName, ''),)*2
+            self.pbs += cmd % tmp
+            # and back to normal model root
+            self.pbs += cd2model
+
+        self.pbs += '  echo "END COPY BACK TURB"\n'
+        self.pbs += '  echo ""\n\n'
+
+        # copy back any other kind of files, as specified in copyback_files
+        self.pbs += '  echo "COPYBACK [copyback_files]/[copyback_frename]"\n'
+        if len(self.copyback_frename) == 0:
+            self.copyback_frename = self.copyback_files
+        for fname, fnew in zip(self.copyback_files, self.copyback_frename):
+            dst_fnew = os.path.join(dst, fnew)
+            self.pbs += "  %s %s %s \n" % (foper, fname, dst_fnew)
+        self.pbs += '  echo "END COPYBACK"\n'
+        self.pbs += '  echo ""\n\n'
+
+        if pbs_mode:
+            # check what is left
+            self.pbs += '  echo ""\n'
+            self.pbs += '  echo "following files are on '
+            self.pbs += 'node/cpu %i (find .):"\n' % cpu_nr
+            self.pbs += '  find .\n'
+        self.pbs += '# ' + '-'*78 + '\n'
+
+    def checklogs(self):
+        """
+        """
+        self.pbs += 'python -c "from wetb.prepost import statsdel; '
+        rpl = (os.path.join(self.logs_dir, self.case+'.log'))
+        self.pbs += 'statsdel.logcheck(\'%s\')"\n' % rpl
+
+    def postprocessing(self):
+        """Run post-processing just after HAWC2 has ran
+        """
+        self.pbs += 'python -c "from wetb.prepost import statsdel; '
+        fsrc = os.path.join(self.results_dir, self.case)
+        rpl = (fsrc, str(self.case_duration), '.csv')
+        self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[3, 4, 6, 8, 10, 12], '
+                     'neq=%s, i0=0, i1=None, ftype=\'%s\')"\n' % rpl)
 
     def check_results(self, cases):
         """
@@ -2512,10 +2648,11 @@ class PBS(object):
         # length will be zero if there are no failures
         return cases_fail
 
+
 # TODO: rewrite the error log analysis to something better. Take different
 # approach: start from the case and see if the results are present. Than we
 # also have the tags_dict available when log-checking a certain case
-class ErrorLogs(object):
+class ErrorLogs(windIO.LogFile):
     """
     Analyse all HAWC2 log files in any given directory
     ==================================================
@@ -2552,106 +2689,21 @@ class ErrorLogs(object):
 
     def __init__(self, silent=False, cases=None, resultfile='ErrorLog.csv'):
 
-        self.silent = silent
-        # specify folder which contains the log files
+        # call init from base class
+        super(ErrorLogs, self).__init__()
+
         self.PathToLogs = ''
         self.ResultFile = resultfile
-
         self.cases = cases
-
-        # the total message list log:
-        self.MsgListLog = []
-        # a smaller version, just indication if there are errors:
-        self.MsgListLog2 = dict()
-
-        # specify which message to look for. The number track's the order.
-        # this makes it easier to view afterwards in spreadsheet:
-        # every error will have its own column
-
-        # error messages that appear during initialisation
-        self.err_init = {}
-        self.err_init[' *** ERROR *** Error in com'] = len(self.err_init)
-        self.err_init[' *** ERROR ***  in command '] = len(self.err_init)
-        #  *** WARNING *** A comma "," is written within the command line
-        self.err_init[' *** WARNING *** A comma ",'] = len(self.err_init)
-        #  *** ERROR *** Not correct number of parameters
-        self.err_init[' *** ERROR *** Not correct '] = len(self.err_init)
-        #  *** INFO *** End of file reached
-        self.err_init[' *** INFO *** End of file r'] = len(self.err_init)
-        #  *** ERROR *** No line termination in command line
-        self.err_init[' *** ERROR *** No line term'] = len(self.err_init)
-        #  *** ERROR *** MATRIX IS NOT DEFINITE
-        self.err_init[' *** ERROR *** MATRIX IS NO'] = len(self.err_init)
-        #  *** ERROR *** There are unused relative
-        self.err_init[' *** ERROR *** There are un'] = len(self.err_init)
-        #  *** ERROR *** Error finding body based
-        self.err_init[' *** ERROR *** Error findin'] = len(self.err_init)
-        #  *** ERROR *** In body actions
-        self.err_init[' *** ERROR *** In body acti'] = len(self.err_init)
-        #  *** ERROR *** Command unknown and ignored
-        self.err_init[' *** ERROR *** Command unkn'] = len(self.err_init)
-        #  *** ERROR *** ERROR - More bodies than elements on main_body: tower
-        self.err_init[' *** ERROR *** ERROR - More'] = len(self.err_init)
-        #  *** ERROR *** The program will stop
-        self.err_init[' *** ERROR *** The program '] = len(self.err_init)
-        #  *** ERROR *** Unknown begin command in topologi.
-        self.err_init[' *** ERROR *** Unknown begi'] = len(self.err_init)
-        #  *** ERROR *** Not all needed topologi main body commands present
-        self.err_init[' *** ERROR *** Not all need'] = len(self.err_init)
-        #  *** ERROR ***  opening timoschenko data file
-        self.err_init[' *** ERROR ***  opening tim'] = len(self.err_init)
-        #  *** ERROR *** Error opening AE data file
-        self.err_init[' *** ERROR *** Error openin'] = len(self.err_init)
-        #  *** ERROR *** Requested blade _ae set number not found in _ae file
-        self.err_init[' *** ERROR *** Requested bl'] = len(self.err_init)
-        #  Error opening PC data file
-        self.err_init[' Error opening PC data file'] = len(self.err_init)
-        #  *** ERROR *** error reading mann turbulence
-        self.err_init[' *** ERROR *** error readin'] = len(self.err_init)
-        #  *** INFO *** The DLL subroutine
-        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
-        #  ** WARNING: FROM ESYS ELASTICBAR: No keyword
-        self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init)
-        #  *** ERROR *** DLL ./control/killtrans.dll could not be loaded - error!
-        self.err_init[' *** ERROR *** DLL'] = len(self.err_init)
-        # *** ERROR *** The DLL subroutine
-        self.err_init[' *** ERROR *** The DLL subr'] = len(self.err_init)
-        # *** ERROR *** Mann turbulence length scale must be larger than zero!
-        # *** ERROR *** Mann turbulence alpha eps value must be larger than zero!
-        # *** ERROR *** Mann turbulence gamma value must be larger than zero!
-        self.err_init[' *** ERROR *** Mann turbule'] = len(self.err_init)
-
-        # *** WARNING *** Shear center x location not in elastic center, set to zero
-        self.err_init[' *** WARNING *** Shear cent'] = len(self.err_init)
-        # Turbulence file ./xyz.bin does not exist
-        self.err_init[' Turbulence file '] = len(self.err_init)
-        self.err_init[' *** WARNING ***'] = len(self.err_init)
-        self.err_init[' *** ERROR ***'] = len(self.err_init)
-        self.err_init[' WARNING'] = len(self.err_init)
-        self.err_init[' ERROR'] = len(self.err_init)
-
-        # error messages that appear during simulation
-        self.err_sim = {}
-        #  *** ERROR *** Wind speed requested inside
-        self.err_sim[' *** ERROR *** Wind speed r'] = len(self.err_sim)
-        #  Maximum iterations exceeded at time step:
-        self.err_sim[' Maximum iterations exceede'] = len(self.err_sim)
-        #  Solver seems not to converge:
-        self.err_sim[' Solver seems not to conver'] = len(self.err_sim)
-        #  *** ERROR *** Out of x bounds:
-        self.err_sim[' *** ERROR *** Out of x bou'] = len(self.err_sim)
-        #  *** ERROR *** Out of limits in user defined shear field - limit value used
-        self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim)
-
-        # TODO: error message from a non existing channel output/input
-        # add more messages if required...
-
-        self.init_cols = len(self.err_init)
-        self.sim_cols = len(self.err_sim)
+        self.silent = silent
 
     # TODO: save this not a csv text string but a df_dict, and save as excel
     # and DataFrame!
     def check(self, appendlog=False, save_iter=False):
+        """Check all log files that are to be found in the directory
+        ErrorLogs.PathToLogs, or check the specific log file if
+        ErrorLogs.PathToLogs points to a specific log file.
+        """
 
         # MsgListLog = []
 
@@ -2686,208 +2738,12 @@ class ErrorLogs(object):
 
             # open the current log file
             f_log = os.path.join(self.PathToLogs, str(fname_lower))
-            with open(f_log, 'r') as f:
-                lines = f.readlines()
 
-            # keep track of the messages allready found in this file
-            tempLog = []
-            tempLog.append(fname)
-            exit_correct, found_error = False, False
-
-            subcols_sim = 4
-            subcols_init = 2
-            # create empty list item for the different messages and line
-            # number. Include one column for non identified messages
-            for j in range(self.init_cols):
-                # 2 sub-columns per message: nr, msg
-                for k in range(subcols_init):
-                    tempLog.append('')
-            for j in range(self.sim_cols):
-                # 4 sub-columns per message: first, last, nr, msg
-                for k in range(subcols_sim):
-                    tempLog.append('')
-            # and two more columns at the end for messages of unknown origin
-            tempLog.append('')
-            tempLog.append('')
-
-            # if there is a cases object, see how many time steps we expect
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
-                dt = float(case['[dt_sim]'])
-                time_steps = int(float(case['[time_stop]']) / dt)
-                iterations = np.ndarray( (time_steps+1,3), dtype=np.float32 )
             else:
-                iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
-                dt = False
-            iterations[:,0:2] = -1
-            iterations[:,2] = 0
-
-            # keep track of the time_step number
-            time_step, init_block = -1, True
-            # check for messages in the current line
-            # for speed: delete from message watch list if message is found
-            for j, line in enumerate(lines):
-                # all id's of errors are 27 characters long
-                msg = line[:27]
-                # remove the line terminator, this seems to take 2 characters
-                # on PY2, but only one in PY3
-                line = line.replace('\n', '')
-
-                # keep track of the number of iterations
-                if line[:12] == ' Global time':
-                    time_step += 1
-                    iterations[time_step,0] = float(line[14:40])
-                    # for PY2, new line is 2 characters, for PY3 it is one char
-                    iterations[time_step,1] = int(line[-6:])
-                    # time step is the first time stamp
-                    if not dt:
-                        dt = float(line[15:40])
-                    # no need to look for messages if global time is mentioned
-                    continue
-
-                elif line[:20] == ' Starting simulation':
-                    init_block = False
-
-                elif init_block:
-                    # if string is shorter, we just get a shorter string.
-                    # checking presence in dict is faster compared to checking
-                    # the length of the string
-                    # first, last, nr, msg
-                    if msg in self.err_init:
-                        # icol=0 -> fname
-                        icol = subcols_init*self.err_init[msg] + 1
-                        # 0: number of occurances
-                        if tempLog[icol] == '':
-                            tempLog[icol] = '1'
-                        else:
-                            tempLog[icol] = str(int(tempLog[icol]) + 1)
-                        # 1: the error message itself
-                        tempLog[icol+1] = line
-                        found_error = True
-
-                # find errors that can occur during simulation
-                elif msg in self.err_sim:
-                    icol = subcols_sim*self.err_sim[msg]
-                    icol += subcols_init*self.init_cols + 1
-                    # in case stuff already goes wrong on the first time step
-                    if time_step == -1:
-                        time_step = 0
-
-                    # 1: time step of first occurance
-                    if tempLog[icol]  == '':
-                        tempLog[icol] = '%i' % time_step
-                    # 2: time step of last occurance
-                    tempLog[icol+1] = '%i' % time_step
-                    # 3: number of occurances
-                    if tempLog[icol+2] == '':
-                        tempLog[icol+2] = '1'
-                    else:
-                        tempLog[icol+2] = str(int(tempLog[icol+2]) + 1)
-                    # 4: the error message itself
-                    tempLog[icol+3] = line
-
-                    found_error = True
-                    iterations[time_step,2] = 1
-
-                # method of last resort, we have no idea what message
-                elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
-                    icol = subcols_sim*self.sim_cols
-                    icol += subcols_init*self.init_cols + 1
-                    # line number of the message
-                    tempLog[icol] = j
-                    # and message
-                    tempLog[icol+1] = line
-                    found_error = True
-                    # in case stuff already goes wrong on the first time step
-                    if time_step == -1:
-                        time_step = 0
-                    iterations[time_step,2] = 1
-
-            # simulation and simulation output time
-            if self.cases is not None:
-                t_stop = float(case['[time_stop]'])
-                duration = float(case['[duration]'])
-            else:
-                t_stop = -1
-                duration = -1
-
-            # see if the last line holds the sim time
-            if line[:15] ==  ' Elapsed time :':
-                exit_correct = True
-                elapsed_time = float(line[15:-1])
-                tempLog.append( elapsed_time )
-            # in some cases, Elapsed time is not given, and the last message
-            # might be: " Closing of external type2 DLL"
-            elif line[:20] == ' Closing of external':
-                exit_correct = True
-                elapsed_time = iterations[time_step,0]
-                tempLog.append( elapsed_time )
-            elif np.allclose(iterations[time_step,0], t_stop):
-                exit_correct = True
-                elapsed_time = iterations[time_step,0]
-                tempLog.append( elapsed_time )
-            else:
-                elapsed_time = -1
-                tempLog.append('')
-
-            # give the last recorded time step
-            tempLog.append('%1.11f' % iterations[time_step,0])
-
-            # simulation and simulation output time
-            tempLog.append('%1.01f' % t_stop)
-            tempLog.append('%1.04f' % (t_stop/elapsed_time))
-            tempLog.append('%1.01f' % duration)
-
-            # as last element, add the total number of iterations
-            itertotal = np.nansum(iterations[:,1])
-            tempLog.append('%i' % itertotal)
-
-            # the delta t used for the simulation
-            if dt:
-                tempLog.append('%1.7f' % dt)
-            else:
-                tempLog.append('failed to find dt')
-
-            # number of time steps
-            tempLog.append('%i' % len(iterations) )
-
-            # if the simulation didn't end correctly, the elapsed_time doesn't
-            # exist. Add the average and maximum nr of iterations per step
-            # or, if only the structural and eigen analysis is done, we have 0
-            try:
-                ratio = float(elapsed_time)/float(itertotal)
-                tempLog.append('%1.6f' % ratio)
-            except (UnboundLocalError, ZeroDivisionError, ValueError) as e:
-                tempLog.append('')
-            # when there are no time steps (structural analysis only)
-            try:
-                tempLog.append('%1.2f' % iterations[:,1].mean() )
-                tempLog.append('%1.2f' % iterations[:,1].max() )
-            except ValueError:
-                tempLog.append('')
-                tempLog.append('')
-
-            # save the iterations in the results folder
-            if save_iter:
-                fiter = fname.replace('.log', '.iter')
-                fmt = ['%12.06f', '%4i', '%4i']
-                if self.cases is not None:
-                    fpath = os.path.join(case['[run_dir]'], case['[iter_dir]'])
-                    # in case it has subdirectories
-                    for tt in [3,2,1]:
-                        tmp = os.path.sep.join(fpath.split(os.path.sep)[:-tt])
-                        if not os.path.exists(tmp):
-                            os.makedirs(tmp)
-                    if not os.path.exists(fpath):
-                        os.makedirs(fpath)
-                    np.savetxt(fpath + fiter, iterations, fmt=fmt)
-                else:
-                    np.savetxt(os.path.join(self.PathToLogs, fiter), iterations,
-                               fmt=fmt)
-
-            # append the messages found in the current file to the overview log
-            self.MsgListLog.append(tempLog)
-            self.MsgListLog2[fname] = [found_error, exit_correct]
+                case = None
+            self.readlog(f_log, case=case, save_iter=save_iter)
             i += 1
 
 #            # if no messages are found for the current file, than say so:
@@ -2907,21 +2763,8 @@ class ErrorLogs(object):
 
     def save(self, appendlog=False, suffix=None):
 
-        # write the results in a file, start with a header
-        contents = 'file name;' + 'nr;msg;'*(self.init_cols)
-        contents += 'first_tstep;last_tstep;nr;msg;'*(self.sim_cols)
-        contents += 'lnr;msg;'
-        # and add headers for elapsed time, nr of iterations, and sec/iteration
-        contents += 'Elapsted time;last time step;Simulation time;'
-        contents += 'real sim time;Sim output time;'
-        contents += 'total iterations;dt;nr time steps;'
-        contents += 'seconds/iteration;average iterations/time step;'
-        contents += 'maximum iterations/time step;\n'
-        for k in self.MsgListLog:
-            for n in k:
-                contents = contents + str(n) + ';'
-            # at the end of each line, new line symbol
-            contents = contents + '\n'
+        contents = self._header()
+        contents = self._msglistlog2csv(contents)
 
         # write csv file to disk, append to facilitate more logfile analysis
         if isinstance(suffix, str):
@@ -4082,7 +3925,7 @@ class Cases(object):
                    tags=['[turb_seed]','[windspeed]'], calc_mech_power=False,
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
-                   chs_resultant=[], i0=0, i1=-1, saveinterval=1000,
+                   chs_resultant=[], i0=0, i1=None, saveinterval=1000,
                    csv=True, suffix=None, A=None,
                    ch_wind=None, save_new_sigs=False, xlsx=False):
         """
@@ -4219,7 +4062,7 @@ class Cases(object):
             if not silent:
                 pc = '%6.2f' % (float(ii)*100.0/float(nrcases))
                 pc += ' %'
-                print('stats progress: %4i/%i %s' % (ii, nrcases, pc))
+                print('stats progress: %4i/%i %s | %s' % (ii, nrcases, pc, cname))
 
             # make sure the selected tags exist
             if len(tags) != len(set(case) and tags):
@@ -5143,7 +4986,7 @@ class Cases(object):
                 raise ValueError('name should be either ojf or hawc2')
             # create the torque_constant dir if it doesn't exists
             try:
-                os.mkdir(fpath)
+                os.makedirs(fpath)
             except OSError:
                 pass
 
@@ -5284,7 +5127,7 @@ class Cases(object):
             print('='*79)
             print('statistics for %s, nr cases: %i' % (sim_id, nrcases))
 
-        fname = os.path.join(post_dir, sim_id, '_envelope' + append + '.h5')
+        fname = os.path.join(post_dir, sim_id + '_envelope' + append + '.h5')
         h5f = tbl.openFile(fname, mode="w", title=str(sim_id),
                            filters=tbl.Filters(complevel=9))
 
@@ -5435,7 +5278,7 @@ class MannTurb64(prepost.PBSScript):
         super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
         # PBS configuration
-        self.umask = '003'
+        self.umask = '0003'
         self.walltime = '00:59:59'
         self.queue = 'workq'
         self.lnodes = '1'
@@ -5473,9 +5316,9 @@ class MannTurb64(prepost.PBSScript):
                 self.prelude = 'cd %s' % case['[turb_dir]']
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-            rpl = (float(case['[AlfaEpsilon]']),
-                   float(case['[L_mann]']),
-                   float(case['[Gamma]']),
+            rpl = (float(case['[MannAlfaEpsilon]']),
+                   float(case['[MannL]']),
+                   float(case['[MannGamma]']),
                    int(case['[tu_seed]']),
                    int(case['[turb_nr_u]']),
                    int(case['[turb_nr_v]']),

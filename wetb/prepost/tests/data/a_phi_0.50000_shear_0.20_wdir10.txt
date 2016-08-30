@@ -1,0 +1,30 @@
+# User defined shear file
+3 5 # nr_hor (v), nr_vert (w)
+# v component, normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns
+-0.00000  -0.00000  -0.00000
+-0.22662  -0.22662  -0.22662
+-0.19440  -0.19440  -0.19440
+-0.15702  -0.15702  -0.15702
+-0.12881  -0.12881  -0.12881
+# u component, normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns
+ 0.00000   0.00000   0.00000
+ 0.79839   0.79839   0.79839
+ 0.93331   0.93331   0.93331
+ 1.02188   1.02188   1.02188
+ 1.08750   1.08750   1.08750
+# w component, normalized with U_mean, nr_hor (v) rows, nr_vert (w) columns
+ 0.00000   0.00000   0.00000
+ 0.00000   0.00000   0.00000
+ 0.00000   0.00000   0.00000
+ 0.00000   0.00000   0.00000
+ 0.00000   0.00000   0.00000
+# v coordinates (along the horizontal, nr_hor, 0 rotor center)
+  -57.50
+    0.00
+   57.50
+# w coordinates (zero is at ground level, height, nr_hor)
+    0.00
+   39.38
+   78.75
+  118.12
+  157.50

@@ -701,7 +701,8 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
         that have file extension "fext"
 
     fext : string, default='xlsx'
-        File extension of the Excel files that should be loaded
+        File extension of the Excel files that should be loaded. Other valid
+        extensions are csv, xls, and xlsm.
 
     pignore : string, default=None
         Specify which string can not occur in the full path of the DLC target.
@@ -711,7 +712,7 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
 
     sheet : string or int, default=0
         Name or index of the Excel sheet to be considered. By default, the
-        first sheet (index=0) is taken.
+        first sheet (index=0) is taken. Ignored when fext is csv.
 
     Returns
     -------
@@ -738,8 +739,10 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
             if not silent:
                 print(f_target, end='')
             try:
-                xl = pd.ExcelFile(f_target)
-                df = xl.parse(sheet)
+                if fext == 'csv':
+                    df = pd.read_csv(f_target)
+                else:
+                    df = pd.read_excel(f_target, sheetname=sheet)
                 df_list[f_target.replace('.'+fext, '')] = df
                 if not silent:
                     print(': sucesfully included %i case(s)' % len(df))

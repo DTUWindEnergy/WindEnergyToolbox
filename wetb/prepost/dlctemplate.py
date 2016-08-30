@@ -26,6 +26,7 @@ from matplotlib import pyplot as plt
 from wetb.prepost import Simulations as sim
 from wetb.prepost import dlcdefs
 from wetb.prepost import dlcplots
+from wetb.prepost.simchunks import create_chunks_htc_pbs
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -117,9 +118,9 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     # master file with the HAWC2Wrapper !!
     # default tags turbulence generator (required for 64-bit Mann generator)
     # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-    master.tags['[AlfaEpsilon]'] = 1.0
-    master.tags['[L_mann]'] = 29.4
-    master.tags['[Gamma]'] = 3.0
+    master.tags['[MannAlfaEpsilon]'] = 1.0
+    master.tags['[MannL]'] = 29.4
+    master.tags['[MannGamma]'] = 3.0
     master.tags['[tu_seed]'] = 0
     master.tags['[turb_nr_u]'] = 8192
     master.tags['[turb_nr_v]'] = 32
@@ -182,8 +183,8 @@ def variable_tag_func(master, case_id_short=False):
 ### PRE- POST
 # =============================================================================
 
-def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
-                      runmethod=None, write_htc=True):
+def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
+                      runmethod=None, write_htc=True, zipchunks=False):
     """
     Launch load cases defined in Excel files
     """
@@ -240,7 +241,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
-                               silent=silent, verbose=verbose)
+                               silent=silent, verbose=verbose, pyenv=None)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -248,56 +249,24 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=True,
         mann64 = sim.MannTurb64(silent=silent)
         mann64.gen_pbs(cases)
 
-
-def launch_param(sim_id):
-    """
-    Launch parameter variations defined according to the Simulations syntax
-    """
-    # MODEL SOURCES, exchanche file sources
-#    p_local = '/mnt/vea-group/AED/STABCON/SIM/NREL5MW'
-#    p_local = '%s/%s' % (P_SOURCE, PROJECT)
-    # target run dir (is defined in the master_tags)
-#    p_root = '/mnt/gorm/HAWC2/NREL5MW'
-
-    iter_dict = dict()
-    iter_dict['[Windspeed]'] = [False]
-
-    opt_tags = []
-
-    runmethod = 'gorm'
-#    runmethod = 'local'
-#    runmethod = 'linux-script'
-#    runmethod = 'windows-script'
-#    runmethod = 'jess'
-    master = master_tags(sim_id, runmethod=runmethod)
-    master.tags['[hawc2_exe]'] = 'hawc2-latest'
-    master.tags['[sim_id]'] = sim_id
-    master.output_dirs.append('[Case folder]')
-    master.output_dirs.append('[Case id.]')
-
-    # TODO: copy master and DLC exchange files to p_root too!!
-
-    # all tags set in master_tags will be overwritten by the values set in
-    # variable_tag_func(), iter_dict and opt_tags
-    # values set in iter_dict have precedence over opt_tags
-    # variable_tag_func() has precedense over iter_dict, which has precedence
-    # over opt_tags. So opt_tags comes last
-    sim.prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
-                       write_htc=True, runmethod=runmethod, verbose=False,
-                       copyback_turb=False, msg='', update_cases=False,
-                       ignore_non_unique=False, run_only_new=False,
-                       pbs_fname_appendix=False, short_job_names=False)
+    if zipchunks:
+        # create chunks
+        # sort so we have minimal copying turb files from mimer to node/scratch
+        sorts_on = ['[DLC]', '[Windspeed]']
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
+                              nr_procs_series=9, processes=1,
+                              walltime='20:00:00', chunks_dir='zip-chunks-jess')
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
+                              nr_procs_series=15, processes=1,
+                              walltime='20:00:00', chunks_dir='zip-chunks-gorm')
 
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
                 m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
-                years=20.0, fatigue=True, nn_twb=1, nn_twt=20, nn_blr=4, A=None,
+                years=20.0, fatigue=True, A=None, AEP=False,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
-                save_iter=False, AEP=False):
-
-    if neq < 0:
-        neq = None
+                save_iter=False):
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -331,36 +300,6 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     df_stats, df_AEP, df_Leq = None, None, None
 
     if statistics:
-        # for the default load case analysis, add mechanical power
-#        add = {'ch1_name':'shaft-shaft-node-004-momentvec-z',
-#               'ch2_name':'Omega',
-#               'ch_name_add':'mechanical-power-floater-floater-001',
-#               'factor':1.0, 'operator':'*'}
-        # for the AVATAR DLB, following resultants are defined:
-        chs_resultant = [['tower-tower-node-%03i-momentvec-x' % nn_twb,
-                          'tower-tower-node-%03i-momentvec-y' % nn_twb],
-                         ['tower-tower-node-%03i-momentvec-x' % nn_twt,
-                          'tower-tower-node-%03i-momentvec-y' % nn_twt],
-                         ['shaft-shaft-node-004-momentvec-x',
-                          'shaft-shaft-node-004-momentvec-z'],
-                         ['shaft-shaft-node-004-momentvec-y',
-                          'shaft-shaft-node-004-momentvec-z'],
-                         ['shaft_nonrotate-shaft-node-004-momentvec-x',
-                          'shaft_nonrotate-shaft-node-004-momentvec-z'],
-                         ['shaft_nonrotate-shaft-node-004-momentvec-y',
-                          'shaft_nonrotate-shaft-node-004-momentvec-z'],
-                         ['blade1-blade1-node-%03i-momentvec-x' % nn_blr,
-                          'blade1-blade1-node-%03i-momentvec-y' % nn_blr],
-                         ['blade2-blade2-node-%03i-momentvec-x' % nn_blr,
-                          'blade2-blade2-node-%03i-momentvec-y' % nn_blr],
-                         ['blade3-blade3-node-%03i-momentvec-x' % nn_blr,
-                          'blade3-blade3-node-%03i-momentvec-y' % nn_blr],
-                         ['hub1-blade1-node-%03i-momentvec-x' % nn_blr,
-                          'hub1-blade1-node-%03i-momentvec-y' % nn_blr],
-                         ['hub2-blade2-node-%03i-momentvec-x' % nn_blr,
-                          'hub2-blade2-node-%03i-momentvec-y' % nn_blr],
-                         ['hub3-blade3-node-%03i-momentvec-x' % nn_blr,
-                          'hub3-blade3-node-%03i-momentvec-y' % nn_blr]]
         i0, i1 = 0, -1
 
         # in addition, sim_id and case_id are always added by default
@@ -372,7 +311,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=neq, no_bins=no_bins,
-                                 chs_resultant=chs_resultant, A=A)
+                                 chs_resultant=[], A=A)
         # annual energy production
         if AEP:
             df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
@@ -436,15 +375,11 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=-1.0, action='store',
+    parser.add_argument('--neq', type=float, default=None, action='store',
                         dest='neq', help='Equivalent cycles neq, default 1 Hz '
                                          'equivalent load (neq = simulation '
                                          'duration in seconds)')
-    parser.add_argument('--nn_twt', type=float, default=20, action='store',
-                        dest='nn_twt', help='Node number tower top')
-    parser.add_argument('--nn_blr', type=float, default=4, action='store',
-                        dest='nn_blr', help='Node number blade root')
-    parser.add_argument('--rotarea', type=float, default=4, action='store',
+    parser.add_argument('--rotarea', type=float, default=None, action='store',
                         dest='rotarea', help='Rotor area for C_T, C_P')
     parser.add_argument('--save_new_sigs', default=False, action='store_true',
                         dest='save_new_sigs', help='Save post-processed sigs')
@@ -454,6 +389,16 @@ if __name__ == '__main__':
                         dest='envelopeblade', help='Compute envelopeblade')
     parser.add_argument('--envelopeturbine', default=False, action='store_true',
                         dest='envelopeturbine', help='Compute envelopeturbine')
+    parser.add_argument('--zipchunks', default=False, action='store_true',
+                        dest='zipchunks', help='Create PBS launch files for'
+                        'running in zip-chunk find+xargs mode.')
+    parser.add_argument('--pbs_turb', default=False, action='store_true',
+                        dest='pbs_turb', help='Create PBS launch files to '
+                        'create the turbulence boxes in stand alone mode '
+                        'using the 64-bit Mann turbulence box generator. '
+                        'This can be usefull if your turbulence boxes are too '
+                        'big for running in HAWC2 32-bit mode. Only works on '
+                        'Jess. ')
     opt = parser.parse_args()
 
     # TODO: use arguments to determine the scenario:
@@ -491,7 +436,8 @@ if __name__ == '__main__':
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
-        launch_dlcs_excel(sim_id, silent=False)
+        launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
+                          pbs_turb=opt.pbs_turb)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,

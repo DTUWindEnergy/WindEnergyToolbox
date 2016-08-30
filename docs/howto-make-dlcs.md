@@ -389,27 +389,61 @@ number of cpu's requested (using ```-c``` or ```--nr_cpus```) and minimum
 of required free cpu's on the cluster (using ```--cpu_free```, 48 by default).
 Jobs will be launched after a predefined sleep time (as set by the
 ```--tsleep``` option, and set to 5 seconds by default). After the initial sleep
-time a new job will be launched every 0.1 second. If the launch condition is not
-met (```nr_cpus > cpu's used by user AND cpu's free on cluster > cpu_free```),
-the program will wait 5 seconds before trying to launch a new job again.
+time a new job will be launched every 0.5 second. If the launch condition is not
+met:
+
+```
+nr_cpus > cpu's used by user
+AND cpu's free on cluster > cpu_free
+AND jobs queued by user < cpu_user_queue)
+```
+
+the program will sleep 5 seconds before trying to launch a new job again.
 
 Depending on the amount of jobs and the required computation time, it could
 take a while before all jobs are launched. When running the launch script from
 the login node, this might be a problem when you have to close your ssh/putty
-session before all jobs are launched. In that case the user should use a
-dedicated compute node for launching jobs. To run the launch script on a
-compute instead of the login node, use the ```--node``` option. You can inspect
-the progress in the ```launch_scheduler_log.txt``` file.
+session before all jobs are launched. In that case the user can use the
+```--crontab``` argument: it will trigger the ```launch.py``` script every 5
+minutes to check if more jobs can be launched until all jobs have been
+executed. The user does not need to have an active ssh/putty session for this to
+work. You can follow the progress and configuration of ```launch.py``` in
+crontab mode in the following files:
 
-The ```launch.py``` script has some different options, and you can read about
+* ```launch_scheduler_log.txt```
+* ```launch_scheduler_config.txt```: you can change your launch settings on the fly
+* ```launch_scheduler_state.txt```
+* ```launch_pbs_filelist.txt```: remaining jobs, when a job is launched it is
+removed from this list
+
+You can check if ```launch.py``` is actually active as a crontab job with:
+
+```
+crontab -l
+```
+
+```launch.py``` will clean-up the crontab after all jobs are launched, but if
+you need to prevent it from launching new jobs before that, you can clean up your
+crontab with:
+
+```
+crontab -r
+```
+
+The ```launch.py``` script has various different options, and you can read about
 them by using the help function (the output is included for your convenience):
 
 ```bash
 g-000 $ launch.py --help
+Usage:
 
-usage: launch.py -n nr_cpus
+launch.py -n nr_cpus
 
-options:
+launch.py --crontab when running a single iteration of launch.py as a crontab job every 5 minutes.
+File list is read from "launch_pbs_filelist.txt", and the configuration can be changed on the fly
+by editing the file "launch_scheduler_config.txt".
+
+Options:
   -h, --help            show this help message and exit
   --depend              Switch on for launch depend method
   -n NR_CPUS, --nr_cpus=NR_CPUS
@@ -420,15 +454,36 @@ options:
                         full pbs file path. Escape backslashes! By default it
                         will select all *.p files in pbs_in/.
   --dry                 dry run: do not alter pbs files, do not launch
-  --tsleep=TSLEEP       Sleep time [s] after qsub command. Default=5 seconds
+  --tsleep=TSLEEP       Sleep time [s] when cluster is too bussy to launch new
+                        jobs. Default=5 seconds
+  --tsleep_short=TSLEEP_SHORT
+                        Sleep time [s] between between successive job
+                        launches. Default=0.5 seconds.
   --logfile=LOGFILE     Save output to file.
   -c, --cache           If on, files are read from cache
   --cpu_free=CPU_FREE   No more jobs will be launched when the cluster does
                         not have the specified amount of cpus free. This will
                         make sure there is room for others on the cluster, but
-                        might mean less cpus available for you. Default=48.
+                        might mean less cpus available for you. Default=48
+  --cpu_user_queue=CPU_USER_QUEUE
+                        No more jobs will be launched after having
+                        cpu_user_queue number of jobs in the queue. This
+                        prevents users from filling the queue, while still
+                        allowing to aim for a high cpu_free target. Default=5
   --qsub_cmd=QSUB_CMD   Is set automatically by --node flag
-  --node                If executed on dedicated node.
+  --node                If executed on dedicated node. Although this works,
+                        consider using --crontab instead. Default=False
+  --sort                Sort pbs file list. Default=False
+  --crontab             Crontab mode: %prog will check every 5 (default)
+                        minutes if more jobs can be launched. Not compatible
+                        with --node. When all jobs are done, crontab -r will
+                        remove all existing crontab jobs of the current user.
+                        Use crontab -l to inspect current crontab jobs, and
+                        edit them with crontab -e. Default=False
+  --every_min=EVERY_MIN
+                        Crontab update interval in minutes. Default=5
+  --debug               Debug print statements. Default=False
+
 ```
 
 Then launch the actual jobs (each job is a ```*.p``` file in ```pbs_in```) using
@@ -440,12 +495,17 @@ g-000 $ launch.py -n 100 -p pbs_in/
 ```
 
 If the launching process requires hours, and you have to close you SHH/PuTTY
-session before it reaches the end, you should use the ```--node``` argument so
-the launching process will take place on a dedicated node:
+session before it reaches the end, you can either use the ```--node``` or the
+```--crontab``` argument. When using ```--node```, ```launch.py``` will run on
+a dedicated cluster node, submitted as a PBS job. When using ```--crontab```,
+```launch.py``` will be run once every 5 minutes as a ```crontab``` job on the
+login node. This is preferred since you are not occupying a node with a very
+simple and light job. ```launch.py``` will remove all the users crontab jobs
+at the end with ```crontab -r```.
 
 ```bash
 g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
-g-000 $ launch.py -n 100 -p pbs_in/ --node
+g-000 $ launch.py -n 100 -p pbs_in/ --crontab
 ```
 
 
@@ -484,6 +544,19 @@ your running HAWC2 model (replace 123456 with the relevant job id):
 g-000 $ cd /scratch/$USER/123456.g-000.risoe.dk
 ```
 
+You can find what HAWC2 (or whatever other executable you are running) is
+outputting to the command line in the file:
+```
+/var/lib/torque/spool/JOBID.jess.dtu.dk.OU
+```
+Or when watch what is happening at the end in real time
+```
+# on Jess:
+tail -f /var/lib/torque/spool/JOBID.jess.dtu.dk.OU
+# on Gorm:
+tail -f /var/spool/pbs/spool/JOBID.g-000.risoe.dk.OU
+```
+
 
 Re-launching failed jobs
 ------------------------
@@ -500,11 +573,11 @@ g-000 $ launch.py -n 100 --node -p pbs_in_failed
 ```
 
 2. Use the ```--cache``` option, and edit the PBS file list in the file
-```pbs_in_file_cache.txt``` so that only the simulations remain that have to be
-run again. Note that the ```pbs_in_file_cache.txt``` file is created every time
-you run a ```launch.py```. Note that you can use the option ```--dry``` to make
-a practice launch run, and that will create a ```pbs_in_file_cache.txt``` file,
-but not a single job will be launched.
+```launch_pbs_filelist.txt``` so that only the simulations remain that have to be
+run again. ```launch_pbs_filelist.txt``` is created every time you run
+```launch.py```. You can use the option ```--dry``` to make a practice launch
+run, and that will create a ```launch_pbs_filelist.txt``` file, but not a single
+job will be launched.
 
 3. Each pbs file can be launched manually as follows:
 ```
