@@ -2,9 +2,7 @@
 
 For updating the toolbox jump to [Update wetb on Windows](#Update wetb on Windows)
 
-This guide describes how I installed the toolbox on a Windows machine (1/9-2016)
- 
-- Download and install Anaconda (Python 3.5 version, 64bit installer) from <https://www.continuum.io/downloads>
+This guide describes a simple way to install the toolbox on Windows (1/9-2016)
 
 ### Installing Anaconda
 
