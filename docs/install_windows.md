@@ -1,5 +1,8 @@
-# How to install on Windows
 
+
+#Install wetb on Windows
+
+For updating the toolbox jump to [Update wetb on Windows](#Update wetb on Windows)
 
 This guide describes how I installed the toolbox on a Windows machine (1/9-2016)
  
@@ -57,4 +60,17 @@ pip install pyscaffold pytest-cov --no-deps
 ```
 pip install wetb
 ```
-     
+
+[#Update wetb on Windows](#Update wetb on Windows)
+
+* Activate the envirronment (type in a terminal):
+
+```
+activate py35
+´´´
+
+* Update the toolbox
+
+```
+pip install wetb --upgrade --no-deps
+´´´
