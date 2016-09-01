@@ -98,10 +98,7 @@ class TestShear(unittest.TestCase):
         wsp53 = data[:, 2]
         wsp21 = data[:, 4]
 
-        import matplotlib.pyplot as plt
-        alpha, u_ref = fit_power_shear_ref([(85, wsp85), (21, wsp21)], 87.13333, plt)
-        if 0:
-            plt.show()
+        alpha, u_ref = fit_power_shear_ref([(85, wsp85), (21, wsp21)], 87.13333)
         self.assertAlmostEqual(alpha, .5, delta=.001)
         self.assertAlmostEqual(u_ref, 9, delta=.01)
 
