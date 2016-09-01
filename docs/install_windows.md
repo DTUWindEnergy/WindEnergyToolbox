@@ -1,4 +1,3 @@
-
 # Install wetb on Windows
 
 For updating the toolbox jump to [Update wetb on Windows](#Update wetb on Windows)
@@ -60,7 +59,7 @@ pip install pyscaffold pytest-cov --no-deps
 pip install wetb
 ```
 
-[#Update wetb on Windows](#Update wetb on Windows)
+[# Update wetb on Windows](#Update wetb on Windows)
 
 * Activate the envirronment (type in a terminal):
 
