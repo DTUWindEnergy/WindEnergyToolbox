@@ -19,7 +19,7 @@ conda update --all
 
 ### Create Anaconda environment
 
-* Creating an environment :
+* Create an environment :
 
 ```
 conda create -n py35 python=3.5
