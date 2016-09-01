@@ -61,12 +61,13 @@ pip install wetb
 
 * Activate the envirronment (type in a terminal):
 
+
 ```
 activate py35
-´´´
+```
 
 * Update the toolbox
 
 ```
 pip install wetb --upgrade --no-deps
-´´´
+```
