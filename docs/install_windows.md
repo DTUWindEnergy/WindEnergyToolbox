@@ -1,6 +1,5 @@
 
-
-#Install wetb on Windows
+# Install wetb on Windows
 
 For updating the toolbox jump to [Update wetb on Windows](#Update wetb on Windows)
 
