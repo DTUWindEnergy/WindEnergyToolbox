@@ -14,7 +14,7 @@ import unittest
 import wetb.gtsdf
 import numpy as np
 from wetb.utils.geometry import rad, deg, mean_deg, sind, cosd, std_deg, xyz2uvw, \
-    wsp_dir2uv, wsp_dir_tilt2uvw, tand
+    wsp_dir2uv, wsp_dir_tilt2uvw, tand, abvrel2xyz
 import os
 
 
@@ -116,6 +116,15 @@ class TestGeometry(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal=True, dir_ref=180), np.array([x, -y, z]), 5)
         np.testing.assert_array_almost_equal(xyz2uvw(*wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal=True), left_handed=False), xyz2uvw(x, y, z))
+
+    def test_abvrel2xyz(self):
+        abvrel = np.array([(0., 0, 1), (30, 0, 1), (-30, 0, 1), (0, 30, 1), (0, -30, 1), (30, 30, 1), (30, 30, 2)])
+        abvrel[:, :2] = rad(abvrel[:, :2])
+        for (x, y, z), (a, b, vrel) in zip(abvrel2xyz(*abvrel.T), abvrel):
+            #print (deg(a), deg(b), vrel, x, y, z)
+            self.assertAlmostEqual(a, np.arctan(y / x))
+            self.assertAlmostEqual(b, np.arctan(-z / x))
+            self.assertAlmostEqual(vrel, np.sqrt(x ** 2 + y ** 2 + z ** 2))
 
 
 if __name__ == "__main__":

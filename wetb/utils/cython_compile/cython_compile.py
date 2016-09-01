@@ -151,7 +151,7 @@ def cython_import(import_module_name, compiler=None):
         fid.close()
 
         # compile, import compiled module and delete temporary files
-        module_relname = os.path.relpath(eval(module_name).__file__, str(os.getcwd())).replace(os.path.sep, ".")[:-3]
+        module_relname = eval(module_name).__package__ + "." + module_name  #"os.path.relpath(eval(module_name).__file__, str(os.getcwd())).replace(os.path.sep, ".")[:-3]
         return compile_and_cleanup(import_module_name, pyx_filename, module_relname, compiler)
     return eval(module_name)
 

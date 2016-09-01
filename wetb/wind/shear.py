@@ -19,7 +19,7 @@ def _z_u(z_u_lst):
     u = np.array([np.mean(np.array([u])[:]) for _, u in z_u_lst])
     return z, u
 
-def power_shear(alpha, z_ref, u_ref, z):
+def power_shear(alpha, z_ref, u_ref):
     """Power shear
 
     Parameters
@@ -28,22 +28,20 @@ def power_shear(alpha, z_ref, u_ref, z):
         The alpha shear parameter
     z_ref : int or float
         The reference height
-    z : int, float or array_like
-        The heights of interest
     u_ref : int or float
         The wind speed of the reference height
 
     Returns
     -------
-    power_shear : array-like
-        Wind speeds at height z
+    power_shear : function
+        Function returning for wsp at input heights: f(height) -> wsp
 
     Example
     --------
-    >>> power_shear(.5, 70, [20,50,70], 9)
+    >>> power_shear(.5, 70, 9)([20,50,70])
     [ 4.81070235  7.60638829  9.        ]
     """
-    return u_ref * (np.array(z) / z_ref) ** alpha
+    return lambda z : u_ref * (np.array(z) / z_ref) ** alpha
 
 
 def fit_power_shear(z_u_lst):
@@ -72,7 +70,7 @@ def fit_power_shear(z_u_lst):
     alpha, _ = np.polyfit(np.log(z / z_hub), np.log(u / u_hub), 1)
     return alpha
 
-def fit_power_shear_ref(z_u_lst, z_ref):
+def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
     """Estimate power shear parameter, alpha, from two or more specific reference heights using polynomial fit.
 
     Parameters
@@ -84,6 +82,8 @@ def fit_power_shear_ref(z_u_lst, z_ref):
         - u_z2: Wind speeds or mean wind speeds at z2
     z_ref : float or int
         Reference height (hub height)
+    plt : matplotlib.pyplot (or similar) or None
+        Used to plot result if not None
 
     Returns
     -------
@@ -101,7 +101,13 @@ def fit_power_shear_ref(z_u_lst, z_ref):
         alpha, u_ref = x
         return np.sum([(u - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
     z_u_lst = [(z, np.mean(u)) for z, u in z_u_lst]
-    return fmin(shear_error, (.1, 10), (z_u_lst, z_ref), disp=False)
+    alpha, u_ref = fmin(shear_error, (.1, 10), (z_u_lst, z_ref), disp=False)
+    if plt:
+        z, u = list(zip(*z_u_lst))
+        plt.plot(u, z, '.')
+        z = np.linspace(min(z), max(z), 100)
+        plt.plot(power_shear(alpha, z_ref, u_ref)(z), z)
+    return alpha, u_ref
 
 
 
@@ -188,7 +194,7 @@ if __name__ == '__main__':
     from matplotlib.pyplot import plot, show
     z = np.arange(0, 211)
     for alpha, c in zip([0.00001, 1, 2], ['r', 'b', 'g']):
-        u = power_shear(alpha, 120, 10, z)
+        u = power_shear(alpha, 120, 10)(z)
         plot(u, z, c)
         plot(u.mean(), 120, c + '.')
 

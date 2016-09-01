@@ -85,7 +85,7 @@ class Simulation(object):
         if not os.path.isabs(htcfilename):
             htcfilename = os.path.join(modelpath, htcfilename)
         self.filename = os.path.basename(htcfilename)
-        self.htcFile = H2aeroHTCFile(htcfilename)
+        self.htcFile = HTCFile(htcfilename)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence

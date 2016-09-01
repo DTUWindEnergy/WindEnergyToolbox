@@ -22,8 +22,8 @@ class StFile(object):
 
     - r : curved length distance from main_body node 1 [m]
     - m : mass per unit length [kg/m]
-    - xm : xc2-coordinate from C1/2 to mass center [m]
-    - ym : yc2-coordinate from C1/2 to mass center [m]
+    - x_cg : xc2-coordinate from C1/2 to mass center [m]
+    - y_cg : yc2-coordinate from C1/2 to mass center [m]
     - rix : radius of gyration related to elastic center. Corresponds to rotation about principal bending xe axis [m]
     - riy : radius of gyration related to elastic center. Corresponds to rotation about principal bending ye axis [m]
     - xs : xc2-coordinate from C1/2 to shear center [m]. The shear center is the point where external forces only contributes to pure bending and no torsion.

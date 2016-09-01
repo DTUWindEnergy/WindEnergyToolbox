@@ -162,7 +162,7 @@ def rpm2rads(rpm):
     return rpm * 2 * np.pi / 60
 
 
-def abvrel2xyz(alpha, beta, vrel):
+def abvrel2xyz_old(alpha, beta, vrel):
     """Convert pitot tube alpha, beta and relative velocity to local Cartesian wind speed velocities
 
     Parameters
@@ -203,3 +203,57 @@ def abvrel2xyz(alpha, beta, vrel):
     z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
 
     return x, y, z
+
+def abvrel2xyz(alpha, beta, vrel):
+    """Convert pitot tube alpha, beta and relative velocity to local Cartesian wind speed velocities
+
+    x : parallel to pitot tube, direction pitot tube root to tip, i.e. normal flow gives negative x\n
+    y : component in alpha plane
+    z : component in beta plane
+
+    For typical usage where pitot tube is mounted on leading edge:\n
+    x: Opposite rotational direction\n
+    y: Direction of mean wind\n
+    z: From blade root to tip\n
+
+
+    Parameters
+    ----------
+    alpha : array_like
+        Pitot tube angle of attack [rad]. Zero for flow towards pitot tube. Positive around z-axis. I.e.
+        negative alpha (normal flow) gives positive y component
+    beta : array_like
+        Pitot tube side slip angle [rad]. Zero for flow towards pitot tube. Positive around y-axis. I.e.
+        Positive beta (normal flow due to expansion and position in front of blade) gives positive z
+    vrel : array_like
+        Pitot tube relative velocity. Positive: flow towards pitot tube
+
+    Returns
+    -------
+    x : array_like
+        Wind component away from pitot tube (positive for postive vrel and -90<beta<90)
+    y : array_like
+        Wind component in alpha plane (positive for positive alpha)
+    z : array_like
+        Wind component in beta plane (positive for negative beta)
+    """
+    alpha = np.array(alpha, dtype=np.float)
+    beta = np.array(beta, dtype=np.float)
+    vrel = np.array(vrel, dtype=np.float)
+
+    sign_vsx = ((np.abs(beta) > np.pi / 2) * 2 - 1)  # -1 for |beta| < 90, +1 for |beta|>90
+    sign_vsy = -np.sign(alpha)  #- for alpha > 0
+    sign_vsz = np.sign(beta)  # for beta>0
+
+
+    x = sign_vsx * np.sqrt(vrel ** 2 / (1 + np.tan(alpha) ** 2 + np.tan(beta) ** 2))
+
+    m = alpha != 0
+    y = np.zeros_like(alpha)
+    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 + 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
+
+    m = beta != 0
+    z = np.zeros_like(alpha)
+    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
+
+    return np.array([x, y, z]).T

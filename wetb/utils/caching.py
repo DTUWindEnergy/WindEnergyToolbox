@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
+import sys
 standard_library.install_aliases()
 import inspect
 
@@ -80,7 +81,11 @@ def cache_function(f):
             self.cache_attr_lst.add(name)
 
         return getattr(self, name)
-    if 'reload' in inspect.getargspec(f)[0]:
+    version = sys.version_info
+    if version >= (3,3):
+        if 'reload' in inspect.signature(f).parameters.values():
+            raise AttributeError("Functions decorated with cache_function are not allowed to take a parameter called 'reload'")
+    elif 'reload' in inspect.getargspec(f)[0]:
         raise AttributeError("Functions decorated with cache_function are not allowed to take a parameter called 'reload'")
     return wrap
 
