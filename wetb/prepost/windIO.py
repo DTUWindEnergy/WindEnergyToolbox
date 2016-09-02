@@ -202,6 +202,15 @@ class LogFile(object):
                 # no need to look for messages if global time is mentioned
                 continue
 
+            elif line[:4] == ' kfw':
+                pass
+            # Global time =    17.7800000000000      Iter =            2
+            # kfw  0.861664060457402
+            #  nearwake iterations          17
+
+            # computed relaxation factor  0.300000000000000
+
+
             elif line[:20] == ' Starting simulation':
                 init_block = False
 
@@ -627,7 +636,138 @@ class LoadResults(ReadHawc2):
                     del change_list[k]
                     break
 
-#        self.ch_details_new = ch_details_new
+    # TODO: THIS IS STILL A WIP
+    def _make_channel_names(self):
+        """Give every channel a unique channel name which is (nearly) identical
+        to the channel names as defined in the htc output section. Instead
+        of spaces, use colon (;) to seperate the different commands.
+
+        THIS IS STILL A WIP
+        """
+
+        index = {}
+
+        names = {'htc_name':[], 'chi':[], 'label':[], 'unit':[], 'index':[],
+                 'name':[], 'description':[]}
+        constraint_fmts = {'bea1':'constraint;bearing1',
+                           'bea2':'constraint;bearing2',
+                           'bea3':'constraint;bearing3',
+                           'bea4':'constraint;bearing4'}
+        # mbdy momentvec tower  1 1 global
+        force_fmts = {'F':'mbdy;forcevec;{body};{nodenr:03i};{coord};{comp}',
+                      'M':'mbdy;momentvec;{body};{nodenr:03i};{coord};{comp}'}
+        state_fmt = 'mbdy;{state};{typ};{body};{elnr:03i};{zrel:01.02f};{coord}'
+
+        wind_coord_map = {'Vx':'1', 'Vy':'2', 'Vz':'3'}
+        wind_fmt = 'wind;{typ};{coord};{x};{y};{z};{comp}'
+
+        for ch in range(self.Nch):
+            name = self.ch_details[ch, 0]
+            name_items = misc.remove_items(name.split(' '), '')
+
+            description = self.ch_details[ch, 2]
+            descr_items = misc.remove_items(description.split(' '), '')
+
+            unit = self.ch_details[ch, 1]
+
+            # default names
+            htc_name = ' '.join(name_items+descr_items)
+            label = ''
+            coord = ''
+            typ = ''
+            elnr = ''
+            nodenr = ''
+            zrel = ''
+            state = ''
+
+            # CONSTRAINTS: BEARINGS
+            if name_items[0] in constraint_fmts:
+                htc_name = constraint_fmts[name_items[0]] + ';'
+                htc_name += (descr_items[0] + ';')
+                htc_name += unit
+
+            # MBDY FORCES/MOMENTS
+            elif name_items[0][0] in force_fmts:
+                comp = name_items[0]
+                if comp[0] == 'F':
+                    i0 = 1
+                else:
+                    i0 = 0
+                label = description.split('coo: ')[1].split('  ')[1]
+                coord = descr_items[i0+5]
+                body = descr_items[i0+1][5:]#.replace('Mbdy:', '')
+                nodenr = int(descr_items[i0+3])
+                htc_name = force_fmts[comp[0]].format(body=body, coord=coord,
+                                                      nodenr=nodenr, comp=comp)
+
+            # STATE: POS, VEL, ACC, STATE_ROT
+            elif descr_items[0][:5] == 'State':
+                if name_items[0] == 'State':
+                    i0 = 1
+                    state = 'state'
+                else:
+                    i0 = 0
+                    state = 'state_rot'
+                typ = name_items[i0+0]
+                comp = name_items[i0+1]
+                coord = name_items[i0+3]
+
+                body = descr_items[3][5:]#.replace('Mbdy:', '')
+                elnr = int(descr_items[5])
+                zrel = float(descr_items[6][6:])#.replace('Z-rel:', ''))
+                if len(descr_items) > 8:
+                    label = ' '.join(descr_items[9:])
+                htc_name = state_fmt.format(typ=typ, body=body, elnr=elnr,
+                                            zrel=zrel, coord=coord,
+                                            state=state)
+
+            # WINDSPEED
+            elif description[:9] == 'Free wind':
+                if descr_items[4] == 'gl.':
+                    coord = '1' # global
+                else:
+                    coord = '2' # non-rotating rotor coordinates
+
+                try:
+                    comp = wind_coord_map[descr_items[3][:-1]]
+                    typ = 'free_wind'
+                except KeyError:
+                    comp = descr_items[3]
+                    typ = 'free_wind_hor'
+
+                tmp = description.split('pos')[1]
+                x, y, z = tmp.split(',')
+                # z might hold a label....
+                z_items  = z.split('  ')
+                if len(z_items) > 1:
+                    label = '  '.join(z_items[1:])
+                    z = z_items[0]
+                x, y, z = x.strip(), y.strip(), z.strip()
+
+                htc_name = wind_fmt.format(typ=typ, coord=coord, x=x, y=y, z=z,
+                                           comp=comp)
+
+
+            names['htc_name'].append(htc_name)
+            names['chi'].append(ch)
+            # this is the Channel column from the sel file, so the unique index
+            # which is dependent on the order of the channels
+            names['index'].append(ch+1)
+            names['unit'].append(unit)
+            names['name'].append(name)
+            names['description'].append(description)
+            names['label'].append(label)
+            names['state'].append(state)
+            names['type'].append(typ)
+            names['comp'].append(comp)
+            names['coord'].append(coord)
+            names['elnr'].append(coord)
+            names['nodenr'].append(coord)
+            names['zrel'].append(coord)
+            index[name] = ch
+
+        return names, index
+
 
     def _unified_channel_names(self):
         """
