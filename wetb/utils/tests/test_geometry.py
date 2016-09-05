@@ -57,6 +57,9 @@ class TestGeometry(unittest.TestCase):
         np.testing.assert_array_almost_equal(mean_deg(a, 1), [45, 0, -45])
         np.testing.assert_array_almost_equal(mean_deg(a.T, 0), [45, 0, -45])
 
+    def test_mean_deg_nan(self):
+        self.assertEqual(mean_deg(np.array([0., 90, np.nan])), 45)
+
 
     def test_std_deg(self):
         self.assertEqual(std_deg(np.array([0, 0, 0])), 0)

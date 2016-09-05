@@ -35,7 +35,7 @@ def mean_deg(dir, axis=0):
     mean_deg : float
         Mean angle
     """
-    return deg(np.arctan2(np.mean(sind(dir[:]), axis), np.mean(cosd(dir[:]), axis)))
+    return deg(np.arctan2(np.nanmean(sind(dir[:]), axis), np.nanmean(cosd(dir[:]), axis)))
 
 def std_deg(dir):
     """Standard deviation of angles in degrees
