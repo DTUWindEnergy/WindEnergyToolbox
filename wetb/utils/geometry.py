@@ -50,7 +50,7 @@ def std_deg(dir):
     std_deg : float
         standard deviation
     """
-    return deg(np.sqrt(1 - (np.mean(sind(dir)) ** 2 + np.mean(cosd(dir)) ** 2)))
+    return deg(np.sqrt(1 - (np.nanmean(sind(dir)) ** 2 + np.nanmean(cosd(dir)) ** 2)))
 
 
 def wsp_dir2uv(wsp, dir, dir_ref=None):
