@@ -40,7 +40,7 @@ The python distribution in use will now be located in \<path_to_anaconda\>/env/p
 
 ```
 conda install setuptools_scm future h5py pytables pytest nose sphinx
-conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl
+conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
 ```
 
 * Not all packages are available in the conda repositories, but they can be

@@ -15,6 +15,46 @@ import numpy as np
 
 class Control(object):
 
+    def torque_controller_tuning(self, r0, lambda_opt, ksi_pole_part,
+                                 omega_pole_part, j_dt):
+        """THIS IS A WIP
+        """
+
+        # TODO: THIS IS STILL A WIP
+
+        i12, i23, i34 = self.select_regions()
+
+        # Compute K factor for optimal CP tracking in region 1 as
+        # K=0.5*rho*A*Cp_opt*R^3/lambda_opt^3
+
+        # HAWCStab2/Computation_LIB/compute_controller_input_mod.f90:83-88
+
+        # Compute K factor for optimal CP tracking in region 1 as
+        # K=0.5*rho*A*Cp_opt*R^3/lambda_opt^3
+        # pi_torque_controller%kfactor=0.d0
+        # do i=1,iregion2-iregion1-1
+        # !kfactor=kfactor+0.85d0*kfactor_fit(i)*substructure(3)
+        #   pi_torque_controller%kfactor
+        #   = pi_torque_controller%kfactor
+        #   + kfactor_fit(i)*substructure(3)%opstate(i+iregion1)%r0**3/lambda_opt**3
+        # enddo
+
+        # HAWCStab2/Computation_LIB/compute_controller_input_mod.f90:89
+        # pi_torque_controller%kfactor =
+        #   pi_torque_controller%kfactor/max(dfloat(iregion2-iregion1-1), 1.d0)
+
+        Qg = (r0*r0*r0)/(lambda_opt*lambda_opt*lambda_opt)
+
+        # PI generator torque controller in region 2 (constant speed, variable power)
+        # HAWCStab2/Computation_LIB/compute_controller_input_mod.f90:104-105
+        # pi_torque_controller%kp = 2.d0*ksi_pole_part*omega_pole_part*j_dt
+        # pi_torque_controller%ki = omega_pole_part**2*j_dt
+        pgTorque = 2.0*ksi_pole_part*omega_pole_part*j_dt
+        igTorque = omega_pole_part**2*j_dt
+
+        return Qg, pgTorque, igTorque
+
+
     def pitch_controller_tuning(self, pitch, I, dQdt, P, Omr, om, csi):
         """
 
@@ -89,6 +129,24 @@ class Control(object):
         return K
 
     def select_regions(self, pitch, omega, power):
+        """Find indices at wich point the controller should switch between the
+        different operating mode regions.
+
+        Parameters
+        ----------
+
+
+
+        Returns
+        ------
+
+        i12 : int
+
+        123 : int
+
+        134 : int
+
+        """
 
         i12 = 0
 
