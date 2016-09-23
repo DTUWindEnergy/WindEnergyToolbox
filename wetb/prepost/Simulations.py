@@ -5271,7 +5271,22 @@ class Results(object):
 class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-    mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
+    mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true.
+
+    Following tags have to be defined:
+        * [tu_model]
+        * [Turb base name]
+        * [MannAlfaEpsilon]
+        * [MannL]
+        * [MannGamma]
+        * [tu_seed]
+        * [turb_nr_u]
+        * [turb_nr_v]
+        * [turb_nr_w]
+        * [turb_dx]
+        * [turb_dy]
+        * [turb_dz]
+        * [high_freq_comp]
     """
 
     def __init__(self, silent=False):
@@ -5287,6 +5302,13 @@ class MannTurb64(prepost.PBSScript):
         self.pbs_in_dir = 'pbs_in_turb/'
 
     def gen_pbs(self, cases):
+        """
+        Parameters
+        ----------
+
+        cases : dict of dicts
+            each key holding a dictionary with tag/value pairs.
+        """
 
         case0 = cases[list(cases.keys())[0]]
         # make sure the path's end with a trailing separator, why??
