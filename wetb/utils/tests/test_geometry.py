@@ -57,10 +57,16 @@ class TestGeometry(unittest.TestCase):
         np.testing.assert_array_almost_equal(mean_deg(a, 1), [45, 0, -45])
         np.testing.assert_array_almost_equal(mean_deg(a.T, 0), [45, 0, -45])
 
+    def test_mean_deg_nan(self):
+        self.assertEqual(mean_deg(np.array([0., 90, np.nan])), 45)
+
 
     def test_std_deg(self):
         self.assertEqual(std_deg(np.array([0, 0, 0])), 0)
         self.assertAlmostEqual(std_deg(np.array([0, 90, 180, 270])), 57.296, 2)
+
+    def test_std_deg_nan(self):
+        self.assertAlmostEqual(std_deg(np.array([0, 90, 180, 270, np.nan])), 57.296, 2)
 
     def test_wspdir2uv(self):
         u, v = wsp_dir2uv(np.array([1, 1, 1]), np.array([30, 0, 330]))

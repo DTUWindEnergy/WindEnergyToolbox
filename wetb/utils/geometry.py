@@ -29,13 +29,33 @@ def mean_deg(dir, axis=0):
     ----------
     dir : array_like
         Angles in degrees
+    axis : int
+        if dir is 2d array_like, axis defines which axis to take the mean of
 
     Returns
     -------
     mean_deg : float
         Mean angle
     """
-    return deg(np.arctan2(np.mean(sind(dir[:]), axis), np.mean(cosd(dir[:]), axis)))
+    return deg(mean_rad(rad(dir), axis))
+
+def mean_rad(dir, axis=0):
+    """Mean of angles in radians
+
+    Parameters
+    ----------
+    dir : array_like
+        Angles in radians
+    axis : int
+        if dir is 2d array_like, axis defines which axis to take the mean of
+
+    Returns
+    -------
+    mean_rad : float
+        Mean angle
+    """
+    return np.arctan2(np.nanmean(np.sin(dir[:]), axis), np.nanmean(np.cos(dir[:]), axis))
+
 
 def std_deg(dir):
     """Standard deviation of angles in degrees
@@ -50,8 +70,22 @@ def std_deg(dir):
     std_deg : float
         standard deviation
     """
-    return deg(np.sqrt(1 - (np.mean(sind(dir)) ** 2 + np.mean(cosd(dir)) ** 2)))
+    return deg(std_rad(rad(dir)))
 
+def std_rad(dir):
+    """Standard deviation of angles in radians
+
+    Parameters
+    ----------
+    dir : array_like
+        Angles in radians
+
+    Returns
+    -------
+    std_rad : float
+        standard deviation
+    """
+    return np.sqrt(1 - (np.nanmean(np.sin(dir)) ** 2 + np.nanmean(np.cos(dir)) ** 2))
 
 def wsp_dir2uv(wsp, dir, dir_ref=None):
     """Convert horizontal wind speed and direction to u,v
