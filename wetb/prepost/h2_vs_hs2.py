@@ -107,7 +107,11 @@ class ConfigBase(object):
         opt_tags[0]['[blade_nbodies]'] = 1
         opt_tags[0]['[Windspeed]'] = 0.0
         opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
-        opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
+        opt_tags[0]['[operational_data]'] = 'empty.opt'
+        opt_tags[0]['[eigen_analysis]'] = True
+        opt_tags[0]['[output]'] = False
+        opt_tags[0]['[t0]'] = 0.0
+        opt_tags[0]['[time stop]'] = 0.0
 
         return opt_tags
 
@@ -116,7 +120,7 @@ class ConfigBase(object):
         analysis, at 0 RPM.
         """
         opt_tags = [self.opt_hs2.copy()]
-        opt_tags[0]['[Case id.]'] = '%s_hawc2_eigenanalysis' % basename
+        opt_tags[0]['[Case id.]'] = '%s_hs2_eigenanalysis' % basename
         opt_tags[0]['[blade_damp_x]'] = 0.0
         opt_tags[0]['[blade_damp_y]'] = 0.0
         opt_tags[0]['[blade_damp_z]'] = 0.0
@@ -124,7 +128,8 @@ class ConfigBase(object):
         opt_tags[0]['[Windspeed]'] = 0.0
         opt_tags[0]['[initspeed_rotor_rads]'] = 0.0
         opt_tags[0]['[fixspeed_rotor_rads]'] = 0.0
-        opt_tags[0]['[operational_data]'] = 'case-turbine2-empty.opt'
+        opt_tags[0]['[operational_data]'] = 'empty.opt'
+        opt_tags[0]['[hs2_blademodes]'] = True
 
         return opt_tags
 
