@@ -2829,13 +2829,22 @@ class ModelData(object):
         #12    13  14  15  16  17  18
         #I_p/K k_x k_y A pitch x_e y_e
         # 19 cols
-        self.st_column_header_list = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', \
-            'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x', \
+        self.st_column_header_list = ['r', 'm', 'x_cg', 'y_cg', 'ri_x',
+            'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x',
             'k_y', 'A', 'pitch', 'x_e', 'y_e']
 
-        self.st_column_header_list_latex = ['r','m','x_{cg}','y_{cg}','ri_x',\
-            'ri_y', 'x_{sh}','y_{sh}','E', 'G', 'I_x', 'I_y', 'J', 'k_x', \
+        self.st_column_header_list_latex = ['r','m','x_{cg}','y_{cg}','ri_x',
+            'ri_y', 'x_{sh}','y_{sh}','E', 'G', 'I_x', 'I_y', 'J', 'k_x',
             'k_y', 'A', 'pitch', 'x_e', 'y_e']
+
+        self.st_fpm_cols = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'pitch',
+                            'x_e', 'y_e', 'E11', 'E12', 'E13', 'E14', 'E15',
+                            'E16', 'E22', 'E23', 'E24', 'E25', 'E26', 'E33',
+                            'E34', 'E35', 'E36', 'E44', 'E45', 'E46', 'E55',
+                            'E56', 'E66']
+        # set column names/indeices as class attributes
+        for i, col in enumerate(self.st_fpm_cols):
+            setattr(self, col, i)
 
         # make the column header
         self.column_header_line = 19 * self.col_width * '=' + '\n'
