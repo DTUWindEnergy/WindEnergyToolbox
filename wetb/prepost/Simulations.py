@@ -1930,14 +1930,13 @@ class PBS(object):
             self.maxcpu = 1
             self.secperiter = 0.012
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
-            self.winefix = ''
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
-            self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
+        self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
 
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels
