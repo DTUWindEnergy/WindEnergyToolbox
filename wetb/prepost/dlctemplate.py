@@ -35,7 +35,7 @@ plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
 if socket.gethostname()[:2] == 'g-':
     RUNMETHOD = 'gorm'
-elif socket.gethostname()[:4] == 'jess':
+elif socket.gethostname()[:1] == 'j':
     RUNMETHOD = 'jess'
 else:
     plt.rc('text', usetex=True)
