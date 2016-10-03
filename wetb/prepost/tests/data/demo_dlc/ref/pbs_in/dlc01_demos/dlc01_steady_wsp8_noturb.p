@@ -37,7 +37,8 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   mkdir -p turb/
   cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc ./htc/dlc01_demos/
   cp -R $PBS_O_WORKDIR/../turb/none*.bin turb/ 
-  # ------------------------------------------------------------
+  WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
+# ------------------------------------------------------------
 else
   # with find+xargs we first browse to CPU folder
   cd "$CPU_NR"
