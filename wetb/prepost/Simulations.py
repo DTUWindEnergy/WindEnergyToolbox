@@ -1118,7 +1118,7 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
         # file. If it is a directory, it will check all that is in the dir
         run_dir = cases[k]['[run_dir]']
         log_dir = cases[k]['[log_dir]']
-        errorlogs.PathToLogs = os.path.join(run_dir, log_dir)
+        errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
         try:
             errorlogs.check(save_iter=save_iter)
             if not silent:
@@ -2712,25 +2712,19 @@ class ErrorLogs(windIO.LogFile):
         """
 
         # MsgListLog = []
-
-        # load all the files in the given path
         FileList = []
-        for files in os.walk(self.PathToLogs):
-            FileList.append(files)
+        # if a directory, load all files first
+        if os.path.isdir(self.PathToLogs):
 
-        # if the instead of a directory, a file path is given
-        # the generated FileList will be empty!
-        try:
+            for files in os.walk(self.PathToLogs):
+                FileList.append(files)
             NrFiles = len(FileList[0][2])
-        # input was a single file:
-        except:
-            NrFiles = 1
+        else:
             # simulate one entry on FileList[0][2], give it the file name
             # and save the directory on in self.PathToLogs
-            tmp = self.PathToLogs.split(os.path.sep)[-1]
-            # cut out the file name from the directory
-            self.PathToLogs = self.PathToLogs.replace(tmp, '')
-            FileList.append([ [],[],[tmp] ])
+            NrFiles = 1
+            FileList.append([ [],[],[os.path.basename(self.PathToLogs)] ])
+            self.PathToLogs = os.path.dirname(self.PathToLogs)
             single_file = True
         i=1
 
