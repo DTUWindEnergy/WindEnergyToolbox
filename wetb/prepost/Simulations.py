@@ -1118,7 +1118,7 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
         # file. If it is a directory, it will check all that is in the dir
         run_dir = cases[k]['[run_dir]']
         log_dir = cases[k]['[log_dir]']
-        errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
+        errorlogs.PathToLogs = os.path.join(run_dir, log_dir)
         try:
             errorlogs.check(save_iter=save_iter)
             if not silent:
@@ -1808,6 +1808,12 @@ class HtcMaster(object):
         """
 
         htc = self.master_str
+
+        # FIXME: HAWC2 always outputs result and logfile in lower case, so
+        # force case_id/Case id. to be lower case
+        self.tags['[case_id]'] = self.tags['[case_id]'].lower()
+        if '[Case id.]' in self.tags:
+            self.tags['[Case id.]'] = self.tags['[Case id.]'].lower()
 
         # and now replace all the tags in the htc master file
         # when iterating over a dict, it will give the key, given in the
@@ -2626,7 +2632,8 @@ class PBS(object):
             run_dir = case['[run_dir]']
             res_dir = case['[res_dir]']
             log_dir = case['[log_dir]']
-            cname_ = cname.replace('.htc', '')
+            # FIXME: HAWC2 outputs result and logfile always in lower cases
+            cname_ = cname.replace('.htc', '').lower()
             f_log = os.path.join(run_dir, log_dir, cname_)
             f_res = os.path.join(run_dir, res_dir, cname_)
             if not os.path.exists(f_log + '.log'):
@@ -2729,14 +2736,13 @@ class ErrorLogs(windIO.LogFile):
 
         # walk trough the files present in the folder path
         for fname in FileList[0][2]:
-            fname_lower = fname.lower()
             # progress indicator
             if NrFiles > 1:
                 if not self.silent:
                     print('progress: ' + str(i) + '/' + str(NrFiles))
 
             # open the current log file
-            f_log = os.path.join(self.PathToLogs, str(fname_lower))
+            f_log = os.path.join(self.PathToLogs, fname)
 
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
@@ -3615,7 +3621,7 @@ class Cases(object):
 
         respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
         resfile = case['[case_id]']
-        self.res = windIO.LoadResults(respath, resfile)
+        self.res = windIO.LoadResults(respath, resfile.lower())
         if not _slice:
             _slice = np.r_[0:len(self.res.sig)]
         self.time = self.res.sig[_slice,0]
@@ -3677,12 +3683,6 @@ class Cases(object):
 
         #return cases
 
-    def force_lower_case_id(self):
-        tmp_cases = {}
-        for cname, case in self.cases.items():
-            tmp_cases[cname.lower()] = case.copy()
-        self.cases = tmp_cases
-
     def _get_cases_dict(self, post_dir, sim_id):
         """
         Load the pickled dictionary containing all the cases and their
@@ -3698,8 +3698,6 @@ class Cases(object):
         """
         self.cases = load_pickled_file(os.path.join(post_dir, sim_id + '.pkl'))
         self.cases_fail = {}
-
-        self.force_lower_case_id()
 
         if self.rem_failed:
             try:
