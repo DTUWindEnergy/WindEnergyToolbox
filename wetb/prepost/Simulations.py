@@ -5292,6 +5292,7 @@ class MannTurb64(prepost.PBSScript):
     def __init__(self, silent=False):
         super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
+        self.winefix = 'wine winefix\n'
         # PBS configuration
         self.umask = '0003'
         self.walltime = '00:59:59'
