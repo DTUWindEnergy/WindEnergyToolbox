@@ -5292,7 +5292,7 @@ class MannTurb64(prepost.PBSScript):
     def __init__(self, silent=False):
         super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
-        self.prelude += 'wine winefix\n'
+        self.winefix = 'wine winefix\n'
         # PBS configuration
         self.umask = '0003'
         self.walltime = '00:59:59'
@@ -5333,6 +5333,7 @@ class MannTurb64(prepost.PBSScript):
             self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
             self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
 
+            self.prelude = self.winefix
             if case['[turb_db_dir]'] is not None:
                 self.prelude += 'cd %s' % case['[turb_db_dir]']
             else:
