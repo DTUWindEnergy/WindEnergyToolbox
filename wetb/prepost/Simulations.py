@@ -5292,7 +5292,7 @@ class MannTurb64(prepost.PBSScript):
     def __init__(self, silent=False):
         super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
-        self.winefix = 'wine winefix\n'
+        self.prelude += 'wine winefix\n'
         # PBS configuration
         self.umask = '0003'
         self.walltime = '00:59:59'
@@ -5334,9 +5334,9 @@ class MannTurb64(prepost.PBSScript):
             self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
 
             if case['[turb_db_dir]'] is not None:
-                self.prelude = 'cd %s' % case['[turb_db_dir]']
+                self.prelude += 'cd %s' % case['[turb_db_dir]']
             else:
-                self.prelude = 'cd %s' % case['[turb_dir]']
+                self.prelude += 'cd %s' % case['[turb_dir]']
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
             rpl = (float(case['[MannAlfaEpsilon]']),
@@ -5440,6 +5440,7 @@ def eigenstructure(cases, debug=False):
         cases[case]['[eigen_structure]'] = modes
 
     return cases
+
 
 if __name__ == '__main__':
     pass
