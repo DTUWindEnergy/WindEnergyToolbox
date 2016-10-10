@@ -1,5 +1,4 @@
-
-Configure Wine for HAWC2
+Configure Wine for Gorm
 ------------------------
 
 > Note that the steps described here are executed automatically by the
@@ -52,3 +51,11 @@ executable. The file ```hawc2-latest.exe``` will always be the latest HAWC2
 version at ```/home/MET/hawc2exe/```. When a new HAWC2 is released you can
 simply copy all the files from there again to update.
 
+
+Configure Wine for Jess
+------------------------
+
+```
+g-000 $ WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
+g-000 $ WINEARCH=win32 WINEPREFIX=~/.wine32 wine test.exe
+```
