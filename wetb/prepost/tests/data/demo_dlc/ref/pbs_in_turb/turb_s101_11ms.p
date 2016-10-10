@@ -27,7 +27,8 @@ echo "PRELUDE"
 echo "------------------------------------------------------------------------"
 
 winefix
-cd ../turb/
+cd /scratch/$USER/$PBS_JOBID/
+
 
 echo ""
 echo "------------------------------------------------------------------------"
@@ -43,6 +44,10 @@ echo "------------------------------------------------------------------------"
 echo "CODA"
 echo "------------------------------------------------------------------------"
 
+# COPY BACK FROM SCRATCH AND RENAME, remove _ at end
+cp turb_s101_11ms_u.bin $PBS_O_WORKDIR/../turb/turb_s101_11msu.bin
+cp turb_s101_11ms_v.bin $PBS_O_WORKDIR/../turb/turb_s101_11msv.bin
+cp turb_s101_11ms_w.bin $PBS_O_WORKDIR/../turb/turb_s101_11msw.bin
 
 
 echo ""

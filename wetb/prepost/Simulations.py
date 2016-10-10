@@ -5275,7 +5275,7 @@ class MannTurb64(prepost.PBSScript):
 
     Following tags have to be defined:
         * [tu_model]
-        * [Turb base name]
+        * [turb_base_name]
         * [MannAlfaEpsilon]
         * [MannL]
         * [MannGamma]
@@ -5321,10 +5321,10 @@ class MannTurb64(prepost.PBSScript):
             # only relevant for cases with turbulence
             if '[tu_model]' in case and int(case['[tu_model]']) == 0:
                 continue
-            if '[Turb base name]' not in case:
+            if '[turb_base_name]' not in case:
                 continue
 
-            base_name = case['[Turb base name]']
+            base_name = case['[turb_base_name]']
             # pbs_in/out dir can contain subdirs, only take the inner directory
             out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
             turb = case['[turb_dir]']
@@ -5333,11 +5333,24 @@ class MannTurb64(prepost.PBSScript):
             self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
             self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
 
+            # apply winefix
             self.prelude = self.winefix
+            # browse to scratch dir
+            self.prelude += 'cd {}\n'.format(self.scratchdir)
+
+            self.coda = '# COPY BACK FROM SCRATCH AND RENAME, remove _ at end\n'
+            # copy back to turb dir at the end
             if case['[turb_db_dir]'] is not None:
-                self.prelude += 'cd %s' % case['[turb_db_dir]']
+                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_db_dir]'],
+                                   base_name)
             else:
-                self.prelude += 'cd %s' % case['[turb_dir]']
+                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_dir]'],
+                                   base_name)
+            # FIXME: Mann64 turb exe creator adds an underscore to output
+            for comp in list('uvw'):
+                src = '{}_{}.bin'.format(base_name, comp)
+                dst2 = '{}{}.bin'.format(dst, comp)
+                self.coda += 'cp {} {}\n'.format(src, dst2)
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
             rpl = (float(case['[MannAlfaEpsilon]']),
