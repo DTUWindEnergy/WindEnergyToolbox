@@ -33,7 +33,7 @@ import pickle
 import re
 # what is actually the difference between warnings and logging.warn?
 # for which context is which better?
-#import warnings
+import warnings
 import logging
 from operator import itemgetter
 from time import time
@@ -5181,7 +5181,12 @@ class Cases(object):
         """
         msg = "force_lower_case_id is depricated and is integrated in "
         msg += "Cases.createcase() instead."
-        raise DeprecationWarning(msg)
+        warnings.warn(msg, DeprecationWarning)
+
+        tmp_cases = {}
+        for cname, case in self.cases.items():
+             tmp_cases[cname.lower()] = case.copy()
+        self.cases = tmp_cases
 
 
 class EnvelopeClass(object):
