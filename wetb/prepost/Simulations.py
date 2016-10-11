@@ -5176,6 +5176,13 @@ class Cases(object):
                 csv_table.flush()
         h5f.close()
 
+    def force_lower_case_id(self):
+        """Keep for backwards compatibility with the dlctemplate.py
+        """
+        msg = "force_lower_case_id is depricated and is integrated in "
+        msg += "Cases.createcase() instead."
+        raise DeprecationWarning(msg)
+
 
 class EnvelopeClass(object):
     """
