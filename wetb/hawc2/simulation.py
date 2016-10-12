@@ -27,6 +27,7 @@ from wetb.utils.cluster_tools.pbsjob import SSHPBSJob, DONE, NOT_SUBMITTED
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 from wetb.utils.timing import print_time
 from _datetime import datetime
+from subprocess import STDOUT
 standard_library.install_aliases()
 from threading import Thread
 
@@ -463,11 +464,27 @@ class SimulationThread(Thread):
         #else:
         #    self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
 
-        if isinstance(hawc2exe, tuple):
-            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % (hawc2exe + (htcfile, stdout)), stdout=None, stderr=None, shell=True, cwd=modelpath)
-        else:
-            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+        with open (os.path.join(self.modelpath, stdout), 'wb') as stdout:
+            if isinstance(hawc2exe, tuple):
+                self.process = subprocess.Popen(list(hawc2exe + (htcfile, stdout)), stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)
+            else:
+                self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+            self.process.communicate()
 
+
+#        if isinstance(hawc2exe, tuple):
+#            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % (hawc2exe + (htcfile, stdout)), stdout=None, stderr=None, shell=False, cwd=modelpath)
+#        else:
+#            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
+#            with open("cmd.txt", 'w') as fid:
+#                fid.write("cd %s\n" % modelpath)
+#                fid.write('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout))
+
+        import psutil
+        try:
+            self.sim.host.resource.process_name = psutil.Process(self.process.pid).name()
+        except:
+            pass
         Thread.start(self)
 
 
