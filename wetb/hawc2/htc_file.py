@@ -182,7 +182,6 @@ class HTCFile(HTCContents, HTCDefaults):
                          ('new_htc_structure/struct_inertia_output_file_name', 0),
                          ('new_htc_structure/body_eigenanalysis_file_name', 0),
                          ('new_htc_structure/constraint_output_file_name', 0),
-                         ('new_htc_structure/structure_eigenanalysis_file_name', 0),
                          ('turb_export/filename_u', 0),
                          ('turb_export/filename_v', 0),
                          ('turb_export/filename_w', 0)]:
