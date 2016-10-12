@@ -36,10 +36,10 @@ class TestFastIO(unittest.TestCase):
         self.assertAlmostEqual(data[10, 4], 138.822277739535)
 
     def test_load_output2(self):
-        data, info = load_output(testfilepath + 'DTU10MW2.out')
-        self.assertEqual(info['name'], "DTU10MW2")
-        self.assertEqual(info['attribute_names'][-1], "RotPwr")
-        self.assertEqual(info['attribute_units'][-1], "kW")
+        data, info = load_output(testfilepath + 'DTU10MW.out')
+        self.assertEqual(info['name'], "DTU10MW")
+        self.assertEqual(info['attribute_names'][1], "RotPwr")
+        self.assertEqual(info['attribute_units'][1], "kW")
 
 
 
