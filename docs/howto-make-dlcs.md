@@ -369,6 +369,29 @@ node for which the a fixed file name is assumed
 * ```[copyto_generic] = ['ESYSMooring_init.dat']```
 
 
+### Tags required for standalone Mann 64-bit turbulence generator
+
+```dlctemplate.py``` has a flag named ```--pbs_turb```, which when activated
+generates PBS input files containing the instructions to generate all required
+turbulence boxes using the 64-bit version of the stand alone Mann turbulence
+box generator. The appropriate input parameters are taken from the following
+tags:
+
+* ```[tu_model]```
+* ```[Turb base name]```
+* ```[MannAlfaEpsilon]```
+* ```[MannL]```
+* ```[MannGamma]```
+* ```[tu_seed]```
+* ```[turb_nr_u]``` : number of grid points in the u direction
+* ```[turb_nr_v]``` : number of grid points in the v direction
+* ```[turb_nr_w]``` : number of grid points in the w direction
+* ```[turb_dx]``` : grid spacing in meters in the u direction
+* ```[turb_dy]``` : grid spacing in meters in the v direction
+* ```[turb_dz]``` : grid spacing in meters in the w direction
+* ```[high_freq_comp]```
+
+
 Launching the jobs on the cluster
 ---------------------------------
 

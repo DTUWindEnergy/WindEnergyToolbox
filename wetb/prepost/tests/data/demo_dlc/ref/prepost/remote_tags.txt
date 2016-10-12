@@ -176,3 +176,59 @@
                     [windramp] : False               
                   [wsp factor] : 0.8                 
               [zip_root_files] : []                  
+
+-------------------------------------------------------------------------------
+                 opt_tags set
+-------------------------------------------------------------------------------
+                 [Case folder] : dlc01_demos         
+                    [Case id.] : dlc01_steady_wsp11_s101
+                 [Cut-in time] : -1                  
+                [Cut-out time] : -1                  
+                         [DLC] : 01                  
+                   [Dyn stall] : 2                   
+              [Free shaft rot] : True                
+                         [G_A] : True                
+                         [G_T] : True                
+                      [G_phi0] : True                
+                        [G_t0] : True                
+              [Grid loss time] : 5000                
+                   [Induction] : 1                   
+              [Pitch 1 DLC22b] : 0                   
+                    [Pitvel 1] : 3                   
+                    [Pitvel 2] : 4                   
+               [Rotor azimuth] : 0                   
+                [Rotor locked] : False               
+                   [Stop type] : 1                   
+                          [TI] : 0.201454545455      
+          [Time pitch runaway] : 5000                
+           [Time stuck DLC22b] : -1                  
+              [Turb base name] : turb_s101_11ms      
+                   [Windspeed] : 11                  
+                     [case_id] : dlc01_steady_wsp11_s101
+                    [data_dir] : data/               
+                 [dis_setbeta] : True                
+                    [duration] : 20.0                
+                        [gust] : False               
+                   [gust_type] : True                
+                     [htc_dir] : htc/dlc01_demos/    
+                     [init_wr] : 0.5                 
+                    [iter_dir] : iter/dlc01_demos/   
+                     [log_dir] : logfiles/dlc01_demos/
+                  [out_format] : hawc_binary         
+                  [pbs_in_dir] : pbs_in/dlc01_demos/ 
+                 [pbs_out_dir] : pbs_out/dlc01_demos/
+                     [res_dir] : res/dlc01_demos/    
+                   [shear_exp] : 0                   
+                   [staircase] : False               
+                   [t flap on] : -1                  
+                          [t0] : 20                  
+                   [time stop] : 40                  
+                   [time_stop] : 40                  
+                    [tu_model] : 1                   
+                     [tu_seed] : 100                 
+              [turb_base_name] : turb_s101_11ms      
+                     [turb_dx] : 0.859375            
+                        [wdir] : 0                   
+                    [windramp] : False               
+                  [wsp factor] : 0.727272727273      
+              [zip_root_files] : []                  

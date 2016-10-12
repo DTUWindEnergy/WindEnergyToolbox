@@ -35,7 +35,7 @@ plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
 if socket.gethostname()[:2] == 'g-':
     RUNMETHOD = 'gorm'
-elif socket.gethostname()[:4] == 'jess':
+elif socket.gethostname()[:1] == 'j':
     RUNMETHOD = 'jess'
 else:
     plt.rc('text', usetex=True)
@@ -279,7 +279,6 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     config['Weibull']['Vref'] = 50
     config['nn_shaft'] = 4
     cc = sim.Cases(POST_DIR, sim_id, rem_failed=rem_failed, config=config)
-    cc.force_lower_case_id()
 
     if force_dir:
         for case in cc.cases:

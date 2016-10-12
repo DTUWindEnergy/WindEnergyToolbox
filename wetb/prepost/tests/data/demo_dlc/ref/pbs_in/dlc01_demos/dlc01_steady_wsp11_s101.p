@@ -1,8 +1,8 @@
 ### Standard Output 
-#PBS -N dlc01_steady_wsp8_noturb 
-#PBS -o ./pbs_out/dlc01_demos/dlc01_steady_wsp8_noturb.out
+#PBS -N dlc01_steady_wsp11_s101 
+#PBS -o ./pbs_out/dlc01_demos/dlc01_steady_wsp11_s101.out
 ### Standard Error 
-#PBS -e ./pbs_out/dlc01_demos/dlc01_steady_wsp8_noturb.err
+#PBS -e ./pbs_out/dlc01_demos/dlc01_steady_wsp11_s101.err
 #PBS -W umask=0003
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
 #PBS -l walltime=04:00:00
@@ -35,8 +35,8 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   mkdir -p res/dlc01_demos/
   mkdir -p logfiles/dlc01_demos/
   mkdir -p turb/
-  cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc ./htc/dlc01_demos/
-  cp -R $PBS_O_WORKDIR/../turb/none*.bin turb/ 
+  cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp11_s101.htc ./htc/dlc01_demos/
+  cp -R $PBS_O_WORKDIR/../turb/turb_s101_11ms*.bin turb/ 
   WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
 # ------------------------------------------------------------
 else
@@ -48,14 +48,14 @@ echo ""
 # evaluates to true if LAUNCH_PBS_MODE is NOT set
 if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   echo "execute HAWC2, fork to background"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc  &
+  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp11_s101.htc  &
   wait
 else
   echo "execute HAWC2, do not fork and wait"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc  
+  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp11_s101.htc  
   echo "POST-PROCESSING"
-  python -c "from wetb.prepost import statsdel; statsdel.logcheck('logfiles/dlc01_demos/dlc01_steady_wsp8_noturb.log')"
-  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp8_noturb', no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=20.0, i0=0, i1=None, ftype='.csv')"
+  python -c "from wetb.prepost import statsdel; statsdel.logcheck('logfiles/dlc01_demos/dlc01_steady_wsp11_s101.log')"
+  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp11_s101', no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=20.0, i0=0, i1=None, ftype='.csv')"
 fi
 
 

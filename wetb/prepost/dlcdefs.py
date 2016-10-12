@@ -185,6 +185,17 @@ def tags_dlcs(master):
     master.tags['[Time pitch runaway]'] = 1000
     master.tags['[Induction]'] = 1
     master.tags['[Dyn stall]'] = 1
+    # required tags for the MannTurb64 standalone turbulence box generator
+    master.tags['[MannAlfaEpsilon]'] = 1.0
+    master.tags['[MannL]'] = 29.4
+    master.tags['[MannGamma]'] = 3.0
+    master.tags['[turb_nr_u]'] = 8192
+    master.tags['[turb_nr_v]'] = 32
+    master.tags['[turb_nr_w]'] = 32
+    master.tags['[turb_dx]'] = 1
+    master.tags['[turb_dy]'] = 6.5
+    master.tags['[turb_dz]'] = 6.5
+    master.tags['[high_freq_comp]'] = 1
 
     return master
 
@@ -218,6 +229,17 @@ def tags_defaults(master):
     master.tags['[hydro_dir]']     = False
     master.tags['[mooring_dir]']   = False
     master.tags['[externalforce]'] = False
+    # required tags for the MannTurb64 standalone turbulence box generator
+    master.tags['[MannAlfaEpsilon]'] = 1.0
+    master.tags['[MannL]'] = 29.4
+    master.tags['[MannGamma]'] = 3.0
+    master.tags['[turb_nr_u]'] = 8192
+    master.tags['[turb_nr_v]'] = 32
+    master.tags['[turb_nr_w]'] = 32
+    master.tags['[turb_dx]'] = 1
+    master.tags['[turb_dy]'] = 6.5
+    master.tags['[turb_dz]'] = 6.5
+    master.tags['[high_freq_comp]'] = 1
     # zip_root_files only is used when copy to run_dir and zip creation, define
     # in the HtcMaster object
     master.tags['[zip_root_files]'] = []

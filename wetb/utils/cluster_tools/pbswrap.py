@@ -127,6 +127,8 @@ def print_node_loading(users, host, nodes, nodesload):
 
 
 def parse_pbsnode_lall(output):
+    """Parse output of pbsnodes -l all
+    """
     # read the qstat output
     frees, exclusives, others, down = 0, 0, 0, 0
     nr_nodes = 0
@@ -186,7 +188,7 @@ def parse_qstat_n1(output):
     host = {}
     users = {}
     # get the hostname
-    hostname = output[1]
+    hostname = socket.gethostname()
     if hostname[:5] == 'g-000':
         host['name'] = 'gorm'
         host['cpu_per_node'] = 12
@@ -199,9 +201,13 @@ def parse_qstat_n1(output):
     # who are down
     #queue['_total_cpu_'] = cpu_node*nr_nodes
 
-    for line in output[5:]:  # first 5 are not relevant
-        if line == "":
+    ii = 0
+    for line in output:
+        # first 5 are not relevant
+        if ii < 5:
+            ii += 1
             continue
+
         items = line.split()
         queue = items[2]
 
@@ -247,6 +253,7 @@ def parse_qstat_n1(output):
             nodes = items[11].split('+')
             # TODO: take into account cpu number for jess: j-304/5
             # on jess, the cpu number of the node is indicated, ignore for now
+            # FIXME: host name can be jess or j-
             if host['name'].startswith('jess'):
                 for i, node in enumerate(nodes):
                     nodes[i] = node.split('/')[0]
@@ -261,9 +268,11 @@ def parse_qstat_n1(output):
                 except KeyError:
                     nodesload[node] = [userid]
 
+        ii += 1
+
     return users, host, nodesload
 
-
+# FIXME: counts diffferent compared to launch.py....
 def count_cpus(users, host, pbsnodes):
     """
     See how many cpu's are actually free

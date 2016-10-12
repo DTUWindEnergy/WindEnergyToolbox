@@ -97,6 +97,7 @@ exit
         self.prelude = ''
         self.execution = ''
         self.coda = ''
+        self.scratchdir = '/scratch/$USER/$PBS_JOBID/'
 
     def check_dirs(self):
         """Create the directories of std out, std error and pbs file if they

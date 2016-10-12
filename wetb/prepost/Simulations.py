@@ -33,7 +33,7 @@ import pickle
 import re
 # what is actually the difference between warnings and logging.warn?
 # for which context is which better?
-#import warnings
+import warnings
 import logging
 from operator import itemgetter
 from time import time
@@ -1809,6 +1809,12 @@ class HtcMaster(object):
 
         htc = self.master_str
 
+        # FIXME: HAWC2 always outputs result and logfile in lower case, so
+        # force case_id/Case id. to be lower case
+        self.tags['[case_id]'] = self.tags['[case_id]'].lower()
+        if '[Case id.]' in self.tags:
+            self.tags['[Case id.]'] = self.tags['[Case id.]'].lower()
+
         # and now replace all the tags in the htc master file
         # when iterating over a dict, it will give the key, given in the
         # corresponding format (string keys as strings, int keys as ints...)
@@ -1930,14 +1936,13 @@ class PBS(object):
             self.maxcpu = 1
             self.secperiter = 0.012
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
-            self.winefix = ''
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
-            self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
+        self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
 
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels
@@ -2627,7 +2632,8 @@ class PBS(object):
             run_dir = case['[run_dir]']
             res_dir = case['[res_dir]']
             log_dir = case['[log_dir]']
-            cname_ = cname.replace('.htc', '')
+            # FIXME: HAWC2 outputs result and logfile always in lower cases
+            cname_ = cname.replace('.htc', '').lower()
             f_log = os.path.join(run_dir, log_dir, cname_)
             f_res = os.path.join(run_dir, res_dir, cname_)
             if not os.path.exists(f_log + '.log'):
@@ -2706,38 +2712,31 @@ class ErrorLogs(windIO.LogFile):
         """
 
         # MsgListLog = []
-
-        # load all the files in the given path
         FileList = []
-        for files in os.walk(self.PathToLogs):
-            FileList.append(files)
+        # if a directory, load all files first
+        if os.path.isdir(self.PathToLogs):
 
-        # if the instead of a directory, a file path is given
-        # the generated FileList will be empty!
-        try:
+            for files in os.walk(self.PathToLogs):
+                FileList.append(files)
             NrFiles = len(FileList[0][2])
-        # input was a single file:
-        except:
-            NrFiles = 1
+        else:
             # simulate one entry on FileList[0][2], give it the file name
             # and save the directory on in self.PathToLogs
-            tmp = self.PathToLogs.split(os.path.sep)[-1]
-            # cut out the file name from the directory
-            self.PathToLogs = self.PathToLogs.replace(tmp, '')
-            FileList.append([ [],[],[tmp] ])
+            NrFiles = 1
+            FileList.append([ [],[],[os.path.basename(self.PathToLogs)] ])
+            self.PathToLogs = os.path.dirname(self.PathToLogs)
             single_file = True
         i=1
 
         # walk trough the files present in the folder path
         for fname in FileList[0][2]:
-            fname_lower = fname.lower()
             # progress indicator
             if NrFiles > 1:
                 if not self.silent:
                     print('progress: ' + str(i) + '/' + str(NrFiles))
 
             # open the current log file
-            f_log = os.path.join(self.PathToLogs, str(fname_lower))
+            f_log = os.path.join(self.PathToLogs, fname)
 
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
@@ -2829,13 +2828,22 @@ class ModelData(object):
         #12    13  14  15  16  17  18
         #I_p/K k_x k_y A pitch x_e y_e
         # 19 cols
-        self.st_column_header_list = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', \
-            'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x', \
+        self.st_column_header_list = ['r', 'm', 'x_cg', 'y_cg', 'ri_x',
+            'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x',
             'k_y', 'A', 'pitch', 'x_e', 'y_e']
 
-        self.st_column_header_list_latex = ['r','m','x_{cg}','y_{cg}','ri_x',\
-            'ri_y', 'x_{sh}','y_{sh}','E', 'G', 'I_x', 'I_y', 'J', 'k_x', \
+        self.st_column_header_list_latex = ['r','m','x_{cg}','y_{cg}','ri_x',
+            'ri_y', 'x_{sh}','y_{sh}','E', 'G', 'I_x', 'I_y', 'J', 'k_x',
             'k_y', 'A', 'pitch', 'x_e', 'y_e']
+
+        self.st_fpm_cols = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'pitch',
+                            'x_e', 'y_e', 'E11', 'E12', 'E13', 'E14', 'E15',
+                            'E16', 'E22', 'E23', 'E24', 'E25', 'E26', 'E33',
+                            'E34', 'E35', 'E36', 'E44', 'E45', 'E46', 'E55',
+                            'E56', 'E66']
+        # set column names/indeices as class attributes
+        for i, col in enumerate(self.st_fpm_cols):
+            setattr(self, col, i)
 
         # make the column header
         self.column_header_line = 19 * self.col_width * '=' + '\n'
@@ -3607,7 +3615,7 @@ class Cases(object):
 
         respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
         resfile = case['[case_id]']
-        self.res = windIO.LoadResults(respath, resfile)
+        self.res = windIO.LoadResults(respath, resfile.lower())
         if not _slice:
             _slice = np.r_[0:len(self.res.sig)]
         self.time = self.res.sig[_slice,0]
@@ -3669,12 +3677,6 @@ class Cases(object):
 
         #return cases
 
-    def force_lower_case_id(self):
-        tmp_cases = {}
-        for cname, case in self.cases.items():
-            tmp_cases[cname.lower()] = case.copy()
-        self.cases = tmp_cases
-
     def _get_cases_dict(self, post_dir, sim_id):
         """
         Load the pickled dictionary containing all the cases and their
@@ -3690,8 +3692,6 @@ class Cases(object):
         """
         self.cases = load_pickled_file(os.path.join(post_dir, sim_id + '.pkl'))
         self.cases_fail = {}
-
-        self.force_lower_case_id()
 
         if self.rem_failed:
             try:
@@ -5176,6 +5176,18 @@ class Cases(object):
                 csv_table.flush()
         h5f.close()
 
+    def force_lower_case_id(self):
+        """Keep for backwards compatibility with the dlctemplate.py
+        """
+        msg = "force_lower_case_id is depricated and is integrated in "
+        msg += "Cases.createcase() instead."
+        warnings.warn(msg, DeprecationWarning)
+
+        tmp_cases = {}
+        for cname, case in self.cases.items():
+             tmp_cases[cname.lower()] = case.copy()
+        self.cases = tmp_cases
+
 
 class EnvelopeClass(object):
     """
@@ -5271,12 +5283,28 @@ class Results(object):
 class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-    mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true
+    mann_turb_x64.exe fname 1.0 29.4 3.0 1209 256 32 32 2.0 5 5 true.
+
+    Following tags have to be defined:
+        * [tu_model]
+        * [turb_base_name]
+        * [MannAlfaEpsilon]
+        * [MannL]
+        * [MannGamma]
+        * [tu_seed]
+        * [turb_nr_u]
+        * [turb_nr_v]
+        * [turb_nr_w]
+        * [turb_dx]
+        * [turb_dy]
+        * [turb_dz]
+        * [high_freq_comp]
     """
 
     def __init__(self, silent=False):
         super(MannTurb64, self).__init__()
         self.exe = 'time wine mann_turb_x64.exe'
+        self.winefix = 'winefix\n'
         # PBS configuration
         self.umask = '0003'
         self.walltime = '00:59:59'
@@ -5287,6 +5315,13 @@ class MannTurb64(prepost.PBSScript):
         self.pbs_in_dir = 'pbs_in_turb/'
 
     def gen_pbs(self, cases):
+        """
+        Parameters
+        ----------
+
+        cases : dict of dicts
+            each key holding a dictionary with tag/value pairs.
+        """
 
         case0 = cases[list(cases.keys())[0]]
         # make sure the path's end with a trailing separator, why??
@@ -5298,10 +5333,10 @@ class MannTurb64(prepost.PBSScript):
             # only relevant for cases with turbulence
             if '[tu_model]' in case and int(case['[tu_model]']) == 0:
                 continue
-            if '[Turb base name]' not in case:
+            if '[turb_base_name]' not in case:
                 continue
 
-            base_name = case['[Turb base name]']
+            base_name = case['[turb_base_name]']
             # pbs_in/out dir can contain subdirs, only take the inner directory
             out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
             turb = case['[turb_dir]']
@@ -5310,10 +5345,24 @@ class MannTurb64(prepost.PBSScript):
             self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
             self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
 
+            # apply winefix
+            self.prelude = self.winefix
+            # browse to scratch dir
+            self.prelude += 'cd {}\n'.format(self.scratchdir)
+
+            self.coda = '# COPY BACK FROM SCRATCH AND RENAME, remove _ at end\n'
+            # copy back to turb dir at the end
             if case['[turb_db_dir]'] is not None:
-                self.prelude = 'cd %s' % case['[turb_db_dir]']
+                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_db_dir]'],
+                                   base_name)
             else:
-                self.prelude = 'cd %s' % case['[turb_dir]']
+                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_dir]'],
+                                   base_name)
+            # FIXME: Mann64 turb exe creator adds an underscore to output
+            for comp in list('uvw'):
+                src = '{}_{}.bin'.format(base_name, comp)
+                dst2 = '{}{}.bin'.format(dst, comp)
+                self.coda += 'cp {} {}\n'.format(src, dst2)
 
             # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
             rpl = (float(case['[MannAlfaEpsilon]']),
@@ -5417,6 +5466,7 @@ def eigenstructure(cases, debug=False):
         cases[case]['[eigen_structure]'] = modes
 
     return cases
+
 
 if __name__ == '__main__':
     pass
