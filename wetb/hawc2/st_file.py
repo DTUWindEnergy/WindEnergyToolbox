@@ -24,8 +24,8 @@ class StFile(object):
     - m : mass per unit length [kg/m]
     - x_cg : xc2-coordinate from C1/2 to mass center [m]
     - y_cg : yc2-coordinate from C1/2 to mass center [m]
-    - rix : radius of gyration related to elastic center. Corresponds to rotation about principal bending xe axis [m]
-    - riy : radius of gyration related to elastic center. Corresponds to rotation about principal bending ye axis [m]
+    - ri_x : radius of gyration related to elastic center. Corresponds to rotation about principal bending xe axis [m]
+    - ri_y : radius of gyration related to elastic center. Corresponds to rotation about principal bending ye axis [m]
     - xs : xc2-coordinate from C1/2 to shear center [m]. The shear center is the point where external forces only contributes to pure bending and no torsion.
     - ys : yc2-coordinate from C1/2 to shear center [m]. The shear center is the point where external forces only contributes to pure bending and no torsion.
     - E : modulus of elasticity [N/m2]
@@ -97,6 +97,9 @@ class StFile(object):
             return r
         return r[np.argmin(np.abs(r - radius))]
 
+    def to_str(self, mset=1, set=1):
+        d = self.main_data_sets[mset][set]
+        return "\n".join([("%12.5e "*d.shape[1]) % tuple(row) for row in d])
 
 
 if __name__ == "__main__":
