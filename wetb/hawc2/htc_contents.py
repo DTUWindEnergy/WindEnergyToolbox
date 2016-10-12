@@ -41,6 +41,7 @@ def fmt_value(v):
         return float(v)
     except ValueError:
         return v
+
 c = 0
 class HTCContents(object):
     lines = []
@@ -382,3 +383,27 @@ class HTCDefaults(object):
             except KeyError:
                 pass
             mann.std_scaling = "%f %f %f" % std_scaling
+
+
+    def import_dtu_we_controller_input(self, filename):
+        dtu_we_controller = [dll for dll in self.dll if dll.name[0] == 'dtu_we_controller'][0]
+        with open (filename) as fid:
+            lines = fid.readlines()
+        K_r1 = float(lines[1].replace("K = ", '').replace("[Nm/(rad/s)^2]", ''))
+        Kp_r2 = float(lines[4].replace("Kp = ", '').replace("[Nm/(rad/s)]", ''))
+        Ki_r2 = float(lines[5].replace("Ki = ", '').replace("[Nm/rad]", ''))
+        Kp_r3 = float(lines[7].replace("Kp = ", '').replace("[rad/(rad/s)]", ''))
+        Ki_r3 = float(lines[8].replace("Ki = ", '').replace("[rad/rad]", ''))
+        KK = lines[9].split("]")
+        KK1 = float(KK[0].replace("K1 = ", '').replace("[deg", ''))
+        KK2 = float(KK[1].replace(", K2 = ", '').replace("[deg^2", ''))
+        cs = dtu_we_controller.init
+        cs.constant__11.values[1] = "%.6E" % K_r1
+        cs.constant__12.values[1] = "%.6E" % Kp_r2
+        cs.constant__13.values[1] = "%.6E" % Ki_r2
+        cs.constant__16.values[1] = "%.6E" % Kp_r3
+        cs.constant__17.values[1] = "%.6E" % Ki_r3
+        cs.constant__21.values[1] = "%.6E" % KK1
+        cs.constant__22.values[1] = "%.6E" % KK2
+
+
