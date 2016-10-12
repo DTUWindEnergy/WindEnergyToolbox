@@ -26,7 +26,6 @@ class Resource(object):
             total, free, user = self.check_resources()
         except:
             return False
-
         if user < self.min_cpu:
             return True
         elif free > self.min_free:
@@ -77,7 +76,10 @@ class SSHPBSClusterResource(Resource, SSHClient):
 
                 return nodeSum['used_cpu'] + cpu_free, cpu_free, cpu_user
             except Exception as e:
-                raise EnvironmentError("check resources failed")
+                if str(e) == "Password not set":
+                    raise EnvironmentError(str(e))
+                else:
+                    raise EnvironmentError("check resources failed")
 
     def jobids(self, jobname_prefix):
             _, output, _ = self.execute('qstat -u %s' % self.username)
@@ -93,10 +95,10 @@ class SSHPBSClusterResource(Resource, SSHClient):
 
 
 class LocalResource(Resource):
-    def __init__(self, process_name):
-        N = max(1, multiprocessing.cpu_count() / 2)
-        Resource.__init__(self, N, multiprocessing.cpu_count())
-        self.process_name = process_name
+    def __init__(self, cpu_limit):
+
+        Resource.__init__(self, cpu_limit, multiprocessing.cpu_count())
+        #self.process_name = process_name
         self.host = 'Localhost'
 
     def check_resources(self):
@@ -109,6 +111,7 @@ class LocalResource(Resource):
 
         no_cpu = multiprocessing.cpu_count()
         cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
-        no_current_process = len([i for i in psutil.pids() if name(i).lower().startswith(self.process_name.lower())])
-        used = max(self.acquired, no_cpu - cpu_free, no_current_process)
+        #no_current_process = len([i for i in psutil.pids() if name(i) == self.process_name.lower()])
+        #used = max(self.acquired, no_cpu - cpu_free, no_current_process)
+        used = self.acquired
         return no_cpu, cpu_free, used
