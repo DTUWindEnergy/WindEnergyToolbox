@@ -34,7 +34,7 @@ def from_unix(sec):
             return datetime.utcfromtimestamp(0)
         return datetime.utcfromtimestamp(sec)
     else:
-        sec = np.array(sec)
+        sec = np.array(sec).astype(np.float)
         ms = np.atleast_1d((sec * 1000000 % 1000000).astype(np.int))
         sec = sec.astype(np.int)
         S = np.atleast_1d(sec % 60)

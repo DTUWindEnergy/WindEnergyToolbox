@@ -31,7 +31,7 @@ class Test_gsdf(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(Test_gsdf, cls).tearDownClass()
-        shutil.rmtree(tmp_path)
+        #shutil.rmtree(tmp_path)
 
     def test_minimum_requirements (self):
         fn = tmp_path + "minimum.hdf5"
@@ -170,15 +170,27 @@ class Test_gsdf(unittest.TestCase):
 
     def test_append(self):
         fn = tmp_path + 'append.hdf5'
-        d = np.arange(12, dtype=np.float32).reshape(6, 2)
+        d = np.arange(48, dtype=np.float32).reshape(24, 2)
         d[2, 0] = np.nan
         gtsdf.save(fn, d)
         _, data, _ = gtsdf.load(fn)
-        np.testing.assert_array_almost_equal(data, d, 4)
+        np.testing.assert_array_almost_equal(data, d, 3)
         gtsdf.append_block(fn, d)
         _, data, _ = gtsdf.load(fn)
-        self.assertEqual(data.shape, (12, 2))
-        np.testing.assert_array_almost_equal(data, np.append(d, d, 0), 4)
+        self.assertEqual(data.shape, (48, 2))
+        np.testing.assert_array_almost_equal(data, np.append(d, d, 0), 3)
+        f = h5py.File(fn)
+        self.assertIn('gains', f['block0001'])
+        f.close()
+
+    def test_append_small_block(self):
+        fn = tmp_path + 'append_small_block.hdf5'
+        d = np.arange(12, dtype=np.float32).reshape(2, 6)
+        gtsdf.save(fn, d)
+        gtsdf.append_block(fn, d + 12)
+        f = h5py.File(fn)
+        self.assertNotIn('gains', f['block0001'])
+        f.close()
 
 
     def test_nan_float(self):
@@ -223,6 +235,9 @@ class Test_gsdf(unittest.TestCase):
         self.assertEqual(time[1], 0.05)
         self.assertEqual(data[1, 1], 11.986652374267578)
         self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
+
+
+
 
 
 

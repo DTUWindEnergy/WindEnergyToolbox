@@ -322,6 +322,9 @@ def append_block(filename, data, **kwargs):
             dtype = kwargs.get('dtype', np.uint16)
         else:
             dtype = f[block_name_fmt % 0]['data'].dtype
+            if dtype == np.uint16:
+                if no_observations < 12:  # size with float32<1.2*size with uint16
+                    dtype = np.float32
 
         block = f.create_group(block_name_fmt % blocknr)
         if 'time' in kwargs:

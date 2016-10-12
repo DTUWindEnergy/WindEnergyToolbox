@@ -42,10 +42,14 @@ from .gtsdf import load_pandas
 class Dataset(object):
     def __init__(self, filename):
         self.time, self.data, self.info = load(filename)
-    def __call__(self, name):
-        if name == "Time":
+    def __call__(self, id):
+        if isinstance(id, str):
+            return self((['Time'] + self.info['attribute_names']).index(id) + 1)
+        if id == 1:
             return self.time
-        return self.data[:, self.info['attribute_names'].index(name)]
+        else:
+            return self.data[:, id - 2]
+
 
 
 __all__ = sorted([m for m in set(dir()) - set(d)])
