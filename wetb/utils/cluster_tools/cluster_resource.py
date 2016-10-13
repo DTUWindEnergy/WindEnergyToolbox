@@ -62,7 +62,7 @@ class SSHPBSClusterResource(Resource, SSHClient):
                     pbsnodes, nodes = pbswrap.parse_pbsnode_lall(output.split("\n"))
 
                     _, output, _ = self.execute('qstat -n1')
-                    users, host, nodesload = pbswrap.parse_qstat_n1(output.split("\n"))
+                    users, host, nodesload = pbswrap.parse_qstat_n1(output.split("\n"), self.host)
 
 
                 # if the user does not have any jobs, this will not exist
@@ -76,10 +76,8 @@ class SSHPBSClusterResource(Resource, SSHClient):
 
                 return nodeSum['used_cpu'] + cpu_free, cpu_free, cpu_user
             except Exception as e:
-                if str(e) == "Password not set":
-                    raise EnvironmentError(str(e))
-                else:
-                    raise EnvironmentError("check resources failed")
+                raise EnvironmentError(str(e))
+
 
     def jobids(self, jobname_prefix):
             _, output, _ = self.execute('qstat -u %s' % self.username)
