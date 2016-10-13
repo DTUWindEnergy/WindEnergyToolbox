@@ -37,7 +37,13 @@ class SSHClient(object):
         self.disconnect += 1
         if self.client is None or self.client._transport is None or self.client._transport.is_active() is False:
             self.close()
-            self.connect()
+            try:
+                self.connect()
+                self.disconnect = 1
+            except Exception as e:
+                self.close()
+                self.disconnect = 0
+                raise e
         return self.client
 
     def connect(self):
@@ -99,7 +105,6 @@ class SSHClient(object):
         return out.strip() == "File exists"
 
     def execute(self, command, sudo=False, verbose=False):
-
         feed_password = False
         if sudo and self.username != "root":
             command = "sudo -S -p '' %s" % command
@@ -113,7 +118,7 @@ class SSHClient(object):
             if ssh is None:
                 exc_info = sys.exc_info()
                 traceback.print_exception(*exc_info)
-                raise Exception("ssh_client exe ssh is NOne")
+                raise Exception("ssh_client exe ssh is None")
             stdin, stdout, stderr = ssh.exec_command(command)
             if feed_password:
                 stdin.write(self.password + "\n")
