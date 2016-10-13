@@ -176,7 +176,7 @@ def parse_pbsnode_lall(output):
     return pbsnodes, nodes
 
 
-def parse_qstat_n1(output):
+def parse_qstat_n1(output, hostname=None):
     """
     Parse the output of qstat -n1
     """
@@ -188,26 +188,22 @@ def parse_qstat_n1(output):
     host = {}
     users = {}
     # get the hostname
-    hostname = socket.gethostname()
-    if hostname[:5] == 'g-000':
+    if hostname is None:
+        hostname = socket.gethostname()
+    if 'jess' in hostname:
+        host['name'] = 'jess'
+        host['cpu_per_node'] = 20
+    else:
         host['name'] = 'gorm'
         host['cpu_per_node'] = 12
-    else:
-        # 272 nodes are 2 x 10 core (twenty) processors
-        host['name'] = 'jess'
-        #total_nodes = 80
-        host['cpu_per_node'] = 20
+
     # take the available nodes in nr_nodes: it excludes the ones
     # who are down
     #queue['_total_cpu_'] = cpu_node*nr_nodes
 
-    ii = 0
-    for line in output:
-        # first 5 are not relevant
-        if ii < 5:
-            ii += 1
+    for line in output[5:]:
+        if len(line.strip()) == 0:
             continue
-
         items = line.split()
         queue = items[2]
 
@@ -267,8 +263,6 @@ def parse_qstat_n1(output):
                     nodesload[node].append(userid)
                 except KeyError:
                     nodesload[node] = [userid]
-
-        ii += 1
 
     return users, host, nodesload
 
