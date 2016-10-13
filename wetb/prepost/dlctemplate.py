@@ -443,7 +443,7 @@ if __name__ == '__main__':
                     force_dir=P_RUN, saveinterval=2000, csv=opt.csv,
                     statistics=opt.stats, years=opt.years, neq=opt.neq,
                     fatigue=opt.fatigue, A=opt.rotarea, AEP=opt.AEP,
-                    no_bins=opt.no_bins, nn_blr=opt.nn_blr, nn_twt=opt.nn_twt,
+                    no_bins=opt.no_bins,
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
