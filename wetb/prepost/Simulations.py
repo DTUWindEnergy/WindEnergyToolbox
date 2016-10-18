@@ -1942,7 +1942,12 @@ class PBS(object):
             self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
-        self.winefix = 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+
+        # determine at runtime if winefix has to be ran
+        self.winefix = '  _HOSTNAME_=`hostname`\n'
+        self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then \n'
+        self.winefix += '    WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+        self.winefix += '  fi\n'
 
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels
@@ -2228,7 +2233,7 @@ class PBS(object):
                 self.pbs += "  cp -R $PBS_O_WORKDIR/%s ./%s \n" % (fname, fgen)
 
             # only apply the wine fix in PBS mode
-            self.pbs += '  ' + self.winefix
+            self.pbs += self.winefix
             # TODO: activate python env, calculate post-processing
 #            self.pbs += 'echo `python -c "import wetb; print(wetb.__version__)"`\n'
 

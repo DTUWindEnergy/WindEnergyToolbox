@@ -37,7 +37,10 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   mkdir -p turb/
   cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp11_s101.htc ./htc/dlc01_demos/
   cp -R $PBS_O_WORKDIR/../turb/turb_s101_11ms*.bin turb/ 
-  WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
+  _HOSTNAME_=`hostname`
+  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then 
+    WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
+  fi
 # ------------------------------------------------------------
 else
   # with find+xargs we first browse to CPU folder
