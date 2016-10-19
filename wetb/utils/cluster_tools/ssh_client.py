@@ -158,11 +158,7 @@ class SSHClient(object):
         cwd = os.path.join(cwd, os.path.split(filepattern)[0]).replace("\\", "/")
         filepattern = os.path.split(filepattern)[1]
         _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
-        files = []
-        for file in out.strip().split("\n"):
-            if file != "":
-                files.append(file.strip())
-        return files
+        return [file for file in out.strip().split("\n") if file != ""]
 
 
 class SharedSSHClient(SSHClient):
