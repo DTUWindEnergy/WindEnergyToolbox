@@ -466,7 +466,7 @@ class SimulationThread(Thread):
         with open (os.path.join(self.modelpath, stdout), 'wb') as stdout:
             if isinstance(hawc2exe, tuple):
                 wine, hawc2exe = hawc2exe
-                self.process = subprocess.Popen([wine, hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=True, cwd=modelpath) #shell must be True to inwoke wine
+                self.process = subprocess.Popen(" ".join([wine, hawc2exe, htcfile]), stdout=stdout, stderr=STDOUT, shell=True, cwd=modelpath) #shell must be True to inwoke wine
             else:
                 self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
             self.process.communicate()
