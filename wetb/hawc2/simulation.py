@@ -86,7 +86,7 @@ class Simulation(object):
         if not os.path.isabs(htcfilename):
             htcfilename = os.path.join(modelpath, htcfilename)
         self.filename = os.path.basename(htcfilename)
-        self.htcFile = HTCFile(htcfilename)
+        self.htcFile = HTCFile(htcfilename, os.path.relpath(self.modelpath,os.path.dirname(htcfilename)))
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
@@ -127,7 +127,7 @@ class Simulation(object):
     def abort(self, update_status=True):
         if self.status != QUEUED:
             self.host.stop()
-            for _ in range(100):
+            for _ in range(50):
                 if self.is_simulating is False:
                     break
                 time.sleep(0.1)
@@ -175,7 +175,7 @@ class Simulation(object):
                 src = os.path.relpath (src)
             assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
             return src
-        input_patterns = [fmt(src) for src in self.htcFile.input_files() + self.htcFile.turbulence_files() + self.additional_files().get('input', [])]
+        input_patterns = [fmt(src) for src in self.htcFile.input_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + self.additional_files().get('input', [])]
         input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.modelpath, pattern)) if os.path.isfile(f)])
         if not os.path.isdir(os.path.dirname(self.modelpath + self.stdout_filename)):
             os.makedirs(os.path.dirname(self.modelpath + self.stdout_filename))
@@ -435,7 +435,6 @@ class LocalSimulationHost(SimulationResource):
         self.logFile.update_status()
 
     def stop(self):
-        if self.simulationThread.is_alive():
             self.simulationThread.stop()
             self.simulationThread.join()
 
@@ -466,7 +465,8 @@ class SimulationThread(Thread):
 
         with open (os.path.join(self.modelpath, stdout), 'wb') as stdout:
             if isinstance(hawc2exe, tuple):
-                self.process = subprocess.Popen(list(hawc2exe + (htcfile, stdout)), stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)
+                wine, hawc2exe = hawc2exe
+                self.process = subprocess.Popen([wine, hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=True, cwd=modelpath) #shell must be True to inwoke wine
             else:
                 self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
             self.process.communicate()
@@ -506,7 +506,7 @@ class SimulationThread(Thread):
     def stop(self):
         if hasattr(self, 'process'):
             subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=self.process.pid))
-
+        
 
 class PBSClusterSimulationHost(SimulationResource, SSHClient):
     def __init__(self, simulation, resource, host, username, password, port=22):
@@ -649,7 +649,7 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
 #PBS -j oe
 #PBS -o %s
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
-#PBS -l walltime=01:00:00
+#PBS -l walltime=04:00:00
 ###PBS -a 201547.53
 #PBS -lnodes=1:ppn=1
 ### Queue name
@@ -661,6 +661,11 @@ cp -R . /scratch/$USER/$PBS_JOBID
 ### Execute commands on scratch nodes
 cd /scratch/$USER/$PBS_JOBID
 pwd
+export PATH=/home/python/miniconda3/bin:$PATH
+source activate wetb_py3
+WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
+### modelpath: %s
+### htc: %s 
 echo "---------------------"
 %s -c "from wetb.hawc2.cluster_simulation import ClusterSimulation;ClusterSimulation('.','%s', ('%s','%s'))"
 echo "---------------------"
@@ -672,7 +677,7 @@ cd /scratch/$USER/$PBS_JOBID
 echo $PBS_JOBID
 cd /scratch/
 ### rm -r $PBS_JOBID
-exit""" % (self.simulation_id, self.stdout_filename, self.resource.python_cmd, rel_htcfilename, self.resource.wine_cmd, self.hawc2exe, cp_back)
+exit""" % (self.simulation_id, self.stdout_filename, self.modelpath, self.htcFile.filename, self.resource.python_cmd, rel_htcfilename, self.resource.wine_cmd, self.hawc2exe, cp_back)
 
 
 
