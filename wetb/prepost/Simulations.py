@@ -4609,6 +4609,12 @@ class Cases(object):
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
         # available material constants
         ms, cols = [], []
         for key in dfs:
@@ -4617,7 +4623,7 @@ class Cases(object):
         # when multiple DLC cases are included, add extra cols to identify each
         # DLC group. Make a copy, because extra_cols does not get re-initiated
         # when defined as an optional keyword argument
-        extra_cols_ = copy.copy(extra_cols + ['channel'])
+        extra_cols_ = copy.copy(extra_cols + [chan_col_name])
         cols = copy.copy(ms)
         cols.extend(extra_cols_)
         # ---------------------------------------------------------------------
@@ -4628,7 +4634,7 @@ class Cases(object):
         dfs = dfs.set_index('[case_id]')
         # which rows to keep: a
         # select for each channel all the cases
-        for grname, gr in dfs.groupby(dfs.channel):
+        for grname, gr in dfs.groupby(dfs[chan_col_name]):
             # if one m has any nan's, assume none of them are good and throw
             # away
 #            if np.isnan(gr[ms[0]].values).any():
