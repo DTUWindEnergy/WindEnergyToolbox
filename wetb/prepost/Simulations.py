@@ -1058,6 +1058,19 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
     ----------
 
     cases : either a string (path to file) or the cases itself
+
+    save_iter : boolean, default=False
+        Set to True to save the number of iterations per time step in
+        *.iter file (in the same folder as the logfile)
+
+    path_errorlog : str, default=None
+        Root path of the error logfiles. If set to None (default), the
+        value set in the [run_dir] tag is used as the root folder of the
+        logfiles.
+
+    suffix : str, default=None
+        If not None, the suffix will be appended to file name of the error
+        log analysis file as follows: "ErrorLog_suffix.csv".
     """
 
     # TODO: finish support for default location of the cases and file name
@@ -3570,6 +3583,27 @@ class Cases(object):
 
         check the logs files and make sure result files are present and
         accounted for.
+
+        Parameters
+        ----------
+
+        save_iter : boolean, default=False
+            Set to True to save the number of iterations per time step in
+            *.iter file (in the same folder as the logfile)
+
+        pbs_failed_path : str, default=False
+            If not False, specify the path to which the *.p files of the
+            failed cases should be copied to. For example, the dlctemplate
+            will set this value to "pbs_in_fail".
+
+        path_errorlog : str, default=None
+            Root path of the error logfiles. If set to None (default), the
+            value set in the [run_dir] tag is used as the root folder of the
+            logfiles.
+
+        suffix : str, default=None
+            If not None, the suffix will be appended to file name of the error
+            log analysis file as follows: "ErrorLog_suffix.csv".
         """
         # TODO: integrate global post_launch in here
         self.cases_fail = post_launch(self.cases, save_iter=save_iter,
