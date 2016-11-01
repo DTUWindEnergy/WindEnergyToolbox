@@ -361,7 +361,7 @@ if __name__ == '__main__':
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
     parser.add_argument('--pbs_failed_path', default='pbs_in_fail', type=str,
-                        default=None, action='store', dest='pbs_failed_path',
+                        action='store', dest='pbs_failed_path',
                         help='Copy pbs launch files of the failed cases to a '
                         'new directory in order to prepare a re-run. Default '
                         'value: pbs_in_failed.')
