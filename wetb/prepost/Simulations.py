@@ -3563,7 +3563,7 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False, copy_pbs_failed=True, suffix=None,
+    def post_launch(self, save_iter=False, pbs_failed_path=False, suffix=None,
                     path_errorlog=None, silent=False):
         """
         Post Launching Maintenance
@@ -3575,8 +3575,8 @@ class Cases(object):
         self.cases_fail = post_launch(self.cases, save_iter=save_iter,
                                       suffix=suffix, path_errorlog=path_errorlog)
 
-        if copy_pbs_failed:
-            copy_pbs_in_failedcases(self.cases_fail, path='pbs_in_fail',
+        if pbs_failed_path is not False:
+            copy_pbs_in_failedcases(self.cases_fail, path=pbs_failed_path,
                                     silent=silent)
 
         if self.rem_failed:

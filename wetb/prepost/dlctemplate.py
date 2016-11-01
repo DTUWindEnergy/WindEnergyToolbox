@@ -266,7 +266,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
                 years=20.0, fatigue=True, A=None, AEP=False,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
-                save_iter=False):
+                save_iter=False, pbs_failed_path=False):
 
     # =========================================================================
     # check logfiles, results files, pbs output files
@@ -286,7 +286,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
             cc.cases[case]['[run_dir]'] = force_dir
 
     if check_logs:
-        cc.post_launch(save_iter=save_iter)
+        cc.post_launch(save_iter=save_iter, pbs_failed_path=pbs_failed_path)
     elif rem_failed:
         cc.remove_failed()
 
@@ -360,6 +360,11 @@ if __name__ == '__main__':
                         dest='prep', help='create htc, pbs, files')
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
+    parser.add_argument('--pbs_failed_path', default='pbs_in_fail', type=str,
+                        default=None, action='store', dest='pbs_failed_path',
+                        help='Copy pbs launch files of the failed cases to a '
+                        'new directory in order to prepare a re-run. Default '
+                        'value: pbs_in_failed.')
     parser.add_argument('--stats', action='store_true', default=False,
                         dest='stats', help='calculate statistics and 1Hz '
                                            'equivalent loads')
@@ -443,7 +448,7 @@ if __name__ == '__main__':
                     force_dir=P_RUN, saveinterval=2000, csv=opt.csv,
                     statistics=opt.stats, years=opt.years, neq=opt.neq,
                     fatigue=opt.fatigue, A=opt.rotarea, AEP=opt.AEP,
-                    no_bins=opt.no_bins,
+                    no_bins=opt.no_bins, pbs_failed_path=opt.pbs_failed_path,
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
