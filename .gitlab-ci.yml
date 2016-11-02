@@ -5,5 +5,5 @@ test-3.4:
   image: mmpe/wetb
   script:
   - python3 setup.py test
-  - coverage3 run ./tests/run_pytest.py
-  - coverage3 report -m
+  # - coverage3 run ./tests/run_pytest.py
+  # - coverage3 report -m
