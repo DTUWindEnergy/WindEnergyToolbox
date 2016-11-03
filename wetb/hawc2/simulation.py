@@ -458,11 +458,7 @@ class SimulationThread(Thread):
         stdout = self.sim.stdout_filename
         if not os.path.isdir(os.path.dirname(self.modelpath + self.sim.stdout_filename)):
             os.makedirs(os.path.dirname(self.modelpath + self.sim.stdout_filename))
-        #if os.name == "nt":
-        #    self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
-        #else:
-        #    self.process = subprocess.Popen('wine "%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=True, cwd=modelpath)
-
+        
         with open (os.path.join(self.modelpath, stdout), 'wb') as stdout:
             if isinstance(hawc2exe, tuple):
                 wine, hawc2exe = hawc2exe
@@ -470,15 +466,6 @@ class SimulationThread(Thread):
             else:
                 self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
             self.process.communicate()
-
-
-#        if isinstance(hawc2exe, tuple):
-#            self.process = subprocess.Popen('%s "%s" %s 1> %s 2>&1' % (hawc2exe + (htcfile, stdout)), stdout=None, stderr=None, shell=False, cwd=modelpath)
-#        else:
-#            self.process = subprocess.Popen('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout), stdout=None, stderr=None, shell=False, cwd=modelpath)  #, creationflags=CREATE_NO_WINDOW)
-#            with open("cmd.txt", 'w') as fid:
-#                fid.write("cd %s\n" % modelpath)
-#                fid.write('"%s" %s 1> %s 2>&1' % (hawc2exe, htcfile, stdout))
 
         import psutil
         try:

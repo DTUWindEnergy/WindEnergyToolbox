@@ -35,6 +35,8 @@ def set_cache_property(obj, name, get_func, set_func=None):
     >>> e = Example()
     >>> e.test # Call, store and return result of e.slow_function
     >>> e.test # Return stored result of e.slow_function
+    >>> e._test = None # clear cache result
+    >>> e.test # Call, store and return result of e.slow_function
     """
     _name = "_" + name
     setattr(obj, _name, None)
