@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
 from wetb.utils.cython_compile.cython_compile import cython_import
-cython_import('pair_range')
-cython_import('peak_trough')
-cython_import('rainflowcount_astm')
+if __name__=="__main__":
+    cython_import('pair_range')
+    cython_import('peak_trough')
+    cython_import('rainflowcount_astm')
