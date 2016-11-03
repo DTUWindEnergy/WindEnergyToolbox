@@ -6,4 +6,4 @@ test-3.4:
   script:
   #- python3 setup.py test
    - python3 -m coverage run ./tests/run_pytest.py
-   - python3 -m coverage report -m
+   - python3 -m coverage report
