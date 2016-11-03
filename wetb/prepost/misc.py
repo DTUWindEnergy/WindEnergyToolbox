@@ -19,22 +19,17 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import object
 
-
-
-#print(*objects, sep=' ', end='\n', file=sys.stdout)
 import os
 import sys
 import shutil
 import unittest
 import pickle
 
-#from xlrd import open_workbook
 import numpy as np
 import scipy as sp
 from scipy import optimize as opt
 from scipy import stats
-#import scipy.interpolate
-#import scipy.ndimage
+from scipy.interpolate import griddata as interp
 from matplotlib import pyplot as plt
 import pandas as pd
 
@@ -950,6 +945,9 @@ def histfit(hist, bin_edges, xnew):
     http://nbviewer.ipython.org/url/xweb.geos.ed.ac.uk/~jsteven5/blog/
     fitting_distributions_from_percentiles.ipynb
 
+    Calculate the CDF of given PDF, and fit a lognorm distribution onto the
+    CDF. This obviously only works if your PDF is lognorm.
+
     Parameters
     ----------
 
@@ -986,6 +984,87 @@ def histfit(hist, bin_edges, xnew):
     width = np.diff(x_hist).mean()
     pdf_fit = pdf_fit / (pdf_fit * width).sum()
     return shape_out, scale_out, pdf_fit
+
+
+def histfit_arbritrary(edges, pdf, edges_new, resolution=100):
+    """Re-bin based on the CDF of a PDF. Assume normal distribution within
+    a bin to transform the CDF to higher resolution.
+
+    Parameters
+    ----------
+
+    edges : ndarray(n+1)
+        edges of the bins, inlcuding most left and right edges.
+
+    pdf : ndarray(n)
+        probability of the bins
+
+    edges_new : ndarray(m+1)
+        edges of the new bins
+
+    resolution : int
+        resolution of the intermediate CDF used for re-fitting.
+
+
+    Returns
+    -------
+
+    centers_new : ndarray(m)
+
+    widths_new : ndarray(m)
+
+    pdf_new : ndarray(m)
+
+    """
+
+    x_hd = np.ndarray((0,))
+    cdf_hd = np.ndarray((0,))
+    binw = np.ndarray((0,))
+
+    for i in range(len(pdf)):
+        # HD grid for x
+        x_inc = np.linspace(edges[i], edges[i+1], num=resolution)
+
+        # FIXME: let the distribution in a bin be a user configurable input
+        # define a distribution within the bin: norm
+        shape = 2.5
+        scale = shape*2/10
+        x_inc = np.linspace(0, scale*10, num=resolution)
+        cdf_inc = stats.norm.cdf(x_inc, shape, scale=scale)
+
+        # scale cdf_inc and x-coordinates
+        cdf_inc_scale = pdf[i] * cdf_inc / cdf_inc[-1]
+        binw = edges[i+1] - edges[i]
+        x_inc_scale = edges[i] + (binw * x_inc / x_inc[-1])
+
+        # add to the new hd corodinates and cdf
+        x_hd = np.append(x_hd, x_inc_scale)
+        if i == 0:
+            cdf_i  = 0
+        else:
+            cdf_i = cdf_hd[-1]
+        cdf_hd = np.append(cdf_hd, cdf_inc_scale + cdf_i)
+
+#        plt.plot(x_inc, cdf_inc)
+#        plt.plot(x_inc_scale, cdf_inc_scale)
+
+    cdf_new = interp(x_hd, cdf_hd, edges_new)
+    # last point includes everything that comes after
+    cdf_new[-1] = 1
+    pdf_new = np.diff(cdf_new)
+    widths_new = np.diff(edges_new)
+    centers_new = widths_new + edges[0]
+    # the first bin also includes everything that came before
+    pdf_new[0] += cdf_new[0]
+    pdf_new /= pdf_new.sum()
+
+#    plt.plot(x_hd, cdf_hd)
+#    plt.plot(edges_new, cdf_new, 'rs')
+#
+#    plt.bar(edges_new[:-1], pdf_new, width=widths_new, color='b')
+#    plt.bar(edges[:-1], pdf, width=np.diff(edges), color='r', alpha=0.7)
+
+    return centers_new, widths_new, pdf_new
 
 
 def hist_centers2edges(centers):

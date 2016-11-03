@@ -1,4 +1,6 @@
 
+[![build status](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/build.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
+[![coverage report](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/coverage.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
 # Introduction
 
 The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection

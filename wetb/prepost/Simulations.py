@@ -1058,6 +1058,19 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
     ----------
 
     cases : either a string (path to file) or the cases itself
+
+    save_iter : boolean, default=False
+        Set to True to save the number of iterations per time step in
+        *.iter file (in the same folder as the logfile)
+
+    path_errorlog : str, default=None
+        Root path of the error logfiles. If set to None (default), the
+        value set in the [run_dir] tag is used as the root folder of the
+        logfiles.
+
+    suffix : str, default=None
+        If not None, the suffix will be appended to file name of the error
+        log analysis file as follows: "ErrorLog_suffix.csv".
     """
 
     # TODO: finish support for default location of the cases and file name
@@ -3563,20 +3576,41 @@ class Cases(object):
         launch(self.cases, runmethod=runmethod, verbose=verbose, silent=silent,
                check_log=check_log, copyback_turb=copyback_turb)
 
-    def post_launch(self, save_iter=False, copy_pbs_failed=True, suffix=None,
+    def post_launch(self, save_iter=False, pbs_failed_path=False, suffix=None,
                     path_errorlog=None, silent=False):
         """
         Post Launching Maintenance
 
         check the logs files and make sure result files are present and
         accounted for.
+
+        Parameters
+        ----------
+
+        save_iter : boolean, default=False
+            Set to True to save the number of iterations per time step in
+            *.iter file (in the same folder as the logfile)
+
+        pbs_failed_path : str, default=False
+            If not False, specify the path to which the *.p files of the
+            failed cases should be copied to. For example, the dlctemplate
+            will set this value to "pbs_in_fail".
+
+        path_errorlog : str, default=None
+            Root path of the error logfiles. If set to None (default), the
+            value set in the [run_dir] tag is used as the root folder of the
+            logfiles.
+
+        suffix : str, default=None
+            If not None, the suffix will be appended to file name of the error
+            log analysis file as follows: "ErrorLog_suffix.csv".
         """
         # TODO: integrate global post_launch in here
         self.cases_fail = post_launch(self.cases, save_iter=save_iter,
                                       suffix=suffix, path_errorlog=path_errorlog)
 
-        if copy_pbs_failed:
-            copy_pbs_in_failedcases(self.cases_fail, path='pbs_in_fail',
+        if pbs_failed_path is not False:
+            copy_pbs_in_failedcases(self.cases_fail, path=pbs_failed_path,
                                     silent=silent)
 
         if self.rem_failed:
@@ -4609,6 +4643,12 @@ class Cases(object):
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
         # available material constants
         ms, cols = [], []
         for key in dfs:
@@ -4617,7 +4657,7 @@ class Cases(object):
         # when multiple DLC cases are included, add extra cols to identify each
         # DLC group. Make a copy, because extra_cols does not get re-initiated
         # when defined as an optional keyword argument
-        extra_cols_ = copy.copy(extra_cols + ['channel'])
+        extra_cols_ = copy.copy(extra_cols + [chan_col_name])
         cols = copy.copy(ms)
         cols.extend(extra_cols_)
         # ---------------------------------------------------------------------
@@ -4628,7 +4668,7 @@ class Cases(object):
         dfs = dfs.set_index('[case_id]')
         # which rows to keep: a
         # select for each channel all the cases
-        for grname, gr in dfs.groupby(dfs.channel):
+        for grname, gr in dfs.groupby(dfs[chan_col_name]):
             # if one m has any nan's, assume none of them are good and throw
             # away
 #            if np.isnan(gr[ms[0]].values).any():
