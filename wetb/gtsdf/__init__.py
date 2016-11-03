@@ -48,8 +48,18 @@ class Dataset(object):
         if id == 1:
             return self.time
         else:
-            return self.data[:, id - 2]
+            return self.data[:, id - 1]
 
+    def __getattribute__(self, name):
+        try:
+            return object.__getattribute__(self, name)
+            
+        except Exception as e:
+            try:
+                return self(name)
+            except:
+                raise e
+            
 
 
 __all__ = sorted([m for m in set(dir()) - set(d)])
