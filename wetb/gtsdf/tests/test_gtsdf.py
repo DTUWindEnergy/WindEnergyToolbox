@@ -33,9 +33,6 @@ class Test_gsdf(unittest.TestCase):
         super(Test_gsdf, cls).tearDownClass()
         #shutil.rmtree(tmp_path)
 
-
-    def test_error(self):
-        raise Exception()
     def test_minimum_requirements (self):
         fn = tmp_path + "minimum.hdf5"
         f = h5py.File(fn, "w")
