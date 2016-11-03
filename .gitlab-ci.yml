@@ -4,6 +4,6 @@ before_script:
 test-3.4:
   image: mmpe/wetb
   script:
-  - python3 setup.py test
-  # - coverage3 run ./tests/run_pytest.py
-  # - coverage3 report -m
+  #- python3 setup.py test
+   - python3 -m coverage run ./tests/run_pytest.py
+   - python3 -m coverage report -m
