@@ -6,7 +6,8 @@ from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 import numpy as np
-
+from wetb.fatigue_tools.rainflowcounting import peak_trough
+from wetb.fatigue_tools.rainflowcounting import pair_range
 
 
 def check_signal(signal):
@@ -73,16 +74,14 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
 
 
         # If possible the module is compiled using cython otherwise the python implementation is used
-        from wetb.fatigue_tools.rainflowcounting.peak_trough import peak_trough
-        from wetb.fatigue_tools.rainflowcounting.pair_range import pair_range_amplitude_mean
 
 
         #Convert to list of local minima/maxima where difference > thresshold
-        sig_ext = peak_trough(signal, thresshold)
+        sig_ext = peak_trough.peak_trough(signal, thresshold)
 
 
         #rainflow count
-        ampl_mean = pair_range_amplitude_mean(sig_ext)
+        ampl_mean = pair_range.pair_range_amplitude_mean(sig_ext)
 
         ampl_mean = np.array(ampl_mean)
         ampl_mean = np.round(ampl_mean / thresshold) * gain * thresshold

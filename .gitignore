@@ -19,3 +19,4 @@ wetb/hawc2/ascii2bin/tests/test_files/Hawc2ascii_bin.sel
 wetb/hawc2/ascii2bin/tests/test_files/Hawc2ascii_bin.dat
 wetb/prepost/tests/data/demo_dlc/remote*
 
+/wetb/fatigue_tools/rainflowcounting/compile.py
