@@ -422,14 +422,14 @@ class Tests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.fpath = 'data/DLCs'
+        self.fpath = os.path.join(os.path.dirname(__file__), 'data/DLCs')
 
     def test_read_tag_exchange_file(self):
 
         df_list = misc.read_excel_files(self.fpath, fext='xlsx', pignore=None,
                                         sheet=0, pinclude=None)
 
-        df = df_list[list(df_list.keys())[0]]
+#        df = df_list[list(df_list.keys())[0]]
 #        df.fillna('', inplace=True)
 #        df.replace(';', False, inplace=True)
 
@@ -440,4 +440,3 @@ class Tests(unittest.TestCase):
 if __name__ == '__main__':
 
     unittest.main()
-
