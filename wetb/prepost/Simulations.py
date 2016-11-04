@@ -1455,7 +1455,7 @@ class HtcMaster(object):
                 for root, dirs, files in os.walk(os.path.join(plocal, path)):
                     for file_name in files:
                         src = os.path.join(root, file_name)
-                        dst = root.replace(os.path.abspath(plocal),
+                        dst = os.path.abspath(root).replace(os.path.abspath(plocal),
                                            os.path.abspath(prun))
                         if not os.path.exists(dst):
                             os.makedirs(dst)
