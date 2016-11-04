@@ -134,11 +134,16 @@ class GeneralDLC(object):
                         if formula[0] == '"':
                             if key == '[wsp]' or key == '[gridgustdelay]':
                                 fmt = '%2.2i'
+                                formula = formula.replace(key, fmt%int(dlc[key][i]))
                             elif key == '[wdir]' or key == '[G_phi0]':
                                 fmt = '%3.3i'
+                                formula = formula.replace(key, fmt%int(dlc[key][i]))
+                            elif key == '[sign]':
+                                fmt = '%s'
+                                formula = formula.replace(key, fmt%dlc[key][i])
                             else:
                                 fmt = '%4.4i'
-                            formula = formula.replace(key, fmt % int(dlc[key][i]))
+                                formula = formula.replace(key, fmt % int(dlc[key][i]))
                         elif key in formula:
                             formula = formula.replace(key, '%s' % dlc[key][i])
                 formula = formula.replace(',', '.')
@@ -270,3 +275,4 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     DLB = GenerateDLCCases()
     DLB.execute(filename=opt.filename, folder=opt.folder)
+
