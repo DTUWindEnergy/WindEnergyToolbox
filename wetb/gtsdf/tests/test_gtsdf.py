@@ -18,10 +18,10 @@ from wetb import gtsdf
 
 import unittest
 import os
-import shutil
 
 tmp_path = os.path.dirname(__file__) + "/tmp/"
-tfp = os.path.dirname(__file__) + "/test_files/"
+tfp = os.path.dirname(os.path.abspath(__file__)) + "/test_files/"
+
 class Test_gsdf(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
@@ -230,11 +230,33 @@ class Test_gsdf(unittest.TestCase):
         df = gtsdf.load_pandas(fn)
 
     def test_loadtesthdf5(self):
-
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         self.assertEqual(time[1], 0.05)
         self.assertEqual(data[1, 1], 11.986652374267578)
         self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
+    
+    def test_loadhdf5File(self):
+        f = h5py.File(tfp + 'test.hdf5')
+        time, data, info = gtsdf.load(f)
+        
+        self.assertEqual(time[1], 0.05)
+        self.assertEqual(data[1, 1], 11.986652374267578)
+        self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
+        
+        
+    def test_gtsdf_dataset(self):
+        ds = gtsdf.Dataset(tfp+'test.hdf5')
+        self.assertEqual(ds.data.shape, (2440,49))
+        self.assertEqual(ds('Time')[1], 0.05)
+        self.assertEqual(ds.Time[1], 0.05)
+        self.assertRaisesRegex(AttributeError, "'Dataset' object has no attribute 'Time1'", lambda : ds.Time1)
+        self.assertEqual(ds(2)[1], 12.04148006439209)
+        n = ds.info['attribute_names'][2]
+        self.assertEqual(n, "WSP gl. coo.,Vy")
+        self.assertEqual(ds(n)[1], 12.04148006439209)
+        
+        
+        
 
 
 

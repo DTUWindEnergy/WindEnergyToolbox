@@ -18,10 +18,10 @@ def to_unix(dateTime):
             return [(dt - timestamp0).total_seconds() for dt in dateTime]
         raise
 
-def from_unix_old(sec):
-    if np.isnan(sec):
-        return datetime.utcfromtimestamp(0)
-    return datetime.utcfromtimestamp(sec)
+# def from_unix_old(sec):
+#     if np.isnan(sec):
+#         return datetime.utcfromtimestamp(0)
+#     return datetime.utcfromtimestamp(sec)
 
 
 day_dict = {}

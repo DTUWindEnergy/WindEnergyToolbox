@@ -11,6 +11,6 @@ from future import standard_library
 standard_library.install_aliases()
 from wetb.hawc2.ascii2bin.ascii2bin import ascii2bin
 
-
-ascii2bin(r"tests/hawc2ascii.sel", "temp_hawc2ascii.sel")
+if __name__=="__main__":
+    ascii2bin(r"tests/hawc2ascii.sel", "temp_hawc2ascii.sel")
 

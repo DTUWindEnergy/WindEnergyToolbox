@@ -4,6 +4,7 @@ before_script:
 test-3.4:
   image: mmpe/wetb
   script:
-  - python3 setup.py test
-  - coverage run ./tests/run_pytest.py
-  - coverage report -m
+  #- python3 setup.py test
+  - pip3 install pytest-cov
+  - python3 -m pytest --cov=wetb
+   
