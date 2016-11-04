@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
 from future import standard_library
+import sys
 standard_library.install_aliases()
 
 import unittest
@@ -57,6 +58,8 @@ class TestFatigueTools(unittest.TestCase):
 
     def test_windap3(self):
         data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
+        from wetb.fatigue_tools.rainflowcounting import peak_trough
+        self.assertTrue(peak_trough.__file__.lower()[-4:] == ".pyd" or peak_trough.__file__.lower()[-3:] == ".so", "not compiled, %s"%sys.executable)
         np.testing.assert_array_equal(cycle_matrix(data, 4, 4, rainflow_func=rainflow_windap)[0], np.array([[  14., 65., 39., 24.],
                                                                    [  0., 1., 4., 0.],
                                                                    [  0., 0., 0., 0.],
