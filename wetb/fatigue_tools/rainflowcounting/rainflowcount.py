@@ -6,7 +6,7 @@ from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 import numpy as np
-from wetb.utils.cython_compile.cython_compile import cython_import
+
 
 
 def check_signal(signal):
@@ -73,9 +73,6 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
 
 
         # If possible the module is compiled using cython otherwise the python implementation is used
-        cython_import('wetb.fatigue_tools.rainflowcounting.peak_trough')
-        cython_import('wetb.fatigue_tools.rainflowcounting.pair_range')
-
         from wetb.fatigue_tools.rainflowcounting.peak_trough import peak_trough
         from wetb.fatigue_tools.rainflowcounting.pair_range import pair_range_amplitude_mean
 
@@ -129,7 +126,7 @@ def rainflow_astm(signal):
 
     # Import find extremes and rainflow.
     # If possible the module is compiled using cython otherwise the python implementation is used
-    cython_import('wetb.fatigue_tools.rainflowcounting.rainflowcount_astm')
+    
     from wetb.fatigue_tools.rainflowcounting.rainflowcount_astm import find_extremes, rainflowcount
 
     # Remove points which is not local minimum/maximum
