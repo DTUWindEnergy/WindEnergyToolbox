@@ -246,13 +246,14 @@ class Test_gsdf(unittest.TestCase):
         
     def test_gtsdf_dataset(self):
         ds = gtsdf.Dataset(tfp+'test.hdf5')
+        self.assertEqual(ds.data.shape, (2440,49))
         self.assertEqual(ds('Time')[1], 0.05)
         self.assertEqual(ds.Time[1], 0.05)
         self.assertRaisesRegex(AttributeError, "'Dataset' object has no attribute 'Time1'", lambda : ds.Time1)
-        self.assertEqual(ds(2)[1], 11.986652374267578)
+        self.assertEqual(ds(2)[1], 12.04148006439209)
         n = ds.info['attribute_names'][2]
         self.assertEqual(n, "WSP gl. coo.,Vy")
-        self.assertEqual(ds(n)[1], 11.986652374267578)
+        self.assertEqual(ds(n)[1], 12.04148006439209)
         
         
         

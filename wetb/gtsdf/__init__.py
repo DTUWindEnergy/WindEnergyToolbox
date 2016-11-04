@@ -44,11 +44,14 @@ class Dataset(object):
         self.time, self.data, self.info = load(filename)
     def __call__(self, id):
         if isinstance(id, str):
-            return self((['Time'] + self.info['attribute_names']).index(id) + 1)
+            if id=="Time":
+                return self.time
+            else:
+                return self(self.info['attribute_names'].index(id) + 2)
         if id == 1:
             return self.time
         else:
-            return self.data[:, id - 1]
+            return self.data[:, id - 2]
 
     def __getattribute__(self, name):
         try:
