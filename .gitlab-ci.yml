@@ -6,5 +6,5 @@ test-3.4:
   script:
   #- python3 setup.py test
   - pip3 install pytest-cov
-  - python3 -m python3 -m pytest --cov=wetb
+  - python3 -m pytest --cov=wetb
    
