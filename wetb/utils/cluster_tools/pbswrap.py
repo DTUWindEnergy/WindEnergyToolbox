@@ -359,34 +359,6 @@ def create_input(walltime='00:59:59', queue='xpresq', pbs_in='pbs_in/', ppn=1,
     return pbs_in_file
 
 
-def test():
-
-    # sample output
-    FILE = open('tests/sampleoutput_pbsnodes', 'rb')
-    output = FILE.readlines()
-    FILE.close()
-    pbsnodes, nodes = parse_pbsnode_lall(output)
-
-    # sample output
-    FILE = open('tests/sampleoutput_qstat', 'rb')
-    output = FILE.readlines()
-    FILE.close()
-    users, host, nodesload = parse_qstat_n1(output)
-
-    print_node_loading(users, host, nodes, nodesload)
-    print_dashboard(users, host, pbsnodes)
-
-
 if __name__ == '__main__':
 
-    #command = 'pbsnodes -l all' # | cut -c 22-35
-
-    output = os.popen('pbsnodes -l all').readlines()
-    pbsnodes, nodes = parse_pbsnode_lall(output)
-
-    output = os.popen('qstat -n1').readlines()
-    users, host, nodesload = parse_qstat_n1(output)
-
-    print_node_loading(users, host, nodes, nodesload)
-    print_dashboard(users, host, pbsnodes)
-
+    pass
