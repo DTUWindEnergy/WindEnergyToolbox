@@ -167,7 +167,7 @@ description [here]
 (https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/configure-wine.md).
 
 All your HAWC2 executables and DLL's are now located
-at ```/home/$USER/.wine32/drive_c/bin```.
+at ```/home/$USER/wine_exe/win32```.
 
 Notice that the HAWC2 executable names are ```hawc2-latest.exe```,
 ```hawc2-118.exe```, etc. By default the latest version will be used and the user
@@ -177,7 +177,7 @@ executable.
 
 Alternatively you can also include all the DLL's and executables in the root of
 your HAWC2 model folder. Executables and DLL's placed in the root folder take
-precedence over the ones placed in ```/home/$USER/.wine32/drive_c/bin```.
+precedence over the ones placed in ```/home/$USER/wine_exe/win32```.
 
 Log out and in again from the cluster (close and restart PuTTY).
 
@@ -195,7 +195,7 @@ When there is a new version of HAWC2, or when a new license manager is released,
 you can update your local wine directory as follows:
 
 ```
-g-000 $ cp /home/MET/hawc2exe/* /home/$USER/.wine32/drive_c/bin/
+g-000 $ cp /home/MET/hawc2exe/* /home/$USER/wine_exe/win32/
 ```
 
 The file ```hawc2-latest.exe``` will always be the latest HAWC2
