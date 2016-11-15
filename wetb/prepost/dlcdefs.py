@@ -361,6 +361,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                 tags_dict['[case_id]'] = tags_dict['[Case id.]']
             if '[time stop]' in tags_dict.keys():
                 tags_dict['[time_stop]'] = tags_dict['[time stop]']
+            else:
+                tags_dict['[time stop]'] = tags_dict['[time_stop]']
             try:
                 tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
             except KeyError:
