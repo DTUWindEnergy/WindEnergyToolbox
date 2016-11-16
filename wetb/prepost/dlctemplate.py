@@ -162,7 +162,10 @@ def variable_tag_func(master, case_id_short=False):
     mt['[log_dir]'] = 'logfiles/%s/' % dlc_case
     mt['[htc_dir]'] = 'htc/%s/' % dlc_case
     mt['[case_id]'] = mt['[Case id.]']
-    mt['[time_stop]'] = mt['[time stop]']
+    try:
+        mt['[time_stop]'] = mt['[time stop]']
+    except KeyError:
+        mt['[time stop]'] = mt['[time_stop]']
     mt['[turb_base_name]'] = mt['[Turb base name]']
     mt['[DLC]'] = mt['[Case id.]'].split('_')[0][3:]
     mt['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
