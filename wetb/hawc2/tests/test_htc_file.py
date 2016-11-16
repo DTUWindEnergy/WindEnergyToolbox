@@ -247,6 +247,11 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(str(htcfile)[0], ";")
 
 
+    def test_htc_reset(self):
+        htcfile = HTCFile(self.testfilepath + "test.htc")
+        self.assertEqual(htcfile.wind.wsp[0], 10)
+        
+
 
 
 

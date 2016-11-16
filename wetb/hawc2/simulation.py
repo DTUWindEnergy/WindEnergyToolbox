@@ -239,6 +239,8 @@ class Simulation(object):
         self.set_id(self.filename)
         if self.status != ERROR:
             self.status = CLEANED
+        self.logFile.reset()
+        self.htcFile.reset()
 
 
 
