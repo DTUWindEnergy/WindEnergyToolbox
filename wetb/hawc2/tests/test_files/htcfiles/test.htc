@@ -118,7 +118,7 @@ begin main_body;
   node_distribution     c2_def;
   damping_posdef     0.0 0.0 0.0 0.00153 0.00255 0.00033;
   begin timoschenko_input;
-        filename	./data/dtu_10mw_rwt_blade_st.dat;
+        filename	./data/DTU_10MW_RWT_Blade_st.dat;
         set	1 1;		set subset
   end timoschenko_input;
    begin c2_def;
