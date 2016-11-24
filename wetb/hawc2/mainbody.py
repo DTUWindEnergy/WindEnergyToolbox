@@ -15,12 +15,44 @@ class MainBody():
     def __init__(self, htc_filename, modelpath, body_name):
         self.htcfile = htcfile = HTCFile(htc_filename, modelpath)
         s = htcfile.new_htc_structure
-        blade_name = htcfile.aero.link[2]
-        mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
+        main_bodies = {s[k].name[0]:s[k] for k in s.keys() if s[k].name_ == "main_body"}
+        self.main_body = main_bodies[body_name]
+        self.stFile = StFile(os.path.join(htcfile.modelpath, self.main_body.timoschenko_input.filename[0]))
+        self.c2def = np.array([v.values[1:5] for v in self.main_body.c2_def if v.name_ == "sec"])
+        self.concentrated_mass = [cm.values for cm in self.main_body if cm.name_.startswith('concentrated_mass')]
 
-        blade_main_body = [mb for mb in mainbodies if mb.name[0] == blade_name][0]
-        self.stFile = StFile(os.path.join(htcfile.modelpath, blade_main_body.timoschenko_input.filename[0]))
-        self.c2def = np.array([v.values[1:5] for v in blade_main_body.c2_def if v.name_ == "sec"])
+    def plot_xz_geometry(self, plt=None):
+        if plt is None:
+            import matplotlib.pyplot as plt
+            plt.figure()
+        plt.xlabel("z")
+        plt.ylabel("x")
+        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
+        plt.plot(self.c2def[:, 2], self.c2def[:, 0],'.-', label='Center line')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_e(z), label='Elastic center')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_cg(z), label='Mass center')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_sh(z), label='Shear center')
+        for cm in self.concentrated_mass:
+            plt.plot(self.c2def[cm[0]-1,2]+cm[3],self.c2def[cm[0]-1,0]+cm[1],'x', label='Concentrated mass')
+        plt.legend()
+    
+    def plot_yz_geometry(self, plt=None):
+        if plt is None:
+            import matplotlib.pyplot as plt
+            plt.figure()
+        plt.xlabel("z")
+        plt.ylabel("y")
+        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
+        plt.plot(self.c2def[:, 2], self.c2def[:, 1], label='Center line')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_e(z), label='Elastic center')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_cg(z), label='Mass center')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_sh(z), label='Shear center')
+        for cm in self.concentrated_mass:
+            plt.plot(self.c2def[cm[0]-1,2]+cm[3],self.c2def[cm[0]-1,1]+cm[2],'x', label='Concentrated mass')
+        plt.legend()
+
+        
+
 
 class BladeData(object):
     def plot_xz_geometry(self, plt):
@@ -93,62 +125,33 @@ class BladeData(object):
 
 
 
-class H2BladeData(BladeData):
-    def __init__(self, htc_filename, modelpath):
+class Blade(MainBody, BladeData):
+    def __init__(self, htc_filename, modelpath, blade_number=1):
+        
         self.htcfile = htcfile = HTCFile(htc_filename, modelpath)
+        
+        blade_name = [link[2] for link in htcfile.aero if link.name_.startswith('link') and link[0]==blade_number][0]
+        MainBody.__init__(self, htc_filename, modelpath, blade_name)
         self.pcFile = PCFile(os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0]),
                         os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0]))
-        s = htcfile.new_htc_structure
-        blade_name = htcfile.aero.link[2]
-        mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
-
-        blade_main_body = [mb for mb in mainbodies if mb.name[0] == blade_name][0]
-        self.stFile = StFile(os.path.join(htcfile.modelpath, blade_main_body.timoschenko_input.filename[0]))
-        self.c2def = np.array([v.values[1:5] for v in blade_main_body.c2_def if v.name_ == "sec"])
-
-    def plot_geometry(self, plt=None):
+        
+    def plot_xz_geometry(self, plt=None):
         if plt is None:
             import matplotlib.pyplot as plt
+            plt.figure()
 
+        MainBody.plot_xz_geometry(self, plt)
         BladeData.plot_xz_geometry(self, plt=plt)
-        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_e(z), label='Elastic center')
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_cg(z), label='Mass center')
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.stFile.x_sh(z), label='Shear center')
-
         plt.legend()
-        plt.figure()
-        BladeData.plot_yz_geometry(self, plt=plt)
-        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_e(z), label='Elastic center')
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_cg(z), label='Mass center')
-        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.stFile.y_sh(z), label='Shear center')
-        plt.legend()
-
-        plt.show()
-
-
-
-
-class H2AeroBladeData(BladeData):
-    def __init__(self, htc_filename, modelpath):
-        self.htcfile = htcfile = HTCFile(htc_filename, modelpath)
-        self.pcFile = PCFile(os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0]),
-                        os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0]))
-        self.c2def = np.array([v.values[1:5] for v in htcfile.blade_c2_def if v.name_ == "sec"])
-
-    def plot_geometry(self, plt=None):
+    
+    def plot_geometry_yz(self, plt=None):
         if plt is None:
             import matplotlib.pyplot as plt
+            plt.figure()
 
-        BladeData.plot_xz_geometry(self, plt=plt)
-        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
-        plt.legend()
-        plt.figure()
         BladeData.plot_yz_geometry(self, plt=plt)
-        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
-        plt.legend()
+        MainBody.plot_yz_geometry(self, plt)
+        
 
-        plt.show()
 
 
