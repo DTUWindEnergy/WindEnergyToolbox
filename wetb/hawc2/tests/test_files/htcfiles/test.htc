@@ -327,8 +327,8 @@ begin aero;
   link 1 mbdy_c2_def blade1;
   link 2 mbdy_c2_def blade2;
     link	3 mbdy_c2_def blade3;
-    ae_filename	./data/dtu_10mw_rwt_ae.dat;
-    pc_filename	./data/dtu_10mw_rwt_pc.dat;
+    ae_filename	./data/DTU_10MW_RWT_ae.dat;
+    pc_filename	./data/DTU_10MW_RWT_pc.dat;
   induction_method   1;     0=none, 1=normal
   aerocalc_method    1;     0=ingen aerodynamic, 1=med aerodynamic
   aerosections       50; def. 50
