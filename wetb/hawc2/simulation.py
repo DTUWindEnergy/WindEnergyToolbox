@@ -235,12 +235,18 @@ class Simulation(object):
             return dst
         output_patterns = [fmt(dst) for dst in self.htcFile.output_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + [self.stdout_filename]]
         output_files = set([f for pattern in output_patterns for f in self.host.glob(unix_path(os.path.join(self.tmp_modelpath, pattern)))])
-        self.host._finish_simulation(output_files)
-        self.set_id(self.filename)
-        if self.status != ERROR:
-            self.status = CLEANED
-        self.logFile.reset()
-        self.htcFile.reset()
+        try:
+            self.host._finish_simulation(output_files)
+            if self.status != ERROR:
+                self.status = CLEANED
+        except Exception as e:
+            self.errors.append(str(e))
+            raise
+            
+        finally:
+            self.set_id(self.filename)
+            self.logFile.reset()
+            self.htcFile.reset()
 
 
 
@@ -418,20 +424,26 @@ class LocalSimulationHost(SimulationResource):
 
 
     def _finish_simulation(self, output_files):
+        missing_result_files = []
         for src_file in output_files:
             dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
             # exist_ok does not exist in Python27
-            if not os.path.isdir(os.path.dirname(dst_file)):
-                os.makedirs(os.path.dirname(dst_file))  #, exist_ok=True)
-            if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
-                shutil.copy(src_file, dst_file)
+            try:
+                if not os.path.isdir(os.path.dirname(dst_file)):
+                    os.makedirs(os.path.dirname(dst_file))  #, exist_ok=True)
+                if not os.path.isfile(dst_file) or os.path.getmtime(dst_file) != os.path.getmtime(src_file):
+                    shutil.copy(src_file, dst_file)
+            except:
+                missing_result_files.append(dst_file)
 
         self.logFile.filename = os.path.join(self.modelpath, self.log_filename)
-
+        if missing_result_files:
+            raise Warning("Failed to copy %s from %s"%(",".join(missing_result_files), self.host))
         try:
             shutil.rmtree(self.tmp_modelpath)
         except (PermissionError, OSError) as e:
-            raise Warning(str(e))
+            raise Warning("Fail to remove temporary files and folders on %s\n%s"%(self.host, str(e)))
+
 
     def update_logFile_status(self):
         self.logFile.update_status()
@@ -535,19 +547,24 @@ class PBSClusterSimulationHost(SimulationResource, SSHClient):
 
     def _finish_simulation(self, output_files):
         with self:
+            download_failed = []
             for src_file in output_files:
                 try:
                     dst_file = os.path.join(self.modelpath, os.path.relpath(src_file, self.tmp_modelpath))
                     os.makedirs(os.path.dirname(dst_file), exist_ok=True)
-                    self.download(src_file, dst_file, retry=3)
+                    self.download(src_file, dst_file, retry=10)
                 except Exception as e:
-                    print (self.modelpath, src_file, self.tmp_modelpath)
-                    raise e
-            try:
-                self.execute('rm -r .hawc2launcher/%s' % self.simulation_id)
-                self.execute('rm .hawc2launcher/status_%s' % self.simulation_id)
-            except:
-                pass
+                    download_failed.append(dst_file)
+            if download_failed:
+                raise Warning("Failed to download %s from %s"%(",".join(download_failed), self.host))
+            else:
+                try:
+                    self.execute('rm -r .hawc2launcher/%s' % self.simulation_id)
+                finally:
+                    try:
+                        self.execute('rm .hawc2launcher/status_%s' % self.simulation_id)
+                    except:
+                        raise Warning("Fail to remove temporary files and folders on %s"%self.host)
 
 
     def _simulate(self):
@@ -667,7 +684,4 @@ echo $PBS_JOBID
 cd /scratch/
 ### rm -r $PBS_JOBID
 exit""" % (self.simulation_id, self.stdout_filename, self.modelpath, self.htcFile.filename, self.resource.python_cmd, rel_htcfilename, self.resource.wine_cmd, self.hawc2exe, cp_back)
-
-
-
 
