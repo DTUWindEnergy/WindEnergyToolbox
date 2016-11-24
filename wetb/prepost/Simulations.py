@@ -4629,7 +4629,8 @@ class Cases(object):
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
             fname = os.path.join(run_dir, 'dlc_config.xlsx')
-            dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
+            dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k,
+                                       fail_on_resfile_not_found=True)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
             fh_lst = dlc_cfg.file_hour_lst(years=years)
