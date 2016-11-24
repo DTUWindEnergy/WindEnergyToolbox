@@ -10,6 +10,18 @@ import os
 import numpy as np
 from wetb.hawc2.st_file import StFile
 
+
+class MainBody():
+    def __init__(self, htc_filename, modelpath, body_name):
+        self.htcfile = htcfile = HTCFile(htc_filename, modelpath)
+        s = htcfile.new_htc_structure
+        blade_name = htcfile.aero.link[2]
+        mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
+
+        blade_main_body = [mb for mb in mainbodies if mb.name[0] == blade_name][0]
+        self.stFile = StFile(os.path.join(htcfile.modelpath, blade_main_body.timoschenko_input.filename[0]))
+        self.c2def = np.array([v.values[1:5] for v in blade_main_body.c2_def if v.name_ == "sec"])
+
 class BladeData(object):
     def plot_xz_geometry(self, plt):
 
