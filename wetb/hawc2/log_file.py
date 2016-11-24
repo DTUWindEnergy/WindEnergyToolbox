@@ -140,9 +140,11 @@ class LogFile(LogInterpreter):
 
 
     @staticmethod
-    def from_htcfile(htcfile, modelpath):
+    def from_htcfile(htcfile, modelpath=None):
         logfilename = htcfile.simulation.logfile[0]
         if not os.path.isabs(logfilename):
+            if modelpath is None:
+                modelpath = htcfile.modelpath
             logfilename = os.path.join(modelpath, logfilename)
         return LogFile(logfilename, htcfile.simulation.time_stop[0])
 

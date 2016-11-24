@@ -38,23 +38,30 @@ class HTCFile(HTCContents, HTCDefaults):
     level = 0
     modelpath = "../"
     initial_comments = None
+    _contents = None
     def __init__(self, filename=None, modelpath="../"):
         self.modelpath = modelpath
-        self.contents = OrderedDict()
+        
+
+        self.filename = filename
+        
+                #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
+
+    def _load(self):
+        self.reset()
         self.initial_comments = []
         self.htc_inputfiles = []
-        if filename is None:
+        self.contents = OrderedDict()
+        if self.filename is None:
             self.filename = 'empty.htc'
-            self.lines = self.empty_htc.split("\n")
+            lines = self.empty_htc.split("\n")
         else:
-            self.filename = filename
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), modelpath))
-            self.lines = self.readlines(filename)
-#            with open(filename) as fid:
-#                self.lines = fid.readlines()
-        self.lines = [l.strip() for l in self.lines]
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
+            lines = self.readlines(self.filename)
 
-        lines = copy(self.lines)
+        lines = [l.strip() for l in lines]
+
+        #lines = copy(self.lines)
         while lines:
             if lines[0].startswith(";"):
                 self.initial_comments.append(lines.pop(0).strip() + "\n")
@@ -65,9 +72,23 @@ class HTCFile(HTCContents, HTCDefaults):
                 self._add_contents(line)
                 if line.name_ == "exit":
                     break
-        #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
 
+    def reset(self):
+        self._contents = None
+
+        
+    @property
+    def contents(self):
+        if self._contents is None:
+            self._load()
+        return self._contents
+    
+    @contents.setter
+    def contents(self, value):
+        self._contents = value
+        
+            
     def readfilelines(self, filename):
         with open(unix_filename(filename), encoding='cp1252') as fid:
             lines = list(fid.readlines())
@@ -97,9 +118,11 @@ class HTCFile(HTCContents, HTCDefaults):
         self.contents[key] = value
 
     def __str__(self):
+        self.contents #load
         return "".join(self.initial_comments + [c.__str__(1) for c in self])
 
     def save(self, filename=None):
+        self.contents #load if not loaded
         if filename is None:
             filename = self.filename
         else:
@@ -112,6 +135,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def set_name(self, name, htc_folder="htc", log_folder="log", res_folder="res"):
         #if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
+        self.contents #load if not loaded
         fmt_folder = lambda folder : "./" + os.path.relpath(folder).replace("\\", "/")
 
         self.filename = os.path.abspath(os.path.join(self.modelpath, fmt_folder(htc_folder), "%s.htc" % name)).replace("\\", "/")
@@ -122,6 +146,7 @@ class HTCFile(HTCContents, HTCDefaults):
         self.output.filename = os.path.join(fmt_folder(res_folder), "%s" % name).replace("\\", "/")
 
     def set_time(self, start=None, stop=None, step=None):
+        self.contents # load if not loaded
         if stop is not None:
             self.simulation.time_stop = stop
         else:
@@ -134,6 +159,7 @@ class HTCFile(HTCContents, HTCDefaults):
                 self.wind.scale_time_start = start
 
     def input_files(self):
+        self.contents # load if not loaded
         files = self.htc_inputfiles
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
@@ -173,6 +199,7 @@ class HTCFile(HTCContents, HTCDefaults):
         return [f for f in set(files) if f]
 
     def output_files(self):
+        self.contents # load if not loaded
         files = []
         for k, index in [('simulation/logfile', 0),
                          ('simulation/animation', 0),
@@ -204,6 +231,7 @@ class HTCFile(HTCContents, HTCDefaults):
         return [f for f in files if f]
 
     def turbulence_files(self):
+        self.contents # load if not loaded
         if 'wind' not in self.contents.keys() or self.wind.turb_format[0] == 0:
             return []
         elif self.wind.turb_format[0] == 1:
@@ -214,6 +242,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
 
     def res_file_lst(self):
+        self.contents # load if not loaded
         if 'output' not in self:
             return []
         dataformat = self.output.get('data_format', 'hawc_ascii')
@@ -227,6 +256,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
 
     def simulate(self, exe, skip_if_up_to_date=False):
+        self.contents # load if not loaded
         if skip_if_up_to_date:
             from os.path import isfile, getmtime, isabs
             res_file = os.path.join(self.modelpath, self.res_file_lst()[0])

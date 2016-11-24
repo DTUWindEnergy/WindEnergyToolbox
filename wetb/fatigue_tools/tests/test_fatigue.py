@@ -56,15 +56,15 @@ class TestFatigueTools(unittest.TestCase):
         np.testing.assert_allclose(eq_load(data, neq=61, rainflow_func=rainflow_astm), np.array([[1.356, 1.758, 2.370, 2.784, 3.077, 3.296]]), 0.01)
 
 
-    def test_windap3(self):
-        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
-        from wetb.fatigue_tools.rainflowcounting import peak_trough
-        self.assertTrue(peak_trough.__file__.lower()[-4:] == ".pyd" or peak_trough.__file__.lower()[-3:] == ".so", 
-                        "not compiled, %s, %s\n%s"%(sys.executable, peak_trough.__file__, os.listdir(os.path.dirname(peak_trough.__file__))))
-        np.testing.assert_array_equal(cycle_matrix(data, 4, 4, rainflow_func=rainflow_windap)[0], np.array([[  14., 65., 39., 24.],
-                                                                   [  0., 1., 4., 0.],
-                                                                   [  0., 0., 0., 0.],
-                                                                   [  0., 1., 2., 0.]]) / 2)
+#     def test_windap3(self):
+#         data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
+#         from wetb.fatigue_tools.rainflowcounting import peak_trough
+#         self.assertTrue(peak_trough.__file__.lower()[-4:] == ".pyd" or peak_trough.__file__.lower()[-3:] == ".so", 
+#                         "not compiled, %s, %s\n%s"%(sys.executable, peak_trough.__file__, os.listdir(os.path.dirname(peak_trough.__file__))))
+#         np.testing.assert_array_equal(cycle_matrix(data, 4, 4, rainflow_func=rainflow_windap)[0], np.array([[  14., 65., 39., 24.],
+#                                                                    [  0., 1., 4., 0.],
+#                                                                    [  0., 0., 0., 0.],
+#                                                                    [  0., 1., 2., 0.]]) / 2)
 
 
     def test_astm3(self):

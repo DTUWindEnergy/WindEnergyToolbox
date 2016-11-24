@@ -62,7 +62,7 @@ def exec_process(process):
 def unix_filename(filename):
     """Convert case insensitive filename into unix case sensitive filename
 
-    I more than one case insensitive matching file or folder is found, case sensitive matching is used
+    If more than one case insensitive matching file or folder is found, case sensitive matching is used
 
     Parameters
     ---------

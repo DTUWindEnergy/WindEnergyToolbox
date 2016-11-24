@@ -12,7 +12,7 @@ from future import standard_library
 standard_library.install_aliases()
 import unittest
 from wetb.hawc2.log_file import LogFile, \
-    INITIALIZATION, SIMULATING, DONE, PENDING
+    INITIALIZATION, SIMULATING, DONE, PENDING, UNKNOWN
 import time
 from wetb.hawc2 import log_file
 import threading
@@ -209,6 +209,15 @@ class TestLogFile(unittest.TestCase):
         self.assertEqual(logfile.remaining_time_str(), "1:02:05")
 
 
+    def test_reset(self):
+        htcfile = HTCFile(self.tfp + 'logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc')
+        logfile = LogFile.from_htcfile(htcfile, self.tfp + 'logfiles/model/')
+        self.assertEqual(logfile.status, DONE)
+        logfile.reset()
+        self.assertEqual(logfile.status, UNKNOWN)
+        self.assertEqual(logfile.txt, "")
+        logfile.update_status()
+        self.assertEqual(logfile.status, DONE)
 
 
 if __name__ == "__main__":
