@@ -17,7 +17,8 @@ Both Python2 and Python3 are supported.
 
 # Installation
 
-For a more detailed overview, see: [docs/install](docs/install.md)
+- [Simple user](docs/install.md)
+- [Developer/contributor](docs/developer-guide.md)
 
 
 # Contents of WindEnergyToolbox, [wetb](wetb)
