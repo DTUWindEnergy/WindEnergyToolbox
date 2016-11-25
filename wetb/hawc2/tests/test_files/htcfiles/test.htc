@@ -118,8 +118,8 @@ begin main_body;
   node_distribution     c2_def;
   damping_posdef     0.0 0.0 0.0 0.00153 0.00255 0.00033;
   begin timoschenko_input;
-    filename data/2Bdown-rR1.08_blade_st.dat;
-    set 1 1;
+        filename	./data/DTU_10MW_RWT_Blade_st.dat;
+        set	1 1;		set subset
   end timoschenko_input;
    begin c2_def;
     nsec 20;
@@ -326,9 +326,9 @@ begin aero;
   hub_vec shaft -3;         rotor rotation vector (normally shaft composant directed from pressure to sustion side)
   link 1 mbdy_c2_def blade1;
   link 2 mbdy_c2_def blade2;
-;  link 3 mbdy_c2_def blade3;
-  ae_filename        ./data/2Bdown-rR1.08_ae.dat;
-  pc_filename        ./data/2Bup_AEP095_pc.dat;
+    link	3 mbdy_c2_def blade3;
+    ae_filename	./data/DTU_10MW_RWT_ae.dat;
+    pc_filename	./data/DTU_10MW_RWT_pc.dat;
   induction_method   1;     0=none, 1=normal
   aerocalc_method    1;     0=ingen aerodynamic, 1=med aerodynamic
   aerosections       50; def. 50

@@ -68,7 +68,7 @@ class StFile(object):
     def __init__(self, filename):
         with open (filename) as fid:
             txt = fid.read()
-        no_maindata_sets = int(txt.strip()[0])
+        no_maindata_sets = int(txt.replace("#","").strip()[0])
         assert no_maindata_sets == txt.count("#")
         self.main_data_sets = {}
         for mset in txt.split("#")[1:]:

@@ -40,10 +40,14 @@ class HTCFile(HTCContents, HTCDefaults):
     initial_comments = None
     _contents = None
     def __init__(self, filename=None, modelpath="../"):
-        self.modelpath = modelpath
         
+        if filename is not None:
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), modelpath))
+            self.filename = filename    
+        else:
+            self.modelpath = modelpath            
 
-        self.filename = filename
+        
         
                 #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
@@ -53,10 +57,8 @@ class HTCFile(HTCContents, HTCDefaults):
         self.htc_inputfiles = []
         self.contents = OrderedDict()
         if self.filename is None:
-            self.filename = 'empty.htc'
             lines = self.empty_htc.split("\n")
         else:
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
             lines = self.readlines(self.filename)
 
         lines = [l.strip() for l in lines]
