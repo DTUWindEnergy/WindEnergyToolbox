@@ -55,6 +55,17 @@ line starts with ```g-000 $```. The command that needs to be entered starts
 after the ```$```.
 
 
+Pdap
+----
+
+You can also use the Pdap for post-processing, which includes a MS Word report
+generator based on a full DLB, a GUI for easy plotting of HAWC2 result files,
+and a Python scripting interface:
+
+* [Pdap](http://www.hawc2.dk/Download/Post-processing-tools/Pdap)
+* [Pdap report/docs](http://orbit.dtu.dk/en/publications/post-processing-of-design-load-cases-using-pdap%28827c432b-cf7d-44eb-899b-93e9c0648ca5%29.html)
+
+
 Connecting to the cluster
 -------------------------
 
@@ -234,6 +245,9 @@ from here (valid for the DTU10MW):
 ```
 /mnt/mimer/hawc2sim/DTU10MW/C0020/htc/DLCs
 ```
+
+Note that ```dlctemplate.py``` does not require any changes or modifications
+if you are only interested in running the standard DLB as explained here.
 
 For example, in order to generate all the HAWC2 htc input files and the
 corresponding ```*.p``` cluster launch files using this default DLB setup with:
