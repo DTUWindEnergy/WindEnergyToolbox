@@ -1,6 +1,7 @@
 # Developer guide
 
-Thank you for your interest in developing wetb. This guide details how to contribute to wetb in a way that is efficient for everyone.
+Thank you for your interest in developing wetb. This guide details how to
+contribute to wetb in a way that is efficient for everyone.
 
 ## Contents
 
@@ -9,18 +10,18 @@ Thank you for your interest in developing wetb. This guide details how to contri
 - [Install Python](#Install-Python)
 - [Install dependencies](#Install-dependencies)
 - [Get wetb](#Get-wetb)
-- [Install wetb](#Install-wetb) 
+- [Install wetb](#Install-wetb)
 - [Contributions](#Contributions)
 - [Upload contributions](#Upload-contributions)
 - [Make and upload wheels](#Make-and-upload-wheels)
- 
-
 
 
 ## Fork project
-We prefer that you make your contributions in your own fork of the project, [make your changes](#Contributions) and [make a merge request](#Upload contributions).
+We prefer that you make your contributions in your own fork of the project,
+[make your changes](#Contributions) and [make a merge request](#Upload contributions).
 
-The project can be forked to your own user account via the \<Fork\> button on the [frontpage](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox)
+The project can be forked to your own user account via the \<Fork\> button on
+the [frontpage](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox)
 
 
 ## Requirements
@@ -49,15 +50,18 @@ rights on your computer.
 * Git comes with a simple GUI, but there are more and different options available
 if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
 
-* On windows we highly recommend [tortoisegit](https://tortoisegit.org/). It is a gui integrated into the windows explorer. 
+* On windows we highly recommend [tortoisegit](https://tortoisegit.org/). It
+is a gui integrated into the windows explorer.
 
 
 ## Install Python
-For all platforms we recommend that you download and install the Anaconda - a professional grade, full blown scientific Python distribution. 
+For all platforms we recommend that you download and install the Anaconda -
+a professional grade, full blown scientific Python distribution.
 
 ### Installing Anaconda, activate root environment
 
-* Download and install Anaconda (Python 3.5 version, 64 bit installer is recommended) from <https://www.continuum.io/downloads>
+* Download and install Anaconda (Python 3.5 version, 64 bit installer is
+recommended) from <https://www.continuum.io/downloads>
 
 > Note: The Python 2.7 or Python 3.5 choice of Anaconda only affects the
 root environment. You can always create additional environments using other
@@ -87,7 +91,7 @@ use ```deactivate``` to deactivate the environment.
 
 ### Optionally, create other independent Anaconda environments
 
-* By using environments you can manage different Python installations with
+By using environments you can manage different Python installations with
 different versions on your system. Creating environments is as easy as:
 
 ```
@@ -96,7 +100,7 @@ different versions on your system. Creating environments is as easy as:
 >> conda create -n py35 python=3.5
 ```
 
-* These environments can be activated as follows:
+These environments can be activated as follows:
 
 ```
 >> activate py27
@@ -107,9 +111,23 @@ different versions on your system. Creating environments is as easy as:
 The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/env/py35/
 
 use ```deactivate``` to deactivate the environment.
- 
+
 
 ## Install dependencies
+
+- [numpy](http://www.numpy.org/)
+- [cython](http://cython.org/)
+- [scipy](http://scipy.org/scipylib/)
+- [pandas](http://pandas.pydata.org/)
+- xlrd and xlwt from [python-excel](http://www.python-excel.org/)
+- [openpyxl](http://openpyxl.readthedocs.org/en/default/)
+- [h5py](http://www.h5py.org/)
+- [matplotlib](http://matplotlib.org/)
+- [pytables](http://www.pytables.org/)
+- [pyscaffold](http://pyscaffold.readthedocs.org/en/)
+- pytest, pytest-cov
+- six, [future](http://python-future.org/index.html)
+- [parimeko](http://www.paramiko.org/)
 
 Install the necessary Python dependencies using the conda package manager:
 
@@ -143,14 +161,14 @@ or via tortoise-git:
 
 If you make a change in the toolbox, that others can benefit from please make a merge request.
 
-If you can, please submit a merge request with the fix or improvements including tests. 
+If you can, please submit a merge request with the fix or improvements including tests.
 
 The workflow to make a merge request is as follows:
 
 - Create a feature branch, branch away from master
 - Write tests and code
 - Push the commit(s) to your fork
-- Submit a merge request (MR) to the master branch of 
+- Submit a merge request (MR) to the master branch of
 - Link any relevant issues in the merge request description and leave a comment on them with a link back to the MR
 - Your tests should run as fast as possible, and if it uses test files, these files should be as small as possible.
 - Please keep the change in a single MR as small as possible. Split the functionality if you can
