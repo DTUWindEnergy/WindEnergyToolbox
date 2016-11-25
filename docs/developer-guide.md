@@ -113,8 +113,17 @@ The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/
 use ```deactivate``` to deactivate the environment.
 
 
-## Install dependencies
+## Install/build dependencies
 
+- Compiler (```wetb``` contains cython extensions that require a compiler):
+    - Linux: gcc (should be installed by default)
+    - Windows:
+        - Python 2.7: [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
+        or the [direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
+        - Python 3.4: MS Visual Studio 2010
+        - Python 3.5: MS Visual Studio 2015 or [Visual C++ Build Tools](http://landinghub.visualstudio.com/visual-cpp-build-tools)
+        - Only one MS Visual Studio version can be installed, but you can for
+        example install MS Visual Studio 2010 alongside the Visual C++ Build Tools.
 - [numpy](http://www.numpy.org/)
 - [cython](http://cython.org/)
 - [scipy](http://scipy.org/scipylib/)
