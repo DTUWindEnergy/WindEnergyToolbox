@@ -15,6 +15,11 @@ merged in due time.
 
 Both Python2 and Python3 are supported.
 
+# Installation
+
+For a more detailed overview, see: [docs/install](docs/install.md)
+
+
 # Contents of WindEnergyToolbox, [wetb](wetb)
 
 ### Overview
