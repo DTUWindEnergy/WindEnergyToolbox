@@ -1,8 +1,8 @@
-#Developer guide
+# Developer guide
 
 Thank you for your interest in developing wetb. This guide details how to contribute to wetb in a way that is efficient for everyone.
 
-##Contents
+## Contents
 
 - [Fork](#Fork-project)
 - [Requirements](#Requirements)
@@ -17,13 +17,13 @@ Thank you for your interest in developing wetb. This guide details how to contri
 
 
 
-##Fork project
+## Fork project
 We prefer that you make your contributions in your own fork of the project, [make your changes](#Contributions) and [make a merge request](#Upload contributions).
 
 The project can be forked to your own user account via the \<Fork\> button on the [frontpage](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox)
 
 
-##Requirements
+## Requirements
 
 ### Command line
 
@@ -52,7 +52,7 @@ if you are not happy with it, see [here](https://git-scm.com/downloads/guis).
 * On windows we highly recommend [tortoisegit](https://tortoisegit.org/). It is a gui integrated into the windows explorer. 
 
 
-##Install Python
+## Install Python
 For all platforms we recommend that you download and install the Anaconda - a professional grade, full blown scientific Python distribution. 
 
 ### Installing Anaconda, activate root environment
@@ -109,7 +109,7 @@ The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/
 use ```deactivate``` to deactivate the environment.
  
 
-##Install dependencies
+## Install dependencies
 
 Install the necessary Python dependencies using the conda package manager:
 
@@ -119,7 +119,7 @@ Install the necessary Python dependencies using the conda package manager:
 >> conda install -c https://conda.anaconda.org/conda-forge pyscaffold pytest-cov
 ```
 
-##Get wetb
+## Get wetb
 
 Copy the https - link on the front page of your fork of wetb
 
@@ -133,13 +133,13 @@ or via tortoise-git:
 - "Git Clone..."
 - \<Ok\>
 
-##Install wetb
+## Install wetb
 ```
 >> cd WindEnergyToolbox
 >> pip install -e . --no-deps
 ```
 
-##Contributions
+## Contributions
 
 If you make a change in the toolbox, that others can benefit from please make a merge request.
 
@@ -155,11 +155,11 @@ The workflow to make a merge request is as follows:
 - Your tests should run as fast as possible, and if it uses test files, these files should be as small as possible.
 - Please keep the change in a single MR as small as possible. Split the functionality if you can
 
-##Upload contributions
+## Upload contributions
 To be written
 
 
-##Make and upload wheels
+## Make and upload wheels
 
 ```
 >> conda install --channel https://conda.anaconda.org/pbrod twine
