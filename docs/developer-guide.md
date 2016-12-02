@@ -202,5 +202,5 @@ To be written
 - Make tag
 - pip install -e . --upgrade
 - python setup.py bdist_wheel -d dist
-- twine upload dist\*
+- twine upload dist/*
 
