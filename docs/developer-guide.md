@@ -3,6 +3,7 @@
 Thank you for your interest in developing wetb. This guide details how to
 contribute to wetb in a way that is efficient for everyone.
 
+
 ## Contents
 
 - [Fork](#Fork-project)
@@ -17,6 +18,7 @@ contribute to wetb in a way that is efficient for everyone.
 
 
 ## Fork project
+
 We prefer that you make your contributions in your own fork of the project,
 [make your changes](#Contributions) and [make a merge request](#Upload contributions).
 
@@ -25,6 +27,7 @@ the [frontpage](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox)
 
 
 ## Requirements
+
 
 ### Command line
 
@@ -57,6 +60,7 @@ is a gui integrated into the windows explorer.
 ## Install Python
 For all platforms we recommend that you download and install the Anaconda -
 a professional grade, full blown scientific Python distribution.
+
 
 ### Installing Anaconda, activate root environment
 
@@ -167,7 +171,9 @@ or via tortoise-git:
 - "Git Clone..."
 - \<Ok\>
 
+
 ## Install wetb
+
 ```
 >> cd WindEnergyToolbox
 >> pip install -e . --no-deps
@@ -189,18 +195,39 @@ The workflow to make a merge request is as follows:
 - Your tests should run as fast as possible, and if it uses test files, these files should be as small as possible.
 - Please keep the change in a single MR as small as possible. Split the functionality if you can
 
+
 ## Upload contributions
+
 To be written
 
 
 ## Make and upload wheels
 
+Using conda:
 ```
->> conda install --channel https://conda.anaconda.org/pbrod twine
+>> conda install --channel https://conda.anaconda.org/pbrod twine --no-channel-priority
 ```
 
-- Make tag
-- pip install -e . --upgrade
-- python setup.py bdist_wheel -d dist
-- twine upload dist/*
+Or pip:
+```
+>> pip install twine
+```
+
+- Make tag: ```git tag "vX.Y.Z"```, and push tag to remote: ```git push --tags```
+- In order to have a clean version number (which is determined automagically)
+make sure your git working directory is clean (no uncommitted changes etc).
+- ```pip install -e . --upgrade```
+- ```python setup.py bdist_wheel -d dist``` (wheel includes compiled extensions)
+- On Linux you will have to rename the binary wheel file
+(see [PEP 513](https://www.python.org/dev/peps/pep-0513/) for a background discussion):
+    - wetb-0.0.5-cp35-cp35m-linux_x86_64.whl
+    - wetb-0.0.5-cp35-cp35m-manylinux1_x86_64.whl
+- ```python setup.py sdist -d dist``` (for general source distribution installs)
+- ```twine upload dist/*```
+
+In case of problems:
+
+- Make sure the version tag is compliant with
+[PEP 440](https://www.python.org/dev/peps/pep-0440/), otherwise ```twine upload```
+will fail. This means commit hashes can not be part of a release version.
 
