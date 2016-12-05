@@ -6,15 +6,15 @@ contribute to wetb in a way that is efficient for everyone.
 
 ## Contents
 
-- [Fork](#Fork-project)
-- [Requirements](#Requirements)
-- [Install Python](#Install-Python)
-- [Install dependencies](#Install-dependencies)
-- [Get wetb](#Get-wetb)
-- [Install wetb](#Install-wetb)
-- [Contributions](#Contributions)
-- [Upload contributions](#Upload-contributions)
-- [Make and upload wheels](#Make-and-upload-wheels)
+- [Fork](#fork-project)
+- [Requirements](#requirements)
+- [Install Python](#install-python)
+- [Install/build dependencies](#installbuild-dependencies)
+- [Get wetb](#get-wetb)
+- [Install wetb](#install-wetb)
+- [Contributions](#contributions)
+- [Upload contributions](#upload-contributions)
+- [Make and upload wheels](#make-and-upload-wheels)
 
 
 ## Fork project
@@ -220,8 +220,8 @@ make sure your git working directory is clean (no uncommitted changes etc).
 - ```python setup.py bdist_wheel -d dist``` (wheel includes compiled extensions)
 - On Linux you will have to rename the binary wheel file
 (see [PEP 513](https://www.python.org/dev/peps/pep-0513/) for a background discussion):
-    - wetb-0.0.5-cp35-cp35m-linux_x86_64.whl
-    - wetb-0.0.5-cp35-cp35m-manylinux1_x86_64.whl
+    - from: ```wetb-0.0.5-cp35-cp35m-linux_x86_64.whl```
+    - to: ```wetb-0.0.5-cp35-cp35m-manylinux1_x86_64.whl```
 - ```python setup.py sdist -d dist``` (for general source distribution installs)
 - ```twine upload dist/*```
 
