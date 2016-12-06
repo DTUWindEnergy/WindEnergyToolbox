@@ -12,6 +12,13 @@ import os
 import sys
 from setuptools import setup
 
+try:
+    from pypandoc import convert_file
+    read_md = lambda f: convert_file(f, 'rst')
+except ImportError:
+    print("warning: pypandoc module not found, could not convert Markdown to RST")
+    read_md = lambda f: open(f, 'r').read()
+
 import numpy as np
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
@@ -31,7 +38,8 @@ def setup_package():
     setup(setup_requires=['six', 'pyscaffold>=2.5a0,<2.6a0'] + sphinx,
           cmdclass = {'build_ext': build_ext},
           ext_modules = extlist,
-          use_pyscaffold=True)
+          use_pyscaffold=True,
+          long_description=read_md('README.md'))
 
 
 if __name__ == "__main__":
