@@ -13,3 +13,7 @@ tables
 future
 paramiko
 psutil
+pbr
+pyscaffold
+pytest-cov
+

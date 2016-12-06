@@ -7,9 +7,9 @@
 Install the necessary Python dependencies using the ```conda``` package manager:
 
 ```
-conda install setuptools_scm future h5py pytables pytest nose sphinx blosc
-conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
-conda install -c https://conda.anaconda.org/conda-forge pyscaffold pytest-cov --no-channel-priority
+>> conda install setuptools_scm future h5py pytables pytest nose sphinx blosc prb paramiko
+>> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
+>> conda install -c https://conda.anaconda.org/conda-forge pyscaffold pytest-cov --no-channel-priority --no-update-dependencies
 ```
 
 Now you can install ```wetb``` with ```pip``` (there is no ```conda``` package
@@ -18,14 +18,14 @@ Since we prefer that ```conda``` manages and installs all dependencies we
 expclicitally tell ```pip``` to only install ```wetb``` and nothing more:
 
 ```
-pip install wetb --upgrade --no-deps
+>> pip install wetb --upgrade --no-deps
 ```
 
 ## Update conda and ```wetb```
 
 ```
-conda update --all
-pip install wetb --upgrade --no-deps
+>> conda update --all
+>> pip install wetb --upgrade --no-deps
 
 ```
 
@@ -35,7 +35,7 @@ pip install wetb --upgrade --no-deps
 ## Installation and update
 
 ```
-pip install --upgrade wetb
+>> pip install --upgrade wetb
 ```
 
 
