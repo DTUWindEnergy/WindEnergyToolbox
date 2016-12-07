@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
+from wetb import gtsdf
 standard_library.install_aliases()
 
 
@@ -26,8 +27,8 @@ class TestBearingDamage(unittest.TestCase):
         self.tfp = os.path.join(os.path.dirname(__file__), 'test_files/')
 
     def test_bearing_damage_swp(self):
-        data = Hawc2io.ReadHawc2(self.tfp + "test_bearing_damage").ReadBinary((np.array([4, 26, 6, 32, 8, 38]) - 1).tolist())
-        self.assertAlmostEqual(bearing_damage([(data[:, i], data[:, i + 1]) for i in [0, 2, 4]]), 7.755595081475002e+13)
+        data = Hawc2io.ReadHawc2(self.tfp + "test_bearing_damage").ReadBinary((np.array([1, 4, 2, 5, 3, 6]) ).tolist())
+        self.assertAlmostEqual(bearing_damage([(data[:, i], data[:, i + 1]) for i in [0,2,4]]), 7.755595081475002e+13)
 
 
 if __name__ == "__main__":
