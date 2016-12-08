@@ -145,15 +145,15 @@ use ```deactivate``` to deactivate the environment.
 Install the necessary Python dependencies using the conda package manager:
 
 ```
->> conda install setuptools_scm future h5py pytables pytest nose sphinx blosc prb paramiko
+>> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c https://conda.anaconda.org/conda-forge pyscaffold pytest-cov --no-channel-priority --no-update-dependencies
+>> conda install -c https://conda.anaconda.org/conda-forge pyscaffold --no-deps
 ```
 
-Note that ```--no-channel-priority``` avoids that newer packages from the
+Note that ```--no-deps``` avoids that newer packages from the channel
 ```conda-forge``` will be used instead of those from the default ```anaconda```
 channel. Depending on which packages get overwritten, this might brake your
-Anaconda root environment. As such, using ```--no-channel-priority``` should be
+Anaconda root environment. As such, using ```--no-deps``` should be
 be used for safety (especially when operating from the root environment).
 
 
@@ -178,6 +178,11 @@ or via tortoise-git:
 >> cd WindEnergyToolbox
 >> pip install -e . --no-deps
 ```
+
+Note that the ```no-deps``` option here is used for the same reason as explained
+above for the ```conda-forge``` channel: it is to avoid that pip will replace
+newer packages compared to the ones as available in the ```Anaconda``` channel.
+
 
 ## Contributions
 
