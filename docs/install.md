@@ -7,7 +7,7 @@
 Install the necessary Python dependencies using the ```conda``` package manager:
 
 ```
->> conda install setuptools_scm future h5py pytables pytest nose sphinx blosc paramiko
+>> conda install setuptools_scm future h5py pytables pytest nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
 >> conda install -c https://conda.anaconda.org/conda-forge pyscaffold pytest-cov --no-update-dependencies
 ```
