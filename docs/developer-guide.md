@@ -145,8 +145,8 @@ use ```deactivate``` to deactivate the environment.
 - [parimeko](http://www.paramiko.org/)
 - [pandoc](http://pandoc.org/) , [pypandoc](https://pypi.python.org/pypi/pypandoc):
 convert markdown formatted readme file to rst for PyPi compatibility. See also
-issue #22. Note that ```pandoc``` is available in Anaconda. When installing
-```pypandoc``` via pip you'll need to install ```pandoc``` via your package
+issue #22. ```pandoc``` is available in Anaconda. When installing
+```pypandoc``` via pip, you have to install ```pandoc``` via your package
 manager (Linux/Mac).
 - [twine](https://pypi.python.org/pypi/twine): upload package to
 [PyPi](https://pypi.python.org/pypi)
