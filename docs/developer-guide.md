@@ -209,7 +209,7 @@ To be written
 ## Make and upload wheels to PyPi
 
 Uploading wheels to [PyPi](https://pypi.python.org/pypi) is easy thanks to
-```[twine](https://pypi.python.org/pypi/twine)```.
+[twine](https://pypi.python.org/pypi/twine).
 
 Install ```twine``` using conda:
 ```
