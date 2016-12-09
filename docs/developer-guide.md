@@ -138,9 +138,18 @@ use ```deactivate``` to deactivate the environment.
 - [matplotlib](http://matplotlib.org/)
 - [pytables](http://www.pytables.org/)
 - [pyscaffold](http://pyscaffold.readthedocs.org/en/)
-- pytest, pytest-cov
+- [pytest](https://pypi.python.org/pypi/pytest)
+- [pytest-cov](https://pypi.python.org/pypi/pytest-cov/)
 - six, [future](http://python-future.org/index.html)
+- nose, sphinx, blosc, pbr, psutil, coverage, setuptools_scm
 - [parimeko](http://www.paramiko.org/)
+- [pandoc](http://pandoc.org/) , [pypandoc](https://pypi.python.org/pypi/pypandoc):
+convert markdown formatted readme file to rst for PyPi compatibility. See also
+issue #22. Note that ```pandoc``` is available in Anaconda. When installing
+```pypandoc``` via pip you'll need to install ```pandoc``` via your package
+manager (Linux/Mac).
+- [twine](https://pypi.python.org/pypi/twine): upload package to
+[PyPi](https://pypi.python.org/pypi)
 
 Install the necessary Python dependencies using the conda package manager:
 
@@ -148,6 +157,7 @@ Install the necessary Python dependencies using the conda package manager:
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
 >> conda install -c conda-forge pyscaffold pypandoc --no-deps
+>> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel
@@ -208,39 +218,6 @@ To be written
 
 ## Make and upload wheels to PyPi
 
-Uploading wheels to [PyPi](https://pypi.python.org/pypi) is easy thanks to
-[```twine```](https://pypi.python.org/pypi/twine).
-
-Install ```twine``` using conda:
-```
->> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
-```
-
-Or pip:
-```
->> pip install twine
-```
-
-One additional complication with PyPi is that the package description is required
-to be in the ```rst``` format, while the ```wetb``` readme file is currently
-formatted in ```md```. To solve this,
-[```pypandoc```](https://pypi.python.org/pypi/pypandoc) can be used to convert
-```README.md``` on the fly to ```rst```. A discussion on how this can be done
-is also recorded in issue #22.
-
-Install ```pypandoc``` using conda:
-```
->> conda install pandoc
->> conda install -c conda-forge pypandoc --no-deps
-```
-
-However, when installing via pip you will need to install
-[```pandoc```](http://pandoc.org/) first via your Linux/Mac package manager,
-then you can install the Python wrapper:
-```
->> pip install pypandoc
-```
-
 Workflow for creating and uploading wheels is as follows:
 
 - Make tag: ```git tag "vX.Y.Z"```, and push tag to remote: ```git push --tags```
@@ -260,4 +237,6 @@ In case of problems:
 - Make sure the version tag is compliant with
 [PEP 440](https://www.python.org/dev/peps/pep-0440/), otherwise ```twine upload```
 will fail. This means commit hashes can not be part of the version number.
+Note that when your git working directory is not clean, the scheme for automatic
+versioning number will add ```dirty``` to the version number.
 
