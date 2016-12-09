@@ -147,7 +147,7 @@ Install the necessary Python dependencies using the conda package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c https://conda.anaconda.org/conda-forge pyscaffold --no-deps
+>> conda install -c conda-forge pyscaffold pypandoc --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel
@@ -179,7 +179,7 @@ or via tortoise-git:
 >> pip install -e . --no-deps
 ```
 
-Note that the ```no-deps``` option here is used for the same reason as explained
+Note that the ```--no-deps``` option here is used for the same reason as explained
 above for the ```conda-forge``` channel: it is to avoid that pip will replace
 newer packages compared to the ones as available in the ```Anaconda``` channel.
 
@@ -231,9 +231,12 @@ is also recorded in issue #22.
 Install ```pypandoc``` using conda:
 ```
 >> conda install pandoc
+>> conda install -c conda-forge pypandoc --no-deps
 ```
 
-Or pip:
+However, when installing via pip you will need to install
+[```pandoc```](http://pandoc.org/) first via your Linux/Mac package manager,
+then you can install the Python wrapper:
 ```
 >> pip install pypandoc
 ```
