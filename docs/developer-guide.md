@@ -209,7 +209,7 @@ To be written
 ## Make and upload wheels to PyPi
 
 Uploading wheels to [PyPi](https://pypi.python.org/pypi) is easy thanks to
-```[twine](https://pypi.python.org/pypi/twine)```.
+[```twine```](https://pypi.python.org/pypi/twine).
 
 Install ```twine``` using conda:
 ```
@@ -224,7 +224,7 @@ Or pip:
 One additional complication with PyPi is that the package description is required
 to be in the ```rst``` format, while the ```wetb``` readme file is currently
 formatted in ```md```. To solve this,
-```[pypandoc](https://pypi.python.org/pypi/pypandoc)``` can be used to convert
+[```pypandoc```](https://pypi.python.org/pypi/pypandoc) can be used to convert
 ```README.md``` on the fly to ```rst```. A discussion on how this can be done
 is also recorded in issue #22.
 
