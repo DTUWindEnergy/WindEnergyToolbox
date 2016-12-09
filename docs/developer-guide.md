@@ -206,17 +206,39 @@ The workflow to make a merge request is as follows:
 To be written
 
 
-## Make and upload wheels
+## Make and upload wheels to PyPi
 
-Using conda:
+Uploading wheels to [PyPi](https://pypi.python.org/pypi) is easy thanks to
+```[twine](https://pypi.python.org/pypi/twine)```.
+
+Install ```twine``` using conda:
 ```
->> conda install --channel https://conda.anaconda.org/pbrod twine --no-channel-priority
+>> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
 ```
 
 Or pip:
 ```
 >> pip install twine
 ```
+
+One additional complication with PyPi is that the package description is required
+to be in the ```rst``` format, while the ```wetb``` readme file is currently
+formatted in ```md```. To solve this,
+```[pypandoc](https://pypi.python.org/pypi/pypandoc)``` can be used to convert
+```README.md``` on the fly to ```rst```. A discussion on how this can be done
+is also recorded in issue #22.
+
+Install ```pypandoc``` using conda:
+```
+>> conda install pandoc
+```
+
+Or pip:
+```
+>> pip install pypandoc
+```
+
+Workflow for creating and uploading wheels is as follows:
 
 - Make tag: ```git tag "vX.Y.Z"```, and push tag to remote: ```git push --tags```
 - In order to have a clean version number (which is determined automagically)
@@ -234,5 +256,5 @@ In case of problems:
 
 - Make sure the version tag is compliant with
 [PEP 440](https://www.python.org/dev/peps/pep-0440/), otherwise ```twine upload```
-will fail. This means commit hashes can not be part of a release version.
+will fail. This means commit hashes can not be part of the version number.
 
