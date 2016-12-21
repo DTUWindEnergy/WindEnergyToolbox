@@ -11,7 +11,7 @@ from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 import os
-from wetb.utils.geometry import xyz2uvw
+from wetb.wind.dir_mapping import xyz2uvw
 import wetb.gtsdf
 from wetb.wind.shear import power_shear, fit_power_shear, fit_power_shear_ref, \
     log_shear, fit_log_shear, stability_term
