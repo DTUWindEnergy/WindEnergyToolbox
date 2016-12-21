@@ -176,7 +176,7 @@ class Simulation(object):
             assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
             return src
         input_patterns = [fmt(src) for src in self.htcFile.input_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + self.additional_files().get('input', [])]
-        input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.modelpath, pattern)) if os.path.isfile(f)])
+        input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.modelpath, pattern)) if os.path.isfile(f) and ".hawc2launcher" not in f])
         if not os.path.isdir(os.path.dirname(self.modelpath + self.stdout_filename)):
             os.makedirs(os.path.dirname(self.modelpath + self.stdout_filename))
         self.host._prepare_simulation(input_files)

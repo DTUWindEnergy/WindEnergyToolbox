@@ -81,9 +81,10 @@ def unix_filename(filename):
         f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
         if len(f_lst) > 1:
             f_lst = [f_ for f_ in f_lst if f_ == f]
-        if len(f_lst) == 0:
+        elif len(f_lst) == 0:
             raise IOError("'%s' not found in '%s'" % (f, ufn))
-        ufn = os.path.join(ufn, f_lst[0])
+        else: # one match found
+            ufn = os.path.join(ufn, f_lst[0])
     return ufn.replace("\\", "/")
 
 
