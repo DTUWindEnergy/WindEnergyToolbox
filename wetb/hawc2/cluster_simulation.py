@@ -1,4 +1,4 @@
-from wetb.hawc2.simulation import Simulation, SimulationThread
+from wetb.hawc2.simulation import Simulation
 import os
 import sys
 from threading import  Thread
