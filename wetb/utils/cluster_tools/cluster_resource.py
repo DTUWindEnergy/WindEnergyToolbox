@@ -11,6 +11,8 @@ import threading
 from wetb.utils.cluster_tools import pbswrap
 from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
 
+def unix_path(path):
+    return path.replace("\\", "/").lower()
 
 class Resource(object):
 
@@ -42,10 +44,23 @@ class Resource(object):
             self.acquired -= 1
 
 
+    def update_status(self):
+        try:
+            self.no_cpu, self.cpu_free, self.no_current_process = self.check_resources()
+        except Exception:
+            pass
+
 
 class SSHPBSClusterResource(Resource, SSHClient):
-    def __init__(self, host, username, password, port, min_cpu, min_free):
+    finished = []
+    loglines = {}
+    is_executing = []
+    
+    def __init__(self, host, username, password, port, min_cpu, min_free, init_cmd, wine_cmd, python_cmd):
         Resource.__init__(self, min_cpu, min_free)
+        self.init_cmd = init_cmd
+        self.wine_cmd = wine_cmd
+        self.python_cmd = python_cmd
         self.shared_ssh = SharedSSHClient(host, username, password, port)
         SSHClient.__init__(self, host, username, password, port=port)
         self.lock = threading.Lock()
@@ -87,9 +102,9 @@ class SSHPBSClusterResource(Resource, SSHClient):
         if not hasattr(jobids, "len"):
             jobids = list(jobids)
         self.execute("qdel %s" % (" ".join(jobids)))
-
-
-
+        
+        
+   
 
 
 class LocalResource(Resource):

@@ -177,7 +177,7 @@ class HTCFile(HTCContents, HTCDefaults):
                 files.append(self.aero.dynstall_ateflap.get('flap', [None] * 3)[2])
             if 'bemwake_method' in self.aero:
                 files.append(self.aero.bemwake_method.get('a-ct-filename', [None] * 3)[0])
-        for dll in [self.dll[dll] for dll in self.get('dll', {}).keys()]:
+        for dll in [self.dll[dll] for dll in self.get('dll', {}).keys() if 'filename' in self.dll[dll]]:
             files.append(dll.filename[0])
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])

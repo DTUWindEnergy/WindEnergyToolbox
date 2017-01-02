@@ -17,7 +17,7 @@ from collections import OrderedDict
 import time
 import math
 UNKNOWN = "Unknown"
-MISSING = "Log file cannot be found"
+MISSING = "Log file not found (May be waiting for PBS allocation)"
 PENDING = "Simulation not started yet"
 INITIALIZATION = 'Initializing simulation'
 SIMULATING = "Simulating"

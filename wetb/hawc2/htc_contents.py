@@ -91,6 +91,8 @@ class HTCContents(object):
 
 
     def __contains__(self, key):
+        if self.contents is None:
+            return False
         return key in self.contents
 
     def get(self, section, default=None):

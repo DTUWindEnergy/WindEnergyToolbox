@@ -12,6 +12,9 @@ import threading
 from _collections import deque
 import time
 import traceback
+import zipfile
+from wetb.utils.timing import print_time
+import glob
 
 class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
@@ -64,9 +67,12 @@ class SSHClient(object):
 
     def download(self, remotefilepath, localfile, verbose=False, retry=1):
         if verbose:
+            ret = None
             print ("Download %s > %s" % (remotefilepath, str(localfile)))
         with self:
             for i in range(retry):
+                if i>0:
+                    print ("Retry download %s, #%d"%(remotefilepath, i))
                 try:
                     if isinstance(localfile, (str, bytes, int)):
                         ret = self.sftp.get(remotefilepath, localfile)
@@ -75,10 +81,9 @@ class SSHClient(object):
                     break
                 except:
                     pass
-                print ("retry", i)
+                print ("Download %s failed from %s"%(remotefilepath, self.host))
         if verbose:
             print (ret)
-
 
     def upload(self, localfile, filepath, verbose=False):
         if verbose:
@@ -90,6 +95,45 @@ class SSHClient(object):
                 ret = self.sftp.putfo(localfile, filepath)
         if verbose:
             print (ret)
+            
+        
+    def upload_files(self, localpath, remotepath, file_lst=["."], compression_level=1):
+        assert os.path.isdir(localpath)
+        if not isinstance(file_lst, (tuple, list)):
+            file_lst = [file_lst]
+        files = ([os.path.join(root, f) for fp in file_lst for root,_,files in os.walk(os.path.join(localpath, fp )) for f in files] + 
+                [f for fp in file_lst for f in glob.glob(os.path.join(localpath, fp)) ])
+        files = set([os.path.abspath(f) for f in files])
+
+        compression_levels = {0:zipfile.ZIP_STORED, 1:zipfile.ZIP_DEFLATED, 2:zipfile.ZIP_BZIP2, 3:zipfile.ZIP_LZMA}
+        zn =  'tmp.zip'
+        zipf = zipfile.ZipFile(zn, 'w', compression_levels[compression_level])
+        for f in files:
+            zipf.write(f, os.path.relpath(f, localpath))
+        zipf.close()
+        remote_zn = os.path.join(remotepath, zn).replace("\\","/")
+        self.execute("mkdir -p %s"%(remotepath))
+        
+        self.upload(zn, remote_zn)
+        os.remove(zn)
+        self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
+    
+    def download_files(self, remote_path, localpath, file_lst=["."], compression_level=1):
+        if not isinstance(file_lst, (tuple, list)):
+            file_lst = [file_lst]
+        file_lst = [f.replace("\\","/") for f in file_lst]
+        remote_zip = os.path.join(remote_path, "tmp.zip").replace("\\","/")
+        self.execute("cd %s && zip -r tmp.zip %s"%(remote_path, " ".join(file_lst)))
+        
+        local_zip = os.path.join(localpath, "tmp.zip")
+        if not os.path.isdir(localpath):
+            os.makedirs(localpath)
+        self.download(remote_zip, local_zip)
+        self.execute("rm -f %s" % remote_zip)
+        with zipfile.ZipFile(local_zip, "r") as z:
+            z.extractall(localpath)
+        os.remove(local_zip)
+        
 
     def close(self):
         for x in ["sftp", "client" ]:
@@ -154,11 +198,16 @@ class SSHClient(object):
             self.upload('tmp.reg', 'tmp.reg')
             ret = self.execute('wine regedit tmp.reg')
 
-    def glob(self, filepattern, cwd=""):
+    def glob(self, filepattern, cwd="", recursive=False):
         cwd = os.path.join(cwd, os.path.split(filepattern)[0]).replace("\\", "/")
         filepattern = os.path.split(filepattern)[1]
-        _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
+        if recursive:
+            _, out, _ = self.execute(r'find %s -type f -name "%s"' % (cwd, filepattern))
+        else:
+            _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
         return [file for file in out.strip().split("\n") if file != ""]
+
+
 
 
 class SharedSSHClient(SSHClient):
