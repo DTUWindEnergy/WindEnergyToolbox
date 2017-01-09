@@ -182,6 +182,77 @@ def variable_tag_func(master, case_id_short=False):
 
     return master
 
+
+def variable_tag_func_mod1(master, case_id_short=False):
+    """
+    CAUTION: this is version will add an additional layer in the folder
+    structure in order to seperate input and output file types:
+        input:
+            htc
+                DLCs
+            data
+            control
+        output:
+            res
+            logfiles
+
+    Function which updates HtcMaster.tags and returns an HtcMaster object
+
+    Only use lower case characters for case_id since a hawc2 result and
+    logfile are always in lower case characters.
+
+    BE CAREFULL: if you change a master tag that is used to dynamically
+    calculate an other tag, that change will be propageted over all cases,
+    for example:
+    master.tags['tag1'] *= master.tags[tag2]*master.tags[tag3']
+    it will accumlate over each new case. After 20 cases
+    master.tags['tag1'] = (master.tags[tag2]*master.tags[tag3'])^20
+    which is not wanted, you should do
+    master.tags['tag1'] = tag1_base*master.tags[tag2]*master.tags[tag3']
+
+    This example is based on reading the default DLC spreadsheets, and is
+    already included in the dlcdefs.excel_stabcon
+    """
+
+    mt = master.tags
+
+    mt['[Case folder]'] = mt['[Case folder]'].lower()
+    dlc_case = mt['[Case folder]']
+
+    if '[Case id.]' in mt.keys():
+        mt['[case_id]'] = mt['[Case id.]'].lower()
+    if '[time stop]' in mt.keys():
+        mt['[time_stop]'] = mt['[time stop]']
+    else:
+        mt['[time stop]'] = mt['[time_stop]']
+    try:
+        mt['[turb_base_name]'] = mt['[Turb base name]']
+    except KeyError:
+        mt['[turb_base_name]'] = None
+
+    mt['[data_dir]'] = 'input/data/'
+    mt['[res_dir]'] = 'output/res/%s/' % dlc_case
+    mt['[log_dir]'] = 'output/logfiles/%s/' % dlc_case
+    mt['[htc_dir]'] = 'input/htc/%s/' % dlc_case
+    try:
+        mt['[time_stop]'] = mt['[time stop]']
+    except KeyError:
+        mt['[time stop]'] = mt['[time_stop]']
+    mt['[DLC]'] = mt['[Case id.]'].split('_')[0][3:]
+    mt['[pbs_out_dir]'] = 'output/pbs_out/%s/' % dlc_case
+    mt['[pbs_in_dir]'] = 'output/pbs_in/%s/' % dlc_case
+    mt['[iter_dir]'] = 'output/iter/%s/' % dlc_case
+    if '[eigen_analysis]' in mt and mt['[eigen_analysis]']:
+        rpl = os.path.join(dlc_case, mt['[Case id.]'])
+        mt['[eigenfreq_dir]'] = 'output/res_eigen/%s/' % rpl
+    mt['[duration]'] = str(float(mt['[time_stop]']) - float(mt['[t0]']))
+    # replace nan with empty
+    for ii, jj in mt.items():
+        if jj == 'nan':
+            mt[ii] = ''
+
+    return master
+
 # =============================================================================
 ### PRE- POST
 # =============================================================================
