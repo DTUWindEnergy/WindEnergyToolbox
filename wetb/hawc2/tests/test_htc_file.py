@@ -250,10 +250,6 @@ class TestHtcFile(unittest.TestCase):
     def test_htc_reset(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         self.assertEqual(htcfile.wind.wsp[0], 10)
-        
-
-
-
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

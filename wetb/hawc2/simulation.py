@@ -18,9 +18,10 @@ import time
 
 from future import standard_library
 from wetb.hawc2 import log_file
-from wetb.hawc2.htc_file import HTCFile
+from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
-from wetb.utils.cluster_tools.cluster_resource import unix_path
+
+
 
 
 standard_library.install_aliases()
@@ -75,7 +76,7 @@ class Simulation(object):
     def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
         self.modelpath = os.path.abspath(modelpath) + "/"
         if os.path.isabs(htcfilename):
-            htcfilename = os.path.relpath(htcfilename, modelpath).replace("\\","/")
+            htcfilename = os.path.relpath(htcfilename, modelpath)
         if htcfilename.startswith("input/"):
             htcfilename=htcfilename[6:]
         exists = [os.path.isfile(os.path.join(modelpath, htcfilename)), 
@@ -91,22 +92,22 @@ class Simulation(object):
             self.exepath = self.modelpath + "input/"
         else:
             self.exepath = self.modelpath 
+        htcfilename = fmt_path(htcfilename)
         
         self.tmp_modelpath = self.exepath
         self.folder = os.path.dirname(htcfilename)
-        if not os.path.isabs(htcfilename):
-            htcfilename = os.path.join(self.exepath, htcfilename)
+        
         self.filename = os.path.basename(htcfilename)
-        self.htcFile = HTCFile(htcfilename, self.exepath)
+        self.htcFile = HTCFile(os.path.join(self.exepath, htcfilename), self.exepath)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
-        self.simulation_id = unix_path(os.path.relpath(htcfilename, self.modelpath) + "_%d" % id(self)).replace("/", "_")
+        self.simulation_id = (htcfilename + "_%d" % id(self)).replace("\\","/").replace("/", "_")
         if self.simulation_id.startswith("input_"):
             self.simulation_id = self.simulation_id[6:]
-        self.stdout_filename = os.path.splitext(unix_path(os.path.relpath(htcfilename, self.modelpath)).replace('htc', 'stdout', 1))[0] + ".out"
+        self.stdout_filename = fmt_path(os.path.join(os.path.relpath(self.exepath, self.modelpath), 
+                                                     (os.path.splitext(htcfilename)[0] + ".out").replace('htc', 'stdout', 1)))
         if self.ios:
-            
             assert self.stdout_filename.startswith("input/")
             self.stdout_filename = self.stdout_filename.replace("input/", "../output/")
         #self.stdout_filename = "stdout/%s.out" % self.simulation_id
@@ -118,7 +119,7 @@ class Simulation(object):
             self.log_filename = os.path.relpath(self.log_filename, self.modelpath)
         else:
             self.log_filename = os.path.relpath(self.log_filename)
-        self.log_filename = unix_path(self.log_filename)
+        self.log_filename = fmt_path(self.log_filename)
         self.logFile = LogFile(os.path.join(self.exepath, self.log_filename), self.time_stop)
         self.logFile.clear()
         self.last_status = self.status
@@ -257,19 +258,20 @@ class Simulation(object):
                 dst = os.path.relpath(os.path.abspath(dst), self.exepath)
             else:
                 dst = os.path.relpath (dst)
-            dst = unix_path(dst)
+            dst = fmt_path(dst)
             assert not os.path.relpath(os.path.join(self.exepath, dst), self.modelpath).startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % dst
             return dst
+        turb_files = [f for f in self.htcFile.turbulence_files() if self.copy_turbulence and not os.path.isfile(os.path.join(self.exepath, f))]
         if self.ios:
             output_patterns = [fmt(dst) for dst in (["../output/*", "../output/"] + 
-                                                    ([], self.htcFile.turbulence_files())[self.copy_turbulence] + 
+                                                    turb_files + 
                                                     [os.path.join(self.exepath, self.stdout_filename)])]
-            output_files = set([f for pattern in output_patterns for f in self.host.glob(unix_path(os.path.join(self.tmp_exepath, pattern)), recursive=True)])
+            output_files = set([fmt_path(f) for pattern in output_patterns for f in self.host.glob(fmt_path(os.path.join(self.tmp_exepath, pattern)), recursive=True)])
         else:
             output_patterns = [fmt(dst) for dst in (self.htcFile.output_files() + 
-                                                    ([], self.htcFile.turbulence_files())[self.copy_turbulence] + 
+                                                    turb_files + 
                                                     [os.path.join(self.exepath, self.stdout_filename)])]
-            output_files = set([f for pattern in output_patterns for f in self.host.glob(unix_path(os.path.join(self.tmp_exepath, pattern)))])
+            output_files = set([fmt_path(f) for pattern in output_patterns for f in self.host.glob(fmt_path(os.path.join(self.tmp_exepath, pattern)))])
         try:
             self.host._finish_simulation(output_files)
             if self.status != ERROR:
@@ -349,7 +351,7 @@ class Simulation(object):
     def fix_errors(self):
         def confirm_add_additional_file(folder, file):
             if os.path.isfile(os.path.join(self.modelpath, folder, file)):
-                filename = unix_path(os.path.join(folder, file))
+                filename = fmt_path(os.path.join(folder, file))
                 if self.get_confirmation("File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
                     self.add_additional_input_file(filename)
                     self.show_message("'%s' is now added to additional_files.txt.\n\nPlease restart the simulation" % filename)

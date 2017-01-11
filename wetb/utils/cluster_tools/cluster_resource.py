@@ -3,16 +3,60 @@ Created on 04/04/2016
 
 @author: MMPE
 '''
+import glob
 import multiprocessing
+import os
+import re
 import threading
-
-
 
 from wetb.utils.cluster_tools import pbswrap
 from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
 
-def unix_path(path):
-    return path.replace("\\", "/").lower()
+
+def unix_path(path, cwd=None, fail_on_missing=False):
+    """Convert case insensitive filename into unix case sensitive filename
+
+    If no matching file or folder is found an error is raised
+
+    Parameters
+    ---------
+    x : str
+        Case insensitive filename or folder
+
+    Returns
+    -------
+    Filename or folder name
+
+    """
+    if cwd:
+        path = os.path.join(cwd, path)
+    path = os.path.abspath(path)
+    r = glob.glob(re.sub(r'([^:/\\])(?=[/\\]|$)', r'[\1]', path))
+    if r:
+        path = r[0]
+    elif fail_on_missing:
+        raise FileExistsError("File or folder matching '%s' not found"%path)
+    if cwd:
+        path = os.path.relpath(path, cwd)
+    if os.path.isdir(path):
+        path+="/"
+    return path.replace("\\","/")
+
+#     filename = os.path.realpath(filename.replace("\\", "/")).replace("\\", "/")
+#     ufn, rest = os.path.splitdrive(filename)
+#     ufn += "/"
+#     for f in rest[1:].split("/"):
+#         f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
+#         if len(f_lst) > 1:
+#             f_lst = [f_ for f_ in f_lst if f_ == f]
+#         elif len(f_lst) == 0:
+#             raise IOError("'%s' not found in '%s'" % (f, ufn))
+#         else: # one match found
+#             ufn = os.path.join(ufn, f_lst[0])
+#     return ufn.replace("\\", "/")
+
+
+
 
 class Resource(object):
 

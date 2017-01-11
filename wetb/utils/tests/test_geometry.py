@@ -11,7 +11,7 @@ from future import standard_library
 standard_library.install_aliases()
 import unittest
 
-import wetb.gtsdf
+
 import numpy as np
 from wetb.utils.geometry import rad, deg, mean_deg, sind, cosd, std_deg, tand
 import os

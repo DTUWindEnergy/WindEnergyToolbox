@@ -106,17 +106,22 @@ class SSHClient(object):
         files = set([os.path.abspath(f) for f in files])
 
         compression_levels = {0:zipfile.ZIP_STORED, 1:zipfile.ZIP_DEFLATED, 2:zipfile.ZIP_BZIP2, 3:zipfile.ZIP_LZMA}
-        zn =  'tmp.zip'
+        zn =  'tmp_%s_%s.zip'%(id(self),time.time())
         zipf = zipfile.ZipFile(zn, 'w', compression_levels[compression_level])
-        for f in files:
-            zipf.write(f, os.path.relpath(f, localpath))
-        zipf.close()
-        remote_zn = os.path.join(remotepath, zn).replace("\\","/")
-        self.execute("mkdir -p %s"%(remotepath))
+        try:
+            for f in files:
+                zipf.write(f, os.path.relpath(f, localpath))
+            zipf.close()
+            remote_zn = os.path.join(remotepath, zn).replace("\\","/")
+            self.execute("mkdir -p %s"%(remotepath))
+            
+            self.upload(zn, remote_zn)
+            self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
+        except:
+            raise
+        finally:
+            os.remove(zn)
         
-        self.upload(zn, remote_zn)
-        os.remove(zn)
-        self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
     
     def download_files(self, remote_path, localpath, file_lst=["."], compression_level=1):
         if not isinstance(file_lst, (tuple, list)):

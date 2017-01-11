@@ -13,7 +13,8 @@ from __future__ import absolute_import
 from io import open
 from builtins import str
 from future import standard_library
-from wetb.utils.process_exec import pexec, unix_filename
+from wetb.utils.process_exec import pexec
+from wetb.utils.cluster_tools.cluster_resource import unix_path
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -22,6 +23,9 @@ from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine, \
 import os
 from copy import copy
 
+
+def fmt_path(path):
+    return path.lower().replace("\\","/")
 
 class HTCFile(HTCContents, HTCDefaults):
     """Wrapper for HTC files
@@ -39,13 +43,13 @@ class HTCFile(HTCContents, HTCDefaults):
     modelpath = "../"
     initial_comments = None
     _contents = None
-    def __init__(self, filename=None, modelpath="../"):
+    def __init__(self, filename=None, relative_modelpath="../"):
         
         if filename is not None:
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), modelpath))
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), relative_modelpath))
             self.filename = filename    
         else:
-            self.modelpath = modelpath            
+            self.modelpath = relative_modelpath            
 
         
         
@@ -92,7 +96,7 @@ class HTCFile(HTCContents, HTCDefaults):
         
             
     def readfilelines(self, filename):
-        with open(unix_filename(filename), encoding='cp1252') as fid:
+        with open(unix_path(filename), encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]

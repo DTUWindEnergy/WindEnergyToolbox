@@ -22,6 +22,7 @@ from wetb.utils.cluster_tools.cluster_resource import LocalResource, \
 from wetb.utils.cluster_tools.pbsjob import SSHPBSJob, NOT_SUBMITTED, DONE
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 from wetb.utils.timing import print_time
+from wetb.hawc2.htc_file import fmt_path
 
 
 class SimulationHost(object):
@@ -116,7 +117,16 @@ class LocalSimulationHost(SimulationHost):
         try:
             shutil.rmtree(self.tmp_modelpath, ignore_errors=False)
         except (PermissionError, OSError) as e:
-            raise Warning("Fail to remove temporary files and folders on %s\n%s"%(self.resource.host, str(e)))
+            try:
+                #change permissions and delete
+                for root, folders, files in os.walk(self.tmp_modelpath):  
+                    for folder in folders:  
+                        os.chmod(os.path.join(root, folder), 0o666)
+                    for file in files:
+                        os.chmod(os.path.join(root, file), 0o666)
+                shutil.rmtree(self.tmp_modelpath)
+            except (PermissionError, OSError) as e:
+                raise Warning("Fail to remove temporary files and folders on %s\n%s"%(self.resource.host, str(e)))
 
 
     def update_logFile_status(self):
@@ -124,7 +134,9 @@ class LocalSimulationHost(SimulationHost):
 
     def stop(self):
             self.simulationThread.stop()
-            self.simulationThread.join()
+            if self.simulationThread.is_alive():
+                self.simulationThread.join()
+            print ("simulatino_resources.stop joined")
 
 
 
@@ -183,7 +195,10 @@ class SimulationThread(Thread):
 
     def stop(self):
         if hasattr(self, 'process'):
-            subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=self.process.pid))
+            try:
+                subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=self.process.pid))
+            except:
+                pass
         
 
 class PBSClusterSimulationResource(SSHPBSClusterResource):
@@ -246,7 +261,7 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
         if v == 0:
             return datetime.strptime(out.strip(), "%Y,%m,%d,%H,%M,%S")
 
-    @print_time
+    #@print_time
     def _prepare_simulation(self, input_files):
         with self:
             self.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
@@ -268,7 +283,7 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
 
 
 
-    @print_time
+    #@print_time
     def _finish_simulation(self, output_files):
         with self:
             download_failed = []
@@ -377,10 +392,10 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
 
     def pbsjobfile(self, ios=False):
         cp_back = ""
-        for folder in set([unix_path(os.path.relpath(os.path.dirname(f))) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
+        for folder in set([fmt_path(os.path.relpath(os.path.dirname(f))) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
             cp_back += "mkdir -p $PBS_O_WORKDIR/%s/. \n" % folder
             cp_back += "cp -R -f %s/. $PBS_O_WORKDIR/%s/.\n" % (folder, folder)
-        rel_htcfilename = unix_path(os.path.relpath(self.htcFile.filename, self.exepath))
+        rel_htcfilename = fmt_path(os.path.relpath(self.htcFile.filename, self.exepath))
         
         init="""
 ### Standard Output
