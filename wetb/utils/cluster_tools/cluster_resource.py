@@ -42,18 +42,19 @@ def unix_path(path, cwd=None, fail_on_missing=False):
         path+="/"
     return path.replace("\\","/")
 
-#     filename = os.path.realpath(filename.replace("\\", "/")).replace("\\", "/")
-#     ufn, rest = os.path.splitdrive(filename)
-#     ufn += "/"
-#     for f in rest[1:].split("/"):
-#         f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
-#         if len(f_lst) > 1:
-#             f_lst = [f_ for f_ in f_lst if f_ == f]
-#         elif len(f_lst) == 0:
-#             raise IOError("'%s' not found in '%s'" % (f, ufn))
-#         else: # one match found
-#             ufn = os.path.join(ufn, f_lst[0])
-#     return ufn.replace("\\", "/")
+def unix_path_old(filename):
+    filename = os.path.realpath(filename.replace("\\", "/")).replace("\\", "/")
+    ufn, rest = os.path.splitdrive(filename)
+    ufn += "/"
+    for f in rest[1:].split("/"):
+        f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
+        if len(f_lst) > 1:
+            f_lst = [f_ for f_ in f_lst if f_ == f]
+        elif len(f_lst) == 0:
+            raise IOError("'%s' not found in '%s'" % (f, ufn))
+        else: # one match found
+            ufn = os.path.join(ufn, f_lst[0])
+    return ufn.replace("\\", "/")
 
 
 

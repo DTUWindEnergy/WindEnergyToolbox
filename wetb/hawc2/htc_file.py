@@ -14,7 +14,7 @@ from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
-from wetb.utils.cluster_tools.cluster_resource import unix_path
+from wetb.utils.cluster_tools.cluster_resource import unix_path, unix_path_old
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -104,7 +104,7 @@ class HTCFile(HTCContents, HTCDefaults):
         
             
     def readfilelines(self, filename):
-        with open(unix_path(filename), encoding='cp1252') as fid:
+        with open(unix_path_old(filename), encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]
