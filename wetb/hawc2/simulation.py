@@ -339,9 +339,10 @@ class Simulation(object):
                 except:
                     print ("finish_simulation failed", str(self))
                     raise
-        except:
+        except Exception as e:
             self.status = ERROR
-            raise
+            self.errors.append(str(e))
+            raise e
         finally:
             self.is_done = True
 

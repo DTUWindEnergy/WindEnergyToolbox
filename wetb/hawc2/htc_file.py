@@ -43,13 +43,21 @@ class HTCFile(HTCContents, HTCDefaults):
     modelpath = "../"
     initial_comments = None
     _contents = None
-    def __init__(self, filename=None, relative_modelpath="../"):
+    def __init__(self, filename=None, modelpath="../"):
+        """        
+        Parameters
+        ---------
+        filename : str
+            Absolute filename of htc file
+        modelpath : str
+            Model path relative to htc file 
+        """
         
         if filename is not None:
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), relative_modelpath))
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), modelpath))
             self.filename = filename    
         else:
-            self.modelpath = relative_modelpath            
+            self.modelpath = modelpath            
 
         
         
