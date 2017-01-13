@@ -6,7 +6,7 @@ Created on 13/07/2016
 import numpy as np
 from wetb.signal_tools.filters.first_order import low_pass
 from wetb.signal_tools.filters import replacer
-from wetb.signal_tools.sonic.despike_sonic import thresshold_finder
+
 
 replace_by_nan = replacer.replace_by_nan
 replace_by_line = replacer.replace_by_line
