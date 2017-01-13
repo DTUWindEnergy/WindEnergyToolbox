@@ -26,12 +26,10 @@ from Cython.Distutils import build_ext
 
 def setup_package():
 
-    path = 'wetb/fatigue_tools/rainflowcounting/'
-    module = 'wetb.fatigue_tools.rainflowcounting'
-    names = ['pair_range', 'peak_trough', 'rainflowcount_astm']
+    ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm'])]
     extlist = [Extension('%s.%s' % (module, n),
-                         [os.path.join(path, n)+'.pyx'],
-                         include_dirs=[np.get_include()]) for n in names]
+                         [os.path.join(module.replace(".","/"), n)+'.pyx'],
+                         include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
 
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
     sphinx = ['sphinx'] if needs_sphinx else []
