@@ -24,7 +24,7 @@ class Test_first_order_filters(unittest.TestCase):
         a = np.random.randint(0,100,100).astype(np.float)
         b = first_order.high_pass(a, 1, 1)
         self.assertLess(b.mean(), a.mean())
-        if 1:
+        if 0:
             import matplotlib.pyplot as plt
             plt.plot(a)
             plt.plot(b)
