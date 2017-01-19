@@ -350,6 +350,9 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                     elif tags_dict[str(key)].lower() == 'nan':
                         tags_dict[str(key)] = True
 
+            if '[Windspeed]' not in tags_dict and '[wsp]' in tags_dict:
+                tags_dict['[Windspeed]'] = tags_dict['[wsp]']
+
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
             dlc_case = tags_dict['[Case folder]']
