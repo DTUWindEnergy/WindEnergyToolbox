@@ -104,9 +104,10 @@ class DLCHighLevel(object):
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
         self.sensor_df.columns = [k.lower() for k in self.sensor_df.columns]
-
+        
         for k in ['Name', 'Nr']:
             assert k.lower() in self.sensor_df.keys(), "Sensor sheet must have a '%s' column" % k
+        self.sensor_df = self.sensor_df[self.sensor_df.name!=""]
         assert not any(self.sensor_df['name'].duplicated()), "Duplicate sensor names: %s" % ",".join(self.sensor_df['name'][self.sensor_df['name'].duplicated()].values)
         for k in ['description', 'unit', 'statistic', 'ultimate', 'fatigue', 'm', 'neql', 'extremeload', 'bearingdamage', 'mindistance', 'maxdistance']:
             if k not in self.sensor_df.keys():
@@ -172,7 +173,7 @@ class DLCHighLevel(object):
 
     def fatigue_distribution(self):
         fatigue_dist = {}
-        for row, load in enumerate(self.dlc_df['load']):
+        for row, load in self.dlc_df['load'].iteritems():
             if "F" not in str(load).upper():
                 continue
             dlc = self.dlc_df[self.dist_value_keys[0][1]][row]
