@@ -164,7 +164,7 @@ Note that ```--no-deps``` avoids that newer packages from the channel
 ```conda-forge``` will be used instead of those from the default ```anaconda```
 channel. Depending on which packages get overwritten, this might brake your
 Anaconda root environment. As such, using ```--no-deps``` should be
-be used for safety (especially when operating from the root environment).
+used for safety (especially when operating from the root environment).
 
 
 ## Get wetb
