@@ -21,7 +21,8 @@ from sshtunnel import SSHTunnelForwarder
 
 
 class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
-    
+    pass
+
     def _connect_to_gateway(self):
         """
         Open connection to SSH gateway
@@ -34,7 +35,7 @@ class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
                               .format('*' * len(self.ssh_password)))
             try:
                 self._transport = self._get_transport()
-                if self.interactive_auth_gateway:
+                if self.interactive_auth_handler:
                     self._transport.start_client()
                     def interactive_handler(title, instructions, prompt_list):
                         if prompt_list:
@@ -49,45 +50,28 @@ class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
                     self._transport.connect(hostkey=self.ssh_host_key,
                                             username=self.ssh_username,
                                             password=self.ssh_password)
-                
+                 
                 if self._transport.is_alive:
                     return
             except paramiko.AuthenticationException:
                 self.logger.debug('Authentication error')
                 self._stop_transport()
-#         
-#         try:
-#             self._transport = self._get_transport()
-#             self._transport.start_client()
-#             def interactive_handler(title, instructions, prompt_list):
-#                 if prompt_list:
-#                     if prompt_list[0][0]=="AD Password: ":
-#                         import x
-#                         return [x.mmpe]
-#                     return [getpass.getpass(prompt_list[0][0])]
-#                 print ("here")
-#                 return []
-#             self._transport.auth_interactive("mmpe", interactive_handler)
-#             if self._transport.is_alive:
-#                 return
-#         except paramiko.AuthenticationException:
-#             self.logger.debug('Authentication error')
-#             self._stop_transport()
  
+  
         self.logger.error('Could not open connection to gateway')
 
 class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, gateway=None, interactive_auth_gateway=False):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, gateway=None, interactive_auth_handler=None):
         self.host = host
         self.username = username
         self.password = password
         self.port = port
         self.key = key
         self.gateway=gateway
-        self.interactive_auth_gateway = interactive_auth_gateway
+        self.interactive_auth_handler = interactive_auth_handler
         self.disconnect = 0
         self.client = None
         self.sftp = None
@@ -117,13 +101,13 @@ class SSHClient(object):
         if self.gateway:
                           
             self.tunnel = SSHInteractiveAuthTunnelForwarder(
-                (self.gateway, self.port),
-                ssh_username=self.username,
-                ssh_password=self.password,
+                (self.gateway.host, self.gateway.port),
+                ssh_username=self.gateway.username,
+                ssh_password=self.gateway.password,
                 remote_bind_address=(self.host, self.port),
                 local_bind_address=('0.0.0.0', 10022)
             )
-            self.tunnel.interactive_auth_gateway = self.interactive_auth_gateway
+            self.tunnel.interactive_auth_handler = self.gateway.interactive_auth_handler
             self.tunnel.start()
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
