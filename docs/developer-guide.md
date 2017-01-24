@@ -86,7 +86,7 @@ Python versions, see below.
 and your terminal will do something like:
 ```
 C:\Users\> activate
-[Anaconda3] C:\Users\>
+(root) C:\Users\>
 ```
 note that the name of the environment is now a prefix before the current path.
 
