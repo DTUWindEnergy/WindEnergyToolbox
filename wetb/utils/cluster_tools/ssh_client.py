@@ -16,12 +16,38 @@ import zipfile
 from wetb.utils.timing import print_time
 import glob
 import getpass
-from sshtunnel import SSHTunnelForwarder
+from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
 
 
 
 class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
-    pass
+    def __init__(
+        self,
+        interactive_auth_handler,  
+        ssh_address_or_host=None, 
+        ssh_config_file=SSH_CONFIG_FILE, 
+        ssh_host_key=None, 
+        ssh_password=None, 
+        ssh_pkey=None, 
+        ssh_private_key_password=None, 
+        ssh_proxy=None, 
+        ssh_proxy_enabled=True, 
+        ssh_username=None, 
+        local_bind_address=None, 
+        local_bind_addresses=None, 
+        logger=None, 
+        mute_exceptions=False, 
+        remote_bind_address=None, 
+        remote_bind_addresses=None, 
+        set_keepalive=0.0, 
+        threaded=True, 
+        compression=None, 
+        allow_agent=True, *
+        args, **
+        kwargs):
+        self.interactive_auth_handler = interactive_auth_handler
+        SSHTunnelForwarder.__init__(self, ssh_address_or_host=ssh_address_or_host, ssh_config_file=ssh_config_file, ssh_host_key=ssh_host_key, ssh_password=ssh_password, ssh_pkey=ssh_pkey, ssh_private_key_password=ssh_private_key_password, ssh_proxy=ssh_proxy, ssh_proxy_enabled=ssh_proxy_enabled, ssh_username=ssh_username, local_bind_address=local_bind_address, local_bind_addresses=local_bind_addresses, logger=logger, mute_exceptions=mute_exceptions, remote_bind_address=remote_bind_address, remote_bind_addresses=remote_bind_addresses, set_keepalive=set_keepalive, threaded=threaded, compression=compression, allow_agent=allow_agent, *args, **kwargs)
+        
 
     def _connect_to_gateway(self):
         """
@@ -37,15 +63,7 @@ class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
                 self._transport = self._get_transport()
                 if self.interactive_auth_handler:
                     self._transport.start_client()
-                    def interactive_handler(title, instructions, prompt_list):
-                        if prompt_list:
-                            if prompt_list[0][0]=="AD Password: ":
-                                import x
-                                return [x.mmpe]
-                            return [getpass.getpass(prompt_list[0][0])]
-                        print ("here")
-                        return []
-                    self._transport.auth_interactive("mmpe", interactive_handler)
+                    self._transport.auth_interactive(self.ssh_username, self.interactive_auth_handler)
                 else:
                     self._transport.connect(hostkey=self.ssh_host_key,
                                             username=self.ssh_username,
@@ -64,7 +82,7 @@ class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, gateway=None, interactive_auth_handler=None):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
         self.host = host
         self.username = username
         self.password = password
@@ -99,15 +117,22 @@ class SSHClient(object):
 #        if self.password is None or self.password == "":
 #             raise IOError("Password not set for %s"%self.host)
         if self.gateway:
-                          
-            self.tunnel = SSHInteractiveAuthTunnelForwarder(
-                (self.gateway.host, self.gateway.port),
-                ssh_username=self.gateway.username,
-                ssh_password=self.gateway.password,
-                remote_bind_address=(self.host, self.port),
-                local_bind_address=('0.0.0.0', 10022)
-            )
-            self.tunnel.interactive_auth_handler = self.gateway.interactive_auth_handler
+            if self.gateway.interactive_auth_handler:
+                self.tunnel = SSHInteractiveAuthTunnelForwarder(self.gateway.interactive_auth_handler,
+                                                                (self.gateway.host, self.gateway.port),
+                                                                ssh_username=self.gateway.username,
+                                                                ssh_password=self.gateway.password,
+                                                                remote_bind_address=(self.host, self.port),
+                                                                local_bind_address=('0.0.0.0', 10022)
+                                                               )
+            else:
+                self.tunnel = SSHTunnelForwarder((self.gateway.host, self.gateway.port),
+                                                 ssh_username=self.gateway.username,
+                                                 ssh_password=self.gateway.password,
+                                                 remote_bind_address=(self.host, self.port),
+                                                 local_bind_address=('0.0.0.0', 10022)
+                                                )
+            
             self.tunnel.start()
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -117,19 +142,12 @@ class SSHClient(object):
         else:
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            try:
-                self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
-            except paramiko.ssh_exception.SSHException as e:
+            if self.interactive_auth_handler:
                 transport = self.client.get_transport()
-                def interactive_handler(title, instructions, prompt_list):
-                    if prompt_list:
-                        if prompt_list[0][0]=="AD Password: ":
-                            import x
-                            return [x.mmpe]
-                        return [getpass.getpass(prompt_list[0][0])]
-                    print ("here")
-                    return []
-                transport.auth_interactive(self.username, interactive_handler)
+                transport.auth_interactive(self.username, self.interactive_handler)
+            else:
+                self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
+            
                 
         
         
@@ -294,8 +312,8 @@ class SSHClient(object):
 
 
 class SharedSSHClient(SSHClient):
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None):
-        SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase)
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
+        SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase, interactive_auth_handler=interactive_auth_handler, gateway=gateway)
         self.shared_ssh_lock = threading.RLock()
         self.shared_ssh_queue = deque()
         self.next = None
@@ -326,6 +344,8 @@ class SharedSSHClient(SSHClient):
                         self.next = self.shared_ssh_queue.popleft()
                     else:
                         self.next = None
+
+
 
 if __name__ == "__main__":
     from mmpe.ui.qt_ui import QtInputUI
