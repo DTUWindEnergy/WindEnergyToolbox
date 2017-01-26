@@ -140,7 +140,7 @@ class TestSSHClient(unittest.TestCase):
                             return [self.password]
                         return [getpass.getpass(prompt_list[0][0])]
                     return []
-            gateway = SSHClient('ssh.risoe.dk', 'mmpe', x.mmpe, interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
+            gateway = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
             ssh = SSHClient('gorm.risoe.dk', 'mmpe', x.mmpe, gateway = gateway)
             _,out,_ = ssh.execute("hostname")
             self.assertEqual(out.strip(), "g-000.risoe.dk")
