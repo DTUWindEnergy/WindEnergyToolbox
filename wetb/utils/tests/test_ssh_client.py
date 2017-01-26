@@ -121,16 +121,16 @@ class TestSSHClient(unittest.TestCase):
 #             ssh = SSHClient('g-047', "mmpe", x.mmpe, gateway=gateway)
 #             self.assertEqual(ssh.execute('hostname')[1].strip(), "g-047")
 
-    def test_ssh_risoe(self):
-        if x:
-            
-            ssh = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
-            _,out,_ = ssh.execute("hostname")
-            self.assertEqual(out.strip(), "ssh-03.risoe.dk")
+#     def test_ssh_risoe(self):
+#         if x:
+#             
+#             ssh = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
+#             _,out,_ = ssh.execute("hostname")
+#             self.assertEqual(out.strip(), "ssh-03.risoe.dk")
 
     def test_ssh_risoe_gorm(self):
         if x:
-
+ 
             gateway = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
             ssh = SSHClient('gorm.risoe.dk', 'mmpe', x.mmpe, gateway = gateway)
             _,out,_ = ssh.execute("hostname")

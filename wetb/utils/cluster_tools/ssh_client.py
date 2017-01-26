@@ -48,8 +48,26 @@ class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
         self.interactive_auth_handler = interactive_auth_handler
         SSHTunnelForwarder.__init__(self, ssh_address_or_host=ssh_address_or_host, ssh_config_file=ssh_config_file, ssh_host_key=ssh_host_key, ssh_password=ssh_password, ssh_pkey=ssh_pkey, ssh_private_key_password=ssh_private_key_password, ssh_proxy=ssh_proxy, ssh_proxy_enabled=ssh_proxy_enabled, ssh_username=ssh_username, local_bind_address=local_bind_address, local_bind_addresses=local_bind_addresses, logger=logger, mute_exceptions=mute_exceptions, remote_bind_address=remote_bind_address, remote_bind_addresses=remote_bind_addresses, set_keepalive=set_keepalive, threaded=threaded, compression=compression, allow_agent=allow_agent, *args, **kwargs)
         
-
     def _connect_to_gateway(self):
+        """
+        Open connection to SSH gateway
+         - First try with all keys loaded from an SSH agent (if allowed)
+         - Then with those passed directly or read from ~/.ssh/config
+         - As last resort, try with a provided password
+        """
+        try:
+            self._transport = self._get_transport()
+            self._transport.start_client()
+            self._transport.auth_interactive(self.ssh_username, self.interactive_auth_handler)
+            if self._transport.is_alive:
+                return
+        except paramiko.AuthenticationException:
+            self.logger.debug('Authentication error')
+            self._stop_transport()
+  
+        self.logger.error('Could not open connection to gateway')
+        
+    def _connect_to_gateway_old(self):
         """
         Open connection to SSH gateway
          - First try with all keys loaded from an SSH agent (if allowed)
