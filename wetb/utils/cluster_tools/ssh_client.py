@@ -142,12 +142,11 @@ class SSHClient(object):
         else:
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            if self.interactive_auth_handler:
-                transport = self.client.get_transport()
-                transport.auth_interactive(self.username, self.interactive_handler)
-            else:
+            try:
                 self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
-            
+            except paramiko.ssh_exception.SSHException as e:
+                transport = self.client.get_transport()
+                transport.auth_interactive(self.username, self.interactive_auth_handler)
                 
         
         

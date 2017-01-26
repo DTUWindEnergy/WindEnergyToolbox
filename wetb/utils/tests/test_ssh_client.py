@@ -23,7 +23,17 @@ import logging
 
 import getpass
 
-
+class sshrisoe_interactive_auth_handler(object):
+    def __init__(self, password):
+        self.password = password
+              
+    def __call__(self, title, instructions, prompt_list):
+        if prompt_list:
+            if prompt_list[0][0]=="AD Password: ":
+                return [self.password]
+            return [getpass.getpass(prompt_list[0][0])]
+        return []
+    
 tfp = os.path.join(os.path.dirname(__file__), 'test_files/')
 all = 0
 class TestSSHClient(unittest.TestCase):
@@ -111,35 +121,16 @@ class TestSSHClient(unittest.TestCase):
 #             ssh = SSHClient('g-047', "mmpe", x.mmpe, gateway=gateway)
 #             self.assertEqual(ssh.execute('hostname')[1].strip(), "g-047")
 
-#     def test_ssh_risoe(self):
-#         if x:
-#             class sshrisoe_interactive_auth_handler(object):
-#                 def __init__(self, password):
-#                     self.password = password
-#                         
-#                 def __call__(self, title, instructions, prompt_list):
-#                     if prompt_list:
-#                         if prompt_list[0][0]=="AD Password: ":
-#                             return [self.password]
-#                         return [getpass.getpass(prompt_list[0][0])]
-#                     return []
-#             
-#             ssh = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
-#             _,out,_ = ssh.execute("hostname")
-#             self.assertEqual(out.strip(), "ssh-03.risoe.dk")
+    def test_ssh_risoe(self):
+        if x:
+            
+            ssh = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
+            _,out,_ = ssh.execute("hostname")
+            self.assertEqual(out.strip(), "ssh-03.risoe.dk")
 
     def test_ssh_risoe_gorm(self):
         if x:
-            class sshrisoe_interactive_auth_handler(object):
-                def __init__(self, password):
-                    self.password = password
-                         
-                def __call__(self, title, instructions, prompt_list):
-                    if prompt_list:
-                        if prompt_list[0][0]=="AD Password: ":
-                            return [self.password]
-                        return [getpass.getpass(prompt_list[0][0])]
-                    return []
+
             gateway = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
             ssh = SSHClient('gorm.risoe.dk', 'mmpe', x.mmpe, gateway = gateway)
             _,out,_ = ssh.execute("hostname")
