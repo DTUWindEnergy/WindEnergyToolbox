@@ -5,9 +5,12 @@ Created on 23. dec. 2016
 '''
 import unittest
 from wetb.utils.cluster_tools.ssh_client import SSHClient
-import sys
 import os
+
 try:
+    import sys
+    import wetb
+    sys.path.append(os.path.dirname(wetb.__file__) + "/../../x")
     import x
 except:
     x=None
@@ -15,12 +18,6 @@ except:
 import io
 from wetb.utils.timing import print_time
 import shutil
-import paramiko
-from paramiko.message import Message
-from paramiko.common import cMSG_SERVICE_REQUEST
-import getpass
-import logging
-
 import getpass
 
 class sshrisoe_interactive_auth_handler(object):
@@ -132,7 +129,7 @@ class TestSSHClient(unittest.TestCase):
         if x:
  
             gateway = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
-            ssh = SSHClient('gorm.risoe.dk', 'mmpe', x.mmpe, gateway = gateway)
+            ssh = SSHClient('10.40.23.49', 'mmpe', x.mmpe, gateway = gateway)
             _,out,_ = ssh.execute("hostname")
             self.assertEqual(out.strip(), "g-000.risoe.dk")
 
