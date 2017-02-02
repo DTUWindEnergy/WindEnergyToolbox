@@ -250,12 +250,10 @@ class SharedSSHClient(SSHClient):
                         self.next = None
 
 if __name__ == "__main__":
-    from mmpe.ui.qt_ui import QtInputUI
-    q = QtInputUI(None)
-    x = None
-    username, password = "mmpe", x.password  #q.get_login("mmpe")
+    import getpass
+    username, password = "mmpe", getpass.getpass("Enter password")
 
 
     client = SSHClient(host='gorm', port=22, username=username, password=password)
-    print (client.glob("*.*", ".hawc2launcher/medium1__1__"))
+    print (client.execute("hostname"))
     #    ssh.upload('../News.txt', 'news.txt')
