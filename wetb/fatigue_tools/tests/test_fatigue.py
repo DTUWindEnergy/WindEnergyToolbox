@@ -73,6 +73,13 @@ class TestFatigueTools(unittest.TestCase):
                                                                                                            [  0., 1., 4., 0.],
                                                                                                            [  0., 0., 0., 0.],
                                                                                                            [  0., 1., 2., 0.]]) / 2, 0.001)
+        
+    def test_astm_weighted(self):
+        data = Hawc2io.ReadHawc2(testfilepath + "test").ReadBinary([2]).flatten()
+        np.testing.assert_allclose(cycle_matrix([(1, data),(1,data)], 4, 4, rainflow_func=rainflow_astm)[0], np.array([[ 24., 83., 53., 26.],
+                                                                                                           [  0., 1., 4., 0.],
+                                                                                                           [  0., 0., 0., 0.],
+                                                                                                           [  0., 1., 2., 0.]]) , 0.001)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
