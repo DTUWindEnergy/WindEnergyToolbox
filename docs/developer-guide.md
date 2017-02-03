@@ -156,7 +156,7 @@ Install the necessary Python dependencies using the conda package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c conda-forge pyscaffold pypandoc --no-deps
+>> conda install -c conda-forge pyscaffold pypandoc sshtunnel --no-deps
 >> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
 ```
 
