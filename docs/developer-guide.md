@@ -86,7 +86,7 @@ Python versions, see below.
 and your terminal will do something like:
 ```
 C:\Users\> activate
-[Anaconda3] C:\Users\>
+(root) C:\Users\>
 ```
 note that the name of the environment is now a prefix before the current path.
 
@@ -164,7 +164,7 @@ Note that ```--no-deps``` avoids that newer packages from the channel
 ```conda-forge``` will be used instead of those from the default ```anaconda```
 channel. Depending on which packages get overwritten, this might brake your
 Anaconda root environment. As such, using ```--no-deps``` should be
-be used for safety (especially when operating from the root environment).
+used for safety (especially when operating from the root environment).
 
 
 ## Get wetb
