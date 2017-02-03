@@ -15,17 +15,99 @@ import traceback
 import zipfile
 from wetb.utils.timing import print_time
 import glob
+import getpass
+from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
+
+
+
+class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
+    def __init__(
+        self,
+        interactive_auth_handler,  
+        ssh_address_or_host=None, 
+        ssh_config_file=SSH_CONFIG_FILE, 
+        ssh_host_key=None, 
+        ssh_password=None, 
+        ssh_pkey=None, 
+        ssh_private_key_password=None, 
+        ssh_proxy=None, 
+        ssh_proxy_enabled=True, 
+        ssh_username=None, 
+        local_bind_address=None, 
+        local_bind_addresses=None, 
+        logger=None, 
+        mute_exceptions=False, 
+        remote_bind_address=None, 
+        remote_bind_addresses=None, 
+        set_keepalive=0.0, 
+        threaded=True, 
+        compression=None, 
+        allow_agent=True, *
+        args, **
+        kwargs):
+        self.interactive_auth_handler = interactive_auth_handler
+        SSHTunnelForwarder.__init__(self, ssh_address_or_host=ssh_address_or_host, ssh_config_file=ssh_config_file, ssh_host_key=ssh_host_key, ssh_password=ssh_password, ssh_pkey=ssh_pkey, ssh_private_key_password=ssh_private_key_password, ssh_proxy=ssh_proxy, ssh_proxy_enabled=ssh_proxy_enabled, ssh_username=ssh_username, local_bind_address=local_bind_address, local_bind_addresses=local_bind_addresses, logger=logger, mute_exceptions=mute_exceptions, remote_bind_address=remote_bind_address, remote_bind_addresses=remote_bind_addresses, set_keepalive=set_keepalive, threaded=threaded, compression=compression, allow_agent=allow_agent, *args, **kwargs)
+        
+    def _connect_to_gateway(self):
+        """
+        Open connection to SSH gateway
+         - First try with all keys loaded from an SSH agent (if allowed)
+         - Then with those passed directly or read from ~/.ssh/config
+         - As last resort, try with a provided password
+        """
+        try:
+            self._transport = self._get_transport()
+            self._transport.start_client()
+            self._transport.auth_interactive(self.ssh_username, self.interactive_auth_handler)
+            if self._transport.is_alive:
+                return
+        except paramiko.AuthenticationException:
+            self.logger.debug('Authentication error')
+            self._stop_transport()
+  
+        self.logger.error('Could not open connection to gateway')
+        
+    def _connect_to_gateway_old(self):
+        """
+        Open connection to SSH gateway
+         - First try with all keys loaded from an SSH agent (if allowed)
+         - Then with those passed directly or read from ~/.ssh/config
+         - As last resort, try with a provided password
+        """
+        if self.ssh_password:  # avoid conflict using both pass and pkey
+            self.logger.debug('Trying to log in with password: {0}'
+                              .format('*' * len(self.ssh_password)))
+            try:
+                self._transport = self._get_transport()
+                if self.interactive_auth_handler:
+                    self._transport.start_client()
+                    self._transport.auth_interactive(self.ssh_username, self.interactive_auth_handler)
+                else:
+                    self._transport.connect(hostkey=self.ssh_host_key,
+                                            username=self.ssh_username,
+                                            password=self.ssh_password)
+                 
+                if self._transport.is_alive:
+                    return
+            except paramiko.AuthenticationException:
+                self.logger.debug('Authentication error')
+                self._stop_transport()
+ 
+  
+        self.logger.error('Could not open connection to gateway')
 
 class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
         self.host = host
         self.username = username
         self.password = password
         self.port = port
         self.key = key
+        self.gateway=gateway
+        self.interactive_auth_handler = interactive_auth_handler
         self.disconnect = 0
         self.client = None
         self.sftp = None
@@ -50,11 +132,42 @@ class SSHClient(object):
         return self.client
 
     def connect(self):
-        if self.password is None or self.password == "":
-            raise IOError("Password not set for %s"%self.host)
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
+#        if self.password is None or self.password == "":
+#             raise IOError("Password not set for %s"%self.host)
+        if self.gateway:
+            if self.gateway.interactive_auth_handler:
+                self.tunnel = SSHInteractiveAuthTunnelForwarder(self.gateway.interactive_auth_handler,
+                                                                (self.gateway.host, self.gateway.port),
+                                                                ssh_username=self.gateway.username,
+                                                                ssh_password=self.gateway.password,
+                                                                remote_bind_address=(self.host, self.port),
+                                                                local_bind_address=('0.0.0.0', 10022)
+                                                               )
+            else:
+                self.tunnel = SSHTunnelForwarder((self.gateway.host, self.gateway.port),
+                                                 ssh_username=self.gateway.username,
+                                                 ssh_password=self.gateway.password,
+                                                 remote_bind_address=(self.host, self.port),
+                                                 local_bind_address=('0.0.0.0', 10022)
+                                                )
+            
+            self.tunnel.start()
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.connect("127.0.0.1", 10022, username=self.username, password=self.password)
+
+                 
+        else:
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            try:
+                self.client.connect(self.host, self.port, username=self.username, password=self.password, pkey=self.key, timeout=self.TIMEOUT)
+            except paramiko.ssh_exception.SSHException as e:
+                transport = self.client.get_transport()
+                transport.auth_interactive(self.username, self.interactive_auth_handler)
+                
+        
+        
         assert self.client is not None
         self.sftp = paramiko.SFTPClient.from_transport(self.client._transport)
         return self
@@ -141,7 +254,7 @@ class SSHClient(object):
         
 
     def close(self):
-        for x in ["sftp", "client" ]:
+        for x in ["sftp", "client", 'tunnel' ]:
             try:
                 getattr(self, x).close()
                 setattr(self, x, None)
@@ -216,8 +329,8 @@ class SSHClient(object):
 
 
 class SharedSSHClient(SSHClient):
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None):
-        SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase)
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
+        SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase, interactive_auth_handler=interactive_auth_handler, gateway=gateway)
         self.shared_ssh_lock = threading.RLock()
         self.shared_ssh_queue = deque()
         self.next = None
@@ -249,11 +362,15 @@ class SharedSSHClient(SSHClient):
                     else:
                         self.next = None
 
+
+
 if __name__ == "__main__":
-    import getpass
-    username, password = "mmpe", getpass.getpass("Enter password")
+    from mmpe.ui.qt_ui import QtInputUI
+    q = QtInputUI(None)
+    x = None
+    username, password = "mmpe", x.password  #q.get_login("mmpe")
 
 
     client = SSHClient(host='gorm', port=22, username=username, password=password)
-    print (client.execute("hostname"))
+    print (client.glob("*.*", ".hawc2launcher/medium1__1__"))
     #    ssh.upload('../News.txt', 'news.txt')
