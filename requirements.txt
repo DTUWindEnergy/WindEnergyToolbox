@@ -12,6 +12,7 @@ pandas
 tables
 future
 paramiko
+sshtunnel
 psutil
 pbr
 PyScaffold
