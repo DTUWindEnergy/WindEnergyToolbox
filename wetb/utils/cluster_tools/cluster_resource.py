@@ -11,6 +11,8 @@ import threading
 
 from wetb.utils.cluster_tools import pbswrap
 from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
+from wetb.utils.timing import print_time
+import time
 
 
 def unix_path(path, cwd=None, fail_on_missing=False):
@@ -65,7 +67,7 @@ class Resource(object):
         self.min_cpu = min_cpu
         self.min_free = min_free
         self.acquired = 0
-        self.lock = threading.Lock()
+        self.resource_lock = threading.Lock()
 
     def ok2submit(self):
         """Always ok to have min_cpu cpus and ok to have more if there are min_free free cpus"""
@@ -81,54 +83,54 @@ class Resource(object):
             return False
 
     def acquire(self):
-        with self.lock:
+        with self.resource_lock:
             self.acquired += 1
 
     def release(self):
-        with self.lock:
+        with self.resource_lock:
             self.acquired -= 1
 
 
     def update_status(self):
         try:
-            self.no_cpu, self.cpu_free, self.no_current_process = self.check_resources()
+            self.no_cpu, self.cpu_free, self.used_by_user = self.check_resources()
         except Exception:
             pass
 
 
-class SSHPBSClusterResource(Resource, SSHClient):
+class SSHPBSClusterResource(Resource):
     finished = []
     loglines = {}
     is_executing = []
     
-    def __init__(self, host, username, password, port, min_cpu, min_free, init_cmd, wine_cmd, python_cmd):
+    def __init__(self, sshclient, min_cpu, min_free):
         Resource.__init__(self, min_cpu, min_free)
-        self.init_cmd = init_cmd
-        self.wine_cmd = wine_cmd
-        self.python_cmd = python_cmd
-        self.shared_ssh = SharedSSHClient(host, username, password, port)
-        SSHClient.__init__(self, host, username, password, port=port)
-        self.lock = threading.Lock()
+        self.ssh = sshclient
+        self.resource_lock = threading.Lock()
+
+    @property
+    def host(self):
+        return self.ssh.host
 
 
     def new_ssh_connection(self):
         return SSHClient(self.host, self.username, self.password, self.port)
 
     def check_resources(self):
-        with self.lock:
+        with self.resource_lock:
             try:
-                with self:
-                    _, output, _ = self.execute('pbsnodes -l all')
+                with self.ssh:
+                    _, output, _ = self.ssh.execute('pbsnodes -l all')
                     pbsnodes, nodes = pbswrap.parse_pbsnode_lall(output.split("\n"))
 
-                    _, output, _ = self.execute('qstat -n1')
-                    users, host, nodesload = pbswrap.parse_qstat_n1(output.split("\n"), self.host)
+                    _, output, _ = self.ssh.execute('qstat -n1')
+                    users, host, nodesload = pbswrap.parse_qstat_n1(output.split("\n"), self.ssh.host)
 
 
                 # if the user does not have any jobs, this will not exist
                 try:
-                    cpu_user = users[self.username]['cpus']
-                    cpu_user += users[self.username]['Q']
+                    cpu_user = users[self.ssh.username]['cpus']
+                    cpu_user += users[self.ssh.username]['Q']
                 except KeyError:
                     cpu_user = 0
                 cpu_user = max(cpu_user, self.acquired)
@@ -140,13 +142,13 @@ class SSHPBSClusterResource(Resource, SSHClient):
 
 
     def jobids(self, jobname_prefix):
-            _, output, _ = self.execute('qstat -u %s' % self.username)
+            _, output, _ = self.ssh.execute('qstat -u %s' % self.username)
             return [l.split()[0].split(".")[0] for l in output.split("\n")[5:] if l.strip() != "" and l.split()[3].startswith("h2l")]
 
     def stop_pbsjobs(self, jobids):
         if not hasattr(jobids, "len"):
             jobids = list(jobids)
-        self.execute("qdel %s" % (" ".join(jobids)))
+        self.ssh.execute("qdel %s" % (" ".join(jobids)))
         
         
    
@@ -159,17 +161,11 @@ class LocalResource(Resource):
         #self.process_name = process_name
         self.host = 'Localhost'
 
+    
+    
     def check_resources(self):
         import psutil
-        def name(i):
-            try:
-                return psutil.Process(i).name()
-            except (psutil.AccessDenied, psutil.NoSuchProcess):
-                return ""
-
         no_cpu = multiprocessing.cpu_count()
-        cpu_free = (1 - psutil.cpu_percent(.5) / 100) * no_cpu
-        #no_current_process = len([i for i in psutil.pids() if name(i) == self.process_name.lower()])
-        #used = max(self.acquired, no_cpu - cpu_free, no_current_process)
+        cpu_free = (1 - psutil.cpu_percent(.1) / 100) * no_cpu
         used = self.acquired
         return no_cpu, cpu_free, used

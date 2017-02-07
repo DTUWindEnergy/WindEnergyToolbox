@@ -202,9 +202,13 @@ class SimulationThread(Thread):
         
 
 class PBSClusterSimulationResource(SSHPBSClusterResource):
-    def __init__(self, host, username, password, port, min_cpu, min_free, init_cmd, wine_cmd, python_cmd):
-        SSHPBSClusterResource.__init__(self, host, username, password, port, min_cpu, min_free, init_cmd, wine_cmd, python_cmd)
+    def __init__(self, sshclient, min_cpu, min_free, init_cmd, wine_cmd, python_cmd):
+        SSHPBSClusterResource.__init__(self, sshclient, min_cpu, min_free)
+        self.init_cmd = init_cmd
+        self.wine_cmd = wine_cmd
+        self.python_cmd = python_cmd
         
+    
     def is_clean(self):
         return self.execute("find .hawc2launcher/ -type f | wc -l")[1] > 0
 

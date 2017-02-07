@@ -132,8 +132,9 @@ class SSHClient(object):
         return self.client
 
     def connect(self):
-#        if self.password is None or self.password == "":
-#             raise IOError("Password not set for %s"%self.host)
+        
+        print ("connect", self.host)
+        #print (traceback.print_stack())
         if self.gateway:
             if self.gateway.interactive_auth_handler:
                 self.tunnel = SSHInteractiveAuthTunnelForwarder(self.gateway.interactive_auth_handler,
@@ -156,7 +157,8 @@ class SSHClient(object):
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.client.connect("127.0.0.1", 10022, username=self.username, password=self.password)
 
-                 
+        elif self.password is None or self.password == "":
+            raise IOError("Password not set for %s"%self.host)         
         else:
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
