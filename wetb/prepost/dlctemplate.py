@@ -17,6 +17,7 @@ standard_library.install_aliases()
 import os
 import socket
 from argparse import ArgumentParser
+from sys import platform
 
 #import numpy as np
 #import pandas as pd
@@ -39,6 +40,15 @@ elif socket.gethostname()[:1] == 'j':
     RUNMETHOD = 'jess'
 else:
     plt.rc('text', usetex=True)
+    # set runmethod based on the platform host
+    if platform == "linux" or platform == "linux2":
+        RUNMETHOD = 'local-script'
+    elif platform == "darwin":
+        RUNMETHOD = 'linux-script'
+    elif platform == "win32":
+        RUNMETHOD = 'windows-script'
+    else:
+        RUNMETHOD = 'none'
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
@@ -511,6 +521,7 @@ if __name__ == '__main__':
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
 
+
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
@@ -527,6 +538,37 @@ if __name__ == '__main__':
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
     if opt.dlcplot:
+        plot_chans = {}
+        plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
+        plot_chans['$B2_{flap}$'] = ['setbeta-bladenr-2-flapnr-1']
+        plot_chans['$B3_{flap}$'] = ['setbeta-bladenr-3-flapnr-1']
+        plot_chans['$M_x B1_{root}$'] = ['blade1-blade1-node-003-momentvec-x']
+        plot_chans['$M_y B1_{root}$'] = ['blade1-blade1-node-003-momentvec-y']
+        plot_chans['$M_z B1_{root}$'] = ['blade1-blade1-node-003-momentvec-z']
+        plot_chans['$B3_{pitch}$'] = ['bearing-pitch3-angle-deg']
+        plot_chans['RPM'] = ['bearing-shaft_rot-angle_speed-rpm']
+        plot_chans['$P_e$'] = ['DLL-2-inpvec-2']
+        plot_chans['$P_{mech}$'] = ['stats-shaft-power']
+        plot_chans['$M_x B3_{root}$'] = ['blade3-blade3-node-003-momentvec-x']
+        plot_chans['$M_y B3_{root}$'] = ['blade3-blade3-node-003-momentvec-y']
+        plot_chans['$M_z B3_{root}$'] = ['blade3-blade3-node-003-momentvec-z']
+        plot_chans['$B2_{pitch}$'] = ['bearing-pitch2-angle-deg']
+        plot_chans['$B3 U_y$'] = ['global-blade3-elem-018-zrel-1.00-State pos-y']
+        plot_chans['$M_z B2_{root}$'] = ['blade2-blade2-node-003-momentvec-z']
+        plot_chans['$M_x B2_{root}$'] = ['blade2-blade2-node-003-momentvec-x']
+        plot_chans['$M_y B2_{root}$'] = ['blade2-blade2-node-003-momentvec-y']
+        plot_chans['$B1_{pitch}$'] = ['bearing-pitch1-angle-deg']
+        plot_chans['$M_x T_B$'] = ['tower-tower-node-001-momentvec-x']
+        plot_chans['$M_y T_B$'] = ['tower-tower-node-001-momentvec-y']
+        plot_chans['$M_z T_B$'] = ['tower-tower-node-001-momentvec-z']
+        plot_chans['TC blade to tower'] = ['DLL-5-inpvec-2']
+        plot_chans['TC tower to blade'] = ['DLL-5-inpvec-3']
+        plot_chans['$M_z T_T$'] = ['tower-tower-node-008-momentvec-z']
+        plot_chans['$M_y Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-y']
+        plot_chans['$M_x Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-x']
+        plot_chans['$M_z Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-z']
+
         sim_ids = [sim_id]
         figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
-        dlcplots.plot_stats2(sim_ids, [POST_DIR], fig_dir_base=figdir)
+        dlcplots.plot_stats2(sim_ids, [POST_DIR], plot_chans,
+                             fig_dir_base=figdir)
