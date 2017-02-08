@@ -542,22 +542,28 @@ if __name__ == '__main__':
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
         plot_chans['$B2_{flap}$'] = ['setbeta-bladenr-2-flapnr-1']
         plot_chans['$B3_{flap}$'] = ['setbeta-bladenr-3-flapnr-1']
-        plot_chans['$M_x B1_{root}$'] = ['blade1-blade1-node-003-momentvec-x']
-        plot_chans['$M_y B1_{root}$'] = ['blade1-blade1-node-003-momentvec-y']
-        plot_chans['$M_z B1_{root}$'] = ['blade1-blade1-node-003-momentvec-z']
-        plot_chans['$B3_{pitch}$'] = ['bearing-pitch3-angle-deg']
+
+        for comp in list('xyz'):
+            chans = []
+            node_nr = 3
+            node_lab = 'root'
+            # combine blades 1,2,3 stats into a single plot
+            for nr in [1, 2, 3]:
+                rpl = (nr, nr, node_nr, comp)
+                chans.append('blade%i-blade%i-node-%03i-momentvec-%s' % rpl)
+            plot_chans['$M_%s B123_{%i}$' % (comp, node_lab)] = chans
+
+        chans = []
+        # combine blade 1,2,3 pitch angle stats into a single plot
+        for nr in [1, 2, 3]:
+            rpl = (nr, nr, node_nr, comp)
+            chans.append('bearing-pitch%i-angle-deg' % nr)
+        plot_chans['$B123_{pitch}$'] = chans
+
         plot_chans['RPM'] = ['bearing-shaft_rot-angle_speed-rpm']
         plot_chans['$P_e$'] = ['DLL-2-inpvec-2']
         plot_chans['$P_{mech}$'] = ['stats-shaft-power']
-        plot_chans['$M_x B3_{root}$'] = ['blade3-blade3-node-003-momentvec-x']
-        plot_chans['$M_y B3_{root}$'] = ['blade3-blade3-node-003-momentvec-y']
-        plot_chans['$M_z B3_{root}$'] = ['blade3-blade3-node-003-momentvec-z']
-        plot_chans['$B2_{pitch}$'] = ['bearing-pitch2-angle-deg']
         plot_chans['$B3 U_y$'] = ['global-blade3-elem-018-zrel-1.00-State pos-y']
-        plot_chans['$M_z B2_{root}$'] = ['blade2-blade2-node-003-momentvec-z']
-        plot_chans['$M_x B2_{root}$'] = ['blade2-blade2-node-003-momentvec-x']
-        plot_chans['$M_y B2_{root}$'] = ['blade2-blade2-node-003-momentvec-y']
-        plot_chans['$B1_{pitch}$'] = ['bearing-pitch1-angle-deg']
         plot_chans['$M_x T_B$'] = ['tower-tower-node-001-momentvec-x']
         plot_chans['$M_y T_B$'] = ['tower-tower-node-001-momentvec-y']
         plot_chans['$M_z T_B$'] = ['tower-tower-node-001-momentvec-z']
