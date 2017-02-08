@@ -386,28 +386,72 @@ def plot_stats2(sim_ids, post_dirs, plot_chans, fig_dir_base=None, labels=None,
     run_dirs, df_stats = merge_sim_ids(sim_ids, post_dirs,
                                        post_dir_save=post_dir_save)
 
-    plot_stats_df(df_stats, plot_chans, fig_dir_base, labels=labels,
-                  figsize=figsize, dlc_ignore=dlc_ignore)
+    plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=labels,
+                   figsize=figsize, dlc_ignore=dlc_ignore)
 
 
-def plot_stats_df(df_stats, plot_chans, fig_dir_base, labels=None,
-                  figsize=(8,6), dlc_ignore=['00'], run_dirs=None,
-                  sim_ids=[]):
-    """
-    Same as plot_stats2, but give a df with the stats of that sim_id and the
-    relevant channels.
+def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
+                   figsize=(8,6), dlc_ignore=['00'], run_dirs=None,
+                   sim_ids=[]):
+    """Create for each DLC an overview plot of the statistics.
 
-    df_stats columns:
-        * [DLC]
-        * [run_dir]
-        * channel
-        * stat parameters
+    df_stats required columns:
+    * [DLC]
+    * [run_dir]
+    * [wdir]
+    * [Windspeed]
+    * channel
+    * stat parameters
+
+    Parameters
+    ----------
+
+    df_stats : pandas.DataFrame
+
+    plot_chans : dict
+        Dictionary of channels to be plotted. Key is used for the plot title,
+        value is a list of unique channel names that will be included for
+        the statistic values. For example,
+        plot_chans['$B123 M_x$'] = ['blade1-blade1-node-003-momentvec-x',
+        'blade2-blade2-node-003-momentvec-x']
+
+    fig_dir_base : str
+        Base directory of where to store all the figures. A new sub-directory
+        will be created for each DLC.
+
+    labels : list, default=None
+        Labels used in the legend when comparing various DLB's
+
+    figsize : tuple, default=(8,6)
+
+    dlc_ignore : list, default=['00']
+        By default all but dlc00 (stair case, wind ramp) are plotted. Add
+        more dlc numbers here if necessary.
+
+    run_dirs : list, default=None
+        If run_dirs is not defined it will be taken from the unique values
+        in the DataFrame. The order of the elements in this list needs to be
+        consistent with labels, sim_ids (if defined).
+
+    sim_ids : list, default=[]
+        Only used when creating the file name of the figures: appended at
+        the end of the file name (which starts with the unique channel name).
+
     """
 
     mfcs1 = ['k', 'w']
     mfcs2 = ['b', 'w']
     mfcs3 = ['r', 'w']
     stds = ['r', 'b']
+
+    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]']
+    cols = df_stats.columns
+    for col in required:
+        if col not in cols:
+            print('plot_dlc_stats requires DataFrame with following columns:')
+            print(required)
+            print('following column is missing in stats DataFrame:', col)
+            return
 
     if run_dirs is None:
         run_dirs = df_stats['[run_dir]'].unique()
