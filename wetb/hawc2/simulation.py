@@ -20,9 +20,6 @@ from future import standard_library
 from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
-from wetb.utils import threadnames
-
-
 
 
 standard_library.install_aliases()
@@ -332,7 +329,6 @@ class Simulation(object):
 
 
     def simulate_distributed(self):
-        threadnames.register("Simulation %s"%self.simulation_id)
         try:
             self.prepare_simulation()
             try:
