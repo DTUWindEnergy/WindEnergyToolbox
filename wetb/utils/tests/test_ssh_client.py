@@ -6,6 +6,8 @@ Created on 23. dec. 2016
 import unittest
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 import os
+from wetb.utils.text_ui import TextUI
+
 
 try:
     import sys
@@ -37,7 +39,7 @@ class TestSSHClient(unittest.TestCase):
 
     def setUp(self):
         if x:
-            self.ssh = SSHClient('gorm', 'mmpe',x.mmpe )
+            self.ssh = SSHClient('gorm', 'mmpe',x.mmpe)
 
 
     def test_execute(self):
@@ -54,10 +56,12 @@ class TestSSHClient(unittest.TestCase):
                 self.ssh.execute("rm -f tmp.txt")
                 io.StringIO()
                 
-                txt = "Hello world"
+                txt = "Hello world"*1000000
                 f = io.StringIO(txt)
                 f.seek(0)
-                self.ssh.upload(f, "tmp.txt")
+                print ("start upload")
+                self.ssh.upload(f, "tmp.txt", callback = TextUI().progress_callback("Uploading"))
+                print ("endupload")
                 _,out,_ = self.ssh.execute("cat tmp.txt")
                 self.assertEqual(out, txt)
                 fn = tfp + "tmp.txt"
@@ -114,7 +118,7 @@ class TestSSHClient(unittest.TestCase):
                 self.assertEqual(out.strip(), "g-000.risoe.dk")
                 
     def test_ssh_g047(self):
-        if 1 or all:
+        if 0 or all:
             if x:
                 gateway = SSHClient('gorm.risoe.dk', 'mmpe', x.mmpe)
                 ssh = SSHClient('g-047', "mmpe", x.mmpe, gateway=gateway)
@@ -128,10 +132,10 @@ class TestSSHClient(unittest.TestCase):
                 self.assertEqual(out.strip(), "ssh-03.risoe.dk")
 
     def test_ssh_risoe_gorm(self):
-        if 0 or all:
+        if 1 or all:
             if x:
             
-                gateway = SSHClient('ssh.risoe.dk', 'mmpe', interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
+                gateway = SSHClient('ssh.risoe.dk', 'mmpe', password="xxx", interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
                 ssh = SSHClient('10.40.23.49', 'mmpe', x.mmpe, gateway = gateway)
                 _,out,_ = ssh.execute("hostname")
                 self.assertEqual(out.strip(), "g-000.risoe.dk")

@@ -17,6 +17,9 @@ from wetb.utils.timing import print_time
 import glob
 import getpass
 from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
+from wetb.utils.ui import UI
+from wetb.utils import threadnames
+
 
 
 
@@ -100,7 +103,7 @@ class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
+    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None, ui=UI()):
         self.host = host
         self.username = username
         self.password = password
@@ -108,9 +111,11 @@ class SSHClient(object):
         self.key = key
         self.gateway=gateway
         self.interactive_auth_handler = interactive_auth_handler
+        self.ui = ui
         self.disconnect = 0
         self.client = None
-        self.sftp = None
+        self.ssh_lock = threading.RLock()
+        #self.sftp = None
         self.transport = None
         if key is not None:
             self.key = paramiko.RSAKey.from_private_key(StringIO(key), password=passphrase)
@@ -119,21 +124,22 @@ class SSHClient(object):
         return self.host, self.username, self.password, self.port
 
     def __enter__(self):
-        self.disconnect += 1
-        if self.client is None or self.client._transport is None or self.client._transport.is_active() is False:
-            self.close()
-            try:
-                self.connect()
-                self.disconnect = 1
-            except Exception as e:
+        with self.ssh_lock:
+            self.disconnect += 1
+            if self.client is None or self.client._transport is None or self.client._transport.is_active() is False:
                 self.close()
-                self.disconnect = 0
-                raise e
-        return self.client
+                try:
+                    self.connect()
+                    self.disconnect = 1
+                except Exception as e:
+                    self.close()
+                    self.disconnect = 0
+                    raise e
+            return self.client
 
     def connect(self):
         
-        print ("connect", self.host)
+        print ("connect", self.host, threadnames.name())
         #print (traceback.print_stack())
         if self.gateway:
             if self.gateway.interactive_auth_handler:
@@ -152,10 +158,15 @@ class SSHClient(object):
                                                  local_bind_address=('0.0.0.0', 10022)
                                                 )
             
+            print ("start tunnel")
             self.tunnel.start()
+            print ("self.client = paramiko.SSHClient()")
             self.client = paramiko.SSHClient()
+            
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            print ('self.client.connect("127.0.0.1", 10022, username=self.username, password=self.password)')
             self.client.connect("127.0.0.1", 10022, username=self.username, password=self.password)
+            print ("done")
 
         elif self.password is None or self.password == "":
             raise IOError("Password not set for %s"%self.host)         
@@ -171,8 +182,20 @@ class SSHClient(object):
         
         
         assert self.client is not None
-        self.sftp = paramiko.SFTPClient.from_transport(self.client._transport)
+        #self.sftp = paramiko.SFTPClient.from_transport(self.client._transport)
         return self
+
+        
+    def __del__(self):
+        self.close()
+
+    @property
+    def sftp(self):
+        return paramiko.SFTPClient.from_transport(self.client._transport)
+    
+#     @sftp.setter
+#     def sftp(self, values):
+#         pass
 
     def __exit__(self, *args):
         self.disconnect -= 1
@@ -180,39 +203,59 @@ class SSHClient(object):
             self.close()
 
 
-    def download(self, remotefilepath, localfile, verbose=False, retry=1):
+    def download(self, remotefilepath, localfile, verbose=False, retry=1, callback=None):
         if verbose:
             ret = None
             print ("Download %s > %s" % (remotefilepath, str(localfile)))
-        with self:
-            for i in range(retry):
-                if i>0:
-                    print ("Retry download %s, #%d"%(remotefilepath, i))
-                try:
-                    if isinstance(localfile, (str, bytes, int)):
-                        ret = self.sftp.get(remotefilepath, localfile)
-                    elif hasattr(localfile, 'write'):
-                        ret = self.sftp.putfo(remotefilepath, localfile)
-                    break
-                except:
-                    pass
-                print ("Download %s failed from %s"%(remotefilepath, self.host))
+        if callback is None:
+            callback = self.ui.progress_callback()
+        
+        for i in range(retry):
+            if i>0:
+                print ("Retry download %s, #%d"%(remotefilepath, i))
+
+            try:
+                #print ("start download enter", threadnames.name())
+                SSHClient.__enter__(self)
+                #print ("start download", threadnames.name())
+                if isinstance(localfile, (str, bytes, int)):
+                    ret = self.sftp.get(remotefilepath, localfile, callback=callback)
+                elif hasattr(localfile, 'write'):
+                    ret = self.sftp.putfo(remotefilepath, localfile, callback=callback)
+                break
+            except:
+                pass
+            finally:
+                #print ("End download", threadnames.name())
+                SSHClient.__exit__(self)
+                #print ("End download exit", threadnames.name())
+            
+            print ("Download %s failed from %s"%(remotefilepath, self.host))
         if verbose:
             print (ret)
 
-    def upload(self, localfile, filepath, verbose=False):
+    def upload(self, localfile, filepath, verbose=False, callback=None):
         if verbose:
             print ("Upload %s > %s" % (localfile, filepath))
-        with self:
+        if callback is None:
+            callback = self.ui.progress_callback()
+        try:
+            SSHClient.__enter__(self)
             if isinstance(localfile, (str, bytes, int)):
-                ret = self.sftp.put(localfile, filepath)
+                ret = self.sftp.put(localfile, filepath, callback=callback)
             elif hasattr(localfile, 'read'):
-                ret = self.sftp.putfo(localfile, filepath)
+                size = len(localfile.read())
+                localfile.seek(0)
+                ret = self.sftp.putfo(localfile, filepath, file_size=size, callback=callback)
+        finally:
+            #print ("End upload", threadnames.name())
+            SSHClient.__exit__(self)
+            #print ("End upload exit", threadnames.name())
         if verbose:
             print (ret)
             
         
-    def upload_files(self, localpath, remotepath, file_lst=["."], compression_level=1):
+    def upload_files(self, localpath, remotepath, file_lst=["."], compression_level=1, callback=None):
         assert os.path.isdir(localpath)
         if not isinstance(file_lst, (tuple, list)):
             file_lst = [file_lst]
@@ -228,27 +271,30 @@ class SSHClient(object):
                 zipf.write(f, os.path.relpath(f, localpath))
             zipf.close()
             remote_zn = os.path.join(remotepath, zn).replace("\\","/")
-            self.execute("mkdir -p %s"%(remotepath))
-            
-            self.upload(zn, remote_zn)
-            self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
+            with self:
+                self.execute("mkdir -p %s"%(remotepath))
+                
+                self.upload(zn, remote_zn, callback=callback)
+                self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
         except:
             raise
         finally:
             os.remove(zn)
         
     
-    def download_files(self, remote_path, localpath, file_lst=["."], compression_level=1):
+    def download_files(self, remote_path, localpath, file_lst=["."], compression_level=1, callback=None):
         if not isinstance(file_lst, (tuple, list)):
             file_lst = [file_lst]
         file_lst = [f.replace("\\","/") for f in file_lst]
-        remote_zip = os.path.join(remote_path, "tmp.zip").replace("\\","/")
-        self.execute("cd %s && zip -r tmp.zip %s"%(remote_path, " ".join(file_lst)))
+        zn =  'tmp_%s_%s.zip'%(id(self),time.time())
         
-        local_zip = os.path.join(localpath, "tmp.zip")
+        remote_zip = os.path.join(remote_path, zn).replace("\\","/")
+        self.execute("cd %s && zip -r %s %s"%(remote_path, zn, " ".join(file_lst)))
+        
+        local_zip = os.path.join(localpath, zn)
         if not os.path.isdir(localpath):
             os.makedirs(localpath)
-        self.download(remote_zip, local_zip)
+        self.download(remote_zip, local_zip, callback=callback)
         self.execute("rm -f %s" % remote_zip)
         with zipfile.ZipFile(local_zip, "r") as z:
             z.extractall(localpath)
@@ -256,7 +302,7 @@ class SSHClient(object):
         
 
     def close(self):
-        for x in ["sftp", "client", 'tunnel' ]:
+        for x in ["client", 'tunnel' ]:
             try:
                 getattr(self, x).close()
                 setattr(self, x, None)
@@ -319,6 +365,9 @@ class SSHClient(object):
             ret = self.execute('wine regedit tmp.reg')
 
     def glob(self, filepattern, cwd="", recursive=False):
+        if isinstance(filepattern, list):
+            with self:
+                return [f for fp in filepattern for f in self.glob(fp, cwd, recursive)]
         cwd = os.path.join(cwd, os.path.split(filepattern)[0]).replace("\\", "/")
         filepattern = os.path.split(filepattern)[1]
         if recursive:
@@ -333,37 +382,49 @@ class SSHClient(object):
 class SharedSSHClient(SSHClient):
     def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
         SSHClient.__init__(self, host, username, password=password, port=port, key=key, passphrase=passphrase, interactive_auth_handler=interactive_auth_handler, gateway=gateway)
-        self.shared_ssh_lock = threading.RLock()
+        
         self.shared_ssh_queue = deque()
         self.next = None
+        
+        
+
 
 
     def execute(self, command, sudo=False, verbose=False):
         res = SSHClient.execute(self, command, sudo=sudo, verbose=verbose)
         return res
 
-    def __enter__(self):
-        with self.shared_ssh_lock:
-            if self.next == threading.currentThread():
-                return self.client
-            self.shared_ssh_queue.append(threading.current_thread())
-            if self.next is None:
-                self.next = self.shared_ssh_queue.popleft()
 
-        while self.next != threading.currentThread():
-            time.sleep(1)
-        SSHClient.__enter__(self)
+
+
+    def __enter__(self):
+        with self.ssh_lock:
+            SSHClient.__enter__(self)
+            #print ("request SSH", threading.currentThread())
+#             if len(self.shared_ssh_queue)>0 and self.shared_ssh_queue[0] == threading.get_ident():
+#                 # SSH already allocated to this thread ( multiple use-statements in "with ssh:" block 
+#                 self.shared_ssh_queue.appendleft(threading.get_ident())
+#             else:
+#                 self.shared_ssh_queue.append(threading.get_ident())
+
+            if len(self.shared_ssh_queue)>0 and self.shared_ssh_queue[0] == threading.get_ident():
+                # SSH already allocated to this thread ( multiple use-statements in "with ssh:" block 
+                self.shared_ssh_queue.popleft()
+            
+            self.shared_ssh_queue.append(threading.get_ident())
+            
+        while self.shared_ssh_queue[0] != threading.get_ident():
+            #print ("Waiting for ssh", threadnames.name(), [threadnames.name(id) for id in self.shared_ssh_queue])
+            time.sleep(2)
+        #print ("Got SSH", threadnames.name())
+        
         return self.client
 
     def __exit__(self, *args):
-        with self.shared_ssh_lock:
-            if next != threading.current_thread():
-                with self.shared_ssh_lock:
-                    if len(self.shared_ssh_queue) > 0:
-                        self.next = self.shared_ssh_queue.popleft()
-                    else:
-                        self.next = None
-
+        with self.ssh_lock:
+            if len(self.shared_ssh_queue)>0 and self.shared_ssh_queue[0] == threading.get_ident():
+                self.shared_ssh_queue.popleft()
+            
 
 
 if __name__ == "__main__":

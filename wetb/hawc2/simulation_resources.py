@@ -23,7 +23,7 @@ from wetb.utils.cluster_tools.pbsjob import SSHPBSJob, NOT_SUBMITTED, DONE
 from wetb.utils.cluster_tools.ssh_client import SSHClient
 from wetb.utils.timing import print_time
 from wetb.hawc2.htc_file import fmt_path
-
+import numpy as np
 
 class SimulationHost(object):
     def __init__(self, simulation):
@@ -60,6 +60,8 @@ class LocalSimulationHost(SimulationHost):
         return datetime.now()
 
     def glob(self, path, recursive=False):
+        if isinstance(path, list):
+            return [f for p in path for f in self.glob(p, recursive)]
         if recursive:
             return [os.path.join(root, f) for root, _, files in os.walk(path) for f in files]
         else:
@@ -168,7 +170,7 @@ class SimulationThread(Thread):
                 self.process = subprocess.Popen(" ".join([wine, hawc2exe, htcfile]), stdout=stdout, stderr=STDOUT, shell=True, cwd=exepath) #shell must be True to inwoke wine
             else:
                 self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout, stderr=STDOUT, shell=False, cwd=exepath, creationflags=CREATE_NO_WINDOW)
-            self.process.communicate()
+            #self.process.communicate()
 
         import psutil
         try:
@@ -222,25 +224,25 @@ class PBSClusterSimulationResource(SSHPBSClusterResource):
         except:
             pass
 
-    def update_status(self):
+    def update_resource_status(self):
         try:
-            _, out, _ = self.execute("find .hawc2launcher/ -name '*.out'")
+            _, out, _ = self.ssh.execute("find .hawc2launcher/ -name '*.out'")
             self.finished = set([f.split("/")[1] for f in out.split("\n") if "/" in f])
-        except Exception:
-            #print ("resource_manager.update_status, out", str(e))
+        except Exception as e:
+            print ("resource_manager.update_status, out", str(e))
             pass
  
         try:
-            _, out, _ = self.execute("find .hawc2launcher -name 'status*' -exec cat {} \;")
+            _, out, _ = self.ssh.execute("find .hawc2launcher -name 'status*' -exec cat {} \;")
             self.loglines = {l.split(";")[0] : l.split(";")[1:] for l in out.split("\n") if ";" in l}
-        except Exception:
-            #print ("resource_manager.update_status, status file", str(e))
+        except Exception as e:
+            print ("resource_manager.update_status, status file", str(e))
             pass
         try:
-            _, out, _ = self.execute("qstat -u %s" % self.username)
+            _, out, _ = self.ssh.execute("qstat -u %s" % self.username)
             self.is_executing = set([j.split(".")[0] for j in out.split("\n")[5:] if "." in j])
-        except Exception:
-            #print ("resource_manager.update_status, qstat", str(e))
+        except Exception as e:
+            print ("resource_manager.update_status, qstat", str(e))
             pass
 
 class GormSimulationResource(PBSClusterSimulationResource):
@@ -250,49 +252,46 @@ source activate wetb_py3"""
         PBSClusterSimulationResource.__init__(self, "gorm.risoe.dk", username, password, 22, 25, 100, init_cmd, wine_cmd, "python")
 
 
-class PBSClusterSimulationHost(SimulationHost, SSHClient):
+class PBSClusterSimulationHost(SimulationHost):
     def __init__(self, simulation, resource):
         SimulationHost.__init__(self, simulation)
-        SSHClient.__init__(self, resource.host, resource.username, resource.password, resource.port)
-        self.pbsjob = SSHPBSJob(resource.shared_ssh)
+        self.ssh = resource.new_ssh_connection()
+        self.pbsjob = SSHPBSJob(resource.new_ssh_connection())
         self.resource = resource
 
     hawc2exe = property(lambda self : os.path.basename(self.sim.hawc2exe))
 
-
+    def glob(self, *args,**kwargs):
+        return self.ssh.glob(*args,**kwargs)
     def get_datetime(self):
-        v, out, err = self.execute('date "+%Y,%m,%d,%H,%M,%S"')
+        v, out, err = self.ssh.execute('date "+%Y,%m,%d,%H,%M,%S"')
         if v == 0:
             return datetime.strptime(out.strip(), "%Y,%m,%d,%H,%M,%S")
 
     #@print_time
     def _prepare_simulation(self, input_files):
-        with self:
-            self.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
-            self.execute("mkdir -p %s%s" % (self.tmp_exepath, os.path.dirname(self.log_filename)))
-            
-            self.upload_files(self.modelpath, self.tmp_modelpath, file_lst = [os.path.relpath(f, self.modelpath) for f in input_files])
+        with self.ssh:
+            self.ssh.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
+            self.ssh.execute("mkdir -p %s%s" % (self.tmp_exepath, os.path.dirname(self.log_filename)))
+            self.ssh.upload_files(self.modelpath, self.tmp_modelpath, file_lst = [os.path.relpath(f, self.modelpath) for f in input_files], callback=self.sim.progress_callback("Copy to host"))
 #             for src_file in input_files:
 #                     dst = unix_path(self.tmp_modelpath + os.path.relpath(src_file, self.modelpath))
 #                     self.execute("mkdir -p %s" % os.path.dirname(dst), verbose=False)
 #                     self.upload(src_file, dst, verbose=False)
 #                     ##assert self.ssh.file_exists(dst)
-
             f = io.StringIO(self.pbsjobfile(self.sim.ios))
             f.seek(0)
-            self.upload(f, self.tmp_exepath + "%s.in" % self.simulation_id)
-            self.execute("mkdir -p %s%s" % (self.tmp_exepath, os.path.dirname(self.stdout_filename)))
+            self.ssh.upload(f, self.tmp_exepath + "%s.in" % self.simulation_id)
+            self.ssh.execute("mkdir -p %s%s" % (self.tmp_exepath, os.path.dirname(self.stdout_filename)))
             remote_log_filename = "%s%s" % (self.tmp_exepath, self.log_filename)
-            self.execute("rm -f %s" % remote_log_filename)
-
-
-
+            self.ssh.execute("rm -f %s" % remote_log_filename)
+            
     #@print_time
     def _finish_simulation(self, output_files):
-        with self:
+        with self.ssh:
             download_failed = []
             try:
-                self.download_files(self.tmp_modelpath, self.modelpath, file_lst = [os.path.relpath(f, self.tmp_modelpath) for f in output_files] )
+                self.ssh.download_files(self.tmp_modelpath, self.modelpath, file_lst = [os.path.relpath(f, self.tmp_modelpath) for f in output_files], callback=self.sim.progress_callback("Copy from host") )
             except:
 #                 
 #             for src_file in output_files:
@@ -303,15 +302,15 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
 #                 except Exception as e:
 #                     download_failed.append(dst_file)
 #             if download_failed:
-                raise Warning("Failed to download %s from %s"%(",".join(download_failed), self.host))
+                raise Warning("Failed to download %s from %s"%(",".join(download_failed), self.ssh.host))
             else:
                 try:
-                    self.execute('rm -r .hawc2launcher/%s' % self.simulation_id)
+                    self.ssh.execute('rm -r .hawc2launcher/%s' % self.simulation_id)
                 finally:
                     try:
-                        self.execute('rm .hawc2launcher/status_%s' % self.simulation_id)
+                        self.ssh.execute('rm .hawc2launcher/status_%s' % self.simulation_id)
                     except:
-                        raise Warning("Fail to remove temporary files and folders on %s"%self.host)
+                        raise Warning("Fail to remove temporary files and folders on %s"%self.ssh.host)
 
 
     def _simulate(self):
@@ -324,9 +323,9 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
             time.sleep(sleeptime)
 
         local_out_file = self.exepath + self.stdout_filename
-        with self:
+        with self.ssh:
             try:
-                self.download(self.tmp_exepath + self.stdout_filename, local_out_file)
+                self.ssh.download(self.tmp_exepath + self.stdout_filename, local_out_file)
                 with open(local_out_file) as fid:
                     _, self.stdout, returncode_str, _ = fid.read().split("---------------------")
                     self.returncode = returncode_str.strip() != "0"
@@ -334,7 +333,7 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
                 self.returncode = 1
                 self.stdout = "error: Could not download and read stdout file"
             try:
-                self.download(self.tmp_exepath + self.log_filename, self.exepath + self.log_filename)
+                self.ssh.download(self.tmp_exepath + self.log_filename, self.exepath + self.log_filename)
             except Exception:
                 raise Warning ("Logfile not found", self.tmp_modelpath + self.log_filename)
         self.sim.logFile = LogFile.from_htcfile(self.htcFile, self.exepath)
@@ -400,7 +399,11 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
             cp_back += "mkdir -p $PBS_O_WORKDIR/%s/. \n" % folder
             cp_back += "cp -R -f %s/. $PBS_O_WORKDIR/%s/.\n" % (folder, folder)
         rel_htcfilename = fmt_path(os.path.relpath(self.htcFile.filename, self.exepath))
-        
+        try:
+            steps = self.htcFile.simulation.time_stop[0] / self.htcFile.simulation.newmark.deltat[0]
+            walltime = "%02d:00:00"%np.ceil(steps/500/60)
+        except:
+            walltime = "04:00:00"
         init="""
 ### Standard Output
 #PBS -N h2l_%s
@@ -408,14 +411,14 @@ class PBSClusterSimulationHost(SimulationHost, SSHClient):
 #PBS -j oe
 #PBS -o %s
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
-#PBS -l walltime=04:00:00
+#PBS -l walltime=%s
 ###PBS -a 201547.53
 #PBS -lnodes=1:ppn=1
 ### Queue name
 #PBS -q workq
 ### Create scratch directory and copy data to it
 cd $PBS_O_WORKDIR
-pwd"""% (self.simulation_id, self.stdout_filename)
+pwd"""% (self.simulation_id, self.stdout_filename, walltime)
         copy_to="""
 cp -R %s /scratch/$USER/$PBS_JOBID
 ### Execute commands on scratch nodes

@@ -32,8 +32,7 @@ class SSHPBSJob(object):
         if cwd != "":
             cmds.append("cd %s" % cwd)
         cmds.append("qsub %s" % job)
-        ssh = SSHClient(self.ssh.host, self.ssh.username, self.ssh.password, self.ssh.port)
-        _, out, _ = ssh.execute(";".join(cmds))
+        _, out, _ = self.ssh.execute(";".join(cmds))
         self.jobid = out.split(".")[0]
         self._status = PENDING
 

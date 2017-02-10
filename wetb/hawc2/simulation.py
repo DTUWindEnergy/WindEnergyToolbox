@@ -20,6 +20,7 @@ from future import standard_library
 from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
+from wetb.utils import threadnames
 
 
 
@@ -144,18 +145,25 @@ class Simulation(object):
         self.update_status()
 
     def abort(self, update_status=True):
-        if self.status != QUEUED:
-            self.host.stop()
-            for _ in range(50):
-                if self.is_simulating is False:
-                    break
-                time.sleep(0.1)
-        if self.logFile.status not in [log_file.DONE]:
-            self.status = ABORTED
+        self.status = ABORTED
         self.is_simulating = False
         self.is_done = True
+        self.host.stop()
         if update_status:
             self.update_status()
+
+#         if self.status != QUEUED:
+#             self.host.stop()
+#             for _ in range(50):
+#                 if self.is_simulating is False:
+#                     break
+#                 time.sleep(0.1)
+#         if self.logFile.status not in [log_file.DONE]:
+#             self.status = ABORTED
+#         self.is_simulating = False
+#         self.is_done = True
+#         if update_status:
+#             self.update_status()
 
     def show_status(self):
         #print ("log status:", self.logFile.status)
@@ -228,6 +236,8 @@ class Simulation(object):
         self.host._simulate()
         self.returncode, self.stdout = self.host.returncode, self.host.stdout
         if self.host.returncode or 'error' in self.host.stdout.lower():
+            if self.status==ABORTED:
+                return
             if "error" in self.host.stdout.lower():
                 self.errors = (list(set([l for l in self.host.stdout.split("\n") if 'error' in l.lower()])))
             self.status = ERROR
@@ -263,15 +273,12 @@ class Simulation(object):
             return dst
         turb_files = [f for f in self.htcFile.turbulence_files() if self.copy_turbulence and not os.path.isfile(os.path.join(self.exepath, f))]
         if self.ios:
-            output_patterns = [fmt(dst) for dst in (["../output/*", "../output/"] + 
-                                                    turb_files + 
-                                                    [os.path.join(self.exepath, self.stdout_filename)])]
-            output_files = set([fmt_path(f) for pattern in output_patterns for f in self.host.glob(fmt_path(os.path.join(self.tmp_exepath, pattern)), recursive=True)])
+            output_patterns = ["../output/*", "../output/"] + turb_files + [os.path.join(self.exepath, self.stdout_filename)]
         else:
-            output_patterns = [fmt(dst) for dst in (self.htcFile.output_files() + 
-                                                    turb_files + 
-                                                    [os.path.join(self.exepath, self.stdout_filename)])]
-            output_files = set([fmt_path(f) for pattern in output_patterns for f in self.host.glob(fmt_path(os.path.join(self.tmp_exepath, pattern)))])
+            output_patterns = self.htcFile.output_files() + turb_files + [os.path.join(self.exepath, self.stdout_filename)]
+        output_files = set(self.host.glob([fmt_path(os.path.join(self.tmp_exepath,fmt(p))) for p in output_patterns], recursive=self.ios))
+            
+            
         try:
             self.host._finish_simulation(output_files)
             if self.status != ERROR:
@@ -325,6 +332,7 @@ class Simulation(object):
 
 
     def simulate_distributed(self):
+        threadnames.register("Simulation %s"%self.simulation_id)
         try:
             self.prepare_simulation()
             try:
@@ -335,7 +343,8 @@ class Simulation(object):
                 raise
             finally:
                 try:
-                    self.finish_simulation()
+                    if self.status!=ABORTED:
+                        self.finish_simulation()
                 except:
                     print ("finish_simulation failed", str(self))
                     raise

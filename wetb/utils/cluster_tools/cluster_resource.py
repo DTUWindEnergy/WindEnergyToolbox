@@ -66,13 +66,18 @@ class Resource(object):
     def __init__(self, min_cpu, min_free):
         self.min_cpu = min_cpu
         self.min_free = min_free
+        self.cpu_free=0
         self.acquired = 0
+        self.no_cpu="?"
+        self.used_by_user=0
         self.resource_lock = threading.Lock()
 
     def ok2submit(self):
         """Always ok to have min_cpu cpus and ok to have more if there are min_free free cpus"""
         try:
+            print ("ok2submit")
             total, free, user = self.check_resources()
+            print ("ok2submit", total, free, user)
         except:
             return False
         if user < self.min_cpu:
@@ -91,7 +96,7 @@ class Resource(object):
             self.acquired -= 1
 
 
-    def update_status(self):
+    def update_resource_status(self):
         try:
             self.no_cpu, self.cpu_free, self.used_by_user = self.check_resources()
         except Exception:
@@ -114,7 +119,8 @@ class SSHPBSClusterResource(Resource):
 
 
     def new_ssh_connection(self):
-        return SSHClient(self.host, self.username, self.password, self.port)
+        return SSHClient(self.host, self.ssh.username, self.ssh.password, self.ssh.port)
+        #return self.ssh
 
     def check_resources(self):
         with self.resource_lock:
