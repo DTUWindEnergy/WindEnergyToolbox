@@ -13,12 +13,10 @@ from _collections import deque
 import time
 import traceback
 import zipfile
-from wetb.utils.timing import print_time
 import glob
-import getpass
 from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
 from wetb.utils.ui import UI
-from wetb.utils import threadnames
+
 
 
 
@@ -138,9 +136,6 @@ class SSHClient(object):
             return self.client
 
     def connect(self):
-        
-        print ("connect", self.host, threadnames.name())
-        #print (traceback.print_stack())
         if self.gateway:
             if self.gateway.interactive_auth_handler:
                 self.tunnel = SSHInteractiveAuthTunnelForwarder(self.gateway.interactive_auth_handler,
@@ -215,9 +210,7 @@ class SSHClient(object):
                 print ("Retry download %s, #%d"%(remotefilepath, i))
 
             try:
-                #print ("start download enter", threadnames.name())
                 SSHClient.__enter__(self)
-                #print ("start download", threadnames.name())
                 if isinstance(localfile, (str, bytes, int)):
                     ret = self.sftp.get(remotefilepath, localfile, callback=callback)
                 elif hasattr(localfile, 'write'):
@@ -226,10 +219,8 @@ class SSHClient(object):
             except:
                 pass
             finally:
-                #print ("End download", threadnames.name())
                 SSHClient.__exit__(self)
-                #print ("End download exit", threadnames.name())
-            
+                
             print ("Download %s failed from %s"%(remotefilepath, self.host))
         if verbose:
             print (ret)
@@ -248,9 +239,7 @@ class SSHClient(object):
                 localfile.seek(0)
                 ret = self.sftp.putfo(localfile, filepath, file_size=size, callback=callback)
         finally:
-            #print ("End upload", threadnames.name())
             SSHClient.__exit__(self)
-            #print ("End upload exit", threadnames.name())
         if verbose:
             print (ret)
             
@@ -414,9 +403,7 @@ class SharedSSHClient(SSHClient):
             self.shared_ssh_queue.append(threading.get_ident())
             
         while self.shared_ssh_queue[0] != threading.get_ident():
-            #print ("Waiting for ssh", threadnames.name(), [threadnames.name(id) for id in self.shared_ssh_queue])
             time.sleep(2)
-        #print ("Got SSH", threadnames.name())
         
         return self.client
 
