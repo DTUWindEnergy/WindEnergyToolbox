@@ -4,11 +4,14 @@ Auto-generation of Design Load Cases
 
 <!---
 TODO, improvements:
-putty reference and instructions (fill in username in the address username@gorm
-how to mount gorm home on windows
 do as on Arch Linux wiki: top line is the file name where you need to add stuff
-point to the gorm/jess wiki's
 explain the difference in the paths seen from a windows computer and the cluster
+
+DONE:
+- putty reference and instructions (fill in username in the address 
+  username@gorm) [rink]
+- how to mount gorm home on windows [rink]
+- point to the gorm/jess wiki's [rink]
 -->
 
 > WARNING: these notes contain configuration settings that are specif to the
@@ -69,62 +72,114 @@ and a Python scripting interface:
 Connecting to the cluster
 -------------------------
 
-You connect to the cluster via an SSH terminal. SSH is supported out of the box
-for Linux and Mac OSX terminals (such as bash), but requires a separate
-terminal client under Windows. Windows users are advised to use PuTTY and can
-be downloaded at:
-[http://www.chiark.greenend.org.uk/~sgtatham/putty/](http://www.chiark.greenend.org.uk/~sgtatham/putty/).
-Here's a random
-[tutorial](http://www.ghacks.net/2008/02/09/about-putty-and-tutorials-including-a-putty-tutorial/),
-you can use your favourite search engine if you need more or different instructions.
-More answers regarding PuTTY can also be found in the online
+We provide here an overview of how to connect to the cluster, but general,
+up-to-date information can be found in the [HPC documentation](https://docs.hpc.ait.dtu.dk)
+or on the [Gorm wiki](http://gorm.risoe.dk/gormwiki). Note that the 
+information from the Gorm wiki will be migrated into the HPC documentation
+over time.
+
+You connect to the cluster via an SSH terminal, and there are different SSH
+terminals based on your operating system (see the platform-specific
+instructions in the next subsections). The cluster can only be reached when
+on the DTU network (wired, or only from a DTU computer when using a wireless
+connection), when connected to the DTU VPN, or from one of the DTU 
+[databars](http://www.databar.dtu.dk/).
+
+### Windows
+
+Windows users are advised to use PuTTY, which can
+be downloaded from
+[this link](http://www.chiark.greenend.org.uk/~sgtatham/putty/).
+
+Once you have installed PuTTY and placed the executable somewhere convenient
+(e.g., the Desktop), double click on the executable. In the window that opens
+up, enter/verify the following settings:  
+* Session > Host Name: gorm.risoe.dk  
+* Session > Port: 22
+* Session > Connection type: SSH  
+* Session > Saved Sessions: Gorm  
+* Connection > Data > Auto-login username: your DTU username  
+* Connection > Data > When username is not specified: Use system username
+* Window > Colours > Select a colour to adjust > ANSI Blue: RGB = 85, 85, 255  
+* Window > Colours > Select a colour to adjust > ANSI Bold Blue: RGB = 128, 128, 255  
+
+Note that these last two options are optional. We've found that the default
+color for comments, ANSI Blue, is too dark to be seen on the black 
+background. The last two options in the list set ANSI Blue and ANSI Blue Bold
+to be lighter and therefore easier to read when working in the terminal. Once
+you have entered these options, click "Save" on the "Session" tab and close
+the window.
+
+With PuTTY configured, you can connect to Gorm by double-clicking the PuTTY
+executable; then, in the window that opens select "Gorm" in "Saved Sessions",
+click the "Load" button, and finally click the "Open" button. A terminal
+window will open up. Type your DTU password in this new window when prompted
+(your text will not appear in the window) and then hit the Enter key. You
+should now be logged into Gorm.
+
+To close the PuTTY window, you can either hit the red "X" in the upper-right
+corner of the window or type "exit" in the terminal and hit enter.
+
+More information on using PuTTY and how it works can be found in this
+[PuTTY tutorial](http://www.ghacks.net/2008/02/09/about-putty-and-tutorials-including-a-putty-tutorial/)
+or in the online
 [documentation](http://the.earth.li/~sgtatham/putty/latest/htmldoc/).
+You are also welcome to use Google and read the many online resources.
 
-The cluster that is setup for using the pre- and post-processing tools for HAWC2
-has the following address: ```gorm.risoe.dk```.
+### Unix
 
-On Linux/Mac connecting to the cluster is as simple as running the following
-command in the terminal:
+Unlike Windows, SSH is supported out of the box for Linux and Mac OSX
+terminals. To connect to the cluster, enter the following command into 
+the terminal:
 
 ```
 ssh $USER@gorm.risoe.dk
 ```
 
-Use your DTU password when asked. This will give you terminal access to the
-cluster called Gorm.
-
-The cluster can only be reached when on the DTU network (wired, or only from a
-DTU computer when using a wireless connection), when connected to the DTU VPN,
-or from one of the DTU [databars](http://www.databar.dtu.dk/).
-
-More information about the cluster can be found on the
-[Gorm-wiki](http://gorm.risoe.dk/gormwiki)
+Enter your DTU password when prompted. This will give you terminal access
+to the Gorm cluster.
 
 
 Mounting the cluster discs
 --------------------------
 
-You need to be connected to the DTU network in order for this to work. You can
-also connect to the DTU network over VPN. When doing the HAWC2 simulations, you
-will interact regularly with the cluster file system and discs.
+When doing the HAWC2 simulations, you will interact regularly with the cluster 
+file system and discs. Thus, it can be very useful to have two discs mounted 
+locally so you can easily access them: 1) your home directory on Gorm and 2) 
+the HAWC2 simulation folder on Mimer.
+
+You need to be connected to the DTU network (either directly or via VPN) for 
+the following instructions to work. 
+
 
 ### Windows
 
-It is convenient to map these discs as network drives (in Windows terms).
-Map the following network drives (replace ```$USER``` with your user name):
+On Windows, we recommend mapping the two drives to local network drives, which 
+means that you can navigate/copy/paste to/from them in Windows Explorer just as 
+you would do with normal folders on your computer. You may also use [WinSCP](http://winscp.net)  
+to interact with the cluster discs if you are more familiar with that option.
 
-```
-\\mimer\hawc2sim
-\\gorm\$USER # this is your Gorm home directory
-```
+Here we provide instructions for mapping network drives in Windows 7. If these 
+instructions don't work for you, you can always find directions for your 
+version of Windows by Googling "map network drive windows $WIN_VERSION", where 
+$WIN_VERSION is your version number.
 
-Alternatively, on Windows you can use [WinSCP](http://winscp.net) to interact
-with the cluster discs.
+In Windows 7, you can map a network drive in the following steps:  
+1. Open a Windows Explorer window  
+2. Right-click on "Computer" and select "Map network drive"  
+3. Select any unused drive and type "\\gorm\$USER" into the folder field, 
+replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Gorm home 
+drive of "\\gorm\abcd")  
+4. Check the "Reconnect at logon" box if you want to connect to this drive 
+every time you log into your computer (recommended)  
+5. Click the Finish button  
+6. Repeat Steps 1 through 5, replacing the Gorm home address in Step 3 with the 
+HAWC2 simulation folder address: "\\mimer\hawc2sim"
 
-Note that by default Windows Explorer will hide some of the files you will need edit.
-In order to show all files on your Gorm home drive, you need to un-hide system files:
-Explorer > Organize > Folder and search options > select tab "view" > select the
-option to show hidden files and folders.
+Note that by default Windows Explorer will hide some of the files you will need 
+edit. In order to show all files on your Gorm home drive, you need to un-hide 
+system files: Explorer > Organize > Folder and search options > "View" tab > 
+Hidden files and folders > "Show hidden files, folders, and drives".
 
 ### Unix
 
@@ -170,7 +225,7 @@ local wine directory, which by default is assumed to be ```~/.wine32```, and
 ```pbsutils``` contains and automatic configuration script you can run:
 
 ```
-g-000 $ config-wine-hawc2.sh
+g-000 $ /home/MET/repositories/toolbox/pbsutils/config-wine-hawc2.sh
 ```
 
 If you need more information on what is going on, you can read a more detailed
