@@ -442,7 +442,7 @@ class Sims(object):
         """
         Read a HAWCStab2 controller tuning file and return as tags
         """
-        tuning = hs2.hs2_control_tuning()
+        tuning = hs2.ReadControlTuning()
         tuning.read_parameters(fpath)
 
         tune_tags = {}

@@ -15,7 +15,7 @@ import os
 
 import numpy as np
 
-from wetb.prepost.hawcstab2 import results, hs2_control_tuning
+from wetb.prepost.hawcstab2 import results, ReadControlTuning
 
 
 class Tests(unittest.TestCase):
@@ -49,7 +49,7 @@ class Tests(unittest.TestCase):
 
     def test_linear_file(self):
 
-        hs2 = hs2_control_tuning()
+        hs2 = ReadControlTuning()
         hs2.read_parameters(self.fpath_linear)
 
         self.assertEqual(hs2.pi_gen_reg1.K, 0.108313E+07)
@@ -69,7 +69,7 @@ class Tests(unittest.TestCase):
 
     def test_quadratic_file(self):
 
-        hs2 = hs2_control_tuning()
+        hs2 = ReadControlTuning()
         hs2.read_parameters(self.fpath_quad)
 
         self.assertEqual(hs2.pi_gen_reg1.K, 0.108313E+07)

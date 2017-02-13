@@ -15,9 +15,6 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import object
 
-
-
-import unittest
 import os
 import re
 
@@ -28,8 +25,8 @@ from wetb.prepost import mplutils
 
 
 class dummy(object):
-    def __init__(self):
-        pass
+    def __init__(self, name='dummy'):
+        self.__name__ = name
 
 
 def ReadFileHAWCStab2Header(fname, widths):
@@ -172,6 +169,66 @@ class results(object):
                     'T_aero']
             self.operation = pd.DataFrame(operation, columns=cols)
 
+    def load_matrices(self, fpath, basename, operating_point=1,
+                      control_mat=False, local_wind_mat=False):
+        """Load HAWCStab2 State Space system matrices
+
+        The general file name format is:
+        BASENAMETYPE_ase_ops_OPERATING_POINT_NUMBER.dat
+
+        Where TYPE can be of the following:
+            * amat, bmat, bvmat, cmat, dmat, dvmat, emat, fmat, fvmat
+
+        Additionally, when including the control matrices:
+            * BASENAMETYPE_ops_OPERATING_POINT_NUMBER.dat
+            * TYPE: acmat, bcmat, ccmat, dcmat
+
+        Or when including local wind speed
+            * BASENAMETYPE_ase_ops_OPERATING_POINT_NUMBER.dat
+            * TYPE: bvmat_loc_v, dvmat_loc_v, fvmat_loc_v
+
+
+        Parameters
+        ----------
+
+        fpath : str
+
+        basename : str
+
+        operating_point : int, default=1
+
+
+        Returns
+        -------
+
+        matrices : dict
+
+        """
+        mnames = ['amat', 'bmat', 'bvmat', 'cmat', 'dmat', 'dvmat', 'emat',
+                  'fmat', 'fvmat']
+        mnames_c = ['acmat', 'bcmat', 'ccmat', 'dcmat']
+        mnames_v = ['bvmat_loc_v', 'dvmat_loc_v', 'fvmat_loc_v']
+
+        if control_mat:
+            mnames += mnames_c
+        if local_wind_mat:
+            mnames += mnames_v
+
+        matrices = {}
+
+        ase_template = '{:s}{:s}_ase_ops_{:d}.dat'
+        ops_template = '{:s}{:s}_ops_{:d}.dat'
+
+        for mname in mnames:
+            rpl = (basename, mname, operating_point)
+            template = ase_template
+            if mname in mnames_c:
+                template = ops_template
+            fname = os.path.join(fpath, template.format(*rpl))
+            matrices[mname] = np.loadtxt(fname)
+
+        return matrices
+
     def write_ae_sections_h2(self):
         """
         Get the aerosection positions from the HS2 ind result file and
@@ -237,7 +294,7 @@ class results(object):
         print('done!')
 
 
-class hs2_control_tuning(object):
+class ReadControlTuning(object):
 
     def __init__(self):
         """
@@ -293,4 +350,4 @@ class hs2_control_tuning(object):
 
 if __name__ == '__main__':
 
-    unittest.main()
+    pass
