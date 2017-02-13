@@ -52,7 +52,10 @@ class Dataset(object):
             return self.time
         else:
             return self.data[:, id - 2]
-
+        
+    def attribute_names_str(self):
+        return "\n".join(["1: Time"]+["%d: %s"%(i,n) for i, n in enumerate(self.info['attribute_names'],2)])
+    
     def __getattribute__(self, name):
         try:
             return object.__getattribute__(self, name)
