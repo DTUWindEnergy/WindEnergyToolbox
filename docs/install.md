@@ -9,7 +9,7 @@ Install the necessary Python dependencies using the ```conda``` package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
->> conda install -c conda-forge pyscaffold --no-deps
+>> conda install -c conda-forge pyscaffold sshtunnel --no-deps
 ```
 
 Now you can install ```wetb``` with ```pip``` (there is no ```conda``` package

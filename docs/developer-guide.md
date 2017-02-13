@@ -143,6 +143,7 @@ use ```deactivate``` to deactivate the environment.
 - six, [future](http://python-future.org/index.html)
 - nose, sphinx, blosc, pbr, psutil, coverage, setuptools_scm
 - [parimeko](http://www.paramiko.org/)
+- [sshtunnel](https://github.com/pahaz/sshtunnel)
 - [pandoc](http://pandoc.org/) , [pypandoc](https://pypi.python.org/pypi/pypandoc):
 convert markdown formatted readme file to rst for PyPi compatibility. See also
 issue #22. ```pandoc``` is available in Anaconda. When installing
@@ -156,7 +157,7 @@ Install the necessary Python dependencies using the conda package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c conda-forge pyscaffold pypandoc --no-deps
+>> conda install -c conda-forge pyscaffold pypandoc sshtunnel --no-deps
 >> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
 ```
 

@@ -16,4 +16,5 @@ psutil
 pbr
 PyScaffold
 pytest-cov
+sshtunnel
 
