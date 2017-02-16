@@ -347,7 +347,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=None, no_bins=46,
+                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e7, no_bins=46,
                 years=20.0, fatigue=True, A=None, AEP=False,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, pbs_failed_path=False):
@@ -389,11 +389,12 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
         tags = ['[Case folder]']
         add = None
         # general statistics for all channels channel
+        # set neq=None here to calculate 1Hz equivalent loads
         df_stats = cc.statistics(calc_mech_power=True, i0=i0, i1=i1,
                                  tags=tags, add_sensor=add, ch_fatigue=None,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
-                                 csv=csv, m=m, neq=neq, no_bins=no_bins,
+                                 csv=csv, m=m, neq=None, no_bins=no_bins,
                                  chs_resultant=[], A=A)
         # annual energy production
         if AEP:
@@ -463,10 +464,9 @@ if __name__ == '__main__':
                         dest='years', help='Total life time in years')
     parser.add_argument('--no_bins', type=float, default=46.0, action='store',
                         dest='no_bins', help='Number of bins for fatigue loads')
-    parser.add_argument('--neq', type=float, default=None, action='store',
-                        dest='neq', help='Equivalent cycles neq, default 1 Hz '
-                                         'equivalent load (neq = simulation '
-                                         'duration in seconds)')
+    parser.add_argument('--neq', type=float, default=1e7, action='store',
+                        dest='neq', help='Equivalent cycles Neq used for '
+                                         'Leq fatigue lifetime calculations.')
     parser.add_argument('--rotarea', type=float, default=None, action='store',
                         dest='rotarea', help='Rotor area for C_T, C_P')
     parser.add_argument('--save_new_sigs', default=False, action='store_true',
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
-                    force_dir=P_RUN, saveinterval=2000, csv=opt.csv,
+                    force_dir=P_RUN, saveinterval=2500, csv=opt.csv,
                     statistics=opt.stats, years=opt.years, neq=opt.neq,
                     fatigue=opt.fatigue, A=opt.rotarea, AEP=opt.AEP,
                     no_bins=opt.no_bins, pbs_failed_path=opt.pbs_failed_path,

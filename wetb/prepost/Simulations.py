@@ -4634,6 +4634,12 @@ class Cases(object):
         if not silent:
             print('Calculating life time fatigue load')
 
+        if not isinstance(neq_life, float):
+            neq_type = type(neq_life).__name__
+            msg = 'neq_life (reference nr of cycles for life time fatigue '
+            msg += 'load) should be a float instead of %s' % neq_type
+            raise ValueError(msg)
+
         # get some basic parameters required to calculate statistics
         try:
             case = list(self.cases.keys())[0]
