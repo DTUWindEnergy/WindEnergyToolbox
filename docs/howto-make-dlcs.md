@@ -167,14 +167,14 @@ $WIN_VERSION is your version number.
 In Windows 7, you can map a network drive in the following steps:  
 1. Open a Windows Explorer window  
 2. Right-click on "Computer" and select "Map network drive"  
-3. Select any unused drive and type "\\gorm\$USER" into the folder field, 
+3. Select any unused drive and type ```\\gorm.risoe.dk\$USER``` into the folder field, 
 replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Gorm home 
-drive of "\\gorm\abcd")  
+drive of ```\\gorm.risoe.dk\abcd```)  
 4. Check the "Reconnect at logon" box if you want to connect to this drive 
 every time you log into your computer (recommended)  
 5. Click the Finish button  
 6. Repeat Steps 1 through 5, replacing the Gorm home address in Step 3 with the 
-HAWC2 simulation folder address: "\\mimer\hawc2sim"
+HAWC2 simulation folder address: ```\\mimer.risoe.dk\hawc2sim```
 
 Note that by default Windows Explorer will hide some of the files you will need 
 edit. In order to show all files on your Gorm home drive, you need to un-hide 
