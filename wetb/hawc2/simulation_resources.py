@@ -261,8 +261,9 @@ class PBSClusterSimulationHost(SimulationHost):
 
     hawc2exe = property(lambda self : os.path.basename(self.sim.hawc2exe))
 
-    def glob(self, *args,**kwargs):
-        return self.ssh.glob(*args,**kwargs)
+    def glob(self, filepattern, cwd="", recursive=False):
+        return self.ssh.glob(filepattern, cwd, recursive)
+    
     def get_datetime(self):
         v, out, err = self.ssh.execute('date "+%Y,%m,%d,%H,%M,%S"')
         if v == 0:
