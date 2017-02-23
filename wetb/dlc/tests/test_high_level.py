@@ -26,7 +26,7 @@ class TestDLCHighLevel(unittest.TestCase):
         self.assertEqual(os.path.realpath(self.dlc_hl.res_path), os.path.realpath(testfilepath + "res"))
 
     def test_sensor_info(self):
-        self.assertEqual(list(self.dlc_hl.sensor_info().name), ['MxTB', 'MyTB', 'MxBR', 'PyBT', 'Pitch', 'PitchBearing', 'Tip1TowerDistance', 'TipTowerDistance'])
+        self.assertEqual(list(self.dlc_hl.sensor_info().name), ['MxTB', 'MyTB', 'MxBR', 'PyBT', 'Power', 'Pitch', 'PitchBearing', 'Tip1TowerDistance', 'TipTowerDistance'])
 
     def test_sensor_info_filter(self):
         self.assertEqual(list(self.dlc_hl.sensor_info(['fatigue']).m), [4, 4, 10])
