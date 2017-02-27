@@ -254,7 +254,7 @@ class TestHtcFile(unittest.TestCase):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         self.assertEqual(os.path.relpath(htcfile.modelpath,os.path.dirname(htcfile.filename)), "..")
         htcfile = HTCFile(self.testfilepath + "sub/test.htc")
-        self.assertEqual(os.path.relpath(htcfile.modelpath,os.path.dirname(htcfile.filename)), "..\\..")
+        self.assertEqual(os.path.relpath(htcfile.modelpath,os.path.dirname(htcfile.filename)).replace("\\","/"), "../..")
         self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected", HTCFile, self.testfilepath + "test2.htc")
          
           
