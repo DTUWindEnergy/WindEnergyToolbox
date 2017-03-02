@@ -40,7 +40,7 @@ class TestLogFile(unittest.TestCase):
         self.tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
     def test_from_htcfile(self):
-        htcfile = HTCFile(self.tfp + 'logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc')
+        htcfile = HTCFile(self.tfp + 'logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc',"../")
         logfile = LogFile.from_htcfile(htcfile, self.tfp + 'logfiles/model/')
         self.assertEqual(logfile.status, DONE)
 
@@ -210,7 +210,7 @@ class TestLogFile(unittest.TestCase):
 
 
     def test_reset(self):
-        htcfile = HTCFile(self.tfp + 'logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc')
+        htcfile = HTCFile(self.tfp + 'logfiles/model/htc/dlc14_iec61400-1ed3/dlc14_wsp10_wdir000_s0000.htc',"../")
         logfile = LogFile.from_htcfile(htcfile, self.tfp + 'logfiles/model/')
         self.assertEqual(logfile.status, DONE)
         logfile.reset()

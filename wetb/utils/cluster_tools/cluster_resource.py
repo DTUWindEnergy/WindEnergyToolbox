@@ -112,6 +112,9 @@ class SSHPBSClusterResource(Resource):
         Resource.__init__(self, min_cpu, min_free)
         self.ssh = sshclient
         self.resource_lock = threading.Lock()
+        
+    def glob(self, filepattern, cwd="", recursive=False):
+        return self.ssh.glob(filepattern, cwd, recursive)
 
     @property
     def host(self):

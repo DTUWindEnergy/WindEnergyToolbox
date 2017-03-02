@@ -43,7 +43,7 @@ class HTCFile(HTCContents, HTCDefaults):
     modelpath = "../"
     initial_comments = None
     _contents = None
-    def __init__(self, filename=None, modelpath="../"):
+    def __init__(self, filename=None, modelpath=None):
         """        
         Parameters
         ---------
@@ -54,15 +54,28 @@ class HTCFile(HTCContents, HTCDefaults):
         """
         
         if filename is not None:
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(filename), modelpath))
-            self.filename = filename    
-        else:
-            self.modelpath = modelpath            
-
+            self.filename = filename
+        self.modelpath = modelpath or self.auto_detect_modelpath()
+        if filename and not os.path.isabs(self.modelpath):
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
         
-        
+    
                 #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
+    def auto_detect_modelpath(self):
+        if self.filename is None:
+            return "../"
+        
+        #print (["../"*i for i in range(3)])
+        import numpy as np
+        found = ([np.sum([os.path.isfile(os.path.join(os.path.dirname(self.filename), "../"*i, f)) for f in self.input_files() if not os.path.isabs(f)]) for i in range(4)])
+        #for f in self.input_files():
+        #    print (os.path.isfile(os.path.join(os.path.dirname(self.filename), "../",f)), f)
+        if max(found)>0:
+            return "../"* np.argmax(found)
+        else:
+            raise ValueError("Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file"%self.filename)
+        
     def _load(self):
         self.reset()
         self.initial_comments = []
@@ -174,7 +187,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def input_files(self):
         self.contents # load if not loaded
-        files = self.htc_inputfiles
+        files = [os.path.abspath(f).replace("\\","/") for f in self.htc_inputfiles]
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
                 if "timoschenko_input" in mb:
