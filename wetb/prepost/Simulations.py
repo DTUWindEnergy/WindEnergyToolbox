@@ -1942,18 +1942,16 @@ class PBS(object):
         self.silent = silent
         self.pyenv = pyenv
         self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
+        self.winebase = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 '
+        self.wine = self.winebase + 'wine'
+        self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
-#        if server == 'thyra':
-#            self.maxcpu = 4
-#            self.secperiter = 0.020
         if server == 'gorm':
             self.maxcpu = 1
             self.secperiter = 0.012
-            self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         elif server == 'jess':
             self.maxcpu = 1
             self.secperiter = 0.012
-            self.wine = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         else:
             raise UserWarning('server support only for jess or gorm')
 
@@ -2296,7 +2294,9 @@ class PBS(object):
             self.pbs += '# ' + '-'*78 + '\n'
             self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
             self.pbs += "else\n"
-            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+            # numactl --physcpubind=$CPU_NR
+            param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
+                     self.wine_appendix)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
             self.pbs += "  %s %s ./%s %s\n" % param
             self.pbs += '  echo "POST-PROCESSING"\n'
@@ -3835,8 +3835,10 @@ class Cases(object):
                 else:
                     tmp1, tmp2, tmp3 = self.load_stats()
                     self.stats_df = self.stats_df.append(tmp1)
-                    self.Leq_df = self.Leq_df.append(tmp2)
-                    self.AEP_df = self.AEP_df.append(tmp3)
+                    if isinstance(self.Leq_df, pd.DataFrame):
+                        self.Leq_df = self.Leq_df.append(tmp2)
+                    if isinstance(self.AEP_df, pd.DataFrame):
+                        self.AEP_df = self.AEP_df.append(tmp3)
 
         self.cases = cases_merged
         self.cases_fail = cases_fail_merged
