@@ -23,70 +23,73 @@ from the subordinate spreadsheets, submit those HTC files to the cluster,
 and post-process results.
 [houserules-mimerhawc2sim](docs/houserules-mimerhawc2sim.md) has some
 "house rules" on storing simulations on mimer.
-[docs/using-statistics-df.md](using-statistics-df) has some information
+[using-statistics-df.md](docs/using-statistics-df) has some information
 on loading the post-processing statistics using Python.
 
 
 ## Steps
 
-##### 1. Make sure that you can access the cluster/mimer according to the instructions in [wetb](README.md)
+##### 1. Make sure that you can access the cluster/mimer.
+See the instructions on [this page](docs/howto-make-dlcs.md).
 
-##### 2. Create a Set ID folder for this project/simulation (detailed house rules [houserules-mimerhawc2sim](docs/houserules-mimerhawc2sim.md))
-a. Navigate to or create the folder corresponding to your model on
-```\\mimer.risoe.dk\hawc2sim```. You should create a new turbine model folder
-only when the turbulence box size changes (e.g., if the rotor size changes) or
-if you have a completely new model. You now have two options:
+##### 2. Create a Set ID folder for this project/simulation.
+You should find that, within a given turbine model, the folder structure is
+similar to the following:
 
-    i. Create a new Set ID alpha code (e.g., "AA", "AB", etc.) You should
-    only do this if no one else in your project has run simulations on mimer.
+```
+|-- DTU10MW/
+|   |-- AA0001
+|   |   |-- ...
+|   |-- AA0002
+|   |   |-- ...
+|   |-- ...
+|   |-- AB0001
+|   |-- ...
+|-- AA_log_DTUMW.xlsx
+|-- AB_log_DTUMW.xlsx
+|-- ...
+```
 
-    ii. Use a pre-existing Set ID alpha code. This is preferable, but be
-    sure to contact whoever created/used the alpha code most recently to
-    verify it is okay to use.
+Here, each of these alphanumeric folders are "set IDs", and you should have a
+unique set ID for each set of simulations. Detailed house rules on how you
+should store data on mimer can be found in the
+[houserules-mimerhawc2sim](docs/houserules-mimerhawc2sim.md) document.
 
-b. Create a new Set ID folder. If you have a new Set ID alpha code (e.g.,
-"AB"), then it should be that code followed by "0000". If you are using a
-pre-existing Set ID alpha code, then just add 1 to the most recent number
-(e.g., if "AB0008" exists, your new folder is "AB0009").
-
-##### 3. Add proper log files for your Set ID folder. (See [using-statistics-df](docs/using-statistics-df.md))
+There are two steps to creating your new set ID folder:
+1. Determine if you need to create a new turbine model folder. You should only
+do this when the turbulence box size changes (e.g., if the rotor size changes)
+or if you have a model that's never been simulated on mimer.
+2. Determine your set ID code. There are two scenarios:
+    * No one else in your project has run simulations on mimer. In this case,
+    create a new set ID alpha code (e.g., "AA", "AB", etc.). 
+    * Simulations for this project/turbine configuration already exist. In this
+    case, use a pre-existing set ID alpha code and add one to the most recent
+    Set ID (e.g., if "AB0008" exists, your new folder should be "AB0009").  
+    
+##### 3. Add proper log files for your Set ID folder.
+See the [house rules](docs/houserules-mimerhawc2sim.md) regarding log files.
 
 ##### 4. Add your model files.
 Within your new Set ID folder, add your HAWC2 model files. Keep a folder
 structure similar to this:
 
 ```
-|-- animation
-|-- control
-|-- data
-|-- externalforce
-|-- htc
-|-- iter
-|-- logfiles
-|-- pbs_in
-|-- pbs_out
-|-- res
-|-- res_eigen
-|-- turb
-AA0001_ErrorLog.csv
-DTU10MW_AA0001.zip
-pbs_in_file_cache.txt
+|-- control/
+|   |-- ...
+|-- data/
+|   |-- ...
+|-- htc/
+|   |-- _master/
+|   |   |-- TURB_master_AA0001.htc
+|   |-- DLCs.xlsx
 ```
 
-Your ```htc```, ```pbs_in```, and ```pbs_out``` folders will be empty at this time.
+Your master htc file, stored in ```htc/_master/```, can take any desired naming
+convention, but it must have ```_master_``` in the name or future scripts will
+abort. ```htc/DLCs.xlsx``` is your master Excel file that will create the 
+subordinate Excel files in the coming steps.
 
-##### 5. Structure your Set ID/htc folder like this:
-```
-|-- _master
-DLCs.xlsx
-```
-
-Place your master HTC file in the _master folder (NOTE that it must have
-"_master_" in its name or later scripts won’t find it). ```DLCs.xlsx``` is
-your master Excel file that will create the subordinate Excel files in the coming
-steps.
-
-##### 6. Create your subordinate Excel files.
+##### 5. Create your subordinate Excel files.
 From a terminal, change to your htc directory. Then run the following code:
 
 ```
@@ -99,12 +102,13 @@ $ source deactivate
 This will create a subfolders DLCs and fill that new subfolder with the created
 subordinate Excel files.
 
-##### 7. Move your DLCs.xlsx file from the htc folder to the _master folder.
+##### 6. Move your DLCs.xlsx file from the htc folder to the ```_master``` folder.
 It will cause errors in later scripts if left in the htc folder.
 
-##### 8. Create your htc files and corresponding PBS job scripts from the subordinate Excel files.
-In the terminal, change up a level to your Set ID folder (e.g., to folder
-"AB0001"). Then run this code
+##### 7. Create your htc files and PBS job scripts .
+These files and scripts are generated from the subordinate Excel files from
+Step 5. To do this, in the terminal, change up a level to your Set ID folder
+(e.g., to folder "AB0001"). Then run this code
 
 ```
 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
@@ -113,30 +117,36 @@ $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/
 Your htc files should now be placed in subfolders in the htc folder, and PBS
 job files should be in folder ```pbs_in```.
 
-##### 9. Launch the htc files to the cluster.
-For example, the following code will launch the jobs in folder pbs_in on 100
-nodes. You must be in the top-level Set ID folder for this to work (e.g., in
-folder "AB0001").
+##### 8. Launch the htc files to the cluster.
+Use the ```launch.py``` function to launch the jobs on the cluster.
+For example, the following code will launch the jobs in folder ```pbs_in``` on
+100 nodes. You must be in the top-level Set ID folder for this to work (e.g.,
+in folder "AB0001").
 
 ```
 $ launch.py -n 100 -p pbs_in/
 ```
 
-use the ```launchy.py``` help function to get more options:
+There are many launch options available. You can read more about the options
+and querying the cluster configurations/status/etc. on 
+[this page](docs/howto-make-dlcs.md), or you can use the ```launchy.py```
+help function to print available launch options:
 
 ```
 $ launch.py --help
 ```
 
-More information on launching options and cluster configurations/status/etc.
-can be found on the [wetb README](README.md).
+##### 9. Post-process results.
 
-##### 10. Post-process results.
-More detail in [docs/using-statistics-df.md](using-statistics-df). Here is
-example code to check the log files, calculate the statistics, the AEP and the
-lifetime equivalent loads: (Execute from top-level Set ID folder)
+The wetb function ```qsub-wrap.py``` can not only generate htc files but also 
+post-process results. For example, here is code to check the log files
+and calculate the statistics, the AEP and the lifetime equivalent loads
+(must be executed from the top-level Set ID folder):
 
 ```
 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
+
+More details regarding loading the post-processed with statistics dataframes
+can be found here: [using-statistics-df](docs/using-statistics-df.md).
 
