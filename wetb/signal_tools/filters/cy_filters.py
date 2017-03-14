@@ -23,7 +23,7 @@ def cy_low_pass_filter(inp, delta_t, tau):  #cpdef cy_low_pass_filter(np.ndarray
 
     return output
 
-def cy_dynamic_low_pass_filter(inp, delta_t, tau, method):  #cpdef cy_dynamic_low_pass_filter(np.ndarray[double,ndim=1] inp, double delta_t, np.ndarray[double,ndim=1] tau, int method):
+def cy_dynamic_low_pass_filter(inp, delta_t, tau, method=1):  #cpdef cy_dynamic_low_pass_filter(np.ndarray[double,ndim=1] inp, double delta_t, np.ndarray[double,ndim=1] tau, int method=1):
     #cdef np.ndarray[double,ndim=1] output, alpha
     #cdef int i
 
