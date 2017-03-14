@@ -155,8 +155,9 @@ def revolution_trigger(values, rpm_dt=None, dmin=5, dmax=10, ):
     
     Returns
     -------
-    trigger indexes
-    
+    trigger indexes 
+        [i1,i2,...,in] if rpm_dt is not provided
+        [(start1,stop1),(start2,stop2),...,(startn, stopn)] if rpm_dt is provided
     """
     
     values = np.array(values)
