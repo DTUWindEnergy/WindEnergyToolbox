@@ -206,7 +206,7 @@ class HTCFile(HTCContents, HTCDefaults):
             files.append(dll.filename[0])
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
-            files.append(self.wind.get('wind.user_defined_shear_turbulence', [None])[0])
+            files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])
         if 'wakes' in self:
             files.append(self.wind.get('use_specific_deficit_file', [None])[0])
             files.append(self.wind.get('write_ct_cq_file', [None])[0])
