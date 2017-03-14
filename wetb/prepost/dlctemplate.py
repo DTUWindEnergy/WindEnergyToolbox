@@ -390,7 +390,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
         add = None
         # general statistics for all channels channel
         # set neq=None here to calculate 1Hz equivalent loads
-        df_stats = cc.statistics(calc_mech_power=True, i0=i0, i1=i1,
+        df_stats = cc.statistics(calc_mech_power=False, i0=i0, i1=i1,
                                  tags=tags, add_sensor=add, ch_fatigue=None,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,

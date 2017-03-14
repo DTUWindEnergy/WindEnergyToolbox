@@ -8,7 +8,7 @@ do as on Arch Linux wiki: top line is the file name where you need to add stuff
 explain the difference in the paths seen from a windows computer and the cluster
 
 DONE:
-- putty reference and instructions (fill in username in the address 
+- putty reference and instructions (fill in username in the address
   username@gorm) [rink]
 - how to mount gorm home on windows [rink]
 - point to the gorm/jess wiki's [rink]
@@ -74,7 +74,7 @@ Connecting to the cluster
 
 We provide here an overview of how to connect to the cluster, but general,
 up-to-date information can be found in the [HPC documentation](https://docs.hpc.ait.dtu.dk)
-or on the [Gorm wiki](http://gorm.risoe.dk/gormwiki). Note that the 
+or on the [Gorm wiki](http://gorm.risoe.dk/gormwiki). Note that the
 information from the Gorm wiki will be migrated into the HPC documentation
 over time.
 
@@ -82,7 +82,7 @@ You connect to the cluster via an SSH terminal, and there are different SSH
 terminals based on your operating system (see the platform-specific
 instructions in the next subsections). The cluster can only be reached when
 on the DTU network (wired, or only from a DTU computer when using a wireless
-connection), when connected to the DTU VPN, or from one of the DTU 
+connection), when connected to the DTU VPN, or from one of the DTU
 [databars](http://www.databar.dtu.dk/).
 
 ### Windows
@@ -93,18 +93,18 @@ be downloaded from
 
 Once you have installed PuTTY and placed the executable somewhere convenient
 (e.g., the Desktop), double click on the executable. In the window that opens
-up, enter/verify the following settings:  
-* Session > Host Name: gorm.risoe.dk  
+up, enter/verify the following settings:
+* Session > Host Name: gorm.risoe.dk
 * Session > Port: 22
-* Session > Connection type: SSH  
-* Session > Saved Sessions: Gorm  
-* Connection > Data > Auto-login username: your DTU username  
+* Session > Connection type: SSH
+* Session > Saved Sessions: Gorm
+* Connection > Data > Auto-login username: your DTU username
 * Connection > Data > When username is not specified: Use system username
-* Window > Colours > Select a colour to adjust > ANSI Blue: RGB = 85, 85, 255  
-* Window > Colours > Select a colour to adjust > ANSI Bold Blue: RGB = 128, 128, 255  
+* Window > Colours > Select a colour to adjust > ANSI Blue: RGB = 85, 85, 255
+* Window > Colours > Select a colour to adjust > ANSI Bold Blue: RGB = 128, 128, 255
 
 Note that these last two options are optional. We've found that the default
-color for comments, ANSI Blue, is too dark to be seen on the black 
+color for comments, ANSI Blue, is too dark to be seen on the black
 background. The last two options in the list set ANSI Blue and ANSI Blue Bold
 to be lighter and therefore easier to read when working in the terminal. Once
 you have entered these options, click "Save" on the "Session" tab and close
@@ -129,7 +129,7 @@ You are also welcome to use Google and read the many online resources.
 ### Unix
 
 Unlike Windows, SSH is supported out of the box for Linux and Mac OSX
-terminals. To connect to the cluster, enter the following command into 
+terminals. To connect to the cluster, enter the following command into
 the terminal:
 
 ```
@@ -143,42 +143,42 @@ to the Gorm cluster.
 Mounting the cluster discs
 --------------------------
 
-When doing the HAWC2 simulations, you will interact regularly with the cluster 
-file system and discs. Thus, it can be very useful to have two discs mounted 
-locally so you can easily access them: 1) your home directory on Gorm and 2) 
+When doing the HAWC2 simulations, you will interact regularly with the cluster
+file system and discs. Thus, it can be very useful to have two discs mounted
+locally so you can easily access them: 1) your home directory on Gorm and 2)
 the HAWC2 simulation folder on Mimer.
 
-You need to be connected to the DTU network (either directly or via VPN) for 
-the following instructions to work. 
+You need to be connected to the DTU network (either directly or via VPN) for
+the following instructions to work.
 
 
 ### Windows
 
-On Windows, we recommend mapping the two drives to local network drives, which 
-means that you can navigate/copy/paste to/from them in Windows Explorer just as 
-you would do with normal folders on your computer. You may also use [WinSCP](http://winscp.net)  
+On Windows, we recommend mapping the two drives to local network drives, which
+means that you can navigate/copy/paste to/from them in Windows Explorer just as
+you would do with normal folders on your computer. You may also use [WinSCP](http://winscp.net)
 to interact with the cluster discs if you are more familiar with that option.
 
-Here we provide instructions for mapping network drives in Windows 7. If these 
-instructions don't work for you, you can always find directions for your 
-version of Windows by Googling "map network drive windows $WIN_VERSION", where 
+Here we provide instructions for mapping network drives in Windows 7. If these
+instructions don't work for you, you can always find directions for your
+version of Windows by Googling "map network drive windows $WIN_VERSION", where
 $WIN_VERSION is your version number.
 
-In Windows 7, you can map a network drive in the following steps:  
-1. Open a Windows Explorer window  
-2. Right-click on "Computer" and select "Map network drive"  
-3. Select any unused drive and type ```\\gorm.risoe.dk\$USER``` into the folder field, 
-replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Gorm home 
-drive of ```\\gorm.risoe.dk\abcd```)  
-4. Check the "Reconnect at logon" box if you want to connect to this drive 
-every time you log into your computer (recommended)  
-5. Click the Finish button  
-6. Repeat Steps 1 through 5, replacing the Gorm home address in Step 3 with the 
+In Windows 7, you can map a network drive in the following steps:
+1. Open a Windows Explorer window
+2. Right-click on "Computer" and select "Map network drive"
+3. Select any unused drive and type ```\\gorm.risoe.dk\$USER``` into the folder field,
+replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Gorm home
+drive of ```\\gorm.risoe.dk\abcd```)
+4. Check the "Reconnect at logon" box if you want to connect to this drive
+every time you log into your computer (recommended)
+5. Click the Finish button
+6. Repeat Steps 1 through 5, replacing the Gorm home address in Step 3 with the
 HAWC2 simulation folder address: ```\\mimer.risoe.dk\hawc2sim```
 
-Note that by default Windows Explorer will hide some of the files you will need 
-edit. In order to show all files on your Gorm home drive, you need to un-hide 
-system files: Explorer > Organize > Folder and search options > "View" tab > 
+Note that by default Windows Explorer will hide some of the files you will need
+edit. In order to show all files on your Gorm home drive, you need to un-hide
+system files: Explorer > Organize > Folder and search options > "View" tab >
 Hidden files and folders > "Show hidden files, folders, and drives".
 
 ### Unix
@@ -218,6 +218,7 @@ After modifying ```.bash_profile```, save and close it. Then, in the terminal,
 run the command (or logout and in again to be safe):
 ```
 g-000 $ source ~/.bash_profile
+g-000 $ source ~/.bashrc
 ```
 
 You will also need to configure wine and place the HAWC2 executables in your
@@ -245,7 +246,8 @@ Alternatively you can also include all the DLL's and executables in the root of
 your HAWC2 model folder. Executables and DLL's placed in the root folder take
 precedence over the ones placed in ```/home/$USER/wine_exe/win32```.
 
-Log out and in again from the cluster (close and restart PuTTY).
+> IMPORTANT: log out and in again from the cluster (close and restart PuTTY)
+> before trying to see if you can run HAWC2.
 
 At this stage you can run HAWC2 as follows:
 
@@ -487,7 +489,7 @@ met:
 ```
 nr_cpus > cpu's used by user
 AND cpu's free on cluster > cpu_free
-AND jobs queued by user < cpu_user_queue)
+AND jobs queued by user < cpu_user_queue
 ```
 
 the program will sleep 5 seconds before trying to launch a new job again.
