@@ -35,6 +35,37 @@ class HTCFile(HTCContents, HTCDefaults):
     >>> htcfile = HTCFile('htc/test.htc')
     >>> htcfile.wind.wsp = 10
     >>> htcfile.save()
+    
+    #---------------------------------------------
+    >>> htc = HTCFile(filename=None, modelpath=None) # create minimal htcfile
+        
+    #Add section
+    >>> htc.add_section('hydro')
+    
+    #Add subsection
+    >>> htc.hydro.add_section("hydro_element")
+    
+    #Set values
+    >>> htc.hydro.hydro_element.wave_breaking = [2, 6.28, 1] # or
+    >>> htc.hydro.hydro_element.wave_breaking = 2, 6.28, 1
+    
+    #Set comments
+    >>> htc.hydro.hydro_element.wave_breaking.comments = "This is a comment"
+    
+    #Access section
+    >>> hydro_element = htc.hydro.hydro_element #or
+    >>> hydro_element = htc['hydro.hydro_element'] # or
+    >>> hydro_element = htc['hydro/hydro_element'] # or
+    >>> print (hydro_element.wave_breaking) #string represenation
+    wave_breaking    2 6.28 1;    This is a comment
+    >>> print (hydro_element.wave_breaking.name_) # command
+    wave_breaking
+    >>> print (hydro_element.wave_breaking.values) # values
+    [2, 6.28, 1
+    >>> print (hydro_element.wave_breaking.comments) # comments
+    This is a comment
+    >>> print (hydro_element.wave_breaking[0]) # first value
+    2
     """
 
     filename = None
@@ -96,9 +127,9 @@ class HTCFile(HTCContents, HTCDefaults):
                 self._add_contents(HTCSection.from_lines(lines))
             else:
                 line = HTCLine.from_lines(lines)
-                self._add_contents(line)
                 if line.name_ == "exit":
                     break
+                self._add_contents(line)
 
 
     def reset(self):
@@ -146,7 +177,7 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def __str__(self):
         self.contents #load
-        return "".join(self.initial_comments + [c.__str__(1) for c in self])
+        return "".join(self.initial_comments + [c.__str__(1) for c in self]+ ["exit;"])
 
     def save(self, filename=None):
         self.contents #load if not loaded

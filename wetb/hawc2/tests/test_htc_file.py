@@ -34,7 +34,7 @@ class TestHtcFile(unittest.TestCase):
     def check_htc_file(self, f):
  
         with open(f) as fid:
-            orglines = fid.readlines()
+            orglines = fid.read().strip().split("\n")
  
         htcfile = HTCFile(f,"../")
         newlines = str(htcfile).split("\n")
@@ -131,6 +131,17 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.wind.mann.create_turb_parameters[0], 29.4)
         self.assertEqual(htcfile.wind.mann.create_turb_parameters[3], 1004)
         self.assertEqual(htcfile.wind.mann.create_turb_parameters.comments, "L, alfaeps, gamma, seed, highfrq compensation")
+        
+    def test_add_section2(self):
+        htcfile = HTCFile()
+        htcfile.add_section('hydro')
+        #self.assertEqual(str(htcfile).strip()[-5:], "exit;")
+        
+        htcfile = HTCFile(self.testfilepath + "test.htc")
+        htcfile.add_section('hydro')
+        self.assertEqual(str(htcfile).strip()[-5:], "exit;")
+        
+          
   
     def test_add_mann(self):
         htcfile = HTCFile()
