@@ -345,7 +345,7 @@ class HTCFile(HTCContents, HTCDefaults):
             raise Exception (str(stdout) + str(stderr))
 
 class H2aeroHTCFile(HTCFile):
-    def __init__(self, filename=None, modelpath="../"):
+    def __init__(self, filename=None, modelpath=None):
         HTCFile.__init__(self, filename=filename, modelpath=modelpath)
 
     @property
