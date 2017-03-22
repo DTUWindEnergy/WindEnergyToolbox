@@ -10,9 +10,7 @@ import re
 import threading
 
 from wetb.utils.cluster_tools import pbswrap
-from wetb.utils.cluster_tools.ssh_client import SSHClient, SharedSSHClient
-from wetb.utils.timing import print_time
-import time
+
 
 
 def unix_path(path, cwd=None, fail_on_missing=False):
@@ -122,6 +120,7 @@ class SSHPBSClusterResource(Resource):
 
 
     def new_ssh_connection(self):
+        from wetb.utils.cluster_tools.ssh_client import SSHClient
         return SSHClient(self.host, self.ssh.username, self.ssh.password, self.ssh.port)
         #return self.ssh
 
@@ -159,7 +158,11 @@ class SSHPBSClusterResource(Resource):
             jobids = list(jobids)
         self.ssh.execute("qdel %s" % (" ".join(jobids)))
         
-        
+    def setup_wine(self):    
+        self.ssh.execute("""rm -f ./config-wine-hawc2.sh &&
+wget https://gitlab.windenergy.dtu.dk/toolbox/pbsutils/raw/master/config-wine-hawc2.sh &&
+chmod 777 config-wine-hawc2.sh &&
+./config-wine-hawc2.sh""")
    
 
 
