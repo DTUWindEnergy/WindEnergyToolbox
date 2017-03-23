@@ -42,31 +42,31 @@ class Test_first_order_filters(unittest.TestCase):
             plt.show()
         
 
-    def test_low_pass3(self):
-        t = np.linspace(0, 1.0, 2001)
-#         xlow = np.sin(2 * np.pi * 5 * t)
-#         xhigh = np.sin(2 * np.pi * 250 * t)
-#         x = xlow + xhigh
-        x = np.sum([np.sin(t*x*2*np.pi) for x in range(1,200)],0)                
-        cutoff = .2
-        b, a = signal.butter(8,cutoff)
-        w, h = signal.freqs(b, a)
-        y = signal.filtfilt(b, a, x)
-        F = rx2F(x, max_nfft=len(t))
-        tF = np.linspace(0, len(F)/t[-1],len(F))
-        Fy = rx2F(y, max_nfft=len(t))
-
-        if 1:
-            import matplotlib.pyplot as plt
-#             plt.plot(x)
-#             plt.plot(y)
+#     def test_low_pass3(self):
+#         t = np.linspace(0, 1.0, 2001)
+# #         xlow = np.sin(2 * np.pi * 5 * t)
+# #         xhigh = np.sin(2 * np.pi * 250 * t)
+# #         x = xlow + xhigh
+#         x = np.sum([np.sin(t*x*2*np.pi) for x in range(1,200)],0)                
+#         cutoff = .2
+#         b, a = signal.butter(8,cutoff)
+#         w, h = signal.freqs(b, a)
+#         y = signal.filtfilt(b, a, x)
+#         F = rx2F(x, max_nfft=len(t))
+#         tF = np.linspace(0, len(F)/t[-1],len(F))
+#         Fy = rx2F(y, max_nfft=len(t))
+# 
+#         if 1:
+#             import matplotlib.pyplot as plt
+# #             plt.plot(x)
+# #             plt.plot(y)
+# #             plt.show()
+# 
+#             plt.plot(tF, np.abs(F))
+#             plt.plot(tF, np.abs(Fy))
+#             plt.xlim([0,260])
 #             plt.show()
-
-            plt.plot(tF, np.abs(F))
-            plt.plot(tF, np.abs(Fy))
-            plt.xlim([0,260])
-            plt.show()
-            print (b,a)
+#             print (b,a)
 #             
 #             plt.plot(w, 20 * np.log10(abs(h)))
 #             plt.xscale('log')
