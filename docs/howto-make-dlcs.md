@@ -371,7 +371,7 @@ will need to install a Python environment with all its dependencies locally.
 Additionally, you need access to the cluster discs from your local workstation.
 
 The installation procedure for wetb is outlined in the [installation manual]
-(https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/install-manual-detailed.md).
+(docs/developer-guide.md).
 
 
 Optional configuration
