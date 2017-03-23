@@ -175,8 +175,8 @@ def R(rh=0, t=15, P=1014):
     -------
     Specific gas constant
     """
-    assert np.all((900<P)&(P<1100)), "Pressure outside range 900 to 1100"
-    assert np.all((-50<t)&(t<100)), "Temperature outside range -50 to 100"
+    #assert np.all((900<P)&(P<1100)), "Pressure outside range 900 to 1100"
+    #assert np.all((-50<t)&(t<100)), "Temperature outside range -50 to 100"
     Tk = t + 273.15
     return P * 100 / (air_density(P, t, rh) * Tk)
 

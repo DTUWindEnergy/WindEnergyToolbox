@@ -14,7 +14,7 @@ from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
-from wetb.utils.cluster_tools.cluster_resource import unix_path, unix_path_old
+from wetb.utils.cluster_tools.cluster_resource import unix_path_old
 standard_library.install_aliases()
 from collections import OrderedDict
 

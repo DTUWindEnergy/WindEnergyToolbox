@@ -388,6 +388,8 @@ class Simulation(object):
     def set_id(self, *args, **kwargs):
         pass
 
+    def progress_callback(self,*args, **kwargs):
+        pass
 
 class UpdateSimStatusThread(Thread):
     def __init__(self, simulation, interval=1):

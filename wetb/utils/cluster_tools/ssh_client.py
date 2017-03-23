@@ -5,9 +5,10 @@ Created on 27/11/2015
 '''
 
 from io import StringIO
-import paramiko
-import os
 import sys
+import paramiko
+    
+import os
 import threading
 from _collections import deque
 import time
