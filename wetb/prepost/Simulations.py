@@ -992,7 +992,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
     return cases_new
 
 
-def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
+def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
            maxcpu=1, pyenv='wetb_py3'):
@@ -1010,12 +1010,18 @@ def launch(cases, runmethod='local', verbose=False, copyback_turb=True,
 
     verbose : boolean, default=False
 
-    runmethod : {'local' (default),'thyra','gorm','linux-script','none',
-                 'windows-script'}
+    runmethod : {'none' (default),'jess','gorm','linux-script','local',
+                 'local-ram', 'windows-script'}
         Specify how/what to run where. For local, each case in cases is
         run locally via python directly. If set to 'linux-script' a shell
         script is written to run all cases locally sequential. If set to
-        'thyra' or 'gorm', PBS scripts are written to the respective server.
+        'jess' or 'gorm', PBS scripts are written to the respective server.
+        A Windows batch script is written in case of windows-script, and is
+        used in combination with windows_nr_cpus.
+
+    windows_nr_cpus : int, default=2
+        All cases to be run are distributed over 'windows_nr_cpus' number of
+        Windows batch files so the user can utilize 'windows_nr_cpus' CPUs.
     """
 
     random_case = list(cases.keys())[0]
@@ -1894,6 +1900,16 @@ class HtcMaster(object):
         for key in self.output_dirs:
             if isinstance(self.tags[key], str):
                 self.tags[key] = self.tags[key].lower()
+
+    def write_tags(self, fname=False):
+        """Write all tags to a DLC alike spreadsheet
+        """
+
+        if not fname:
+            a, b = self.tags['[master_htc_dir]'], self.tags['[master_htc_file]']
+            fname  = os.path.join(a, b).replace('.htc', '.xlsx')
+        df = pd.DataFrame([], columns=self.tags_in_master.keys())
+        df.to_excel(fname)
 
 
 class PBS(object):
