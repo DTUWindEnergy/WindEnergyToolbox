@@ -16,12 +16,11 @@ import time
 from wetb.hawc2 import log_file
 from wetb.hawc2.log_file import LogInfo, LogFile
 from wetb.hawc2.simulation import ERROR, ABORTED
-from wetb.utils.cluster_tools import pbsjob
+
 from wetb.utils.cluster_tools.cluster_resource import LocalResource, \
-    SSHPBSClusterResource, unix_path
+    SSHPBSClusterResource
+from wetb.utils.cluster_tools import pbsjob
 from wetb.utils.cluster_tools.pbsjob import SSHPBSJob, NOT_SUBMITTED, DONE
-from wetb.utils.cluster_tools.ssh_client import SSHClient
-from wetb.utils.timing import print_time
 from wetb.hawc2.htc_file import fmt_path
 import numpy as np
 
@@ -249,7 +248,8 @@ class GormSimulationResource(PBSClusterSimulationResource):
     def __init__(self, username, password, wine_cmd="WINEARCH=win32 WINEPREFIX=~/.wine32 wine"):
         init_cmd = """export PATH=/home/python/miniconda3/bin:$PATH
 source activate wetb_py3"""
-        PBSClusterSimulationResource.__init__(self, "gorm.risoe.dk", username, password, 22, 25, 100, init_cmd, wine_cmd, "python")
+        from wetb.utils.cluster_tools.ssh_client import SSHClient
+        PBSClusterSimulationResource.__init__(self, SSHClient('gorm.risoe.dk', username, password, 22), 25, 100, init_cmd, wine_cmd, "python")
 
 
 class PBSClusterSimulationHost(SimulationHost):

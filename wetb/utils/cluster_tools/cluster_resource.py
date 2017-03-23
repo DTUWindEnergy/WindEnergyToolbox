@@ -119,6 +119,10 @@ class SSHPBSClusterResource(Resource):
     @property
     def host(self):
         return self.ssh.host
+    
+    @property
+    def username(self):
+        return self.ssh.username
 
 
     def new_ssh_connection(self):
