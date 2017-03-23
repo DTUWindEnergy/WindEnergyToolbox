@@ -4,7 +4,6 @@ Created on 04/12/2015
 @author: mmpe
 '''
 import os
-from wetb.utils.cluster_tools.ssh_client import SSHClient
 
 NOT_SUBMITTED = "Job not submitted"
 PENDING = "Pending"
@@ -38,7 +37,6 @@ class SSHPBSJob(object):
 
     @property
     def status(self):
-
         if self._status in [NOT_SUBMITTED, DONE]:
             return self._status
         with self.ssh:
