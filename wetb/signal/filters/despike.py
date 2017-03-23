@@ -4,8 +4,8 @@ Created on 13/07/2016
 @author: MMPE
 '''
 import numpy as np
-from wetb.signal_tools.filters.first_order import low_pass
-from wetb.signal_tools.filters import replacer
+from wetb.signal.filters.first_order import low_pass
+from wetb.signal.filters import replacer
 
 
 replace_by_nan = replacer.replace_by_nan

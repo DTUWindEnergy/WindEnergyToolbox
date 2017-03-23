@@ -5,7 +5,7 @@ Created on 12/11/2015
 '''
 import unittest
 import numpy as np
-from wetb.signal_tools.spectrum import psd
+from wetb.signal.spectrum import psd
 
 class TestSpectrum(unittest.TestCase):
 

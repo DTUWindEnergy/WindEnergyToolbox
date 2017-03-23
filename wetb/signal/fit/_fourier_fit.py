@@ -58,12 +58,16 @@ def x2F(y, max_nfft, x=None):
     F = np.r_[AB[0], (AB[1:nfft + 1] + 1j * AB[nfft + 1:]), np.zeros(nfft) ]
     return F
 
-def rx2F(y, max_fft):
+def rx2F(y, max_nfft, x=None):
     """Convert non-complex signal, y, to single sided Fourier components, that satifies x(t) = sum(X(cos(iw)+sin(iw)), i=0..N)"""
+    d = np.arange(360)
+    if x is not None:
+        x,fit = bin_fit(x,y, d)
+        y = fit(d)
     F = np.fft.rfft(y) / len(y)
     F[1:-1] *= 2  # add negative side
     F = np.conj(F)
-    return F[:max_fft + 1]
+    return F[:max_nfft + 1]
 
 def rF2x(rF):
     """Convert single sided Fourier components, that satisfies x(t) = sum(X(cos(iw)+sin(iw)), i=0..N) to non-complex signal"""

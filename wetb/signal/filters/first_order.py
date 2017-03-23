@@ -4,7 +4,7 @@ Created on 10/01/2015
 @author: mmpe
 '''
 import numpy as np
-from wetb.signal_tools.filters import cy_filters
+from wetb.signal.filters import cy_filters
 
 def low_pass(input, delta_t, tau, method=1):
     if isinstance(tau, (int, float)):
