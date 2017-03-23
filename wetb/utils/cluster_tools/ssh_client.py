@@ -5,9 +5,13 @@ Created on 27/11/2015
 '''
 
 from io import StringIO
-import paramiko
-import os
 import sys
+try:
+    import paramiko
+except Exception as e:
+    sys.stderr.write("Paramiko(ssh client module) not imported\n%s"%str(e) )
+    
+import os
 import threading
 from _collections import deque
 import time
