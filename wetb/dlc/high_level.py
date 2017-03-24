@@ -44,6 +44,36 @@ def Weibull2(u, k, wsp_lst):
     edges = np.r_[wsp_lst[0] - (wsp_lst[1] - wsp_lst[0]) / 2, (wsp_lst[1:] + wsp_lst[:-1]) / 2, wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2]) / 2]
     return [-cdf(e1) + cdf(e2) for wsp, e1, e2 in zip(wsp_lst, edges[:-1], edges[1:])]
 
+def Weibull_IEC(Vref, Vhub_lst):
+    """Weibull distribution according to IEC 61400-1:2005, page 24
+    
+    Parameters
+    ----------
+    Vref : int or float
+        Vref of wind turbine class
+    Vhub_lst : array_like
+        Wind speed at hub height. Must be equally spaced.
+    
+    Returns
+    -------
+    nd_array : list of probabilities
+        
+    Examples
+    --------
+    >>> Weibull_IEC(50, [4,6,8]) 
+    [ 0.11002961  0.14116891  0.15124155]
+    """
+    Vhub_lst = np.array(Vhub_lst)
+    #Average wind speed
+    Vave=.2*Vref
+    #Rayleigh distribution
+    Pr = lambda x : 1 - np.exp(-np.pi*(x/(2*Vave))**2)
+    #Wsp bin edges: [4,6,8] -> [3,5,7,9] 
+    wsp_bin_edges = np.r_[Vhub_lst[0] - (Vhub_lst[1] - Vhub_lst[0]) / 2, (Vhub_lst[1:] + Vhub_lst[:-1]) / 2, Vhub_lst[-1] + (Vhub_lst[-1] - Vhub_lst[-2]) / 2]
+    #probabilities of 3-5, 5-7, 7-9
+    return np.array([-Pr(e1) + Pr(e2) for e1, e2 in zip(wsp_bin_edges[:-1], wsp_bin_edges[1:])])
+
+
 
 class DLCHighLevel(object):
 
@@ -159,7 +189,7 @@ class DLCHighLevel(object):
 
         dist = self.dlc_df[dist_key][row]
         if str(dist).lower() == "weibull" or str(dist).lower() == "rayleigh":
-            dist = Weibull2(self.vref * .2, self.shape_k, values)
+            dist = Weibull_IEC(self.vref, values)
         else:
             def fmt(v):
                 if "#" in str(v):
