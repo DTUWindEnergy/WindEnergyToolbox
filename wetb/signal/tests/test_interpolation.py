@@ -8,7 +8,6 @@ import unittest
 from matplotlib.pyplot  import *
 import numpy as np
 from wetb import signal
-from wetb.signal.time_shift import find_time_shift
 from wetb import gtsdf
 import os
 from wetb.gtsdf.unix_time import from_unix
