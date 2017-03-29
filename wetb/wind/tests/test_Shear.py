@@ -49,6 +49,24 @@ class TestShear(unittest.TestCase):
         14: WSP gl. coo.,Vz 21
         """
 
+    def test_power_shear_fit(self):
+        z = [30,50,70]
+        a,u_ref = .3,10
+        u = power_shear(a,50,u_ref)(z)
+        np.testing.assert_array_almost_equal(fit_power_shear_ref(zip(z,u), 50), [a,u_ref],3)
+        if 0:
+            import matplotlib.pyplot as plt
+            fit_power_shear_ref(zip(z,u), 50, plt)
+            plt.show()
+        
+    def test_power_shear_fit_nan(self):
+        z = [30,50,70]
+        a,u_ref = .3,10
+        u = power_shear(a,50,u_ref)(z)
+        u[2] = np.nan
+        np.testing.assert_array_almost_equal(fit_power_shear_ref(zip(z,u), 50), [a,u_ref],3)
+        u[:] = np.nan
+        np.testing.assert_array_almost_equal(fit_power_shear_ref(zip(z,u), 50), [np.nan, np.nan],3)
 
     def test_power_shear(self):
         if all:

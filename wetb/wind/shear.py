@@ -99,7 +99,7 @@ def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
     """
     def shear_error(x, z_u_lst, z_ref):
         alpha, u_ref = x
-        return np.sum([(u - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
+        return np.nansum([(u - u_ref * (z / z_ref) ** alpha) ** 2 for z, u in z_u_lst])
     z_u_lst = [(z, np.mean(u)) for z, u in z_u_lst]
     alpha, u_ref = fmin(shear_error, (.1, 10), (z_u_lst, z_ref), disp=False)
     if plt:
@@ -107,6 +107,9 @@ def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
         plt.plot(u, z, '.')
         z = np.linspace(min(z), max(z), 100)
         plt.plot(power_shear(alpha, z_ref, u_ref)(z), z)
+        plt.margins(.1)
+    if alpha==.1 and u_ref==10: # Initial conditions
+        return np.nan, np.nan
     return alpha, u_ref
 
 
