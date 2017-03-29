@@ -4,8 +4,7 @@ Created on 13/07/2016
 @author: MMPE
 '''
 import numpy as np
-from wetb.signal.filters.first_order import low_pass
-from wetb.signal.filters import replacer
+from wetb.signal.filters import replacer, frq_filters
 
 
 replace_by_nan = replacer.replace_by_nan
@@ -42,15 +41,15 @@ def univeral_thresshold_finder(data, variation='mad', plt=None):
     thresshold = np.sqrt(2 * np.log(data.shape[0])) * variation  # Universal thresshold (expected maximum of n random variables)
     return thresshold_finder(data, thresshold, plt)
 
-def despike(data, dt, spike_finder=univeral_thresshold_finder, spike_replacer=replace_by_nan, plt=None):
+def despike(data, spike_length, spike_finder=univeral_thresshold_finder, spike_replacer=replace_by_nan, plt=None):
     """Despike data
 
     Parameters
     ---------
     data : array_like
         data
-    dt : int or float
-        time step
+    spike_length : int
+        Typical spike duration [samples]
     spike_finder : function
         Function returning indexes of the spikes
     spike_replacer : function
@@ -63,8 +62,10 @@ def despike(data, dt, spike_finder=univeral_thresshold_finder, spike_replacer=re
     if plt:
         plt.plot(data, label='Input')
     data = np.array(data).copy()
-    lp_data = low_pass(data, dt, 1)
+    lp_data = low_pass(data, spike_length, 1)
     hp_data = data - lp_data
+    hp_data = frq_filters.high_pass(data, spike_length*4, 1, order=2)
+        #spike_length, sample_frq/2, 1, order=1)
     spike_mask = spike_finder(hp_data, plt=plt)
     despike_data = spike_replacer(data, spike_mask)
     if plt:

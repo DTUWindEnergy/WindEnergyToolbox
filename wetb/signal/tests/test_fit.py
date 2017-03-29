@@ -88,11 +88,11 @@ class TestFit(unittest.TestCase):
         x,y = ds('Wsp_metmast'), ds('Power')
         if 0:
             import matplotlib.pyplot as plt
-            fx, fy = perpendicular_bin_fit(x,y,30,plt=plt)
+            fx, fit = perpendicular_bin_fit(x,y,30,plt=plt)
             plt.show()
 
         else:
-            fx, fy = perpendicular_bin_fit(x,y,30)
+            fx, fit = perpendicular_bin_fit(x,y,30)
         self.assertEqual(len(fx), 30)
             
             
