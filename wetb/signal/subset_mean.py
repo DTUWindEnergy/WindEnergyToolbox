@@ -168,7 +168,7 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_dif
     
     rp = np.array(rotor_position).copy()
     #filter degree increase > thresshold
-    #rp[np.r_[True, np.diff(rp)>thresshold]] = np.nan
+    rp[np.r_[True, np.diff(rp)>thresshold]] = np.nan
     
     upper_indexes = np.where((rp[:-1]>(360-thresshold))&(rp[1:]<(360-thresshold)))[0]
     lower_indexes = np.where((rp[:-1]>thresshold)&(rp[1:]<thresshold))[0] +1 
