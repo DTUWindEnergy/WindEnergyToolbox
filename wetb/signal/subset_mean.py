@@ -136,7 +136,53 @@ def cycle_trigger(values, trigger_value=None, step=1, ascending=True, tolerance=
     else:
         return np.where((values[1:] < trigger_value - tolerance) & (values[:-1] >= trigger_value + tolerance))[0][::step]
 
-def revolution_trigger(values, rpm_dt=None, dmin=5, dmax=10, ):
+def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_diff=1):
+    """Returns one index per revolution (minimum rotor position)
+    
+    Parameters
+    ----------
+    rotor_position : array_like
+        Rotor position [deg] (0-360)
+    sample_frq : int or float
+        Sample frequency [Hz]
+    rotor_speed : array_like
+        Rotor speed [RPM]
+        
+    Returns
+    -------
+    nd_array : Array of indexes
+    """
+    if isinstance(rotor_speed, (float, int)):
+        rotor_speed = np.ones_like(rotor_position)*rotor_speed
+    deg_per_sample = rotor_speed*360/60/sample_frq
+    sample_per_round = 1/(rotor_speed/60/sample_frq)
+    thresshold = deg_per_sample.max()*2
+    
+    nround_rotor_speed = np.nansum(rotor_speed/60/sample_frq)
+    
+    mod = [v for v in [5,10,30,60,90] if v>thresshold][0]
+    
+    nround_rotor_position = np.nansum(np.diff(rotor_position)%mod)/360
+    assert abs(nround_rotor_position-nround_rotor_speed)<max_no_round_diff, "No of rounds from rotor_position (%.2f) mismatch with no_rounds from rotor_speed (%.2f)"%(nround_rotor_position, nround_rotor_speed)
+    #print (nround_rotor_position, nround_rotor_speed)
+    
+    rp = np.array(rotor_position).copy()
+    #filter degree increase > thresshold
+    #rp[np.r_[True, np.diff(rp)>thresshold]] = np.nan
+    
+    upper_indexes = np.where((rp[:-1]>(360-thresshold))&(rp[1:]<(360-thresshold)))[0]
+    lower_indexes = np.where((rp[:-1]>thresshold)&(rp[1:]<thresshold))[0] +1 
+    
+    # Best lower is the first lower after upper
+    best_lower = lower_indexes[np.searchsorted(lower_indexes, upper_indexes)]
+    upper2lower = best_lower - upper_indexes
+    best_lower = best_lower[upper2lower<upper2lower.mean()*2]
+    max_dist_error = max([np.abs((i2-i1)- np.mean(sample_per_round[i1:i2])) for i1,i2 in zip(best_lower[:-1], best_lower[1:])])
+    #assert max_dist_error < sample_frq/5, max_dist_error
+    return best_lower
+    
+
+def revolution_trigger_old(values, rpm_dt=None, dmin=5, dmax=10, ):
     """Return indexes where values are > max(values)-dmin and decreases more than dmax
     If RPM and time step is provided, triggers steps < time of 1rpm is removed   
     
