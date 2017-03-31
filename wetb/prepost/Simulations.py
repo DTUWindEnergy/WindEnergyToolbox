@@ -553,7 +553,7 @@ def run_local(cases, silent=False, check_log=True):
 
 
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
-                write_htc=True, runmethod='local', verbose=False,
+                write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
                 run_only_new=False, windows_nr_cpus=2, qsub='',
@@ -603,11 +603,14 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     verbose : boolean, default=False
 
-    runmethod : {'local' (default),'thyra','gorm','local-script','none'}
+    runmethod : {'none' (default),'pbs','linux-script','local',
+                 'local-ram', 'windows-script'}
         Specify how/what to run where. For local, each case in cases is
-        run locally via python directly. If set to 'local-script' a shell
+        run locally via python directly. If set to 'linux-script' a shell
         script is written to run all cases locally sequential. If set to
-        'thyra' or 'gorm', PBS scripts are written to the respective server.
+        'pbs', PBS scripts are written for a cluster (e.g. Gorm/jess).
+        A Windows batch script is written in case of windows-script, and is
+        used in combination with windows_nr_cpus.
 
     msg : str, default=''
         A descriptive message of the simulation series is saved at
@@ -1010,12 +1013,12 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
 
     verbose : boolean, default=False
 
-    runmethod : {'none' (default),'jess','gorm','linux-script','local',
+    runmethod : {'none' (default),'pbs','linux-script','local',
                  'local-ram', 'windows-script'}
         Specify how/what to run where. For local, each case in cases is
         run locally via python directly. If set to 'linux-script' a shell
         script is written to run all cases locally sequential. If set to
-        'jess' or 'gorm', PBS scripts are written to the respective server.
+        'pbs', PBS scripts are written for a cluster (e.g. Gorm/jess).
         A Windows batch script is written in case of windows-script, and is
         used in combination with windows_nr_cpus.
 
@@ -1032,11 +1035,11 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         local_shell_script(cases, sim_id)
     elif runmethod == 'windows-script':
         local_windows_script(cases, sim_id, nr_cpus=windows_nr_cpus)
-    elif runmethod in ['jess','gorm']:
+    elif runmethod in ['pbs','jess','gorm']:
         # create the pbs object
-        pbs = PBS(cases, server=runmethod, short_job_names=short_job_names,
+        pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent, pyenv=pyenv)
+                  verbose=verbose, silent=silent)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
@@ -1049,8 +1052,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
     elif runmethod == 'none':
         pass
     else:
-        msg = 'unsupported runmethod, valid options: local, local-script, ' \
-              'linux-script, windows-script, local-ram, none'
+        msg = 'unsupported runmethod, valid options: local, linux-script, ' \
+              'windows-script, local-ram, none, pbs'
         raise ValueError(msg)
 
 
@@ -1402,7 +1405,7 @@ class HtcMaster(object):
 
         # create all the necessary directories
         for dirkey in dirkeys:
-            if self.tags[dirkey]:
+            if isinstance(self.tags[dirkey], str):
                 path = os.path.join(self.tags['[run_dir]'], self.tags[dirkey])
                 if not os.path.exists(path):
                     os.makedirs(path)
@@ -1430,7 +1433,7 @@ class HtcMaster(object):
 
             # copy special files with changing file names
             if '[ESYSMooring_init_fname]' in self.tags:
-                if self.tags['[ESYSMooring_init_fname]'] is not None:
+                if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
                     fname_source = self.tags['[ESYSMooring_init_fname]']
                     fname_target = 'ESYSMooring_init.dat'
                     shutil.copy2(model_root + fname_source,
@@ -1922,9 +1925,8 @@ class PBS(object):
     such as the turbulence file and folder, htc folder and others
     """
 
-    def __init__(self, cases, server='gorm', qsub='time', silent=False,
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 pyenv='wetb_py3'):
+    def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1953,7 +1955,6 @@ class PBS(object):
             case_id will be used as job name.
 
         """
-        self.server = server
         self.verbose = verbose
         self.silent = silent
         self.pyenv = pyenv
@@ -1962,14 +1963,9 @@ class PBS(object):
         self.wine = self.winebase + 'wine'
         self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
-        if server == 'gorm':
-            self.maxcpu = 1
-            self.secperiter = 0.012
-        elif server == 'jess':
-            self.maxcpu = 1
-            self.secperiter = 0.012
-        else:
-            raise UserWarning('server support only for jess or gorm')
+        # TODO: based on a certain host/architecture you can change these
+        self.maxcpu = 1
+        self.secperiter = 0.012
 
         # determine at runtime if winefix has to be ran
         self.winefix = '  _HOSTNAME_=`hostname`\n'
