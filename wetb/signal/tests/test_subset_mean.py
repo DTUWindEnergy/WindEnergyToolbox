@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 from wetb import gtsdf
 from wetb.signal.subset_mean import time_trigger, subset_mean, \
-    non_nan_index_trigger, revolution_trigger
+    non_nan_index_trigger, revolution_trigger_old, revolution_trigger
 from wetb.utils.geometry import rpm2rads
 
 
@@ -68,10 +68,10 @@ class TestSubsetMean(unittest.TestCase):
         ds = gtsdf.Dataset(tfp+'azi.hdf5')
         azi, rpm, time = [ds(x)[8403:8803] for x in ['azi','Rot_cor','Time']]
         
-        trigger = revolution_trigger(azi)
+        trigger = revolution_trigger_old(azi)
         np.testing.assert_array_equal(trigger, [ 17, 128, 241, 354])
         azi[64] = 358
-        trigger = revolution_trigger(azi, (ds('Rot_cor'), np.diff(time).mean()))
+        trigger = revolution_trigger_old(azi, (ds('Rot_cor'), np.diff(time).mean()))
         
 #         import matplotlib.pyplot as plt
 #         t = np.arange(len(azi))
@@ -81,6 +81,32 @@ class TestSubsetMean(unittest.TestCase):
 #         plt.show()
         np.testing.assert_array_equal(trigger, [ (128,241),(241,354)])
 
+
+    def test_revolution_trigger(self):
+        rotor_position = np.arange(0.,360*10,4)
+        rotor_position += np.random.random(len(rotor_position))
+        rotor_position = rotor_position % 360
+        if 0:
+            x1 = np.random.randint(0, len(rotor_position),10)
+            print (list(x1))
+            x2 = np.random.randint(0, len(rotor_position),10)
+            print (list(x2))
+        else:
+            x1 = [447, 854, 595, 804, 847, 488, 412, 199, 675, 766]
+            x2 = [92, 647, 821, 422, 33, 159, 369, 99, 157, 464]
+            
+        rotor_position[x1] += 360
+        rotor_position[x2] -= 360
+        rotor_position[90] = 180
+        
+        indexes = revolution_trigger(rotor_position, 20,1/(90/20/60))
+        np.testing.assert_array_equal(indexes, [ 91, 180, 270, 360, 450, 540, 630, 720, 810])
+        if 0:
+            import matplotlib.pyplot as plt
+            plt.plot(rotor_position)
+            plt.plot(indexes, np.zeros_like(indexes),'.')
+            plt.show()
+        
 
 if __name__ == "__main__":
     unittest.main()

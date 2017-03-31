@@ -103,14 +103,9 @@ def bin_fit(x,y, bins=10, kind='linear', bin_func=np.nanmean, bin_min_count=3, l
         else:
             raise NotImplementedError("Argument for handling upper observations, %s, not implemented"%upper)
         
-    #Create mean function
-    def fit(x):
-        x = x[:].copy().astype(np.float)
-        x[x<bin_x_fit[0]] = np.nan
-        x[x>bin_x_fit[-1]] = np.nan
-        return interp1d(bin_x_fit, bin_y_fit, kind)(x[:])
+
     
-    return bin_x_fit, fit
+    return bin_x_fit, _interpolate_fit(bin_x_fit, bin_y_fit, kind)
     
 def perpendicular_bin_fit(x, y, bins = 30, fit_func=None, bin_min_count=3, plt=None):
     """Fit a curve to the values, (x,y) using bins that are perpendicular to an initial fit
@@ -190,6 +185,15 @@ def perpendicular_bin_fit(x, y, bins = 30, fit_func=None, bin_min_count=3, plt=N
         plt.plot(pbfx, pbfy, 'gray', label="perpendicular fit")
         plt.legend()
     #PlotData(None, bfx,bfy)
-    
-    return np.array(pc).T
+    bin_x_fit, bin_y_fit = np.array(pc).T 
+    return bin_x_fit, _interpolate_fit(bin_x_fit, bin_y_fit, kind="linear")
+
+#Create mean function
+def _interpolate_fit(bin_x_fit, bin_y_fit, kind='linear'):
+    def fit(x):
+        x = x[:].copy().astype(np.float)
+        x[x<bin_x_fit[0]] = np.nan
+        x[x>bin_x_fit[-1]] = np.nan
+        return interp1d(bin_x_fit, bin_y_fit, kind)(x[:])
+    return fit
 

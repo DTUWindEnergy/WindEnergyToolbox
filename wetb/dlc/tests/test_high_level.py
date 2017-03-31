@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
 import unittest
-from wetb.dlc.high_level import DLCHighLevel, Weibull
+from wetb.dlc.high_level import DLCHighLevel, Weibull, Weibull_IEC
 import os
 import numpy as np
 
@@ -109,7 +109,10 @@ class TestDLCHighLevel(unittest.TestCase):
         p_tot = np.array([value for key, value in weibull.items()]).sum()
         self.assertTrue(np.allclose(p_tot, 1.0))
 
-
+    def test_weibull_IEC(self):
+        Vref = 50
+        np.testing.assert_array_almost_equal(Weibull_IEC(Vref, [4,6,8]), [ 0.11002961,  0.14116891,  0.15124155])
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
