@@ -10,6 +10,7 @@ import os
 import unittest
 from wetb.signal.fit import fourier_fit
 from wetb.signal.error_measures import rms
+from wetb.signal.fit import spline_fit
 tfp = os.path.join(os.path.dirname(__file__), 'test_files/')
 
 class TestFit(unittest.TestCase):
@@ -143,6 +144,24 @@ class TestFit(unittest.TestCase):
 #         plt.plot(fourier_fit.F2x(np.fft.fft(y) / len(y)), label='fft')
 #         plt.legend()
 #         plt.show()
+
+    def test_spline(self):
+        
+        x = np.random.randint(0,100,10)
+        t = np.arange(0,100,10)
+        
+        t_ = np.arange(100)
+        spline = spline_fit(t,x)
+        acc_lin = np.diff(np.diff(np.interp(t_, t,x)))
+        acc_spline = np.diff(np.diff(spline(t_)))
+        self.assertLess(np.abs(acc_spline).max(), np.abs(acc_lin).max())
+        if 0:
+            import matplotlib.pyplot as plt
+            plt.plot(t,x,'.',label='points')
+            plt.plot(t_, spline(t_),label='spline')
+            plt.legend()
+            plt.show()
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
