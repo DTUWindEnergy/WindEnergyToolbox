@@ -351,28 +351,15 @@ class Sims(object):
              self.sim_id, self.P_MASTERFILE,
              self.MASTERFILE, self.POST_DIR) = dlcdefs.configure_dirs(verbose=verbose)
 
-    def _set_path_config(self, runmethod='here'):
+    def _set_path_config(self, p_root_run='auto'):
         """
         Set the path configuration into the tags
         """
 
-        self.runmethod = runmethod
-
-        if runmethod == 'here':
+        if p_root_run == 'auto':
             self._set_path_auto_config()
-        elif runmethod in ['local', 'local-script', 'none', 'local-ram']:
-            self.p_root = '/home/dave/SimResults/h2_vs_hs2/'
-        elif runmethod == 'windows-script':
-            self.p_root = '/mnt/D16731/dave/Documents/_SimResults'
-        elif runmethod == 'gorm':
-            self.p_root = '/mnt/hawc2sim/h2_vs_hs2'
-        elif runmethod == 'jess':
-            self.p_root = '/mnt/hawc2sim/h2_vs_hs2'
         else:
-            msg='unsupported runmethod, options: none, local, gorm or opt'
-            raise ValueError(msg)
-
-        if not runmethod == 'here':
+            self.p_root = p_root_run
             self.P_RUN = os.path.join(self.p_root, self.PROJECT, self.sim_id)
 
         self.master.tags['[master_htc_file]'] = self.MASTERFILE
@@ -430,10 +417,11 @@ class Sims(object):
 
         return iter_dict, opt_tags
 
-    def create_inputs(self, iter_dict, opt_tags):
+    def create_inputs(self, iter_dict, opt_tags, runmethod='pbs'):
 
+        self.runmethod = runmethod
         sim.prepare_launch(iter_dict, opt_tags, self.master, self._var_tag_func,
-                           write_htc=True, runmethod=self.runmethod, verbose=False,
+                           write_htc=True, runmethod=runmethod, verbose=False,
                            copyback_turb=False, msg='', update_cases=False,
                            ignore_non_unique=False, run_only_new=False,
                            pbs_fname_appendix=False, short_job_names=False)
@@ -444,25 +432,7 @@ class Sims(object):
         """
         tuning = hs2.ReadControlTuning()
         tuning.read_parameters(fpath)
-
-        tune_tags = {}
-
-        tune_tags['[pi_gen_reg1.K]'] = tuning.pi_gen_reg1.K
-
-        tune_tags['[pi_gen_reg2.I]'] = tuning.pi_gen_reg2.I
-        tune_tags['[pi_gen_reg2.Kp]'] = tuning.pi_gen_reg2.Kp
-        tune_tags['[pi_gen_reg2.Ki]'] = tuning.pi_gen_reg2.Ki
-
-        tune_tags['[pi_pitch_reg3.Kp]'] = tuning.pi_pitch_reg3.Kp
-        tune_tags['[pi_pitch_reg3.Ki]'] = tuning.pi_pitch_reg3.Ki
-        tune_tags['[pi_pitch_reg3.K1]'] = tuning.pi_pitch_reg3.K1
-        tune_tags['[pi_pitch_reg3.K2]'] = tuning.pi_pitch_reg3.K2
-
-        tune_tags['[aero_damp.Kp2]'] = tuning.aero_damp.Kp2
-        tune_tags['[aero_damp.Ko1]'] = tuning.aero_damp.Ko1
-        tune_tags['[aero_damp.Ko2]'] = tuning.aero_damp.Ko2
-
-        return tune_tags
+        return tuning.parameters2tags()
 
     def post_processing(self, statistics=True, resdir=None, complib='blosc',
                         calc_mech_power=False):
@@ -485,23 +455,8 @@ class Sims(object):
         # load the file saved in post_dir
         cc = sim.Cases(post_dir, self.sim_id, rem_failed=False, complib=complib)
 
-        if resdir is None:
-            # we keep the run_dir as defined during launch
-            run_root = None
-        elif resdir in ['local', 'local-script', 'none', 'local-ram']:
-            run_root = '/home/dave/SimResults'
-        elif resdir == 'windows-script':
-            run_root = '/mnt/D16731/dave/Documents/_SimResults'
-        elif resdir == 'gorm':
-            run_root = '/mnt/hawc2sim/h2_vs_hs2'
-        elif resdir == 'jess':
-            run_root = '/mnt/hawc2sim/h2_vs_hs2'
-        else:
-            run_root = None
-            cc.change_results_dir(resdir)
-
-        if isinstance(run_root, str):
-            forcedir = os.path.join(run_root, self.PROJECT, self.sim_id)
+        if isinstance(resdir, str):
+            forcedir = os.path.join(resdir, self.PROJECT, self.sim_id)
             cc.change_results_dir(forcedir)
 
         cc.post_launch()

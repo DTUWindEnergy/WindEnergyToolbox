@@ -41,9 +41,7 @@ elif socket.gethostname()[:1] == 'j':
 else:
     plt.rc('text', usetex=True)
     # set runmethod based on the platform host
-    if platform == "linux" or platform == "linux2":
-        RUNMETHOD = 'local-script'
-    elif platform == "darwin":
+    if platform in ["linux", "linux2", "darwin"]:
         RUNMETHOD = 'linux-script'
     elif platform == "win32":
         RUNMETHOD = 'windows-script'
