@@ -98,14 +98,16 @@ def find_fix_dt(rotor_position, sample_frq, rotor_speed, plt=None):
         rpm_pos = differentiation(fix_rotor_position(rotor_position, sample_frq, rotor_speed, i))%180 / 360 * sample_frq * 60
         return np.sum((rpm_pos - rotor_speed)**2)
     
-    best = 0
-    for r in [np.arange(7,46,12), np.arange(-6,7,3),np.arange(-2,3)]:
-        x_lst = r + best
+    best = 27
+    for step in [9,3,1]:
+        
+        x_lst = np.arange(-2,3)*step + best
         res = [err(x) for x in x_lst]
         if plt is not None:
             plt.plot(x_lst, res,'.-')
         best = x_lst[np.argmin(res)]
     if plt is not None:
         plt.show()
+    
     return best 
     

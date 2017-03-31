@@ -27,7 +27,6 @@ class TestFix(unittest.TestCase):
         err_sum = np.sum((rpm_pos - ds.Rot_cor)**2)
          
         self.assertLess(err_sum,40)
-        self.assertLess(np.sqrt(np.mean((((ds.azi-rp_fit)+180)%360-180)**2)),2)
         if 0:
             import matplotlib.pyplot as plt
             t = ds.Time-ds.Time[0]
@@ -35,10 +34,15 @@ class TestFix(unittest.TestCase):
             plt.plot(t, ds.Rot_cor)
             plt.plot(t, differentiation(rp_fit)%180 / 360 * sample_frq * 60, label='fit')
             plt.ylim(10,16)
-              
             plt.show()
+    
+    def test_find_fix_dt(self):
+        ds = gtsdf.Dataset(tfp+'azi.hdf5')
+        sample_frq = 25
+         
+        self.assertEqual(find_fix_dt(ds.azi, sample_frq, ds.Rot_cor), 4)
+        
 
- 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testRotorPositionFix']
     unittest.main()
