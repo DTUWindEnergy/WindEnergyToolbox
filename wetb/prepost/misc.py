@@ -24,6 +24,7 @@ import sys
 import shutil
 import unittest
 import pickle
+import re
 
 import numpy as np
 import scipy as sp
@@ -786,7 +787,24 @@ def find_tags(fname):
     """
     Find all unqiue tags in a text file.
     """
-    pass
+
+    with open(fname, 'r') as f:
+        lines = f.readlines()
+
+    # regex for finding all tags in a line
+    regex = re.compile('(\\[.*?\\])')
+    tags_in_master = {}
+
+    for i, line in enumerate(lines):
+        # are there any tags on this line? Ignore comment AND label section
+        tags = regex.findall(line.split(';')[0].split('#')[0])
+        for tag in tags:
+            try:
+                tags_in_master[tag].append(i)
+            except KeyError:
+                tags_in_master[tag] = [i]
+
+    return tags_in_master
 
 
 def read_mathematica_3darray(fname, shape=None, data=None, dtype=None):
