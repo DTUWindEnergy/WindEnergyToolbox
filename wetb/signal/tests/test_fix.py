@@ -27,6 +27,7 @@ class TestFix(unittest.TestCase):
         err_sum = np.sum((rpm_pos - ds.Rot_cor)**2)
          
         self.assertLess(err_sum,40)
+        self.assertLess(np.sqrt(np.mean((((ds.azi-rp_fit)+180)%360-180)**2)),2)
         if 0:
             import matplotlib.pyplot as plt
             t = ds.Time-ds.Time[0]
