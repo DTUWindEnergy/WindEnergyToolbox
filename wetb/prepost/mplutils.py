@@ -24,7 +24,11 @@ import numpy as np
 import matplotlib as mpl
 # use a headless backend
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
-#import wafo
+# wafo is an optional dependency only required for non default PSD peak marking
+try:
+    import wafo
+except ImportError:
+    pass
 
 
 def make_fig(nrows=1, ncols=1, figsize=(12,8), dpi=120):
@@ -267,7 +271,7 @@ def match_yticks(ax1, ax2, nr_ticks_forced=None, extend=False):
 
 def time_psd(results, labels, axes, alphas=[1.0, 0.7], colors=['k-', 'r-'],
              NFFT=None, res_param=250, f0=0, f1=None, nr_peaks=10, min_h=15,
-             mark_peaks=True):
+             mark_peaks=False):
     """
     Plot time series and the corresponding PSD of the channel.
 
