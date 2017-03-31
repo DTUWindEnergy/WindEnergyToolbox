@@ -347,9 +347,10 @@ class Sims(object):
         relevant HAWC2 model
         and assume we are in a simulation case of a certain turbine/project
         """
-        (self.P_RUN, self.P_SOURCE, self.PROJECT,
-             self.sim_id, self.P_MASTERFILE,
-             self.MASTERFILE, self.POST_DIR) = dlcdefs.configure_dirs(verbose=verbose)
+
+        tmp = dlcdefs.configure_dirs(verbose=verbose)
+        (self.P_RUN, self.P_SOURCE, self.PROJECT, self.sim_id,
+             self.P_MASTERFILE, self.MASTERFILE, self.POST_DIR) = tmp
 
     def _set_path_config(self, p_root_run='auto'):
         """
