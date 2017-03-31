@@ -29,13 +29,20 @@ class dummy(object):
         self.__name__ = name
 
 
-def ReadFileHAWCStab2Header(fname, widths):
+def ReadFileHAWCStab2Header(fname):
     """
     Read a file with a weird HAWCStab2 header that starts with a #, and
     includes the column number and units between square brackets.
     """
 
     regex = re.compile('(\\[.*?\\])')
+
+    def _withgradients(fname):
+        df = pd.read_fwf(fname, header=1, widths=[30]*27)
+        # find all units
+        units = regex.findall(''.join(df.columns))
+        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
+        return df, units
 
     def _newformat(fname):
         df = pd.read_fwf(fname, header=0, widths=[20]*15)
@@ -54,6 +61,8 @@ def ReadFileHAWCStab2Header(fname, widths):
     with open(fname) as f:
         line = f.readline()
 
+    if len(line) > 800:
+        return _withgradients(fname)
     if len(line) > 200:
         return _newformat(fname)
     else:
@@ -99,7 +108,7 @@ class results(object):
         return res
 
     def load_pwr_df(self, fname):
-        return ReadFileHAWCStab2Header(fname, [20]*15)
+        return ReadFileHAWCStab2Header(fname)
 
     def load_cmb(self, fname):
         cmb = np.loadtxt(fname)
@@ -341,11 +350,41 @@ class ReadControlTuning(object):
                 else:
                     self.parse_line(line, controller)
 
-        # set some parameters to zero for the linear case
+        # set some parameters to zero for the linear case, or when aerodynamic
+        # gain scheduling is not used
         if not hasattr(self.pi_pitch_reg3, 'K2'):
             setattr(self.pi_pitch_reg3, 'K2', 0.0)
+        if not hasattr(self.aero_damp, 'Kp2'):
+            setattr(self.aero_damp, 'Kp2', 0.0)
+        if not hasattr(self.aero_damp, 'Ko1'):
+            setattr(self.aero_damp, 'Ko1', 0.0)
         if not hasattr(self.aero_damp, 'Ko2'):
             setattr(self.aero_damp, 'Ko2', 0.0)
+
+    def parameters2tags(self):
+        """Convert the tuning parameters into a dictionary whos keys are
+        compatible with tag names in a HAWC2 master file.
+        """
+
+        tune_tags = {}
+
+        tune_tags['[pi_gen_reg1.K]'] = self.pi_gen_reg1.K
+
+        tune_tags['[pi_gen_reg2.I]'] = self.pi_gen_reg2.I
+        tune_tags['[pi_gen_reg2.Kp]'] = self.pi_gen_reg2.Kp
+        tune_tags['[pi_gen_reg2.Ki]'] = self.pi_gen_reg2.Ki
+        tune_tags['[pi_gen_reg2.Kd]'] = 0.0
+
+        tune_tags['[pi_pitch_reg3.Kp]'] = self.pi_pitch_reg3.Kp
+        tune_tags['[pi_pitch_reg3.Ki]'] = self.pi_pitch_reg3.Ki
+        tune_tags['[pi_pitch_reg3.K1]'] = self.pi_pitch_reg3.K1
+        tune_tags['[pi_pitch_reg3.K2]'] = self.pi_pitch_reg3.K2
+
+        tune_tags['[aero_damp.Kp2]'] = self.aero_damp.Kp2
+        tune_tags['[aero_damp.Ko1]'] = self.aero_damp.Ko1
+        tune_tags['[aero_damp.Ko2]'] = self.aero_damp.Ko2
+
+        return tune_tags
 
 
 if __name__ == '__main__':
