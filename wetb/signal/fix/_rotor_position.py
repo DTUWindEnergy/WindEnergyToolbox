@@ -69,7 +69,7 @@ def fix_rotor_position(rotor_position, sample_frq, rotor_speed, fix_dt=None, plt
         plt.plot(t/sample_frq, spline_fit(x,y)(t)-t*a, label='Spline (detrended)')
         plt.legend()
         plt.show()
-    return spline_fit(x,y)(t)
+    return spline_fit(x,y)(t)%360
 
 def find_fix_dt(rotor_position, sample_frq, rotor_speed, plt=None):
     """Find the optimal fix_dt parameter for fix_rotor_position (function above).
