@@ -44,8 +44,8 @@ plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
-# do not use tex on Gorm
-if not socket.gethostname()[:2] in ['g-', 'je']:
+# do not use tex on Gorm and or Jess
+if not socket.gethostname()[:2] in ['g-', 'je', 'j-']:
     plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
