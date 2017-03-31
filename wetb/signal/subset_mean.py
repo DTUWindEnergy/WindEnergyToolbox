@@ -163,12 +163,12 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_dif
     mod = [v for v in [5,10,30,60,90] if v>thresshold][0]
     
     nround_rotor_position = np.nansum(np.diff(rotor_position)%mod)/360
-    assert abs(nround_rotor_position-nround_rotor_speed)<max_no_round_diff, "No of rounds from rotor_position (%.2f) mismatch with no_rounds from rotor_speed (%.2f)"%(nround_rotor_position, nround_rotor_speed)
+    #assert abs(nround_rotor_position-nround_rotor_speed)<max_no_round_diff, "No of rounds from rotor_position (%.2f) mismatch with no_rounds from rotor_speed (%.2f)"%(nround_rotor_position, nround_rotor_speed)
     #print (nround_rotor_position, nround_rotor_speed)
     
     rp = np.array(rotor_position).copy()
     #filter degree increase > thresshold
-    rp[np.r_[True, np.diff(rp)>thresshold]] = np.nan
+    rp[np.r_[False, np.diff(rp)>thresshold]] = 180
     
     upper_indexes = np.where((rp[:-1]>(360-thresshold))&(rp[1:]<(360-thresshold)))[0]
     lower_indexes = np.where((rp[:-1]>thresshold)&(rp[1:]<thresshold))[0] +1 
@@ -177,7 +177,7 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_dif
     best_lower = lower_indexes[np.searchsorted(lower_indexes, upper_indexes)]
     upper2lower = best_lower - upper_indexes
     best_lower = best_lower[upper2lower<upper2lower.mean()*2]
-    max_dist_error = max([np.abs((i2-i1)- np.mean(sample_per_round[i1:i2])) for i1,i2 in zip(best_lower[:-1], best_lower[1:])])
+    #max_dist_error = max([np.abs((i2-i1)- np.mean(sample_per_round[i1:i2])) for i1,i2 in zip(best_lower[:-1], best_lower[1:])])
     #assert max_dist_error < sample_frq/5, max_dist_error
     return best_lower
     
