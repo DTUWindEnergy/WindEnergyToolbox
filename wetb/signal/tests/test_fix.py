@@ -19,8 +19,8 @@ class TestFix(unittest.TestCase):
         ds = gtsdf.Dataset(tfp+'azi.hdf5')
         sample_frq = 25
          
-        import matplotlib.pyplot as plt
-        print (find_fix_dt(ds.azi, sample_frq, ds.Rot_cor, plt))
+        #import matplotlib.pyplot as plt
+        #print (find_fix_dt(ds.azi, sample_frq, ds.Rot_cor, plt))
         rp_fit = fix_rotor_position(ds.azi, sample_frq, ds.Rot_cor)
                   
         rpm_pos = differentiation(rp_fit)%180 / 360 * sample_frq * 60
