@@ -14,7 +14,10 @@ from setuptools import setup
 
 try:
     from pypandoc import convert_file
-    read_md = lambda f: convert_file(f, 'rst')
+    read_md = lambda f: convert_file(f, 'rst', format='md')
+    # auto-create RST version of README
+    with open('README', 'w') as f:
+        f.write(read_md('README.md'))
 except ImportError:
     print("warning: pypandoc module not found, could not convert Markdown to RST")
     read_md = lambda f: open(f, 'r').read()
