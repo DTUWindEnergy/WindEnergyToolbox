@@ -34,10 +34,8 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
-if socket.gethostname()[:2] == 'g-':
-    RUNMETHOD = 'gorm'
-elif socket.gethostname()[:1] == 'j':
-    RUNMETHOD = 'jess'
+if socket.gethostname()[:2] in ['g-', 'je', 'j-']:
+    RUNMETHOD = 'pbs'
 else:
     plt.rc('text', usetex=True)
     # set runmethod based on the platform host
@@ -266,7 +264,8 @@ def variable_tag_func_mod1(master, case_id_short=False):
 # =============================================================================
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
-                      runmethod=None, write_htc=True, zipchunks=False):
+                      runmethod=None, write_htc=True, zipchunks=False,
+                      walltime='04:00:00'):
     """
     Launch load cases defined in Excel files
     """
@@ -305,6 +304,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     master = master_tags(sim_id, runmethod=runmethod, silent=silent,
                          verbose=verbose)
     master.tags['[sim_id]'] = sim_id
+    master.tags['[walltime]'] = walltime
     master.output_dirs.append('[Case folder]')
     master.output_dirs.append('[Case id.]')
 
@@ -334,6 +334,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     if zipchunks:
         # create chunks
         # sort so we have minimal copying turb files from mimer to node/scratch
+        # note that walltime here is for running all cases assigned to the
+        # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
                               nr_procs_series=9, processes=1,
@@ -485,6 +487,10 @@ if __name__ == '__main__':
                         'This can be usefull if your turbulence boxes are too '
                         'big for running in HAWC2 32-bit mode. Only works on '
                         'Jess. ')
+    parser.add_argument('--walltime', default='04:00:00', type=str,
+                        action='store', dest='walltime', help='Queue walltime '
+                        'for each case/pbs file, format: HH:MM:SS '
+                        'Default: 04:00:00')
     opt = parser.parse_args()
 
     # TODO: use arguments to determine the scenario:
@@ -524,7 +530,7 @@ if __name__ == '__main__':
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
-                          pbs_turb=opt.pbs_turb)
+                          pbs_turb=opt.pbs_turb, walltime=opt.walltime)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
