@@ -58,6 +58,7 @@ is a gui integrated into the windows explorer.
 
 
 ## Install Python
+
 For all platforms we recommend that you download and install the Anaconda -
 a professional grade, full blown scientific Python distribution.
 
@@ -157,8 +158,7 @@ Install the necessary Python dependencies using the conda package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c conda-forge pyscaffold pypandoc sshtunnel --no-deps
->> conda install --channel https://conda.anaconda.org/pbrod twine --no-deps
+>> conda install -c conda-forge pyscaffold sshtunnel twine pypandoc --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel
@@ -166,6 +166,11 @@ Note that ```--no-deps``` avoids that newer packages from the channel
 channel. Depending on which packages get overwritten, this might brake your
 Anaconda root environment. As such, using ```--no-deps``` should be
 used for safety (especially when operating from the root environment).
+
+Note that:
+
+- With Python 2.7, blosc fails to install.
+- With Python 3.6, twine, pypandoc fails to install.
 
 
 ## Get wetb
@@ -193,6 +198,34 @@ or via tortoise-git:
 Note that the ```--no-deps``` option here is used for the same reason as explained
 above for the ```conda-forge``` channel: it is to avoid that pip will replace
 newer packages compared to the ones as available in the ```Anaconda``` channel.
+
+
+## Run tests
+
+Note that the test should be executed from a clean repository and which is not
+used as a development installation with ```pip install -e .```. For example,
+create a clone of your local git repository in which your development takes
+place, but name the top level folder to something else:
+
+```
+>> git clone WindEnergyToolbox/ wetb_tests
+>> cd wetb_tests
+```
+
+In order to make sure your git repository is clean, this will remove all
+untracked files, and undo all untracked changes. WARNING: you will loose all
+untracked files and changes!!
+```
+>> git clean -df & git checkout .
+```
+
+Now we have clean repository that is not used as a development installation
+directory, and we simply track our own local development git repository.
+Use ```git pull``` to get the latest local commits.
+
+```
+>> python -m pytest --cov=wetb
+```
 
 
 ## Contributions
