@@ -13,10 +13,9 @@ from future.utils import viewitems
 from future import standard_library
 standard_library.install_aliases()
 
-
-
 import os
 import unittest
+from glob import glob
 
 import pandas as pd
 
@@ -62,16 +61,30 @@ def configure_dirs(verbose=False):
 
 
 def find_master_file(proot, htc_dir='htc', master_dir='_master',
-                     master_contains='_master_'):
+                     pattern='*_master_*'):
     """
     Find the master file name. It is assumed that the master file is in the
-    folder _master, under htc, and contains _master_ in the file name.
+    folder _master, under htc, and contains _master_ in the file name. If
+    multiple files contain pattern, the last file of the sorted list is
+    returned.
+
+    Parameters
+    ----------
+
+    proot
+
+    htc_dir : str, default: htc
+
+    master_dir : str, default: _master
+
+    pattern : str, default: *_master_*
+
     """
 
-    for root, dirs, files in os.walk(os.path.join(proot, htc_dir, master_dir)):
-        for fname in files:
-            if fname.find(master_contains) > -1:
-                return fname
+    fpath_search = os.path.join(proot, htc_dir, master_dir, pattern)
+    files = glob(fpath_search)
+    if len(files) > 0:
+        return sorted(files)[-1]
     return None
 
 
