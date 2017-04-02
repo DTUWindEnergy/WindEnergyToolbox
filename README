@@ -1,87 +1,132 @@
+|build status| |coverage report|
 
-[![build status](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/build.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
-[![coverage report](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/coverage.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
+Introduction
+============
 
-# Introduction
+The Wind Energy Toolbox (or ``wetb``, pronounce as wee-tee-bee) is a
+collection of Python scripts that facilitate working with (potentially a
+lot) of HAWC2, HAWCStab2, FAST or other text input based simulation
+tools.
 
-The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection
-of Python scripts that facilitate working with (potentially a lot) of HAWC2,
-HAWCStab2, FAST or other text input based simulation tools.
-
-Note that this toolbox is very much a WIP (work in progress). For example,
-some of the functions in the [prepost](#prepost) module have a similar functions
-in [Hawc2io](wetb/hawc2/Hawc2io.py). These different implementations will be
-merged in due time.
+Note that this toolbox is very much a WIP (work in progress). For
+example, some of the functions in the `prepost <#prepost>`__ module have
+a similar functions in `Hawc2io <wetb/hawc2/Hawc2io.py>`__. These
+different implementations will be merged in due time.
 
 Both Python2 and Python3 are supported.
 
-# Installation
+Installation
+============
 
-For a more detailed overview, see: [docs/install](docs/install.md)
+-  `Simple user <docs/install.md>`__
+-  `Developer/contributor <docs/developer-guide.md>`__
 
+Contents of WindEnergyToolbox, `wetb <wetb>`__
+==============================================
 
-# Contents of WindEnergyToolbox, [wetb](wetb)
+Overview
+~~~~~~~~
 
-### Overview
+-  `hawc2 <#hawc2>`__
+-  `gtsdf <#gtsdf>`__
+-  `fatigue\_tools <#fatigue_tools>`__
+-  `wind <#wind>`__
+-  `dlc <#dlc>`__
+-  `prepost <#prepost>`__
+-  `fast <#fast>`__
+-  `utils <#utils>`__
 
-- [hawc2](#hawc2)
-- [gtsdf](#gtsdf)
-- [fatigue_tools](#fatigue_tools)
-- [wind](#wind)
-- [dlc](#dlc)
-- [prepost](#prepost)
-- [fast](#fast)
-- [utils](#utils)
+`hawc2 <wetb/hawc2>`__
+~~~~~~~~~~~~~~~~~~~~~~
 
-### [hawc2](wetb/hawc2)
-- [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
-- [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
-- [htc_file](wetb/hawc2/htc_file.py): Read/write/manipulate htc files
-- [ae_file](wetb/hawc2/ae_file.py): Read AE (aerodynamic blade layout) files
-- [pc_file](wetb/hawc2/pc_file.py): Read PC (profile coefficient) files
-- [shear_file](wetb/hawc2/shear_file.py): Create user defined shear file
-- [at_time_file](wetb/hawc2/at_time_file.py): Read at output_at_time files
-- [log_file](wetb/hawc2/log_file.py): Read and interpret log files
-- [ascii2bin](wetb/hawc2/ascii2bin): Compress HAWC2 ascii result files to binary
+-  `Hawc2io <wetb/hawc2/Hawc2io.py>`__: Read binary, ascii and flex
+   result files
+-  `sel\_file <wetb/hawc2/sel_file.py>`__: Read/write \*.sel (sensor
+   list) files
+-  `htc\_file <wetb/hawc2/htc_file.py>`__: Read/write/manipulate htc
+   files
+-  `ae\_file <wetb/hawc2/ae_file.py>`__: Read AE (aerodynamic blade
+   layout) files
+-  `pc\_file <wetb/hawc2/pc_file.py>`__: Read PC (profile coefficient)
+   files
+-  `st\_file <wetb/hawc2/st_file.py>`__: Read ST (structural properties)
+   files
+-  `shear\_file <wetb/hawc2/shear_file.py>`__: Create user defined shear
+   file
+-  `at\_time\_file <wetb/hawc2/at_time_file.py>`__: Read at
+   output\_at\_time files
+-  `log\_file <wetb/hawc2/log_file.py>`__: Read and interpret log files
+-  `ascii2bin <wetb/hawc2/ascii2bin>`__: Compress HAWC2 ascii result
+   files to binary
 
-### [gtsdf](wetb/gtsdf)
-General Time Series Data Format, a binary hdf5 data format for storing time series data.
-- [gtsdf](wetb/gtsdf/gtsdf.py): read/write/append gtsdf files
-- [unix_time](wetb/gtsdf/unix_time.py): convert between datetime and unix time (seconds since 1/1/1970)
+`gtsdf <wetb/gtsdf>`__
+~~~~~~~~~~~~~~~~~~~~~~
 
-### [fatigue_tools](wetb/fatigue_tools)
-- [fatigue](wetb/fatigue_tools/fatigue.py): Rainflow counting, cycle matrix and equivalent loads
-- [bearing_damage](wetb/fatigue_tools/bearing_damage.py): Calculate a comparable measure of bearing damage
+General Time Series Data Format, a binary hdf5 data format for storing
+time series data. - `gtsdf <wetb/gtsdf/gtsdf.py>`__: read/write/append
+gtsdf files - `unix\_time <wetb/gtsdf/unix_time.py>`__: convert between
+datetime and unix time (seconds since 1/1/1970)
 
-### [wind](wetb/wind)
-- [shear](wetb/wind/shear.py): Calculate and fit wind shear
+`fatigue\_tools <wetb/fatigue_tools>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-### [dlc](wetb/dlc)
-Module for working with "Design load cases" (Code independent)
-- [high_level](wetb/dlc/high_level.py) Class for working with the highlevel dlc excell sheet
+-  `fatigue <wetb/fatigue_tools/fatigue.py>`__: Rainflow counting, cycle
+   matrix and equivalent loads
+-  `bearing\_damage <wetb/fatigue_tools/bearing_damage.py>`__: Calculate
+   a comparable measure of bearing damage
 
-### [prepost](wetb/prepost)
-Module for creating an arbitrary number of HAWC2 simulations, and optionally
-corresponding execution scripts for a PBS Torque cluster (Linux), simple bash
-(Linux), or Windows batch scripts. A post-processing module is also included
-that calculates statistical parameters, performs rainflow counting for fatigue
-load calculations, and create load envelopes.
+`wind <wetb/wind>`__
+~~~~~~~~~~~~~~~~~~~~
+
+-  `shear <wetb/wind/shear.py>`__: Calculate and fit wind shear
+
+`dlc <wetb/dlc>`__
+~~~~~~~~~~~~~~~~~~
+
+Module for working with "Design load cases" (Code independent) -
+`high\_level <wetb/dlc/high_level.py>`__ Class for working with the
+highlevel dlc excell sheet
+
+`prepost <wetb/prepost>`__
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Module for creating an arbitrary number of HAWC2 simulations, and
+optionally corresponding execution scripts for a PBS Torque cluster
+(Linux), simple bash (Linux), or Windows batch scripts. A
+post-processing module is also included that calculates statistical
+parameters, performs rainflow counting for fatigue load calculations,
+and create load envelopes.
 
 Additional documentation can be found here:
 
-- [Auto-generation of Design Load Cases](docs/howto-make-dlcs.md)
-- [How to use the Statistics DataFrame](docs/using-statistics-df.md)
-- [Generate DLB spreadsheets](docs/generate-spreadsheet.md)
+-  `Getting started with DLBs <docs/getting-started-with-dlbs.md>`__
 
+   -  `Generate DLB spreadsheets <docs/generate-spreadsheet.md>`__
+   -  `Auto-generation of Design Load Cases <docs/howto-make-dlcs.md>`__
+   -  `House rules for storing results on
+      ``mimer/hawc2sim`` <docs/houserules-mimerhawc2sim.md>`__
+   -  `How to use the Statistics
+      DataFrame <docs/using-statistics-df.md>`__
 
-### [fast](wetb/fast)
-Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)
-- [fast_io](wetb/fast/fast_io.py): Read binary and ascii result files
+`fast <wetb/fast>`__
+~~~~~~~~~~~~~~~~~~~~
 
-### [utils](wetb/utils)
-Other functions
-- [geometry](wetb/utils/geometry.py): Different kind of geometry conversion functions
-- [process_exec](wetb/utils/process_exec.py): Run system command in subprocess
-- [timing](wetb/utils/timing.py): Decorators for evaluating execution time of functions
-- [caching](wetb/utils/caching.py): Decorators to create cached (calculate once) functions and properties
+Tools for working with NREL's FAST code (An aeroelastic computer-aided
+engineering (CAE) tool for horizontal axis wind turbines) -
+`fast\_io <wetb/fast/fast_io.py>`__: Read binary and ascii result files
 
+`utils <wetb/utils>`__
+~~~~~~~~~~~~~~~~~~~~~~
+
+Other functions - `geometry <wetb/utils/geometry.py>`__: Different kind
+of geometry conversion functions -
+`process\_exec <wetb/utils/process_exec.py>`__: Run system command in
+subprocess - `timing <wetb/utils/timing.py>`__: Decorators for
+evaluating execution time of functions -
+`caching <wetb/utils/caching.py>`__: Decorators to create cached
+(calculate once) functions and properties
+
+.. |build status| image:: https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/build.svg
+   :target: https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master
+.. |coverage report| image:: https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/coverage.svg
+   :target: https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master
