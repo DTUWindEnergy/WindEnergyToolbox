@@ -365,6 +365,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
 
             if '[Windspeed]' not in tags_dict and '[wsp]' in tags_dict:
                 tags_dict['[Windspeed]'] = tags_dict['[wsp]']
+            if '[seed]' in tags_dict:
+                tags_dict['[tu_seed]'] = tags_dict['[seed]']
 
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
