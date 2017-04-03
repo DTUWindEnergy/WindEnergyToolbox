@@ -344,6 +344,9 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                               nr_procs_series=15, processes=1,
                               walltime='20:00:00', chunks_dir='zip-chunks-gorm')
 
+    df = sim.Cases(cases).cases2df()
+    df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
+
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
@@ -385,6 +388,11 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     if statistics:
         i0, i1 = 0, -1
 
+        # example for combination of signals
+#        name = 'stress1'
+#        expr = '[p1-p1-node-002-forcevec-z]*3 + [p1-p1-node-002-forcevec-y]'
+#        add_sigs = {name:expr}
+
         # in addition, sim_id and case_id are always added by default
         tags = ['[Case folder]']
         add = None
@@ -395,7 +403,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=None, no_bins=no_bins,
-                                 chs_resultant=[], A=A)
+                                 chs_resultant=[], A=A, add_sigs={})
         # annual energy production
         if AEP:
             df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
@@ -486,7 +494,7 @@ if __name__ == '__main__':
                         'using the 64-bit Mann turbulence box generator. '
                         'This can be usefull if your turbulence boxes are too '
                         'big for running in HAWC2 32-bit mode. Only works on '
-                        'Jess. ')
+                        'Jess.')
     parser.add_argument('--walltime', default='04:00:00', type=str,
                         action='store', dest='walltime', help='Queue walltime '
                         'for each case/pbs file, format: HH:MM:SS '

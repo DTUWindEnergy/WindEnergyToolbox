@@ -4007,7 +4007,7 @@ class Cases(object):
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=None, saveinterval=1000,
-                   csv=True, suffix=None, A=None,
+                   csv=True, suffix=None, A=None, add_sigs={},
                    ch_wind=None, save_new_sigs=False, xlsx=False):
         """
         Calculate statistics and save them in a pandas dataframe. Save also
@@ -4029,6 +4029,10 @@ class Cases(object):
             Valid ch_dict channel names for which the equivalent fatigue load
             needs to be calculated. When set to None, ch_fatigue = ch_sel,
             and hence all channels will have a fatigue analysis.
+
+        add_sigs : dict, default={}
+            channel name, expression key/value paires. For example,
+            '[p1-p1-node-002-forcevec-z]*3 + [p1-p1-node-002-forcevec-y]'
 
         chs_resultant
 
@@ -4125,6 +4129,8 @@ class Cases(object):
 
         df_dict = None
         add_stats = True
+        # for finding [] tags
+        regex = re.compile('(\\[.*?\\])')
 
         for ii, (cname, case) in enumerate(self.cases.items()):
 
@@ -4160,6 +4166,25 @@ class Cases(object):
             i_new_chans = self.sig.shape[1] # self.Nch
             sig_size = self.res.N  # len(self.sig[i0:i1,0])
             new_sigs = np.ndarray((sig_size, 0))
+
+            for name, expr in add_sigs.items():
+                channel_tags = regex.findall(expr)
+                # replace all sensor names with expressions
+                template = "self.sig[:,self.res.ch_dict['{}']['chi']]"
+                for chan in channel_tags:
+                    # first remove the [] from the tag
+                    expr = expr.replace(chan, chan[1:-1])
+                    expr = expr.replace(chan[1:-1], template.format(chan[1:-1]))
+
+                sig_add = np.ndarray((len(self.sig[:,0]), 1))
+                sig_add[:,0] = eval(expr)
+
+                ch_dict_new[name] = {}
+                ch_dict_new[name]['chi'] = i_new_chans
+                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
+                                                   'ch_name':name})
+                i_new_chans += 1
+                new_sigs = np.append(new_sigs, sig_add, axis=1)
 
             if add_sensor is not None:
                 chi1 = self.res.ch_dict[add_sensor['ch1_name']]['chi']
@@ -4301,10 +4326,9 @@ class Cases(object):
                 df_new_sigs = pd.DataFrame(new_sigs, columns=keys)
                 respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
                 resfile = case['[case_id]']
-                fname = os.path.join(respath, resfile + '_postres.h5')
+                fname = os.path.join(respath, resfile + '_postres.csv')
                 print('    saving post-processed res: %s...' % fname, end='')
-                df_new_sigs.to_hdf(fname, 'table', mode='w', format='table',
-                                   complevel=9, complib=self.complib)
+                df_new_sigs.to_csv(fname, sep='\t')
                 print('done!')
                 del df_new_sigs
 
