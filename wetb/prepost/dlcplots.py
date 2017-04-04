@@ -52,7 +52,7 @@ plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
 
 
-def merge_sim_ids(post_dirs, sim_ids, post_dir_save=False):
+def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
     """
     """
     # map the run_dir to the same order as the post_dirs, labels
