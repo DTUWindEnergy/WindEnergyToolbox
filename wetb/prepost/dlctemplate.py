@@ -127,7 +127,7 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     master.tags['[MannAlfaEpsilon]'] = 1.0
     master.tags['[MannL]'] = 29.4
     master.tags['[MannGamma]'] = 3.0
-    master.tags['[tu_seed]'] = 0
+    master.tags['[seed]'] = None
     master.tags['[turb_nr_u]'] = 8192
     master.tags['[turb_nr_v]'] = 32
     master.tags['[turb_nr_w]'] = 32

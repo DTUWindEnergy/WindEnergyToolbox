@@ -50,6 +50,7 @@
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
+                        [seed] : 0                   
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -106,6 +107,7 @@
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
+                        [seed] : 0                   
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -162,6 +164,7 @@
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
+                        [seed] : 100                 
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -218,6 +221,7 @@
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
+                        [seed] : 100                 
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  

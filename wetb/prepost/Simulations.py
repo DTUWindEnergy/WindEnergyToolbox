@@ -4003,7 +4003,7 @@ class Cases(object):
         return stats_df, Leq_df, AEP_df
 
     def statistics(self, new_sim_id=False, silent=False, ch_sel=None,
-                   tags=['[turb_seed]','[windspeed]'], calc_mech_power=False,
+                   tags=['[seed]','[windspeed]'], calc_mech_power=False,
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=None, saveinterval=1000,
@@ -4020,7 +4020,7 @@ class Cases(object):
             If defined, only add defined channels to the output data frame.
             The list should contain valid channel names as defined in ch_dict.
 
-        tags : list, default=['[turb_seed]','[windspeed]']
+        tags : list, default=['[seed]','[windspeed]']
             Select which tag values from cases should be included in the
             dataframes. This will help in selecting and identifying the
             different cases.
@@ -4173,6 +4173,7 @@ class Cases(object):
                 template = "self.sig[:,self.res.ch_dict['{}']['chi']]"
                 for chan in channel_tags:
                     # first remove the [] from the tag
+                    # FIXME: fails when the same channel occurs more than once
                     expr = expr.replace(chan, chan[1:-1])
                     expr = expr.replace(chan[1:-1], template.format(chan[1:-1]))
 
@@ -4912,7 +4913,7 @@ class Cases(object):
 
         return df_AEP
 
-    def stats2dataframe(self, ch_sel=None, tags=['[turb_seed]','[windspeed]']):
+    def stats2dataframe(self, ch_sel=None, tags=['[seed]','[windspeed]']):
         """
         Convert the archaic statistics dictionary of a group of cases to
         a more convienent pandas dataframe format.
@@ -4930,7 +4931,7 @@ class Cases(object):
             defined, only those channels are considered.
             ch_sel[short name] = full ch_dict identifier
 
-        tags : list, default=['[turb_seed]','[windspeed]']
+        tags : list, default=['[seed]','[windspeed]']
             Select which tag values from cases should be included in the
             dataframes. This will help in selecting and identifying the
             different cases.
@@ -5377,7 +5378,7 @@ class MannTurb64(prepost.PBSScript):
         * [MannAlfaEpsilon]
         * [MannL]
         * [MannGamma]
-        * [tu_seed]
+        * [seed]
         * [turb_nr_u]
         * [turb_nr_v]
         * [turb_nr_w]
@@ -5454,7 +5455,7 @@ class MannTurb64(prepost.PBSScript):
             rpl = (float(case['[MannAlfaEpsilon]']),
                    float(case['[MannL]']),
                    float(case['[MannGamma]']),
-                   int(case['[tu_seed]']),
+                   int(case['[seed]']),
                    int(case['[turb_nr_u]']),
                    int(case['[turb_nr_v]']),
                    int(case['[turb_nr_w]']),

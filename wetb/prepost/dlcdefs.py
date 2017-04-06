@@ -27,7 +27,7 @@ def casedict2xlsx():
     """
 
 
-def configure_dirs(verbose=False):
+def configure_dirs(verbose=False, pattern_master='*_master_*'):
     """
     Automatically configure required directories to launch simulations
     """
@@ -40,7 +40,7 @@ def configure_dirs(verbose=False):
     PROJECT = P_RUN.split(os.sep)[-2]
     sim_id = P_RUN.split(os.sep)[-1]
 
-    master = find_master_file(P_SOURCE)
+    master = find_master_file(P_SOURCE, pattern=pattern_master)
     if master is None:
         raise ValueError('Could not find master file in htc/_master')
     MASTERFILE = master
@@ -169,7 +169,7 @@ def tags_dlcs(master):
     master.tags['[Windspeed]'] = 8
     master.tags['[wdir]'] = 0 # used for the user defined wind
     master.tags['[wdir_rot]'] = 0 # used for the windfield rotations
-    master.tags['[tu_seed]'] = 0
+    master.tags['[seed]'] = None
     master.tags['[tu_model]'] = 0
     master.tags['[TI]'] = 0
     master.tags['[Turb base name]'] = 'none'
@@ -363,10 +363,21 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                     elif tags_dict[str(key)].lower() == 'nan':
                         tags_dict[str(key)] = True
 
+            # FIXME: this horrible mess requires a nice and clearly defined
+            # tag spec/naming convention, and with special tag prefix
             if '[Windspeed]' not in tags_dict and '[wsp]' in tags_dict:
                 tags_dict['[Windspeed]'] = tags_dict['[wsp]']
+            # avoid that any possible default tags from wetb will be used
+            # instead of the ones from the spreadsheet
             if '[seed]' in tags_dict:
                 tags_dict['[tu_seed]'] = tags_dict['[seed]']
+            # in case people are using other turbulence tag names in the sheet
+            elif '[tu_seed]' in tags_dict:
+                tags_dict['[seed]'] = tags_dict['[tu_seed]']
+            elif '[turb_seed]' in tags_dict:
+                tags_dict['[seed]'] = tags_dict['[turb_seed]']
+            else:
+                raise KeyError('[seed] should be used as tag for turb. seed')
 
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
