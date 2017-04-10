@@ -32,10 +32,9 @@ import pandas as pd
 from wetb.prepost.Simulations import Cases
 
 
-def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
-                          nr_procs_series=9, processes=1, queue='workq',
-                          walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          pyenv='wetb_py3', i0=0):
+def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
+                          nr_procs_series=9, queue='workq', pyenv='wetb_py3',
+                          walltime='24:00:00', chunks_dir='zip-chunks-jess'):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -187,7 +186,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
         # =====================================================================
         # activate the python environment
         pbs += 'echo "activate python environment %s"\n' % pyenv
-        pbs += 'source activate %s\n' % pyenv
+        pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
         # sometimes activating an environment fails due to a FileExistsError
         # is this because it is activated at the same time on another node?
         # check twice if the environment got activated for real
@@ -395,6 +394,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20,
     # FIXME: how do you make this work pythonically on both PY2 and PY3?
     except (FileExistsError, OSError):
         pass
+
+    fpath = os.path.join(df['[run_dir]'].iloc[0], 'pbs_out_chunks')
+    if not os.path.exists(fpath):
+        os.makedirs(fpath)
 
     df_iter = chunker(df, nr_procs_series*ppn)
     sim_id = df['[sim_id]'].iloc[0]

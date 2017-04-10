@@ -338,11 +338,11 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
-                              nr_procs_series=9, processes=1,
-                              walltime='20:00:00', chunks_dir='zip-chunks-jess')
+                              nr_procs_series=9, walltime='20:00:00',
+                              chunks_dir='zip-chunks-jess')
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
-                              nr_procs_series=15, processes=1,
-                              walltime='20:00:00', chunks_dir='zip-chunks-gorm')
+                              nr_procs_series=15, walltime='20:00:00',
+                              chunks_dir='zip-chunks-gorm')
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
