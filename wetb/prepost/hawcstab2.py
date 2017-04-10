@@ -28,6 +28,8 @@ class dummy(object):
     def __init__(self, name='dummy'):
         self.__name__ = name
 
+regex_units = re.compile('(\\[.*?\\])')
+
 
 def ReadFileHAWCStab2Header(fname):
     """
@@ -35,38 +37,31 @@ def ReadFileHAWCStab2Header(fname):
     includes the column number and units between square brackets.
     """
 
-    regex = re.compile('(\\[.*?\\])')
-
-    def _withgradients(fname):
-        df = pd.read_fwf(fname, header=1, widths=[30]*27)
-        # find all units
-        units = regex.findall(''.join(df.columns))
-        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
-        return df, units
-
-    def _newformat(fname):
-        df = pd.read_fwf(fname, header=0, widths=[20]*15)
-        # find all units
-        units = regex.findall(''.join(df.columns))
-        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
-        return df, units
-
-    def _oldformat(fname):
-        df = pd.read_fwf(fname, header=0, widths=[14]*13)
-        # find all units
-        units = regex.findall(''.join(df.columns))
-        df.columns = [k.replace('#', '').strip() for k in df.columns]
+    def _read(fname, header=0, widths=[20]*15, skipfooter=0):
+        df = pd.read_fwf(fname, header=header, widths=widths,
+                         skipfooter=skipfooter)
+        units = regex_units.findall(''.join(df.columns))
         return df, units
 
     with open(fname) as f:
         line = f.readline()
 
+    # when gradients are included in the output
     if len(line) > 800:
-        return _withgradients(fname)
-    if len(line) > 200:
-        return _newformat(fname)
+        df, units = _read(fname, header=1, widths=[30]*27)
+        # column name has the name, unit and column number in it...
+        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
+        return df, units
+    elif len(line) > 200:
+        df, units = _read(fname, header=0, widths=[20]*15)
+        # column name has the name, unit and column number in it...
+        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
+        return df, units
+    # older versions of HS2 seem to have two columns less
     else:
-        return _oldformat(fname)
+        df, units = _read(fname, header=0, widths=[14]*13)
+        df.columns = [k.replace('#', '').strip() for k in df.columns]
+        return df, units
 
 
 class InductionResults(object):
@@ -157,6 +152,32 @@ class results(object):
     def load_ind(self, fname):
         self.ind = InductionResults()
         self.ind.read(fname)
+
+    def load_amp(self, fname):
+
+        with open(fname) as f:
+            line = f.readline()
+
+        width = 14
+        nrcols = int((len(line)-1)/width)
+        # first columns has one extra character
+        # col nr1: rotor speed, col nr2: radius
+        widths = [width+1] + [width]*(nrcols-1)
+        # last line is empty
+        df = pd.read_fwf(fname, header=2, widths=widths, skipfooter=1)
+        units = regex_units.findall(''.join(df.columns))
+        # no column number in the column name
+        # since U_x, u_y, phase and theta will be repeated as many times as
+        # there are modes, add the mode number in the column name
+        columns = [k.replace('#', '').strip() for k in df.columns]
+        nrmodes = int((len(columns) - 2 )/6)
+        for k in range(nrmodes):
+            for i in range(6):
+                j = 2+k*6+i
+                columns[j] = columns[j].split('.')[0] + ' nr%i' % (k+1)
+        df.columns = columns
+
+        return df, units
 
     def load_operation(self, fname):
 

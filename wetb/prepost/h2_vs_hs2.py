@@ -311,10 +311,10 @@ class Sims(object):
             mt['[hawc2]'] = False
             mt['[output]'] = False
             mt['[copyback_files]'] = ['./*.ind', './*.pwr', './*.log',
-                                      './*.cmb', './*.bea']
+                                      './*.cmb', './*.bea', './*.amp']
             mt['[copyback_frename]'] = [mt['[res_dir]'], mt['[res_dir]'],
                                         mt['[log_dir]'], mt['[res_dir]'],
-                                        mt['[res_dir]']]
+                                        mt['[res_dir]'], mt['[res_dir]']]
             if mt['[hs2_bladedeform_switch]']:
                 mt['[hs2_bladedeform]'] = 'bladedeform'
             else:
