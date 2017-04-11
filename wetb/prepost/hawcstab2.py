@@ -28,36 +28,40 @@ class dummy(object):
     def __init__(self, name='dummy'):
         self.__name__ = name
 
+regex_units = re.compile('(\\[.*?\\])')
 
-def ReadFileHAWCStab2Header(fname, widths):
+
+def ReadFileHAWCStab2Header(fname):
     """
     Read a file with a weird HAWCStab2 header that starts with a #, and
     includes the column number and units between square brackets.
     """
 
-    regex = re.compile('(\\[.*?\\])')
-
-    def _newformat(fname):
-        df = pd.read_fwf(fname, header=0, widths=[20]*15)
-        # find all units
-        units = regex.findall(''.join(df.columns))
-        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
-        return df, units
-
-    def _oldformat(fname):
-        df = pd.read_fwf(fname, header=0, widths=[14]*13)
-        # find all units
-        units = regex.findall(''.join(df.columns))
-        df.columns = [k.replace('#', '').strip() for k in df.columns]
+    def _read(fname, header=0, widths=[20]*15, skipfooter=0):
+        df = pd.read_fwf(fname, header=header, widths=widths,
+                         skipfooter=skipfooter)
+        units = regex_units.findall(''.join(df.columns))
         return df, units
 
     with open(fname) as f:
         line = f.readline()
 
-    if len(line) > 200:
-        return _newformat(fname)
+    # when gradients are included in the output
+    if len(line) > 800:
+        df, units = _read(fname, header=1, widths=[30]*27)
+        # column name has the name, unit and column number in it...
+        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
+        return df, units
+    elif len(line) > 200:
+        df, units = _read(fname, header=0, widths=[20]*15)
+        # column name has the name, unit and column number in it...
+        df.columns = [k[:-2].replace('#', '').strip() for k in df.columns]
+        return df, units
+    # older versions of HS2 seem to have two columns less
     else:
-        return _oldformat(fname)
+        df, units = _read(fname, header=0, widths=[14]*13)
+        df.columns = [k.replace('#', '').strip() for k in df.columns]
+        return df, units
 
 
 class InductionResults(object):
@@ -99,7 +103,7 @@ class results(object):
         return res
 
     def load_pwr_df(self, fname):
-        return ReadFileHAWCStab2Header(fname, [20]*15)
+        return ReadFileHAWCStab2Header(fname)
 
     def load_cmb(self, fname):
         cmb = np.loadtxt(fname)
@@ -148,6 +152,32 @@ class results(object):
     def load_ind(self, fname):
         self.ind = InductionResults()
         self.ind.read(fname)
+
+    def load_amp(self, fname):
+
+        with open(fname) as f:
+            line = f.readline()
+
+        width = 14
+        nrcols = int((len(line)-1)/width)
+        # first columns has one extra character
+        # col nr1: rotor speed, col nr2: radius
+        widths = [width+1] + [width]*(nrcols-1)
+        # last line is empty
+        df = pd.read_fwf(fname, header=2, widths=widths, skipfooter=1)
+        units = regex_units.findall(''.join(df.columns))
+        # no column number in the column name
+        # since U_x, u_y, phase and theta will be repeated as many times as
+        # there are modes, add the mode number in the column name
+        columns = [k.replace('#', '').strip() for k in df.columns]
+        nrmodes = int((len(columns) - 2 )/6)
+        for k in range(nrmodes):
+            for i in range(6):
+                j = 2+k*6+i
+                columns[j] = columns[j].split('.')[0] + ' nr%i' % (k+1)
+        df.columns = columns
+
+        return df, units
 
     def load_operation(self, fname):
 
@@ -341,11 +371,41 @@ class ReadControlTuning(object):
                 else:
                     self.parse_line(line, controller)
 
-        # set some parameters to zero for the linear case
+        # set some parameters to zero for the linear case, or when aerodynamic
+        # gain scheduling is not used
         if not hasattr(self.pi_pitch_reg3, 'K2'):
             setattr(self.pi_pitch_reg3, 'K2', 0.0)
+        if not hasattr(self.aero_damp, 'Kp2'):
+            setattr(self.aero_damp, 'Kp2', 0.0)
+        if not hasattr(self.aero_damp, 'Ko1'):
+            setattr(self.aero_damp, 'Ko1', 0.0)
         if not hasattr(self.aero_damp, 'Ko2'):
             setattr(self.aero_damp, 'Ko2', 0.0)
+
+    def parameters2tags(self):
+        """Convert the tuning parameters into a dictionary whos keys are
+        compatible with tag names in a HAWC2 master file.
+        """
+
+        tune_tags = {}
+
+        tune_tags['[pi_gen_reg1.K]'] = self.pi_gen_reg1.K
+
+        tune_tags['[pi_gen_reg2.I]'] = self.pi_gen_reg2.I
+        tune_tags['[pi_gen_reg2.Kp]'] = self.pi_gen_reg2.Kp
+        tune_tags['[pi_gen_reg2.Ki]'] = self.pi_gen_reg2.Ki
+        tune_tags['[pi_gen_reg2.Kd]'] = 0.0
+
+        tune_tags['[pi_pitch_reg3.Kp]'] = self.pi_pitch_reg3.Kp
+        tune_tags['[pi_pitch_reg3.Ki]'] = self.pi_pitch_reg3.Ki
+        tune_tags['[pi_pitch_reg3.K1]'] = self.pi_pitch_reg3.K1
+        tune_tags['[pi_pitch_reg3.K2]'] = self.pi_pitch_reg3.K2
+
+        tune_tags['[aero_damp.Kp2]'] = self.aero_damp.Kp2
+        tune_tags['[aero_damp.Ko1]'] = self.aero_damp.Ko1
+        tune_tags['[aero_damp.Ko2]'] = self.aero_damp.Ko2
+
+        return tune_tags
 
 
 if __name__ == '__main__':

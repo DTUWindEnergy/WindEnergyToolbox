@@ -44,15 +44,15 @@ plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
-# do not use tex on Gorm
-if not socket.gethostname()[:2] in ['g-', 'je']:
+# do not use tex on Gorm and or Jess
+if not socket.gethostname()[:2] in ['g-', 'je', 'j-']:
     plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
 
 
-def merge_sim_ids(post_dirs, sim_ids, post_dir_save=False):
+def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
     """
     """
     # map the run_dir to the same order as the post_dirs, labels
@@ -502,7 +502,9 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             # when only one of the channels was present, but the set is still
             # complete.
             # FIXME: what if both channels are present?
-            if len(ch_names) > 1 and (lens[0] < 1) or (lens[1] < 1):
+            if len(ch_names) > 1 and (lens[0] < 1):
+                continue
+            elif len(ch_names) > 1 and len(lens)==2 and lens[1] < 1:
                 continue
 
             print('start plotting:  %s %s' % (str(dlc_name).ljust(7), ch_dscr))

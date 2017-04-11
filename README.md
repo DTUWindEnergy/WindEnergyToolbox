@@ -71,10 +71,11 @@ load calculations, and create load envelopes.
 
 Additional documentation can be found here:
 
-- [Auto-generation of Design Load Cases](docs/howto-make-dlcs.md)
-- [How to use the Statistics DataFrame](docs/using-statistics-df.md)
-- [Generate DLB spreadsheets](docs/generate-spreadsheet.md)
-
+- [Getting started with DLBs](docs/getting-started-with-dlbs.md)
+    - [Generate DLB spreadsheets](docs/generate-spreadsheet.md)
+    - [Auto-generation of Design Load Cases](docs/howto-make-dlcs.md)
+    - [House rules for storing results on ```mimer/hawc2sim```](docs/houserules-mimerhawc2sim.md)
+    - [How to use the Statistics DataFrame](docs/using-statistics-df.md)
 
 ### [fast](wetb/fast)
 Tools for working with NREL's FAST code (An aeroelastic computer-aided engineering (CAE) tool for horizontal axis wind turbines)

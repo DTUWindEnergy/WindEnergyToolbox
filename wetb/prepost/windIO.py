@@ -98,8 +98,8 @@ class LogFile(object):
         self.err_init[' Error opening PC data file'] = len(self.err_init)
         #  *** ERROR *** error reading mann turbulence
         self.err_init[' *** ERROR *** error readin'] = len(self.err_init)
-        #  *** INFO *** The DLL subroutine
-        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
+#        #  *** INFO *** The DLL subroutine
+#        self.err_init[' *** INFO *** The DLL subro'] = len(self.err_init)
         #  ** WARNING: FROM ESYS ELASTICBAR: No keyword
         self.err_init[' ** WARNING: FROM ESYS ELAS'] = len(self.err_init)
         #  *** ERROR *** DLL ./control/killtrans.dll could not be loaded - error!
@@ -643,6 +643,9 @@ class LoadResults(ReadHawc2):
         of spaces, use colon (;) to seperate the different commands.
 
         THIS IS STILL A WIP
+
+        see also issue #11:
+        https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/11
         """
 
         index = {}

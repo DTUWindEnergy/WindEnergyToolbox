@@ -34,16 +34,12 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # on Gorm tex printing doesn't work
-if socket.gethostname()[:2] == 'g-':
-    RUNMETHOD = 'gorm'
-elif socket.gethostname()[:1] == 'j':
-    RUNMETHOD = 'jess'
+if socket.gethostname()[:2] in ['g-', 'je', 'j-']:
+    RUNMETHOD = 'pbs'
 else:
     plt.rc('text', usetex=True)
     # set runmethod based on the platform host
-    if platform == "linux" or platform == "linux2":
-        RUNMETHOD = 'local-script'
-    elif platform == "darwin":
+    if platform in ["linux", "linux2", "darwin"]:
         RUNMETHOD = 'linux-script'
     elif platform == "win32":
         RUNMETHOD = 'windows-script'
@@ -131,7 +127,7 @@ def master_tags(sim_id, runmethod='local', silent=False, verbose=False):
     master.tags['[MannAlfaEpsilon]'] = 1.0
     master.tags['[MannL]'] = 29.4
     master.tags['[MannGamma]'] = 3.0
-    master.tags['[tu_seed]'] = 0
+    master.tags['[seed]'] = None
     master.tags['[turb_nr_u]'] = 8192
     master.tags['[turb_nr_v]'] = 32
     master.tags['[turb_nr_w]'] = 32
@@ -268,7 +264,8 @@ def variable_tag_func_mod1(master, case_id_short=False):
 # =============================================================================
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
-                      runmethod=None, write_htc=True, zipchunks=False):
+                      runmethod=None, write_htc=True, zipchunks=False,
+                      walltime='04:00:00'):
     """
     Launch load cases defined in Excel files
     """
@@ -307,6 +304,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     master = master_tags(sim_id, runmethod=runmethod, silent=silent,
                          verbose=verbose)
     master.tags['[sim_id]'] = sim_id
+    master.tags['[walltime]'] = walltime
     master.output_dirs.append('[Case folder]')
     master.output_dirs.append('[Case id.]')
 
@@ -336,13 +334,18 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     if zipchunks:
         # create chunks
         # sort so we have minimal copying turb files from mimer to node/scratch
+        # note that walltime here is for running all cases assigned to the
+        # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
-                              nr_procs_series=9, processes=1,
-                              walltime='20:00:00', chunks_dir='zip-chunks-jess')
+                              nr_procs_series=9, walltime='20:00:00',
+                              chunks_dir='zip-chunks-jess')
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
-                              nr_procs_series=15, processes=1,
-                              walltime='20:00:00', chunks_dir='zip-chunks-gorm')
+                              nr_procs_series=15, walltime='20:00:00',
+                              chunks_dir='zip-chunks-gorm')
+
+    df = sim.Cases(cases).cases2df()
+    df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
 
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
@@ -385,6 +388,11 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     if statistics:
         i0, i1 = 0, -1
 
+        # example for combination of signals
+#        name = 'stress1'
+#        expr = '[p1-p1-node-002-forcevec-z]*3 + [p1-p1-node-002-forcevec-y]'
+#        add_sigs = {name:expr}
+
         # in addition, sim_id and case_id are always added by default
         tags = ['[Case folder]']
         add = None
@@ -395,7 +403,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  update=update, saveinterval=saveinterval,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=None, no_bins=no_bins,
-                                 chs_resultant=[], A=A)
+                                 chs_resultant=[], A=A, add_sigs={})
         # annual energy production
         if AEP:
             df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
@@ -486,7 +494,11 @@ if __name__ == '__main__':
                         'using the 64-bit Mann turbulence box generator. '
                         'This can be usefull if your turbulence boxes are too '
                         'big for running in HAWC2 32-bit mode. Only works on '
-                        'Jess. ')
+                        'Jess.')
+    parser.add_argument('--walltime', default='04:00:00', type=str,
+                        action='store', dest='walltime', help='Queue walltime '
+                        'for each case/pbs file, format: HH:MM:SS '
+                        'Default: 04:00:00')
     opt = parser.parse_args()
 
     # TODO: use arguments to determine the scenario:
@@ -526,7 +538,7 @@ if __name__ == '__main__':
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
-                          pbs_turb=opt.pbs_turb)
+                          pbs_turb=opt.pbs_turb, walltime=opt.walltime)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,

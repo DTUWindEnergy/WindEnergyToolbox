@@ -553,7 +553,7 @@ def run_local(cases, silent=False, check_log=True):
 
 
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
-                write_htc=True, runmethod='local', verbose=False,
+                write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
                 run_only_new=False, windows_nr_cpus=2, qsub='',
@@ -603,11 +603,14 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     verbose : boolean, default=False
 
-    runmethod : {'local' (default),'thyra','gorm','local-script','none'}
+    runmethod : {'none' (default),'pbs','linux-script','local',
+                 'local-ram', 'windows-script'}
         Specify how/what to run where. For local, each case in cases is
-        run locally via python directly. If set to 'local-script' a shell
+        run locally via python directly. If set to 'linux-script' a shell
         script is written to run all cases locally sequential. If set to
-        'thyra' or 'gorm', PBS scripts are written to the respective server.
+        'pbs', PBS scripts are written for a cluster (e.g. Gorm/jess).
+        A Windows batch script is written in case of windows-script, and is
+        used in combination with windows_nr_cpus.
 
     msg : str, default=''
         A descriptive message of the simulation series is saved at
@@ -1010,12 +1013,12 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
 
     verbose : boolean, default=False
 
-    runmethod : {'none' (default),'jess','gorm','linux-script','local',
+    runmethod : {'none' (default),'pbs','linux-script','local',
                  'local-ram', 'windows-script'}
         Specify how/what to run where. For local, each case in cases is
         run locally via python directly. If set to 'linux-script' a shell
         script is written to run all cases locally sequential. If set to
-        'jess' or 'gorm', PBS scripts are written to the respective server.
+        'pbs', PBS scripts are written for a cluster (e.g. Gorm/jess).
         A Windows batch script is written in case of windows-script, and is
         used in combination with windows_nr_cpus.
 
@@ -1032,11 +1035,11 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         local_shell_script(cases, sim_id)
     elif runmethod == 'windows-script':
         local_windows_script(cases, sim_id, nr_cpus=windows_nr_cpus)
-    elif runmethod in ['jess','gorm']:
+    elif runmethod in ['pbs','jess','gorm']:
         # create the pbs object
-        pbs = PBS(cases, server=runmethod, short_job_names=short_job_names,
+        pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent, pyenv=pyenv)
+                  verbose=verbose, silent=silent)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
@@ -1049,8 +1052,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
     elif runmethod == 'none':
         pass
     else:
-        msg = 'unsupported runmethod, valid options: local, local-script, ' \
-              'linux-script, windows-script, local-ram, none'
+        msg = 'unsupported runmethod, valid options: local, linux-script, ' \
+              'windows-script, local-ram, none, pbs'
         raise ValueError(msg)
 
 
@@ -1402,7 +1405,7 @@ class HtcMaster(object):
 
         # create all the necessary directories
         for dirkey in dirkeys:
-            if self.tags[dirkey]:
+            if isinstance(self.tags[dirkey], str):
                 path = os.path.join(self.tags['[run_dir]'], self.tags[dirkey])
                 if not os.path.exists(path):
                     os.makedirs(path)
@@ -1430,7 +1433,7 @@ class HtcMaster(object):
 
             # copy special files with changing file names
             if '[ESYSMooring_init_fname]' in self.tags:
-                if self.tags['[ESYSMooring_init_fname]'] is not None:
+                if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
                     fname_source = self.tags['[ESYSMooring_init_fname]']
                     fname_target = 'ESYSMooring_init.dat'
                     shutil.copy2(model_root + fname_source,
@@ -1922,9 +1925,8 @@ class PBS(object):
     such as the turbulence file and folder, htc folder and others
     """
 
-    def __init__(self, cases, server='gorm', qsub='time', silent=False,
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 pyenv='wetb_py3'):
+    def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1953,7 +1955,6 @@ class PBS(object):
             case_id will be used as job name.
 
         """
-        self.server = server
         self.verbose = verbose
         self.silent = silent
         self.pyenv = pyenv
@@ -1962,14 +1963,9 @@ class PBS(object):
         self.wine = self.winebase + 'wine'
         self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
-        if server == 'gorm':
-            self.maxcpu = 1
-            self.secperiter = 0.012
-        elif server == 'jess':
-            self.maxcpu = 1
-            self.secperiter = 0.012
-        else:
-            raise UserWarning('server support only for jess or gorm')
+        # TODO: based on a certain host/architecture you can change these
+        self.maxcpu = 1
+        self.secperiter = 0.012
 
         # determine at runtime if winefix has to be ran
         self.winefix = '  _HOSTNAME_=`hostname`\n'
@@ -4007,11 +4003,11 @@ class Cases(object):
         return stats_df, Leq_df, AEP_df
 
     def statistics(self, new_sim_id=False, silent=False, ch_sel=None,
-                   tags=['[turb_seed]','[windspeed]'], calc_mech_power=False,
+                   tags=['[seed]','[windspeed]'], calc_mech_power=False,
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=None, saveinterval=1000,
-                   csv=True, suffix=None, A=None,
+                   csv=True, suffix=None, A=None, add_sigs={},
                    ch_wind=None, save_new_sigs=False, xlsx=False):
         """
         Calculate statistics and save them in a pandas dataframe. Save also
@@ -4024,7 +4020,7 @@ class Cases(object):
             If defined, only add defined channels to the output data frame.
             The list should contain valid channel names as defined in ch_dict.
 
-        tags : list, default=['[turb_seed]','[windspeed]']
+        tags : list, default=['[seed]','[windspeed]']
             Select which tag values from cases should be included in the
             dataframes. This will help in selecting and identifying the
             different cases.
@@ -4033,6 +4029,10 @@ class Cases(object):
             Valid ch_dict channel names for which the equivalent fatigue load
             needs to be calculated. When set to None, ch_fatigue = ch_sel,
             and hence all channels will have a fatigue analysis.
+
+        add_sigs : dict, default={}
+            channel name, expression key/value paires. For example,
+            '[p1-p1-node-002-forcevec-z]*3 + [p1-p1-node-002-forcevec-y]'
 
         chs_resultant
 
@@ -4129,6 +4129,8 @@ class Cases(object):
 
         df_dict = None
         add_stats = True
+        # for finding [] tags
+        regex = re.compile('(\\[.*?\\])')
 
         for ii, (cname, case) in enumerate(self.cases.items()):
 
@@ -4164,6 +4166,26 @@ class Cases(object):
             i_new_chans = self.sig.shape[1] # self.Nch
             sig_size = self.res.N  # len(self.sig[i0:i1,0])
             new_sigs = np.ndarray((sig_size, 0))
+
+            for name, expr in add_sigs.items():
+                channel_tags = regex.findall(expr)
+                # replace all sensor names with expressions
+                template = "self.sig[:,self.res.ch_dict['{}']['chi']]"
+                for chan in channel_tags:
+                    # first remove the [] from the tag
+                    # FIXME: fails when the same channel occurs more than once
+                    expr = expr.replace(chan, chan[1:-1])
+                    expr = expr.replace(chan[1:-1], template.format(chan[1:-1]))
+
+                sig_add = np.ndarray((len(self.sig[:,0]), 1))
+                sig_add[:,0] = eval(expr)
+
+                ch_dict_new[name] = {}
+                ch_dict_new[name]['chi'] = i_new_chans
+                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
+                                                   'ch_name':name})
+                i_new_chans += 1
+                new_sigs = np.append(new_sigs, sig_add, axis=1)
 
             if add_sensor is not None:
                 chi1 = self.res.ch_dict[add_sensor['ch1_name']]['chi']
@@ -4305,10 +4327,9 @@ class Cases(object):
                 df_new_sigs = pd.DataFrame(new_sigs, columns=keys)
                 respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
                 resfile = case['[case_id]']
-                fname = os.path.join(respath, resfile + '_postres.h5')
+                fname = os.path.join(respath, resfile + '_postres.csv')
                 print('    saving post-processed res: %s...' % fname, end='')
-                df_new_sigs.to_hdf(fname, 'table', mode='w', format='table',
-                                   complevel=9, complib=self.complib)
+                df_new_sigs.to_csv(fname, sep='\t')
                 print('done!')
                 del df_new_sigs
 
@@ -4892,7 +4913,7 @@ class Cases(object):
 
         return df_AEP
 
-    def stats2dataframe(self, ch_sel=None, tags=['[turb_seed]','[windspeed]']):
+    def stats2dataframe(self, ch_sel=None, tags=['[seed]','[windspeed]']):
         """
         Convert the archaic statistics dictionary of a group of cases to
         a more convienent pandas dataframe format.
@@ -4910,7 +4931,7 @@ class Cases(object):
             defined, only those channels are considered.
             ch_sel[short name] = full ch_dict identifier
 
-        tags : list, default=['[turb_seed]','[windspeed]']
+        tags : list, default=['[seed]','[windspeed]']
             Select which tag values from cases should be included in the
             dataframes. This will help in selecting and identifying the
             different cases.
@@ -5357,7 +5378,7 @@ class MannTurb64(prepost.PBSScript):
         * [MannAlfaEpsilon]
         * [MannL]
         * [MannGamma]
-        * [tu_seed]
+        * [seed]
         * [turb_nr_u]
         * [turb_nr_v]
         * [turb_nr_w]
@@ -5369,7 +5390,7 @@ class MannTurb64(prepost.PBSScript):
 
     def __init__(self, silent=False):
         super(MannTurb64, self).__init__()
-        self.exe = 'time wine mann_turb_x64.exe'
+        self.exe = 'time WINEARCH=win64 WINEPREFIX=~/.wine wine mann_turb_x64.exe'
         self.winefix = 'winefix\n'
         # PBS configuration
         self.umask = '0003'
@@ -5434,7 +5455,7 @@ class MannTurb64(prepost.PBSScript):
             rpl = (float(case['[MannAlfaEpsilon]']),
                    float(case['[MannL]']),
                    float(case['[MannGamma]']),
-                   int(case['[tu_seed]']),
+                   int(case['[seed]']),
                    int(case['[turb_nr_u]']),
                    int(case['[turb_nr_v]']),
                    int(case['[turb_nr_w]']),

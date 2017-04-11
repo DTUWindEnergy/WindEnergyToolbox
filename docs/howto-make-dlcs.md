@@ -454,7 +454,7 @@ tags:
 * ```[MannAlfaEpsilon]```
 * ```[MannL]```
 * ```[MannGamma]```
-* ```[tu_seed]```
+* ```[seed]```
 * ```[turb_nr_u]``` : number of grid points in the u direction
 * ```[turb_nr_v]``` : number of grid points in the v direction
 * ```[turb_nr_w]``` : number of grid points in the w direction
