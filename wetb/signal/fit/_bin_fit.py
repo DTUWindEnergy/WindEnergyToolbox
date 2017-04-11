@@ -154,7 +154,7 @@ def perpendicular_bin_fit(x, y, bins = 30, fit_func=None, bin_min_count=3, plt=N
     nbfx = (bfx-xo)/xg
     nbfy = (bfy-yo)/yg
     l = np.cumsum(np.sqrt(np.diff(nbfx)**2+np.diff(nbfy)**2))
-    nx, ny = [np.interp(np.linspace(l[0], l[-1], bins), l, (xy[1:]+xy[:-1])/2) for xy in [nbfx,nbfy]]
+    nx, ny = [np.interp(np.linspace(l[0], l[-1], bins+1), l, (xy[1:]+xy[:-1])/2) for xy in [nbfx,nbfy]]
     
     
     last = (-1,0)
