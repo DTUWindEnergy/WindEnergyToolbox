@@ -4,7 +4,7 @@ Created on 13/07/2016
 @author: MMPE
 '''
 import numpy as np
-from wetb.signal.filters import replacer, frq_filters
+from wetb.signal.filters import replacer
 
 
 replace_by_nan = replacer.replace_by_nan
@@ -62,7 +62,8 @@ def despike(data, spike_length, spike_finder=univeral_thresshold_finder, spike_r
     if plt:
         plt.plot(data, label='Input')
     data = np.array(data).copy()
-    lp_data = low_pass(data, spike_length, 1)
+    from wetb.signal.filters import frq_filters
+    lp_data = frq_filters.low_pass(data, spike_length, 1)
     hp_data = data - lp_data
     hp_data = frq_filters.high_pass(data, spike_length*4, 1, order=2)
         #spike_length, sample_frq/2, 1, order=1)

@@ -77,7 +77,7 @@ def bin_fit(x,y, bins=10, kind='linear', bin_func=np.nanmean, bin_min_count=3, l
         lower, upper = lower_upper 
     
     #Add value to min(x)
-    if bin_x_fit[0] > np.nanmin(x):
+    if bin_x_fit[0] > np.nanmin(x) or np.isnan(bin_y_fit[0]):
         if lower =='extrapolate':
         
             bin_y_fit = np.r_[bin_y_fit[0] - (bin_x_fit[0] - np.nanmin(x)) * (bin_y_fit[1] - bin_y_fit[0]) / (bin_x_fit[1] - bin_x_fit[0]), bin_y_fit]
@@ -91,7 +91,7 @@ def bin_fit(x,y, bins=10, kind='linear', bin_func=np.nanmean, bin_min_count=3, l
             raise NotImplementedError("Argument for handling lower observations, %s, not implemented"%lower)
         
     #add value to max(x)
-    if bin_x_fit[-1] < np.nanmax(x):
+    if bin_x_fit[-1] < np.nanmax(x) or np.isnan(bin_y_fit[-1]):
         if upper == 'extrapolate':
             bin_y_fit = np.r_[bin_y_fit, bin_y_fit[-1] + (np.nanmax(x) - bin_x_fit[-1]) * (bin_y_fit[-1] - bin_y_fit[-2]) / (bin_x_fit[-1] - bin_x_fit[-2]) ]
             bin_x_fit = np.r_[bin_x_fit, np.nanmax(x)]
@@ -194,6 +194,7 @@ def _interpolate_fit(bin_x_fit, bin_y_fit, kind='linear'):
         x = x[:].copy().astype(np.float)
         x[x<bin_x_fit[0]] = np.nan
         x[x>bin_x_fit[-1]] = np.nan
-        return interp1d(bin_x_fit, bin_y_fit, kind)(x[:])
+        m = ~(np.isnan(bin_x_fit)|np.isnan(bin_y_fit))
+        return interp1d(bin_x_fit[m], bin_y_fit[m], kind)(x[:])
     return fit
 
