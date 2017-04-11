@@ -3,15 +3,19 @@ Created on 29. mar. 2017
 
 @author: mmpe
 '''
-from wetb.signal.filters.frq_filters import low_pass
+
 import numpy as np
-def differentiation(x,sample_frq=None, cutoff_frq=None):
+def differentiation(x, type='center', sample_frq=None, cutoff_frq=None):
     """Differentiate the signal
     
     Parameters
     ----------
     x : array_like
         The input signal
+    type : {'right','center','left'}
+        right: change from current to next observation\n
+        center: average change from previous to next observation\n
+        left: change from previous to current observation\n
     sample_frq : int, float or None, optional
         sample frequency of signal (only required if low pass filer is applied)
     cutoff_frq : int, float or None, optional
@@ -30,8 +34,14 @@ def differentiation(x,sample_frq=None, cutoff_frq=None):
             
     if cutoff_frq is not None:
         assert sample_frq is not None, "Argument sample_frq must be set to apply low pass filter"
+        from wetb.signal.filters.frq_filters import low_pass
         x = low_pass(x, sample_frq, cutoff_frq)
     else:
         x = np.array(x) 
-    dy = np.r_[x[1]-x[0], (x[2:]-x[:-2])/2, x[-1]-x[-2]]
+    if type=="left":
+        dy = np.r_[np.nan, x[1:]-x[:-1]]
+    if type=="center": 
+        dy = np.r_[x[1]-x[0], (x[2:]-x[:-2])/2, x[-1]-x[-2]]
+    if type=="right":
+        dy = np.r_[x[1:]-x[:-1], np.nan]
     return dy

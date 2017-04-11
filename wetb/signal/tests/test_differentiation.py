@@ -12,6 +12,8 @@ class Test(unittest.TestCase):
 
     def testDifferentiation(self):
         np.testing.assert_array_equal(differentiation([1,2,1,0,1,1]), [1,0,-1,0,.5,0])
+        np.testing.assert_array_equal(differentiation([1,2,1,0,1,1], 'left'), [np.nan, 1,-1,-1,1,0])
+        np.testing.assert_array_equal(differentiation([1,2,1,0,1,1], 'right'), [1,-1,-1,1,0, np.nan])
         
 
 
