@@ -200,6 +200,15 @@ above for the ```conda-forge``` channel: it is to avoid that pip will replace
 newer packages compared to the ones as available in the ```Anaconda``` channel.
 
 
+## Update wetb
+
+```
+>> cd WindEnergyToolbox
+>> git pull
+>> pip install -e . --no-deps
+```
+
+
 ## Run tests
 
 Note that the test should be executed from a clean repository and which is not
