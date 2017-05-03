@@ -120,7 +120,7 @@ class HTCContents(object):
         self._add_contents(section)
         return section
 
-    def add_line(self, name, values, comments):
+    def add_line(self, name, values, comments=""):
         line = HTCLine(name, values, comments)
         self._add_contents(line)
         return line

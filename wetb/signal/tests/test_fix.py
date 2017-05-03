@@ -42,6 +42,8 @@ class TestFix(unittest.TestCase):
          
         self.assertEqual(find_fix_dt(ds.azi, sample_frq, ds.Rot_cor), 4)
         
+        
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testRotorPositionFix']
