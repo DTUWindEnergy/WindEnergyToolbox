@@ -1215,7 +1215,6 @@ class LoadResults(ReadHawc2):
                 blade_nr = blade_nr.split(' ')[0].strip()
                 flap_nr = self.ch_details[ch, 2].split(' ')[-1].strip()
 
-                radius = radius.strip()
                 blade_nr = blade_nr.strip()
 
                 # and tag it
@@ -1227,6 +1226,24 @@ class LoadResults(ReadHawc2):
                 channelinfo['blade_nr'] = int(blade_nr)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+
+            # harmonic channel output
+            # Harmonic
+            # Harmonic sinus function
+            elif self.ch_details[ch, 0][:7] == 'Harmoni':
+
+                func_name = ' '.join(self.ch_details[ch, 1].split(' ')[1:])
+
+                channelinfo = {}
+                channelinfo['output_type'] = func_name
+                channelinfo['sensortype'] = 'harmonic'
+                channelinfo['chi'] = ch
+
+                base = self.ch_details[ch,2].strip().lower().replace(' ', '_')
+                tag = base + '_0'
+                if tag in self.ch_dict:
+                    tag_nr = int(tag.split('_')[-1]) + 1
+                    tag = base + '_%i' % tag_nr
 
             # -----------------------------------------------------------------
             # ignore all the other cases we don't know how to deal with
