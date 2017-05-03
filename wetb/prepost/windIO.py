@@ -1221,7 +1221,6 @@ class LoadResults(ReadHawc2):
                 tag = 'setbeta-bladenr-%s-flapnr-%s' % (blade_nr, flap_nr)
                 # save all info in the dict
                 channelinfo = {}
-                channelinfo['coord'] = coord
                 channelinfo['flap_nr'] = int(flap_nr)
                 channelinfo['blade_nr'] = int(blade_nr)
                 channelinfo['units'] = units
