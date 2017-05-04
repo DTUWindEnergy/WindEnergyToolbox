@@ -91,7 +91,7 @@ class StFile(object):
             radius = self.radius(None, mset_nr, set_nr)
         return np.interp(radius, st_data[:, 0], st_data[:, column])
 
-    def radius(self, radius=None, mset=1, set=1):
+    def radius_st(self, radius=None, mset=1, set=1):
         r = self.main_data_sets[mset][set][:, 0]
         if radius is None:
             return r

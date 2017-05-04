@@ -15,7 +15,7 @@ import numpy as np
 import os
 
 
-
+tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 class TestAtTimeFile(unittest.TestCase):
 
     def setUp(self):
@@ -24,7 +24,7 @@ class TestAtTimeFile(unittest.TestCase):
 
 
     def test_doc_examples(self):
-        atfile = AtTimeFile(self.testfilepath + "at_time.dat", blade_radius=20.501)  # load file
+        atfile = AtTimeFile(self.testfilepath + "at_time.dat", bladetip_radius=20.501)  # load file
         self.assertEqual(atfile.attribute_names, ['radius_s', 'twist', 'chord'])
         np.testing.assert_array_equal(atfile[:3, 1], [ 0., -0.775186, -2.91652 ])
         np.testing.assert_array_equal(atfile.twist()[:3], [ 0. , -0.775186 , -2.91652 ])
@@ -48,7 +48,7 @@ class TestAtTimeFile(unittest.TestCase):
         self.assertEqual(atfile.chord(curved_length=9), 1.3888996578373045)
 
     def test_at_time_file_at_radius(self):
-        atfile = AtTimeFile(self.testfilepath + "at_time.dat", blade_radius=20.501/2)
+        atfile = AtTimeFile(self.testfilepath + "at_time.dat", bladetip_radius=20.501/2)
         self.assertEqual(atfile.radius_s(radius=9/2), 9)
         self.assertEqual(atfile.twist(radius=9/2), -6.635983309665461)
         self.assertEqual(atfile.chord(radius=9/2), 1.3888996578373045)
@@ -56,9 +56,9 @@ class TestAtTimeFile(unittest.TestCase):
 
     def test_at_time_file_radius(self):
         atfile = AtTimeFile(self.testfilepath + "at_time.dat")
-        self.assertEqual(atfile.ac_radius()[12], 10.2505)
-        self.assertEqual(atfile.ac_radius(10), 10.2505)
-        self.assertEqual(atfile.ac_radius(10.5), 10.2505)
+        self.assertEqual(atfile.radius_ac()[12], 10.2505)
+        self.assertEqual(atfile.radius_ac(10), 10.2505)
+        self.assertEqual(atfile.radius_ac(10.5), 10.2505)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
