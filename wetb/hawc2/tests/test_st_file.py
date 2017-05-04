@@ -19,8 +19,8 @@ class TestStFile(unittest.TestCase):
 
     def test_stfile(self):
         st = StFile(testfilepath + "DTU_10MW_RWT_Blade_st.dat")
-        self.assertEqual(st.radius()[2], 3.74238)
-        self.assertEqual(st.radius(3), 3.74238)
+        self.assertEqual(st.radius_st()[2], 3.74238)
+        self.assertEqual(st.radius_st(3), 3.74238)
         self.assertEqual(st.x_e(67.7351), 4.4320990737400E-01)
         self.assertEqual(st.E(3.74238, 1, 1), 1.2511695058500E+10)
         self.assertEqual(st.E(3.74238, 1, 2), 1.2511695058500E+27)
