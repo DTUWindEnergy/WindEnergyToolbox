@@ -55,7 +55,6 @@ from wetb.prepost import windIO
 from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
 
-
 def load_pickled_file(source):
     FILE = open(source, 'rb')
     result = pickle.load(FILE)
@@ -1537,15 +1536,16 @@ class HtcMaster(object):
         extforce = self.tags['[externalforce]']
         # result dirs are not required, HAWC2 will create them
         dirs = [control_dir, data_dir, extforce, turb_dir, wake_dir,
-                 meander_dir, mooring_dir, hydro_dir]
+                meander_dir, mooring_dir, hydro_dir]
         for zipdir in dirs:
             if zipdir:
-                zf.write('.', zipdir + '.', zipfile.ZIP_DEFLATED)
+                zf.write('.', os.path.join(zipdir, '.'), zipfile.ZIP_DEFLATED)
         zf.write('.', 'htc/_master/.', zipfile.ZIP_DEFLATED)
 
         # if any, add files that should be added to the root of the zip file
         for file_name in self.tags['[zip_root_files]']:
-            zf.write(model_dir_local+file_name, file_name, zipfile.ZIP_DEFLATED)
+            src = os.path.join(model_dir_local, file_name)
+            zf.write(src, file_name, zipfile.ZIP_DEFLATED)
 
         if '[ESYSMooring_init_fname]' in self.tags:
             if self.tags['[ESYSMooring_init_fname]'] is not None:
@@ -4791,9 +4791,9 @@ class Cases(object):
         # only keep the ones that do not have nan's (only works with index)
         return df_Leq
 
-    def AEP(self, dfs, fh_lst=None, ch_powe=None, extra_cols=[], update=False,
+    def AEP(self, dfs, fh_lst=None, ch_powe='DLL-2-inpvec-2', extra_cols=[],
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
-            new_sim_id=False, save=False, years=20.0, xlsx=False):
+            new_sim_id=False, save=False, years=20.0, update=False, xlsx=False):
 
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.
@@ -4813,7 +4813,7 @@ class Cases(object):
             is the number of hours over the life time. When fh_lst is set,
             dlc_folder and dlc_name are not used.
 
-        ch_powe : string, default=None
+        ch_powe : string, default='DLL-2-inpvec-2'
 
         extra_cols : list, default=[]
             The included column is just the AEP, and each row is
@@ -4868,9 +4868,6 @@ class Cases(object):
         case_ids = [k[0] for k in fh_lst_basename if k[0][:5]=='dlc12']
         hours = [k[1] for k in fh_lst_basename if k[0][:5]=='dlc12']
 
-        # the default electrical power channel name from DTU Wind controller
-        if ch_powe is None:
-            ch_powe = 'DLL-2-inpvec-2'
         # and select only the power channels
         dfs_powe = dfs[dfs.channel==ch_powe]
 

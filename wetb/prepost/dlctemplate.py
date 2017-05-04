@@ -406,7 +406,8 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  chs_resultant=[], A=A, add_sigs={})
         # annual energy production
         if AEP:
-            df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True)
+            df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True,
+                            ch_powe='DLL-2-inpvec-2')
 
     if envelopeblade:
         ch_list = []
