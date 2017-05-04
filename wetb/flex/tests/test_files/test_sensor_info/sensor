@@ -1,0 +1,69 @@
+  Version ID : HAWC2MB 12.3 (beta -rev_TJ6)
+ No   forst  offset  korr. c  Volt    Unit   Navn    Beskrivelse---------------
+   1    1.0    0.0    0.00      1.0    s      Time    Time
+   2    1.0    0.0    0.00      1.0    deg    bea1 an shaft_rot angle
+   3    1.0    0.0    0.00      1.0    rpm    bea1 an shaft_rot angle speed
+   4    1.0    0.0    0.00      1.0    deg    bea2 an pitch1 angle
+   5    1.0    0.0    0.00      1.0    deg/s  bea2 an pitch1 angle speed
+   6    1.0    0.0    0.00      1.0    deg    bea2 an pitch2 angle
+   7    1.0    0.0    0.00      1.0    deg/s  bea2 an pitch2 angle speed
+   8    1.0    0.0    0.00      1.0    deg    bea2 an pitch3 angle
+   9    1.0    0.0    0.00      1.0    deg/s  bea2 an pitch3 angle speed
+  10    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  11    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  12    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  13    1.0    0.0    0.00      1.0    kN     Fx coo: Force  Fx Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  14    1.0    0.0    0.00      1.0    kN     Fy coo: Force  Fy Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  15    1.0    0.0    0.00      1.0    kN     Fz coo: Force  Fz Mbdy:towertop nodenr:   1 coo: tower  tower top -1: below top mass
+  16    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:tower nodenr:   1 coo: tower  tower base flange
+  17    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:tower nodenr:   1 coo: tower  tower base flange
+  18    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:tower nodenr:   1 coo: tower  tower base flange
+  19    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:towertop nodenr:   2 coo: towertop  yaw bearing
+  20    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:towertop nodenr:   2 coo: towertop  yaw bearing
+  21    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:towertop nodenr:   2 coo: towertop  yaw bearing
+  22    1.0    0.0    0.00      1.0    kN     Fx coo: Force  Fx Mbdy:towertop nodenr:   2 coo: towertop  yaw bering
+  23    1.0    0.0    0.00      1.0    kN     Fy coo: Force  Fy Mbdy:towertop nodenr:   2 coo: towertop  yaw bering
+  24    1.0    0.0    0.00      1.0    kN     Fz coo: Force  Fz Mbdy:towertop nodenr:   2 coo: towertop  yaw bering
+  25    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:shaft nodenr:   4 coo: shaft  main bearing
+  26    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:shaft nodenr:   4 coo: shaft  main bearing
+  27    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:shaft nodenr:   4 coo: shaft  main bearing
+  28    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:blade1 nodenr:   3 coo: blade1  blade 1 root
+  29    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:blade1 nodenr:   3 coo: blade1  blade 1 root
+  30    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:blade1 nodenr:   3 coo: blade1  blade 1 root
+  31    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:blade1 nodenr:  10 coo: local  blade 1 50% local e coo
+  32    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:blade1 nodenr:  10 coo: local  blade 1 50% local e coo
+  33    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:blade1 nodenr:  10 coo: local  blade 1 50% local e coo
+  34    1.0    0.0    0.00      1.0    kN     Fx coo: Force  Fx Mbdy:blade1 nodenr:   1 coo: blade1  blade 1 root
+  35    1.0    0.0    0.00      1.0    kN     Fy coo: Force  Fy Mbdy:blade1 nodenr:   1 coo: blade1  blade 1 root
+  36    1.0    0.0    0.00      1.0    kN     Fz coo: Force  Fz Mbdy:blade1 nodenr:   1 coo: blade1  blade 1 root
+  37    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:blade2 nodenr:   1 coo: blade2  blade 2 root
+  38    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:blade2 nodenr:   1 coo: blade2  blade 2 root
+  39    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:blade2 nodenr:   1 coo: blade2  blade 2 root
+  40    1.0    0.0    0.00      1.0    kNm    Mx coo: MomentMx Mbdy:blade3 nodenr:   1 coo: blade3  blade 3 root
+  41    1.0    0.0    0.00      1.0    kNm    My coo: MomentMy Mbdy:blade3 nodenr:   1 coo: blade3  blade 3 root
+  42    1.0    0.0    0.00      1.0    kNm    Mz coo: MomentMz Mbdy:blade3 nodenr:   1 coo: blade3  blade 3 root
+  43    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:towertop E-nr:   1 Z-rel:1.00 coo: global  tower top flange position
+  44    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:towertop E-nr:   1 Z-rel:1.00 coo: global  tower top flange position
+  45    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:towertop E-nr:   1 Z-rel:1.00 coo: global  tower top flange position
+  46    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: blade1  blade 1 tip pos
+  47    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: blade1  blade 1 tip pos
+  48    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: blade1  blade 1 tip pos
+  49    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: blade2  blade 2 tip pos
+  50    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: blade2  blade 2 tip pos
+  51    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: blade2  blade 2 tip pos
+  52    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: blade3  blade 3 tip pos
+  53    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: blade3  blade 3 tip pos
+  54    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: blade3  blade 3 tip pos
+  55    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: global  blade 1 tip pos
+  56    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: global  blade 1 tip pos
+  57    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: global  blade 1 tip pos
+  58    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: hub1  blade 1 tip pos hub coo
+  59    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: hub1  blade 1 tip pos hub coo
+  60    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade1 E-nr:  18 Z-rel:1.00 coo: hub1  blade 1 tip pos hub coo
+  61    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: hub2  blade 2 tip pos hub coo
+  62    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: hub2  blade 2 tip pos hub coo
+  63    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade2 E-nr:  18 Z-rel:1.00 coo: hub2  blade 2 tip pos hub coo
+  64    1.0    0.0    0.00      1.0    m      State p State pos x  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: hub3  blade 3 tip pos hub coo
+  65    1.0    0.0    0.00      1.0    m      State p State pos y  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: hub3  blade 3 tip pos hub coo
+  66    1.0    0.0    0.00      1.0    m      State p State pos z  Mbdy:blade3 E-nr:  18 Z-rel:1.00 coo: hub3  blade 3 tip pos hub coo
+  67    1.0    0.0    0.00      1.0    rad/s  omega t State_rot omega tz Mbdy:shaft E-nr:   4 Z-rel:1.00 coo: shaft
