@@ -7,7 +7,16 @@ import struct
 import numpy as np
 import os
 
-def load(filename, dtype=np.float):
+def load(filename, name_stop=8, dtype=np.float):
+    """
+    Parameters
+    ----------
+    - filename
+    - name_stop : int or str
+        if int: Number of characters for name
+        if str: name-description delimiter, e.g. " "
+    - dtype    
+    """
     if isinstance(filename, str):
         fid = open(filename,'rb')
     elif hasattr(filename, "name"):
@@ -50,7 +59,7 @@ def load(filename, dtype=np.float):
     
     
     sensor_filename = os.path.join(os.path.dirname(filename), "sensor")
-    sensor_info = {info[0]:info[1:] for info in read_sensor_info(sensor_filename) }
+    sensor_info = {info[0]:info[1:] for info in read_sensor_info(sensor_filename, name_stop) }
 
     # set gain and offset for "Time"
     gains = []
@@ -83,7 +92,15 @@ def load(filename, dtype=np.float):
     return time, data, info 
 
 
-def read_sensor_info(sensor_file):
+def read_sensor_info(sensor_file, name_stop=8):
+    """
+    Parameters
+    ----------
+    - sensor_file
+    - name_stop : int or str
+        if int: Number of characters for name
+        if str: name-description delimiter, e.g. " "    
+    """
 
     if hasattr(sensor_file, 'readlines'):
         sensor_info_lines = sensor_file.readlines()[2:]
@@ -99,12 +116,15 @@ def read_sensor_info(sensor_file):
         gain = float(line[1])
         offset = float(line[2])
         unit = line[5]
-        name_desc = " ".join(line[6:])
-        name = name_desc[:8].split()[0]
-        description = name_desc[8:]
-#        name = line[6]
-#        description = " ".join(line[7:])
-
+        if isinstance(name_stop,int):
+            name_desc = " ".join(line[6:])
+            name = name_desc[:name_stop].strip()
+            description = name_desc[name_stop:].strip()
+        elif isinstance(name_stop,str):
+            name_desc = (" ".join(line[6:])).split(name_stop)
+            name = name_desc[0].strip()
+            description = name_stop.join(name_desc[1:]).strip()
+            
 
         sensor_info.append((nr, name, unit, description, gain, offset))
     return sensor_info

@@ -15,9 +15,9 @@ class Test(unittest.TestCase):
     def test_load(self):
         time, data, info = flex.load(tfp+"test1/test.int")
         self.assertEqual(data.shape, (800,7))
-        self.assertEqual(info['attribute_names'][1], "WSP_gl._")
-        self.assertEqual(info['attribute_units'][1], "m/s")
-        self.assertEqual(info['attribute_descriptions'][1], " Free wind speed Vy, gl. coo, of gl. pos 0.75, 0.00, -40.75")
+        self.assertEqual(info['attribute_names'][0], "WSP_gl._")
+        self.assertEqual(info['attribute_units'][0], "m/s")
+        self.assertEqual(info['attribute_descriptions'][0], "Free wind speed Vy, gl. coo, of gl. pos 0.75, 0.00, -40.75")
 
         self.assertAlmostEqual(data[0, 1], 12.037,3)
 

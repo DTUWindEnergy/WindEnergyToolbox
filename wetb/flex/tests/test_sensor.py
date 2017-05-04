@@ -16,10 +16,17 @@ class Test(unittest.TestCase):
         sensor_info = read_sensor_info(tfp + "test_sensor_info/sensor")
         nr, name, unit, description, _, _ = sensor_info[17]
         self.assertEqual(nr, 18)
-        self.assertEqual(name, "Mz coo: ")
+        self.assertEqual(name, "Mz coo:")
         self.assertEqual(unit, "kNm")
         self.assertEqual(description, "MomentMz Mbdy:tower nodenr: 1 coo: tower tower base flange")
 
+    def test_sensor_load_name_stop(self):
+        sensor_info = read_sensor_info(tfp + "test_sensor_info/sensor"," ")
+        nr, name, unit, description, _, _ = sensor_info[17]
+        self.assertEqual(nr, 18)
+        self.assertEqual(name, "Mz")
+        self.assertEqual(unit, "kNm")
+        self.assertEqual(description, "coo: MomentMz Mbdy:tower nodenr: 1 coo: tower tower base flange")
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_sensor_load']
