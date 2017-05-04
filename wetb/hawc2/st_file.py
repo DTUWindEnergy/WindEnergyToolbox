@@ -68,9 +68,9 @@ class StFile(object):
     def __init__(self, filename):
         with open (filename) as fid:
             txt = fid.read()
-#         Some files sat
-        no_maindata_sets = int(txt.strip()[0]) 
-        assert no_maindata_sets == txt.count("#")
+#         Some files starts with first set ("#1...") with out specifying number of sets
+#         no_maindata_sets = int(txt.strip()[0]) 
+#         assert no_maindata_sets == txt.count("#")
         self.main_data_sets = {}
         for mset in txt.split("#")[1:]:
             mset_nr = int(mset.strip().split()[0])
