@@ -54,6 +54,7 @@ from wetb.prepost import misc
 from wetb.prepost import windIO
 from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
+from wetb.prepost.GenerateHydro import hydro_input
 
 def load_pickled_file(source):
     FILE = open(source, 'rb')
@@ -737,6 +738,25 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             if verbose:
                 print('created cases for: %s.htc\n' % master.tags['[case_id]'])
 
+            # shfe: flag to generate hydro input file
+            if master.tags['[hydro_dir]'] is not False:
+                if '[hydro input name]' not in master.tags:
+                    continue
+                hydro_filename = master.tags['[hydro input name]']
+                print('creating hydro input file for: %s.inp\n' % hydro_filename)
+                wavetype = master.tags['[wave_type]']
+                wavespectrum = master.tags['[wave_spectrum]']
+                hydro_folder = master.tags['[hydro_dir]']
+                wdepth = float(master.tags['[wdepth]'])
+                hs = float(master.tags['[hs]'])
+                tp = float(master.tags['[tp]'])
+                wave_seed = int(float(master.tags['[wave_seed]']))
+                hydro_inputfile = hydro_input(wavetype=wavetype, Hs=hs, Tp=tp,
+                                              wdepth = wdepth, seed=wave_seed,
+                                              spectrum=wavespectrum,
+                                              spreading=None)
+                hydro_inputfile.execute(filename=hydro_filename + '.inp',
+                                        folder=hydro_folder)
 #    print(master.queue.get())
 
     # only copy data and create zip after all htc files have been created.
