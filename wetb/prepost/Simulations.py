@@ -4714,6 +4714,16 @@ class Cases(object):
         case_ids = [os.path.basename(k[0].replace('.sel', '')) for k in fh_lst]
         hours = [k[1] for k in fh_lst]
 
+        # safe how many hours each case is active for AEP calculations for
+        # debugging and inspection reasons.
+        # FIXME: this should be somewhere in its own method or something,
+        # and duplication with what is in AEP should be removed
+        fname = os.path.join(post_dir, sim_id + '_Leq_hourlist')
+        dict_Leq_h = {'case_id':case_ids, 'hours':hours}
+        df_Leq_h = misc.dict2df(dict_Leq_h, fname, update=update, csv=csv,
+                                save=save, check_datatypes=True, xlsx=xlsx,
+                                complib=self.complib)
+
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
@@ -4867,6 +4877,16 @@ class Cases(object):
         # only take dlc12 for power production
         case_ids = [k[0] for k in fh_lst_basename if k[0][:5]=='dlc12']
         hours = [k[1] for k in fh_lst_basename if k[0][:5]=='dlc12']
+
+        # safe how many hours each case is active for AEP calculations for
+        # debugging and inspection reasons.
+        # FIXME: this should be somewhere in its own method or something,
+        # and duplication with what is in fatigue_lifetime should be removed
+        fname = os.path.join(post_dir, sim_id + '_AEP_hourlist')
+        dict_AEP_h = {'case_id':case_ids, 'hours':hours}
+        df_AEP_h = misc.dict2df(dict_AEP_h, fname, update=update, csv=csv,
+                                save=save, check_datatypes=True, xlsx=xlsx,
+                                complib=self.complib)
 
         # and select only the power channels
         dfs_powe = dfs[dfs.channel==ch_powe]
