@@ -45,14 +45,24 @@ class AEFile(object):
 
     def _value(self, radius, column, set_nr=1):
         ae_data = self.ae_sets[set_nr]
-        return np.interp(radius, ae_data[:, 0], ae_data[:, column])
+        if radius:
+            return np.interp(radius, ae_data[:, 0], ae_data[:, column])
+        else:
+            return ae_data[:,column]
 
-    def chord(self, radius, set_nr=1):
+    def chord(self, radius=None, set_nr=1):
         return self._value(radius, 1, set_nr)
 
-    def thickness(self, radius, set_nr=1):
+    def thickness(self, radius=None, set_nr=1):
         return self._value(radius, 2, set_nr)
-
+    
+    def radius_ae(self, radius=None, set_nr=1):
+        radii = self.ae_sets[set_nr][:,0]
+        if radius:
+            return radii[np.argmin(np.abs(radii-radius))]
+        else:
+            return radii
+        
     def pc_set_nr(self, radius, set_nr=1):
         ae_data = self.ae_sets[set_nr]
         index = np.searchsorted(ae_data[:, 0], radius)
@@ -68,6 +78,7 @@ class AEFile(object):
 
 if __name__ == "__main__":
     ae = AEFile(r"tests/test_files/NREL_5MW_ae.txt")
-    print (ae.thickness(36))
+    print (ae.radius_ae(36))
+    print (ae.thickness())
     print (ae.chord(36))
     print (ae.pc_set_nr(36))

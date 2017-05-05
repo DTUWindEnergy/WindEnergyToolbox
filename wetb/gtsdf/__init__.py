@@ -67,7 +67,9 @@ class Dataset(object):
                 for i, n in enumerate(self.info['attribute_names']):
                     print (i,n)
                 raise e
-            
+    
+    def __contains__(self, name):
+        return name in self.info['attribute_names']
 
 
 __all__ = sorted([m for m in set(dir()) - set(d)])

@@ -254,20 +254,18 @@ def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
     return ae
 
 
-def plot_spectra(ae, L, G, k1, uu, vv, ww=None, uw=None, mean_u=1, log10_bin_size=.2, show=True, plt=None):
+def plot_spectra(ae, L, G, k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
 #    if plt is None:
 #        import matplotlib.pyplot as plt
     _plot_spectra(k1, uu, vv, ww, uw, mean_u, log10_bin_size, plt)
     plot_mann_spectra(ae, L, G, "-", mean_u, plt)
-    if show:
-        plt.show()
 
-def _plot_spectra(k1, uu, vv, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
+def _plot_spectra(k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
     if plt is None:
         import matplotlib.pyplot as plt
     bk1, buu, bvv, bww, buw = logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size)
     def plot(xx, label, color, plt):
-        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , '.' + color)
+        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , '.' + color, label=label)
     plot(buu, 'uu', 'r', plt)
     if (bvv) is not None:
         plot(bvv, 'vv', 'g', plt)
@@ -280,8 +278,9 @@ def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv
         import matplotlib.pyplot as plt
     mf = 10 ** (np.linspace(-4, 1, 1000))
     muu, mvv, mww, muw = get_mann_model_spectra(ae, L, G, mf)
+    plt.title("ae: %.3f, L: %.2f, G:%.2f"%(ae,L,G))
     if 'uu' in spectra: plt.semilogx(mf, mf * muu * 10 ** 0 / u_ref ** 2, 'r' + style)
-    if 'vv' in spectra:     plt.semilogx(mf, mf * mvv * 10 ** 0 / u_ref ** 2, 'g' + style)
+    if 'vv' in spectra: plt.semilogx(mf, mf * mvv * 10 ** 0 / u_ref ** 2, 'g' + style)
     if 'ww' in spectra: plt.semilogx(mf, mf * mww * 10 ** 0 / u_ref ** 2, 'b' + style)
     if 'uw' in spectra: plt.semilogx(mf, mf * muw * 10 ** 0 / u_ref ** 2, 'm' + style)
 

@@ -92,21 +92,32 @@ class TestSubsetMean(unittest.TestCase):
             x2 = np.random.randint(0, len(rotor_position),10)
             print (list(x2))
         else:
-            x1 = [447, 854, 595, 804, 847, 488, 412, 199, 675, 766]
+            x1 = [447, 854,   847, 488, 412, 199, 675]
             x2 = [92, 647, 821, 422, 33, 159, 369, 99, 157, 464]
             
         rotor_position[x1] += 360
         rotor_position[x2] -= 360
         rotor_position[90] = 180
+        rotor_position[270:276] = 15
+        rotor_position[598:602] = [360,360,0,0]
+        rotor_position[748:752] = [360,360,0,0]
         
         indexes = revolution_trigger(rotor_position, 20,1/(90/20/60))
-        np.testing.assert_array_equal(indexes, [ 91, 180, 270, 360, 450, 540, 630, 720, 810])
         if 0:
             import matplotlib.pyplot as plt
             plt.plot(rotor_position)
             plt.plot(indexes, np.zeros_like(indexes),'.')
             plt.show()
+        np.testing.assert_array_equal(indexes, [ 91, 180, 270, 360, 450, 540, 630, 720, 810])
         
-
+    def test_revolution_trigger_max_rev_diff(self):
+        rotor_position = np.arange(0.,360*10,4)
+        rotor_position += np.random.random(len(rotor_position))
+        rotor_position = rotor_position % 360
+        rotor_speed = 1/(90/20/60)
+        revolution_trigger(rotor_position, 20, rotor_speed*1.02, max_rev_diff=3)
+        self.assertRaisesRegex(AssertionError, "No of revolution mismatch", revolution_trigger, rotor_position, 20, rotor_speed*1.02, max_rev_diff=1)
+        
+        
 if __name__ == "__main__":
     unittest.main()

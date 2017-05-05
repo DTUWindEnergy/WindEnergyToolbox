@@ -43,7 +43,7 @@ class PCFile(AEFile):
         with open (filename) as fid:
             lines = fid.readlines()
         nsets = int(lines[0].split()[0])
-        self.sets = {}
+        self.pc_sets = {}
         lptr = 1
         for nset in range(1, nsets + 1):
             nprofiles = int(lines[lptr].split()[0])
@@ -59,12 +59,12 @@ class PCFile(AEFile):
                 thicknesses.append(thickness)
                 profiles.append(data)
                 lptr += n_rows
-            self.sets[nset] = (np.array(thicknesses), profiles)
+            self.pc_sets[nset] = (np.array(thicknesses), profiles)
 
     def _Cxxx(self, radius, alpha, column, ae_set_nr=1):
         thickness = self.thickness(radius, ae_set_nr)
         pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
-        thicknesses, profiles = self.sets[pc_set_nr]
+        thicknesses, profiles = self.pc_sets[pc_set_nr]
         index = np.searchsorted(thicknesses, thickness)
         if index == 0:
             index = 1
@@ -112,7 +112,6 @@ class PCFile(AEFile):
         return self._Cxxx(radius, alpha, 2, ae_set_nr)
 
     def CM(self, radius, alpha, ae_set_nr=1):
-
         return self._Cxxx(radius, alpha, 3, ae_set_nr)
 
 if __name__ == "__main__":

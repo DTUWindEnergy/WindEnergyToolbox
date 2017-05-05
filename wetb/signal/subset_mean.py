@@ -9,6 +9,7 @@ import unittest
 from wetb.utils.geometry import rpm2rads
 from _collections import deque
 from tables.tests.test_index_backcompat import Indexes2_0TestCase
+from wetb.signal.filters._differentiation import differentiation
 
 
 def power_mean(power, trigger_indexes, I, rotor_speed, time, air_density=1.225, rotor_speed_mean_samples=1) :
@@ -136,7 +137,7 @@ def cycle_trigger(values, trigger_value=None, step=1, ascending=True, tolerance=
     else:
         return np.where((values[1:] < trigger_value - tolerance) & (values[:-1] >= trigger_value + tolerance))[0][::step]
 
-def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_diff=1):
+def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1):
     """Returns one index per revolution (minimum rotor position)
     
     Parameters
@@ -155,16 +156,12 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_dif
     if isinstance(rotor_speed, (float, int)):
         rotor_speed = np.ones_like(rotor_position)*rotor_speed
     deg_per_sample = rotor_speed*360/60/sample_frq
-    sample_per_round = 1/(rotor_speed/60/sample_frq)
-    thresshold = deg_per_sample.max()*2
+    thresshold = deg_per_sample.max()*3
+    drp = np.diff(rotor_position)%360
+    rp = rotor_position
+
     
-    nround_rotor_speed = np.nansum(rotor_speed/60/sample_frq)
-    
-    mod = [v for v in [5,10,30,60,90] if v>thresshold][0]
-    
-    nround_rotor_position = np.nansum(np.diff(rotor_position)%mod)/360
-    #assert abs(nround_rotor_position-nround_rotor_speed)<max_no_round_diff, "No of rounds from rotor_position (%.2f) mismatch with no_rounds from rotor_speed (%.2f)"%(nround_rotor_position, nround_rotor_speed)
-    #print (nround_rotor_position, nround_rotor_speed)
+
     
     rp = np.array(rotor_position).copy()
     #filter degree increase > thresshold
@@ -176,10 +173,47 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_no_round_dif
     # Best lower is the first lower after upper
     best_lower = lower_indexes[np.searchsorted(lower_indexes, upper_indexes)]
     upper2lower = best_lower - upper_indexes
-    best_lower = best_lower[upper2lower<upper2lower.mean()*2]
-    #max_dist_error = max([np.abs((i2-i1)- np.mean(sample_per_round[i1:i2])) for i1,i2 in zip(best_lower[:-1], best_lower[1:])])
-    #assert max_dist_error < sample_frq/5, max_dist_error
-    return best_lower
+    trigger_indexes = best_lower[upper2lower<upper2lower.mean()*2].tolist()
+
+    if len(trigger_indexes)>1:
+        
+    
+        
+        rpm_rs = np.array([rev.mean() for rev in np.split(rotor_speed, trigger_indexes)[1:-1]])
+        rpm_i = 1/np.diff(trigger_indexes)*60*sample_frq
+        spr_rs = np.array([rev.mean() for rev in np.split(1/rotor_speed*60*sample_frq, trigger_indexes)[1:-1]])
+        spr_i = np.diff(trigger_indexes)
+        
+
+        while np.any(spr_rs>spr_i*1.9):
+            i = np.where(spr_rs>spr_i*1.9)[0][0]
+            if np.abs(spr_i[i-1] + spr_i[i] - spr_rs[i])< np.abs(spr_i[i] + spr_i[i+1] - spr_rs[i]):
+                del trigger_indexes[i]
+            else:
+                del trigger_indexes[i+1]
+            spr_i = np.diff(trigger_indexes)
+            spr_rs = np.array([rev.mean() for rev in np.split(1/rotor_speed*60*sample_frq, trigger_indexes)[1:-1]])
+        
+            
+        
+        # if a revolution is too long add trigger
+        if np.any(rpm_rs>rpm_i*2.1):
+            # >1 missing triggers
+            raise NotImplementedError
+        trigger_indexes.extend([np.mean(trigger_indexes[i:i+2]) for i in np.where(rpm_rs>rpm_i*1.9)[0]])
+        trigger_indexes = np.sort(trigger_indexes).astype(np.int)
+    
+    
+        i1,i2 = trigger_indexes[0], trigger_indexes[-1]
+        nround_rotor_speed = np.nansum(rotor_speed[i1:i2]/60/sample_frq)
+        #mod = [v for v in [5,10,30,60,90] if v>thresshold][0]    
+        nround_rotor_position = len(trigger_indexes)-1 #np.nansum(np.diff(rotor_position[i1:i2])%mod)/360
+        if max_rev_diff is not None:
+            diff_pct = abs(nround_rotor_position-nround_rotor_speed)/nround_rotor_position*100
+            assert diff_pct<max_rev_diff, "No of revolution mismatch: rotor_position (%d), rotor_speed (%.1f), diff %.1f%%"%(nround_rotor_position, nround_rotor_speed, diff_pct)
+         
+    
+    return trigger_indexes
     
 
 def revolution_trigger_old(values, rpm_dt=None, dmin=5, dmax=10, ):

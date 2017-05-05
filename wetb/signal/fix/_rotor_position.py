@@ -5,6 +5,8 @@ Created on 30. mar. 2017
 '''
 import numpy as np
 from wetb.signal.fit._spline_fit import spline_fit
+from wetb.signal.filters._differentiation import differentiation
+
 def fix_rotor_position(rotor_position, sample_frq, rotor_speed, fix_dt=None, plt=None):
     """Rotor position fitted with spline
     
@@ -33,7 +35,7 @@ def fix_rotor_position(rotor_position, sample_frq, rotor_speed, fix_dt=None, plt
     from wetb.signal.subset_mean import revolution_trigger
     
     t = np.arange(len(rotor_position))
-    indexes = revolution_trigger(rotor_position[:], sample_frq, rotor_speed, max_no_round_diff=4)
+    indexes = revolution_trigger(rotor_position[:], sample_frq, rotor_speed, max_rev_diff=4)
     
     rp = rotor_position[:].copy()
     
@@ -69,7 +71,9 @@ def fix_rotor_position(rotor_position, sample_frq, rotor_speed, fix_dt=None, plt
         plt.plot(t/sample_frq, spline_fit(x,y)(t)-t*a, label='Spline (detrended)')
         plt.legend()
         plt.show()
-    return spline_fit(x,y)(t)%360
+    fit = spline_fit(x,y)(t)
+    fit[differentiation(fit, "left")<0]=np.nan
+    return fit%360
 
 def find_fix_dt(rotor_position, sample_frq, rotor_speed, plt=None):
     """Find the optimal fix_dt parameter for fix_rotor_position (function above).
@@ -95,7 +99,8 @@ def find_fix_dt(rotor_position, sample_frq, rotor_speed, plt=None):
     """
     from wetb.signal.filters import differentiation
     def err(i):
-        rpm_pos = differentiation(fix_rotor_position(rotor_position, sample_frq, rotor_speed, i))%180 / 360 * sample_frq * 60
+        drp = differentiation(fix_rotor_position(rotor_position, sample_frq, rotor_speed, i))
+        rpm_pos = drp%180 / 360 * sample_frq * 60
         return np.sum((rpm_pos - rotor_speed)**2)
     
     best = 27
@@ -110,4 +115,69 @@ def find_fix_dt(rotor_position, sample_frq, rotor_speed, plt=None):
         plt.show()
     
     return best 
+
+def check_rotor_position(rotor_position, sample_frq, rotor_speed, max_rev_diff=1, plt=None):
+    """Rotor position fitted with spline
     
+    Parameters
+    ----------
+    rotor_position : array_like
+        Rotor position [deg] (0-360)
+    sample_frq : int or float
+        Sample frequency [Hz]
+    rotor_speed : array_like
+        Rotor speed [RPM]
+    fix_dt : int, float or None, optional
+        Time distance [s] between spline fix points\n
+        If None (default) a range of seconds is tested and the result that minimize the RMS 
+        between differentiated rotor position fit and rotor speed is used.\n 
+        Note that a significant speed up is achievable by specifying the parameter
+    plt : PyPlot or None
+        If PyPlot a visual interpretation is plotted
+            
+    Returns
+    -------
+    y : nd_array
+        Fitted rotor position
+    """
+    
+    from wetb.signal.subset_mean import revolution_trigger
+    
+    t = np.arange(len(rotor_position))/sample_frq
+    indexes = revolution_trigger(rotor_position[:], sample_frq, rotor_speed, max_rev_diff=max_rev_diff)
+    
+    rotor_position = rotor_position[:]%360
+        
+    rp_fit = fix_rotor_position(rotor_position, sample_frq, rotor_speed, None)
+        
+    if plt:
+        #a = (rp.max()-rp.min())/t.max()
+        #plt.plot(t/sample_frq,rp-t*a,label='Continus rotor position (detrended)')
+        f, axarr = plt.subplots(2)
+        print (rp_fit)
+        axarr[0].plot(t, rotor_position)
+        axarr[0].plot(indexes/sample_frq, rotor_position[indexes],'.')
+        axarr[0].plot(t, rp_fit)
+        axarr[1].plot(t, rotor_speed)
+        axarr[1].plot(indexes/sample_frq,60/( differentiation(indexes)/sample_frq))
+        print (t[170:200])
+        drp = differentiation(rp_fit)
+        #drp[(drp<0)]= 0
+        axarr[1].plot(t, drp%180 / 360 * sample_frq * 60, label='fix')
+        plt.legend()
+    
+    i1,i2 = indexes[0], indexes[-1]
+    print ("Rev from rotor position", np.sum(np.diff(rotor_position[i1:i2])%180)/360)
+    print ("Rev from rotor speed", np.mean(rotor_speed[i1:i2])*(i2-i1)/60/sample_frq)
+    print ("Rev from fitted rotor position", np.sum(np.diff(rp_fit[i1:i2])%180)/360)
+    
+    print ("Mean RPM from rotor speed", np.mean(rotor_speed))
+    print ("Mean RPM from fitted rotor position", np.sum(np.diff(rp_fit[i1:i2])%180)/360 / ((i2-i1)/60/sample_frq))
+    
+    spr1 = (np.diff(indexes)/sample_frq)
+    
+    #rs1 = 60/( np.diff(indexes)/sample_frq)
+    spr2 = np.array([60/rotor_speed[i1:i2].mean() for i1,i2 in zip(indexes[:-1], indexes[1:])])
+    
+    err = spr1-spr2
+    print (err.max())
