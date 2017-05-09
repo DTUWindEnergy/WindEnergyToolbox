@@ -404,10 +404,14 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=None, no_bins=no_bins,
                                  chs_resultant=[], A=A, add_sigs={})
-        # annual energy production
-        if AEP:
-            df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True,
-                            ch_powe='DLL-2-inpvec-2')
+
+    # annual energy production
+    if AEP:
+        # load the statistics in case they are missing
+        if not statistics:
+            df_stats, Leq_df, AEP_df = cc.load_stats()
+        df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True,
+                        ch_powe='DLL-2-inpvec-2')
 
     if envelopeblade:
         ch_list = []
@@ -436,6 +440,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                    'hub1-hub1-node-001-momentvec-y',
                    'hub1-hub1-node-001-momentvec-z']]
         cc.envelope(ch_list=ch_list, append='_turbine')
+
     if fatigue:
         # load the statistics in case they are missing
         if not statistics:
@@ -541,7 +546,8 @@ if __name__ == '__main__':
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime)
     # post processing: check log files, calculate statistics
-    if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade or opt.envelopeturbine:
+    if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
+        or opt.envelopeturbine or opt.AEP:
         post_launch(sim_id, check_logs=opt.check_logs, update=False,
                     force_dir=P_RUN, saveinterval=2500, csv=opt.csv,
                     statistics=opt.stats, years=opt.years, neq=opt.neq,
