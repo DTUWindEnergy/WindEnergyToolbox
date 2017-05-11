@@ -56,6 +56,12 @@ class TestDLCHighLevel(unittest.TestCase):
         self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/dlc31_iec61400-1ed3/dlc31_wsp25_wdir000_s0000.sel'))
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
+    def test_file_dict_flex(self):
+        dlc_hl = DLCHighLevel(testfilepath + 'DLC_test_flex.xlsx')
+        file_lst = dlc_hl.files_dict()[12][4][350]["files"]
+        self.assertEqual(len(file_lst),1)
+        self.assertTrue(file_lst[0].endswith(".int"))
+
 
     def test_dlc_lst(self):
         self.assertEqual(self.dlc_hl.dlc_lst(), ['12', '13', '14', '31'])
