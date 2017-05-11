@@ -57,9 +57,10 @@ class TestDLCHighLevel(unittest.TestCase):
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
     def test_file_dict_flex(self):
-
         dlc_hl = DLCHighLevel(testfilepath + 'DLC_test_flex.xlsx')
-        self.assertEqual(dlc_hl.files_dict()[12][4][350]['files'],  ['C:/mmpe/programming/python/WindEnergyToolbox/wetb/dlc/tests\\test_files\\res\\dlc12_iec61400-1ed3\\dlc12_wsp04_wdir350_s3001.int'])
+        file_lst = dlc_hl.files_dict()[12][4][350]["files"]
+        self.assertEqual(len(file_lst),1)
+        self.assertTrue(file_lst[0].endswith(".int"))
 
 
     def test_dlc_lst(self):
