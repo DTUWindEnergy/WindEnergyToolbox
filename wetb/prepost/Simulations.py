@@ -54,7 +54,7 @@ from wetb.prepost import misc
 from wetb.prepost import windIO
 from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
-
+from wetb.prepost.GenerateHydro import hydro_input
 
 def load_pickled_file(source):
     FILE = open(source, 'rb')
@@ -738,6 +738,25 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             if verbose:
                 print('created cases for: %s.htc\n' % master.tags['[case_id]'])
 
+            # shfe: flag to generate hydro input file
+            if master.tags['[hydro_dir]'] is not False:
+                if '[hydro input name]' not in master.tags:
+                    continue
+                hydro_filename = master.tags['[hydro input name]']
+                print('creating hydro input file for: %s.inp\n' % hydro_filename)
+                wavetype = master.tags['[wave_type]']
+                wavespectrum = master.tags['[wave_spectrum]']
+                hydro_folder = master.tags['[hydro_dir]']
+                wdepth = float(master.tags['[wdepth]'])
+                hs = float(master.tags['[hs]'])
+                tp = float(master.tags['[tp]'])
+                wave_seed = int(float(master.tags['[wave_seed]']))
+                hydro_inputfile = hydro_input(wavetype=wavetype, Hs=hs, Tp=tp,
+                                              wdepth = wdepth, seed=wave_seed,
+                                              spectrum=wavespectrum,
+                                              spreading=None)
+                hydro_inputfile.execute(filename=hydro_filename + '.inp',
+                                        folder=hydro_folder)
 #    print(master.queue.get())
 
     # only copy data and create zip after all htc files have been created.
@@ -1537,15 +1556,16 @@ class HtcMaster(object):
         extforce = self.tags['[externalforce]']
         # result dirs are not required, HAWC2 will create them
         dirs = [control_dir, data_dir, extforce, turb_dir, wake_dir,
-                 meander_dir, mooring_dir, hydro_dir]
+                meander_dir, mooring_dir, hydro_dir]
         for zipdir in dirs:
             if zipdir:
-                zf.write('.', zipdir + '.', zipfile.ZIP_DEFLATED)
+                zf.write('.', os.path.join(zipdir, '.'), zipfile.ZIP_DEFLATED)
         zf.write('.', 'htc/_master/.', zipfile.ZIP_DEFLATED)
 
         # if any, add files that should be added to the root of the zip file
         for file_name in self.tags['[zip_root_files]']:
-            zf.write(model_dir_local+file_name, file_name, zipfile.ZIP_DEFLATED)
+            src = os.path.join(model_dir_local, file_name)
+            zf.write(src, file_name, zipfile.ZIP_DEFLATED)
 
         if '[ESYSMooring_init_fname]' in self.tags:
             if self.tags['[ESYSMooring_init_fname]'] is not None:
@@ -4714,6 +4734,16 @@ class Cases(object):
         case_ids = [os.path.basename(k[0].replace('.sel', '')) for k in fh_lst]
         hours = [k[1] for k in fh_lst]
 
+        # safe how many hours each case is active for AEP calculations for
+        # debugging and inspection reasons.
+        # FIXME: this should be somewhere in its own method or something,
+        # and duplication with what is in AEP should be removed
+        fname = os.path.join(post_dir, sim_id + '_Leq_hourlist')
+        dict_Leq_h = {'case_id':case_ids, 'hours':hours}
+        df_Leq_h = misc.dict2df(dict_Leq_h, fname, update=update, csv=csv,
+                                save=save, check_datatypes=True, xlsx=xlsx,
+                                complib=self.complib)
+
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
@@ -4791,9 +4821,9 @@ class Cases(object):
         # only keep the ones that do not have nan's (only works with index)
         return df_Leq
 
-    def AEP(self, dfs, fh_lst=None, ch_powe=None, extra_cols=[], update=False,
+    def AEP(self, dfs, fh_lst=None, ch_powe='DLL-2-inpvec-2', extra_cols=[],
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
-            new_sim_id=False, save=False, years=20.0, xlsx=False):
+            new_sim_id=False, save=False, years=20.0, update=False, xlsx=False):
 
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.
@@ -4813,7 +4843,7 @@ class Cases(object):
             is the number of hours over the life time. When fh_lst is set,
             dlc_folder and dlc_name are not used.
 
-        ch_powe : string, default=None
+        ch_powe : string, default='DLL-2-inpvec-2'
 
         extra_cols : list, default=[]
             The included column is just the AEP, and each row is
@@ -4868,9 +4898,16 @@ class Cases(object):
         case_ids = [k[0] for k in fh_lst_basename if k[0][:5]=='dlc12']
         hours = [k[1] for k in fh_lst_basename if k[0][:5]=='dlc12']
 
-        # the default electrical power channel name from DTU Wind controller
-        if ch_powe is None:
-            ch_powe = 'DLL-2-inpvec-2'
+        # safe how many hours each case is active for AEP calculations for
+        # debugging and inspection reasons.
+        # FIXME: this should be somewhere in its own method or something,
+        # and duplication with what is in fatigue_lifetime should be removed
+        fname = os.path.join(post_dir, sim_id + '_AEP_hourlist')
+        dict_AEP_h = {'case_id':case_ids, 'hours':hours}
+        df_AEP_h = misc.dict2df(dict_AEP_h, fname, update=update, csv=csv,
+                                save=save, check_datatypes=True, xlsx=xlsx,
+                                complib=self.complib)
+
         # and select only the power channels
         dfs_powe = dfs[dfs.channel==ch_powe]
 

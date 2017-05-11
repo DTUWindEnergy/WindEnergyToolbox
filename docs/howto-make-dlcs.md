@@ -464,6 +464,34 @@ tags:
 * ```[high_freq_comp]```
 
 
+### Tags required for hydro file generation
+
+* ```[hydro_dir]```
+* ```[hydro input name]```
+* ```[wave_type]``` : see HAWC2 manual for options
+* ```[wave_spectrum]``` : see HAWC2 manual for options
+* ```[hydro_dir]```
+* ```[wdepth]```
+* ```[hs]``` : see HAWC2 manual for options
+* ```[tp]``` : see HAWC2 manual for options
+* ```[wave_seed]``` : see HAWC2 manual for options
+
+And the corresponding section the htc master file:
+
+```
+begin hydro;
+  begin water_properties;
+    rho 1027 ; kg/m^3
+    gravity 9.81 ; m/s^2
+    mwl 0.0;
+    mudlevel [wdepth];
+    wave_direction [wave_dir];
+    water_kinematics_dll ./wkin_dll.dll   ./[hydro_dir][hydro input name].inp;
+  end water_properties;
+end hydro;
+```
+
+
 Launching the jobs on the cluster
 ---------------------------------
 
