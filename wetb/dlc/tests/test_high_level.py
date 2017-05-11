@@ -56,6 +56,11 @@ class TestDLCHighLevel(unittest.TestCase):
         self.assertEqual(os.path.abspath(f), os.path.abspath(testfilepath + 'res/dlc31_iec61400-1ed3/dlc31_wsp25_wdir000_s0000.sel'))
         self.assertAlmostEqual(h, 0.0087201928 * 1 * (50 / 1100) * 20 * 365 * 24)
 
+    def test_file_dict_flex(self):
+
+        dlc_hl = DLCHighLevel(testfilepath + 'DLC_test_flex.xlsx')
+        self.assertEqual(dlc_hl.files_dict()[12][4][350]['files'],  ['C:/mmpe/programming/python/WindEnergyToolbox/wetb/dlc/tests\\test_files\\res\\dlc12_iec61400-1ed3\\dlc12_wsp04_wdir350_s3001.int'])
+
 
     def test_dlc_lst(self):
         self.assertEqual(self.dlc_hl.dlc_lst(), ['12', '13', '14', '31'])

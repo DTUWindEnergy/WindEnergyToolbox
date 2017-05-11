@@ -231,10 +231,11 @@ class DLCHighLevel(object):
         fatigue_dlcs = self.dlc_df[['F' in str(l).upper() for l in self.dlc_df['load']]]['dlc']
         if len(fatigue_dlcs) == 0:
             return {}
+        ext = getattr(self, 'res_ext', ".sel")
         if isinstance(files, list):
             pass
         elif not hasattr(self, "res_folder") or self.res_folder == "":
-            files = glob.glob(os.path.join(self.res_path, "*.sel")) + glob.glob(os.path.join(self.res_path, "*/*.sel"))
+            files = glob.glob(os.path.join(self.res_path, "*"+ext)) + glob.glob(os.path.join(self.res_path, "*/*"+ext))
         else:
             files = []
 
@@ -244,7 +245,7 @@ class DLCHighLevel(object):
                     folder = self.res_folder % dlc_id
                 else:
                     folder = self.res_folder
-                files.extend(glob.glob(os.path.join(self.res_path , folder, "*.sel")))
+                files.extend(glob.glob(os.path.join(self.res_path , folder, "*"+ext)))
         keys = list(zip(*self.dist_value_keys))[1]
         fmt = self.format_tag_value
         tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).split("_"), keys)] for f in files]
