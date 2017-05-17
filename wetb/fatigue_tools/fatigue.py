@@ -14,11 +14,13 @@ or
 - 'rainflow_astm' (based on the c-implementation by Adam Nieslony found at the MATLAB Central File Exchange
                    http://www.mathworks.com/matlabcentral/fileexchange/3026)
 '''
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from __future__ import absolute_import
+
 from future import standard_library
+
 standard_library.install_aliases()
 import numpy as np
 from wetb.fatigue_tools.rainflowcounting import rainflowcount
@@ -103,8 +105,9 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
     cycles, ampl_bin_mean, ampl_bin_edges, _, _ = cycle_matrix(signals, no_bins, 1, rainflow_func)
     if 0:  #to be similar to windap
         ampl_bin_mean = (ampl_bin_edges[:-1] + ampl_bin_edges[1:]) / 2
-        cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
-    eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
+    cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
+    mask = cycles>0
+    eq_loads = [[((np.sum(cycles[mask] * ampl_bin_mean[mask] ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
     return eq_loads, cycles, ampl_bin_mean, ampl_bin_edges
 
 
@@ -159,9 +162,12 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     cycles, ampl_edges, mean_edges = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights)
 
     ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
-    ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
     mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
-    mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
+        mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
     cycles = cycles / 2  # to get full cycles
     return cycles, ampl_bin_mean, ampl_edges, mean_bin_mean, mean_edges
 
