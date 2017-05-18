@@ -93,7 +93,7 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
         
         blade_name = blade_name or htcfile.aero.link[2]
         s = htcfile.new_htc_structure
-        at_time_filename = at_time_filename or os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat")
+        at_time_filename = at_time_filename or ("output_at_time" in htcfile and os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat"))
         pc_filename = pc_filename or os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0])
         ae_filename = ae_filename or os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0])
         
