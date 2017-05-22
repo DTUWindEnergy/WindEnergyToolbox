@@ -56,9 +56,9 @@ class TestAtTimeFile(unittest.TestCase):
 
     def test_at_time_file_radius(self):
         atfile = AtTimeFile(self.testfilepath + "at_time.dat")
-        self.assertEqual(atfile.radius_ac()[12], 10.2505)
-        self.assertEqual(atfile.radius_ac(10), 10.2505)
-        self.assertEqual(atfile.radius_ac(10.5), 10.2505)
+        self.assertEqual(atfile.radius_curved_ac()[12], 10.2505)
+        self.assertEqual(atfile.radius_curved_ac(10), 10.2505)
+        self.assertEqual(atfile.radius_curved_ac(10.5), 10.2505)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

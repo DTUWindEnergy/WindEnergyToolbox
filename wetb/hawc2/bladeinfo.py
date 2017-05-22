@@ -76,7 +76,7 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
     From at_time_filename
     - attribute_names
     - xxx(radius=None, curved_length=None) # xxx for each attribute name
-    - radius_ac(radius=None) # Curved length of nearest/all aerodynamic calculation points
+    - radius_curved_ac(radius=None) # Curved length of nearest/all aerodynamic calculation points
     
     From ST file
     - radius_st(radius=None, mset=1, set=1)

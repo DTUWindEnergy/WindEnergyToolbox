@@ -66,7 +66,7 @@ class AtTimeFile(object):
         for column, att_name in enumerate(self.attribute_names):
             setattr(self, att_name, func_factory(column))
 
-    def radius_ac(self, radius=None):
+    def radius_curved_ac(self, radius=None):
         """Radius (curved distance) of aerodynamic calculation point(s) 
 
         Parameters

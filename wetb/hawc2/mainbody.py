@@ -126,7 +126,7 @@ class BladeData(object):
 
 
 class Blade(MainBody, BladeData):
-    def __init__(self, htc_filename, modelpath, blade_number=1):
+    def __init__(self, htc_filename, modelpath=None, blade_number=1):
         
         self.htcfile = htcfile = HTCFile(htc_filename, modelpath)
         
