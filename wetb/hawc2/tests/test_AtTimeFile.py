@@ -28,8 +28,8 @@ class TestAtTimeFile(unittest.TestCase):
         self.assertEqual(atfile.attribute_names, ['radius_s', 'twist', 'chord'])
         np.testing.assert_array_equal(atfile[:3, 1], [ 0., -0.775186, -2.91652 ])
         np.testing.assert_array_equal(atfile.twist()[:3], [ 0. , -0.775186 , -2.91652 ])
-        self.assertAlmostEqual(atfile.twist(radius=10), -5.34743208242399)  # Twist at radius = 10 (interpolated)
-        self.assertEqual(atfile.twist(curved_length=10), -5.34743208242399)  # Twist at radius = 10 (interpolated)
+        self.assertAlmostEqual(atfile.twist(10), -5.34743208242399)  # Twist at radius = 10 (interpolated)
+        self.assertEqual(atfile.twist(10,curved_length=True), -5.34743208242399)  # Twist at radius = 10 (interpolated)
 
 
 
@@ -43,15 +43,15 @@ class TestAtTimeFile(unittest.TestCase):
 
     def test_at_time_file_at_curved_radius(self):
         atfile = AtTimeFile(self.testfilepath + "at_time.dat")
-        self.assertEqual(atfile.radius_s(curved_length=9), 9)
-        self.assertEqual(atfile.twist(curved_length=9), -6.635983309665461)
-        self.assertEqual(atfile.chord(curved_length=9), 1.3888996578373045)
+        self.assertEqual(atfile.radius_s(9, curved_length=True), 9)
+        self.assertEqual(atfile.twist(9, curved_length=True), -6.635983309665461)
+        self.assertEqual(atfile.chord(9, curved_length=True), 1.3888996578373045)
 
     def test_at_time_file_at_radius(self):
         atfile = AtTimeFile(self.testfilepath + "at_time.dat", bladetip_radius=20.501/2)
-        self.assertEqual(atfile.radius_s(radius=9/2), 9)
-        self.assertEqual(atfile.twist(radius=9/2), -6.635983309665461)
-        self.assertEqual(atfile.chord(radius=9/2), 1.3888996578373045)
+        self.assertEqual(atfile.radius_s(9/2), 9)
+        self.assertEqual(atfile.twist(9/2), -6.635983309665461)
+        self.assertEqual(atfile.chord(9/2), 1.3888996578373045)
 
 
     def test_at_time_file_radius(self):

@@ -171,14 +171,35 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
         x, y, z, twist = [coef2spline(curve_z_nd, akima(curve_z_nd, self.c2def[:, i])) for i in range(4)]
         return x, y, z, twist
 
-    def c2def_twist(self, radius=None):
-        if radius is None:
+    def xyztwist(self, l=None, curved_length=False):
+        """Return splined x,y,z and twist 
+        
+        Parameters
+        ----------
+        l : int, float, arraylike or None, optional
+            Position of interest, seee curved_length\n
+            If None (default) all x, y, z, and twist defined in c2def
+        curved_length : bool, optional
+            - If False: l is z coordinate of section
+            - If True: l is curved length
+            
+        Returns
+        -------
+        x,y,z,twist
+                """
+        if l is None:
             return self.c2def[:, 3]
         else:
-            return np.interp(radius, self.c2def[:, 2], self.c2def[:, 3])
-
-
-
+            r_nd = np.linspace(0,1,100)
+            if curved_length:
+                curved_length = np.cumsum(np.sqrt((np.diff(self.c2nd(np.linspace(0,1,100)),1,0)[:,:3]**2).sum(1)))
+                assert np.all(l>=curved_length[0]) and np.all(l<=curved_length[-1])
+                return self.c2nd(r_nd[np.argmin(np.abs(curved_length-l))+1])    
+            else:
+                assert np.all(l>=self.c2def[0,2]) and np.all(l<=self.c2def[-1,2])
+                return self.c2nd(l/self.c2def[-1, 2])
+       
+        
 class H2aeroBladeInfo(H2BladeInfo):
 
     def __init__(self, at_time_filename, ae_filename, pc_filename, htc_filename):
