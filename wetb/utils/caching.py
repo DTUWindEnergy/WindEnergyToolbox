@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
 import sys
+from collections import OrderedDict
 standard_library.install_aliases()
 import inspect
 
@@ -91,3 +92,18 @@ def cache_function(f):
         raise AttributeError("Functions decorated with cache_function are not allowed to take a parameter called 'reload'")
     return wrap
 
+class cache_method():
+    def __init__(self, N):
+        self.N = N
+        self.cache_dict = OrderedDict()
+        
+    def __call__(self, f):
+        def wrapped(*args):
+            name = "_" + f.__name__
+            arg_id = ";".join([str(a) for a in args])
+            if arg_id not in self.cache_dict: 
+                self.cache_dict[arg_id] = f(*args)
+                if len(self.cache_dict)>self.N:
+                    self.cache_dict.popitem(last=False)
+            return self.cache_dict[arg_id]
+        return wrapped
