@@ -49,11 +49,13 @@ class AtTimeFile(object):
         self.blade_radius = bladetip_radius
         with open(filename, encoding='utf-8') as fid:
             lines = fid.readlines()
-        self.attribute_names = lines[2].lower().replace("#", "").split()
-        data = np.array([[float(l) for l in lines[i].split() ] for i in range(3, len(lines))])
+        atttribute_name_line = [l.startswith("# Radius_s") for l in lines].index(True)
+        self.attribute_names = lines[atttribute_name_line].lower().replace("#", "").split()
+        data = np.array([[float(l) for l in lines[i].split() ] for i in range(atttribute_name_line+1, len(lines))])
         self.data = data
         def func_factory(column):
             def values(l=None, curved_length=False):
+                assert curved_length==True or curved_length==False, "Curved length must be boolean, but is %s"%curved_length
                 if l is None:
                     return self.data[:, column]
                 else:
