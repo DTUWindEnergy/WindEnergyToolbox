@@ -100,7 +100,7 @@ class Simulation(object):
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
-        self.simulation_id = (htcfilename + "_%d" % id(self)).replace("\\","/").replace("/", "_")
+        self.simulation_id = (htcfilename.replace("\\","/").replace("/", "_")[:50]+ "_%d" % id(self))
         if self.simulation_id.startswith("input_"):
             self.simulation_id = self.simulation_id[6:]
         self.stdout_filename = fmt_path(os.path.join(os.path.relpath(self.exepath, self.modelpath), 
