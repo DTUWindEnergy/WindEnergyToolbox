@@ -45,10 +45,10 @@ class AEFile(object):
 
     def _value(self, radius, column, set_nr=1):
         ae_data = self.ae_sets[set_nr]
-        if radius:
-            return np.interp(radius, ae_data[:, 0], ae_data[:, column])
-        else:
+        if radius is None:
             return ae_data[:,column]
+        else:
+            return np.interp(radius, ae_data[:, 0], ae_data[:, column])
 
     def chord(self, radius=None, set_nr=1):
         return self._value(radius, 1, set_nr)

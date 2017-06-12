@@ -94,7 +94,7 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
     eq_loads : array-like
         List of lists of equivalent loads for the corresponding equivalent number(s) and Wohler exponents
     cycles : array_like
-        2d array with shape = (no_ampl_bins, no_mean_bins)
+        2d array with shape = (no_ampl_bins, 1)
     ampl_bin_mean : array_like
         mean amplitude of the bins
     ampl_bin_edges
@@ -103,8 +103,8 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
     cycles, ampl_bin_mean, ampl_bin_edges, _, _ = cycle_matrix(signals, no_bins, 1, rainflow_func)
     if 0:  #to be similar to windap
         ampl_bin_mean = (ampl_bin_edges[:-1] + ampl_bin_edges[1:]) / 2
-        cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
-    eq_loads = [[((np.sum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
+    cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
+    eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
     return eq_loads, cycles, ampl_bin_mean, ampl_bin_edges
 
 
@@ -158,12 +158,9 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     cycles, ampl_edges, mean_edges = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights)
 
     ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
-    ampl_bin_mean = np.zeros_like(cycles)
-    mask = (cycles > 0)
-    ampl_bin_mean[mask] = ampl_bin_sum[mask] / cycles[mask]
+    ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
     mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
-    mean_bin_mean = np.zeros_like(cycles)+np.nan
-    mean_bin_mean[cycles > 0] = mean_bin_sum[cycles > 0] / cycles[cycles > 0]
+    mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
     cycles = cycles / 2  # to get full cycles
     return cycles, ampl_bin_mean, ampl_edges, mean_bin_mean, mean_edges
 

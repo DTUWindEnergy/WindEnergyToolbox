@@ -76,7 +76,7 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
     From at_time_filename
     - attribute_names
     - xxx(radius=None, curved_length=None) # xxx for each attribute name
-    - radius_ac(radius=None) # Curved length of nearest/all aerodynamic calculation points
+    - radius_curved_ac(radius=None) # Curved length of nearest/all aerodynamic calculation points
     
     From ST file
     - radius_st(radius=None, mset=1, set=1)
@@ -93,7 +93,7 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
         
         blade_name = blade_name or htcfile.aero.link[2]
         s = htcfile.new_htc_structure
-        at_time_filename = at_time_filename or os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat")
+        at_time_filename = at_time_filename or ("output_at_time" in htcfile and os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat"))
         pc_filename = pc_filename or os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0])
         ae_filename = ae_filename or os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0])
         
@@ -171,14 +171,35 @@ class H2BladeInfo(BladeInfo, PCFile, AtTimeFile):
         x, y, z, twist = [coef2spline(curve_z_nd, akima(curve_z_nd, self.c2def[:, i])) for i in range(4)]
         return x, y, z, twist
 
-    def c2def_twist(self, radius=None):
-        if radius is None:
+    def xyztwist(self, l=None, curved_length=False):
+        """Return splined x,y,z and twist 
+        
+        Parameters
+        ----------
+        l : int, float, arraylike or None, optional
+            Position of interest, seee curved_length\n
+            If None (default) all x, y, z, and twist defined in c2def
+        curved_length : bool, optional
+            - If False: l is z coordinate of section
+            - If True: l is curved length
+            
+        Returns
+        -------
+        x,y,z,twist
+                """
+        if l is None:
             return self.c2def[:, 3]
         else:
-            return np.interp(radius, self.c2def[:, 2], self.c2def[:, 3])
-
-
-
+            r_nd = np.linspace(0,1,100)
+            if curved_length:
+                curved_length = np.cumsum(np.sqrt((np.diff(self.c2nd(np.linspace(0,1,100)),1,0)[:,:3]**2).sum(1)))
+                assert np.all(l>=curved_length[0]) and np.all(l<=curved_length[-1])
+                return self.c2nd(r_nd[np.argmin(np.abs(curved_length-l))+1])    
+            else:
+                assert np.all(l>=self.c2def[0,2]) and np.all(l<=self.c2def[-1,2])
+                return self.c2nd(l/self.c2def[-1, 2])
+       
+        
 class H2aeroBladeInfo(H2BladeInfo):
 
     def __init__(self, at_time_filename, ae_filename, pc_filename, htc_filename):

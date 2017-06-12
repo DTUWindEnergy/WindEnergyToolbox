@@ -33,8 +33,8 @@ def thresshold_finder(data, thresshold, plt=None):
 def univeral_thresshold_finder(data, variation='mad', plt=None):
 
     ## Three variation measures in decreasing order of sensitivity to outliers
-    variation = {'std': np.sqrt(np.mean((data - np.mean(data)) ** 2)),  # standard deviation
-                 'abs': np.mean(np.abs(data - np.mean(data))),  # mean abs deviation
+    variation = {'std': np.nanstd(data),  # standard deviation
+                 'abs': np.nanmean(np.abs(data - np.nanmean(data))),  # mean abs deviation
                  'mad': nanmedian(np.abs(data - nanmedian(data)))  # median abs deviation (mad)
                  }.get(variation, variation)
 

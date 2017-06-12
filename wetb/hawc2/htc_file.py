@@ -87,7 +87,7 @@ class HTCFile(HTCContents, HTCDefaults):
         if filename is not None:
             self.filename = filename
         self.modelpath = modelpath or self.auto_detect_modelpath()
-        if filename and not os.path.isabs(self.modelpath):
+        if filename and self.modelpath!="unknown" and not os.path.isabs(self.modelpath):
             self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
         
     
@@ -99,11 +99,14 @@ class HTCFile(HTCContents, HTCDefaults):
         
         #print (["../"*i for i in range(3)])
         import numpy as np
-        found = ([np.sum([os.path.isfile(os.path.join(os.path.dirname(self.filename), "../"*i, f)) for f in self.input_files() if not os.path.isabs(f)]) for i in range(4)])
+        input_files = HTCFile(self.filename, 'unknown').input_files()
+        rel_input_files = [f for f in input_files if not os.path.isabs(f)] 
+        found = ([np.sum([os.path.isfile(os.path.join(os.path.dirname(self.filename), "../"*i, f)) for f in rel_input_files]) for i in range(4)])
         #for f in self.input_files():
         #    print (os.path.isfile(os.path.join(os.path.dirname(self.filename), "../",f)), f)
         if max(found)>0:
-            return "../"* np.argmax(found)
+            relpath = "../"* np.argmax(found)
+            return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath))
         else:
             raise ValueError("Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file"%self.filename)
         
@@ -161,12 +164,15 @@ class HTCFile(HTCContents, HTCDefaults):
         for l in lines:
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip().lower()
-                filename = os.path.join(self.modelpath, filename)
-
-                for line in self.readlines(filename):
-                    if line.lstrip().lower().startswith('exit'):
-                        break
-                    htc_lines.append(line)
+                
+                if self.modelpath=='unknown':
+                    self.htc_inputfiles.append(filename)
+                else:
+                    filename = os.path.join(self.modelpath, filename)
+                    for line in self.readlines(filename):
+                        if line.lstrip().lower().startswith('exit'):
+                            break
+                        htc_lines.append(line)
             else:
                 htc_lines.append(l)
         return htc_lines
@@ -213,12 +219,15 @@ class HTCFile(HTCContents, HTCDefaults):
             self.simulation.newmark.deltat = step
         if start is not None:
             self.output.time = start, stop
-            if "wind" in self and self.wind.turb_format[0] > 0:
+            if "wind" in self:# and self.wind.turb_format[0] > 0:
                 self.wind.scale_time_start = start
 
     def input_files(self):
         self.contents # load if not loaded
-        files = [os.path.abspath(f).replace("\\","/") for f in self.htc_inputfiles]
+        if self.modelpath=="unknown":
+            files = [f.replace("\\","/") for f in self.htc_inputfiles]
+        else:
+            files = [os.path.abspath(f).replace("\\","/") for f in self.htc_inputfiles]
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
                 if "timoschenko_input" in mb:
