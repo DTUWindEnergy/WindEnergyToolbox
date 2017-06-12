@@ -102,10 +102,7 @@ $ source deactivate
 This will create a subfolders DLCs and fill that new subfolder with the created
 subordinate Excel files.
 
-##### 6. Move your DLCs.xlsx file from the htc folder to the ```_master``` folder.
-It will cause errors in later scripts if left in the htc folder.
-
-##### 7. Create your htc files and PBS job scripts .
+##### 6. Create your htc files and PBS job scripts .
 These files and scripts are generated from the subordinate Excel files from
 Step 5. To do this, in the terminal, change up a level to your Set ID folder
 (e.g., to folder "AB0001"). Then run this code
@@ -117,7 +114,7 @@ $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/
 Your htc files should now be placed in subfolders in the htc folder, and PBS
 job files should be in folder ```pbs_in```.
 
-##### 8. Launch the htc files to the cluster.
+##### 7. Launch the htc files to the cluster.
 Use the ```launch.py``` function to launch the jobs on the cluster.
 For example, the following code will launch the jobs in folder ```pbs_in``` on
 100 nodes. You must be in the top-level Set ID folder for this to work (e.g.,
@@ -136,7 +133,7 @@ help function to print available launch options:
 $ launch.py --help
 ```
 
-##### 9. Post-process results.
+##### 8. Post-process results.
 
 The wetb function ```qsub-wrap.py``` can not only generate htc files but also 
 post-process results. For example, here is code to check the log files
