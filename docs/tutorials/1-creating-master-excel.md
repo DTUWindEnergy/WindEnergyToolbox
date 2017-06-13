@@ -10,21 +10,25 @@ the subordinate Excel files and a master htc file.
 4. Submit all PBS job scripts to the cluster
 5. Post-process results
 6. Visualize results
+
 This tutorial presents how to accomplish Step 1.
 
 Note that it is possible to customize your simulations by skipping/modifying 
 steps.
 Such a procedure will be discussed in a later tutorial.
 
-## Background: master Excel file
+If there are any problems with this tutorial, please [submit an issue](
+https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues).
+
+## 1. Background: Master Excel File
 
 The master Excel file is an Excel file that is used to create subordinate 
 Excel files for generation of htc files and PBS job scripts.
 
 ### Master file structure
 
-The master file has a main tab, called "Main", that defines default values 
-and necessary functions that are called in the other tabs.
+The master Excel file has a main tab, called "Main", that defines default 
+values  and necessary functions that are called in the other tabs.
 Each other tab defines a new case, and one subordinate Excel file will be 
 generated for each case.
 There are three variable types in the master Excel file:
@@ -63,7 +67,7 @@ file match the tag names in your master htc file.
 Thus, **be sure to verify that your tag names in your master Excel and master 
 htc files are consistent**.
 
-## Tutorial
+## 2. Tutorial
 
 The procedure for creating the master Excel sheet is simple: each desired DLB 
 is defined in a tab-delimited text file, and these are loaded into a single 
@@ -81,29 +85,28 @@ Generate the master Excel file in a few easy steps:
 2. If you are running the tutorial locally (i.e., not on Gorm), navigate to 
 the Wind Energy Toolbox tutorials directory.
 3. Run the code to generate the Excel file from a folder of text files:
-    * Windows: ```>> python ..\..\wetb\prepost\write_master.py --folder
-data\DLCs_onshore --filename DLCs_onshore.xlsx```
-    * Mac/Linux: ```$ python ../../wetb/prepost/write_master.py --folder
-data/DLCs_onshore  --filename DLCs_onshore.xlsx```
-    * Gorm: ```python 
-/home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/write_master.
-py 
---folder=/home/MET/repositories/toolbox/WindEnergyToolbox/wetb/docs/tutoria
-ls/data/DLCs_onshore --filename=DLCs_onshore.xlsx```   
+    * Windows:
+    ```>> python ..\..\wetb\prepost\write_master.py --folder data\DLCs_onshore --filename DLCs_onshore.xlsx```
+    * Mac/Linux:
+    ```$ python ../../wetb/prepost/write_master.py --folder data/DLCs_onshore  --filename DLCs_onshore.xlsx```
+    * Gorm:
+    ```python  /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/write_master.py --folder=/home/MET/repositories/toolbox/WindEnergyToolbox/wetb/docs/tutoria
+ls/data/DLCs_onshore --filename=DLCs_onshore.xlsx```
+ 
 The master Excel file "DLCs_onshore.xlsx" should now be in the your current 
 directory.
 
 Note that we have used the parser options ```--folder``` and ```--filename``` 
 to specify the folder with the text files and the name of the resulting Excel 
 file.
-Other parser options are also available (See doc string in 
-```write_master.py``` function.)
+Other parser options are also available.
+(See doc string in ```write_master.py``` function.)
 
-## Generation options
+## 3. Generation options
 
 See doc string in ```write_master.py``` function.
 
-## Issues
+## 4. Issues
 
 If there are any problems with this tutorial, please [submit an issue](
 https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues).
