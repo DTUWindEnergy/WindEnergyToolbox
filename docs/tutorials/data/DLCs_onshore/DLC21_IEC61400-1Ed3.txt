@@ -1,0 +1,26 @@
+F	C	F	V	V	V	F	C
+[sim_time]	[Case folder]	[Case id.]	[wdir]	[seed]	[wsp]	[TI]	[Grid loss time]
+100	DLC21_IEC61400-1Ed3	"""DLC21_wsp[wsp]_wdir[wdir]_s[seed]"""	0	4	4	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"	110
+			350		6		
+			10		8		
+					10		
+					12		
+					14		
+					16		
+					18		
+					20		
+					22		
+					24		
+					26		
+							
+							
+							
+							
+							
+							
+							
+							
+							
+							
+							
+							

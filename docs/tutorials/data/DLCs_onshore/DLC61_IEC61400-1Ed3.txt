@@ -1,0 +1,4 @@
+C	F	V	V	V	C	C	C	C	C
+[Case folder]	[Case id.]	[wdir]	[seed]	[wsp]	[turb_format]	[TI]	[shear_exp]	[cutin_t0]	[Induction]
+DLC61_IEC61400-1Ed3	"""DLC61_wsp[wsp]_wdir[wdir]_s[seed]"""	352	6	50	1	0.1100	0.11	1000	0
+		8							

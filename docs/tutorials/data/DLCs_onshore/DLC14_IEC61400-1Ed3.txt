@@ -1,0 +1,5 @@
+C	C	F	V	V	C	C	F	C	C	C	C	F	C
+[sim_time]	[Case folder]	[Case id.]	[wdir]	[wsp]	[seed]	[turb_format]	[TI]	[gust]	[gust_type]	[G_A]	[G_t0]	[G_phi0]	[G_T]
+100	DLC14_IEC61400-1Ed3	"""DLC14_wsp[wsp]_wdir[wdir]_s[seed]"""	0	10	1	0	"2*[ref_ti]*(0,072*(0,2*[ref_wind_speed]/2+3)*([wsp]/2-4)+10)/[wsp]"		ecd	15	110	720/[wsp]	10
+				12									
+				14									
