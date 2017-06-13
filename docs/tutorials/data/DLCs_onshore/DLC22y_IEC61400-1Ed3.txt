@@ -1,0 +1,25 @@
+C	F	V	V	V	F	C		
+[Case folder]	[Case id.]	[wdir]	[seed]	[wsp]	[TI]	[dis_setbeta]		
+DLC22y_IEC61400-1Ed3	"""DLC22y_wsp[wsp]_wdir[wdir]_s[seed]"""	15	1	4	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"	;		
+		30		6				
+		45		8				
+		60		10				
+		75		12				
+		90		14				
+		105		16				
+		120		18				
+		135		20				
+		150		22				
+		165		24				
+		180		26				
+		195						
+		210						
+		225						
+		240						
+		255						
+		270						
+		285						
+		300						
+		315						
+		330						
+		345						

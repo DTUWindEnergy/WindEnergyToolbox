@@ -1,0 +1,53 @@
+																																					
+Master spreadsheets to generate the set of spreadsheets required as inputs to the DLB calculator.																																					
+"Each sheet defines the tags of a DLC, except the main one. The main sheet defines: wind turbine parameters, default tags values, and gusts and turbulence definitions."																																					
+"Tags are devided into 3 categories: constants (C), variables (V), and functions (F).  The category is specified in the line above the tag."																																					
+Constants do not change in a DLC. Variables define the number of cases within a DLC through their combinations. Functions are tags that depends on other tags through and expression. 																																					
+																																					
+Parameters:	Vrate	Vout																																			
+	12	26																																			
+																																					
+Default constants:	[ref_ti]	[ref_wind_speed]	[tsr]	[hub_height]	[diameter]	[t0]	[wdir]	[shear_exp]	[out_format]	[gust]	[gust_type]	[G_A]	[G_phi0]	[G_t0]	[G_T]	[Rotor azimuth]	[Free shaft rot]	[init_wr]	[Pitch 1 DLC22b]	[Rotor locked]	[Time stuck DLC22b]	[Cut-in time]	[Stop type]	[Pitvel 1]	[Pitvel 2]	[Grid loss time]	[Time pitch runaway]	[Induction]	[Dyn stall]	[dis_setbeta]	[long_scale_param]	[t_flap_on]	[turb_format]	[staircase]	[Rotor azimuth]	[sim_time]	[Cut-out time]
+	0.16	50	8.0	90	178	100	0	0.2	hawc_binary	;						0		0.5	0	;	-1	1	1	4	6	10000	10000	1	2	 	42	20	1	;	0	600	10000
+																																					
+																																					
+Default functions:	[Turb base name]	[time stop]	[turb_dx]	[wsp factor]	[wind_ramp_t1]	[wind_ramp_factor1]	[time_start]																														
+	"""turb_wsp[wsp]_s[seed]"""	[t0]+[sim_time]	"[wsp]*[time stop]/8192,0"	[tsr]/[wsp]	[t0]	[wsp factor]	[t0]																														
+																																					
+																																					
+																																					
+Gusts:																																					
+EOG	"min([1,35*(0,8*1,4*[ref_wind_speed]-[wsp]);3,3*[TI]*[wsp]/(1+0,1*[diameter]/[long_scale_param])])"																																				
+ECD	15																																				
+EWS	"(2,5+0,2*6,4*[TI]*[wsp]*([diameter]/[long_scale_param])**0,25)/[diameter]"																																				
+EDC	"4*arctan([TI]/(1+0,1*[diameter]/[long_scale_param]))*180/pi"																																				
+																																					
+Turbulence:																																					
+NTM	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"																																				
+ETM	"2*[ref_ti]*(0,072*(0,2*[ref_wind_speed]/2+3)*([wsp]/2-4)+10)/[wsp]"																																				
+																																					
+	Wind speeds:																																				
+	4																																				
+	6																																				
+	8																																				
+	10																																				
+	12																																				
+	14																																				
+	16																																				
+	18																																				
+	20																																				
+	22																																				
+	24																																				
+	26																																				
+	28																																				
+	30																																				
+	32																																				
+	34																																				
+	36																																				
+	38																																				
+	40																																				
+	42																																				
+	44																																				
+	46																																				
+	48																																				
+	50																																				
