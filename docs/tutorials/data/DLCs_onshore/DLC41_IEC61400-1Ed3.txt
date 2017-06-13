@@ -1,0 +1,5 @@
+F	C	F	V	C	C	C	C
+[sim_time]	[Case folder]	[Case id.]	[wsp]	[seed]	[turb_format]	[TI]	[Cut-out time]
+100	DLC41_IEC61400-1Ed3	"""DLC41_wsp[wsp]_wdir[wdir]_s[seed]"""	4	1	0	0	110
+			12				
+			26				

@@ -1,0 +1,8 @@
+F	C	F	V	C	C	F	C	C	F	C	C	C	V	F
+[sim_time]	[Case folder]	[Case id.]	[wsp]	[seed]	[turb_format]	[TI]	[gust]	[gust_type]	[G_A]	[G_phi0]	[G_t0]	[G_T]	[Cut-out time]	[grid_gust_delay]
+100	DLC42_IEC61400-1Ed3	"""DLC42_wsp[wsp]_wdir[wdir]_s[seed]_tco[grid_gust_delay]"""	10	1	0	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"		eog	"min([1,35*(0,8*1,4*[ref_wind_speed]-[wsp]);3,3*[TI]*[wsp]/(1+0,1*[diameter]/[long_scale_param])])"	0	120	10.5	120.1	([Cut-out time]-[G_t0])
+			14										122.5	
+			26										124	
+													125	
+													128	
+													130	

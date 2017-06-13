@@ -1,0 +1,26 @@
+F	C	F	V	V	V	C	C	F	C	C	F	C	C
+[sim_time]	[Case folder]	[Case id.]	[wdir]	[G_phi0]	[wsp]	[seed]	[turb_format]	[TI]	[gust]	[gust_type]	[G_A]	[G_T]	[G_t0]
+100	DLC15_IEC61400-1Ed3	"""DLC15_wsp[wsp]_wdir[wdir]_s[seed]_phi[G_phi0]"""	0	0	4	1	0	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"		ews	"(2,5+0,2*6,4*[TI]*[wsp]*([diameter]/[long_scale_param])**0,25)/[diameter]"	12	110
+				90	6								
+				180	8								
+				270	10								
+					12								
+					14								
+					16								
+					18								
+					20								
+					22								
+					24								
+					26								
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													
+													

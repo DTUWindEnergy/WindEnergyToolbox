@@ -1,0 +1,23 @@
+C	F	V	V	V	C	F	C	C
+[Case folder]	[Case id.]	[wdir]	[seed]	[wsp]	[turb_format]	[TI]	[cutin_t0]	[Induction]
+DLC64_IEC61400-1Ed3	"""DLC64_wsp[wsp]_wdir[wdir]_s[seed]"""	352	6	4	1	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"	1000	0
+		8		6				
+				8				
+				10				
+				12				
+				14				
+				16				
+				18				
+				20				
+				22				
+				24				
+				26				
+				28				
+				30				
+				32				
+				34				
+								
+								
+								
+								
+								
