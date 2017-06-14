@@ -1,0 +1,5 @@
+F	C	F	V	C	C	C	C
+[sim_time]	[Case folder]	[Case id.]	[wsp]	[seed]	[turb_format]	[TI]	[cutin_t0]
+250	DLC31_IEC61400-1Ed3	"""DLC31_wsp[wsp]_wdir[wdir]_s[seed]"""	4	1	0	0.0000	110
+			12				
+			25				

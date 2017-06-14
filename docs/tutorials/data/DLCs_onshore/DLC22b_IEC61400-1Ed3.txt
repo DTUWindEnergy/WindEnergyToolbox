@@ -1,0 +1,21 @@
+C	F	V	V	V	F	C	C
+[Case folder]	[Case id.]	[wdir]	[seed]	[wsp]	[TI]	[Pitch 1 DLC22b]	[Time stuck DLC22b]
+DLC22b_IEC61400-1Ed3	"""DLC22b_wsp[wsp]_wdir[wdir]_s[seed]"""	0	12	4	"([ref_ti]*(0,75*[wsp]+5,6))/[wsp]"	0	0.1
+				6			
+				8			
+				10			
+				12			
+				14			
+				16			
+				18			
+				20			
+				22			
+				24			
+				26			
+							
+							
+							
+							
+							
+							
+							
