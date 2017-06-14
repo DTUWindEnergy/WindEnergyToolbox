@@ -290,9 +290,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     for (dirpath, dirnames, fnames) in os.walk(P_SOURCE):
         # remove all zip files
         for i, fname in enumerate(fnames):
-            if fname.endswith('.zip'):
-                fnames.pop(i)
-        f_ziproot.extend(fnames)
+            if not fname.endswith('.zip'):
+                f_ziproot.append(fname)
         break
     # and add those files
     for opt in opt_tags:
