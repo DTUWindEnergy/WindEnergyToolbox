@@ -3990,6 +3990,15 @@ class Cases(object):
         leq : bool, default=False
 
         columns : list, default=None
+
+        Returns
+        -------
+
+        stats_df : pandas.DataFrame
+
+        Leq_df : pandas.DataFrame
+
+        AEP_df : pandas.DataFrame
         """
         post_dir = kwargs.get('post_dir', self.post_dir)
         sim_id = kwargs.get('sim_id', self.sim_id)
@@ -4678,10 +4687,11 @@ class Cases(object):
             [(filename, hours),...] where, filename is the name of the file
             (can be a full path, but only the base path is considered), hours
             is the number of hours over the life time. When fh_lst is set,
-            res_dir, dlc_folder and dlc_name are not used.
+            years, res_dir, dlc_folder and dlc_name are not used.
 
         years : float, default=20
-            Total life time expressed in years.
+            Total life time expressed in years, only relevant when fh_lst is
+            None.
 
         Returns
         -------
@@ -4797,15 +4807,21 @@ class Cases(object):
                 # in case the original dfs holds multiple DLC cases.
                 dict_Leq[col].append(sel_sort[col].unique()[0])
 
-            # R_eq is usually expressed as the 1Hz equivalent load
-            neq_1hz = sel_sort['neq'].values
+            # R_eq is assumed to be expressed as the 1Hz equivalent load
+            # where neq is set to the simulation lenght
+#            neq_1hz = sel_sort['neq'].values
 
             for m in ms:
                 # sel_sort[m] holds the equivalent loads for each of the DLC
                 # cases: such all the different wind speeds for dlc1.2
                 m_ = float(m.split('=')[1])
-                R_eq_mod = np.power(sel_sort[m].values, m_) * neq_1hz
-                tmp = (R_eq_mod*np.array(hours)).sum()
+                # do not multi-ply out neq_1hz from R_eq
+                R_eq_mod = np.power(sel_sort[m].values, m_)
+                # R_eq_mod will have to be scaled from its simulation length
+                # to 1 hour (hour distribution is in hours...). Since the
+                # simulation time has not been multiplied out of R_eq_mod yet,
+                # we can just multiply with 3600 (instead of doing 3600/neq)
+                tmp = (R_eq_mod * np.array(hours) * 3600).sum()
                 # the effective Leq for each of the material constants
                 dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/m_))
                 # the following is twice as slow:
