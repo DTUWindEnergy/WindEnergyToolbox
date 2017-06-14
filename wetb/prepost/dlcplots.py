@@ -76,8 +76,12 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
                 wsp = '[wsp]'
             else:
                 wsp = '[Windspeed]'
-            dfc = dfc[['[case_id]', '[run_dir]', wsp, '[res_dir]',
-                       '[wdir]', '[DLC]']]
+            # columns we want to add from cc.cases (cases dict) to stats
+            cols_cc = set(['[run_dir]', wsp, '[res_dir]', '[wdir]', '[DLC]'])
+            # do not add column twice, some might already be in df stats
+            add_cols = list(cols_cc - set(df_stats.columns))
+            add_cols.append('[case_id]')
+            dfc = dfc[add_cols]
             df_stats = pd.merge(df_stats, dfc, on='[case_id]')
             df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
 
@@ -118,6 +122,8 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
         sim_id = sim_ids
         sim_ids = [sim_id]
         post_dir = post_dirs
+        if isinstance(post_dirs, list):
+            post_dir = post_dirs[0]
         cc = sim.Cases(post_dir, sim_id, rem_failed=True)
         df_stats, _, _ = cc.load_stats(leq=False)
         run_dirs = [df_stats['[run_dir]'].unique()[0]]
@@ -129,8 +135,12 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
             wsp = '[wsp]'
         else:
             wsp = '[Windspeed]'
-        dfc = dfc[['[case_id]', '[run_dir]', wsp, '[res_dir]',
-                   '[wdir]', '[DLC]']]
+        # columns we want to add from cc.cases (cases dict) to stats
+        cols_cc = set(['[run_dir]', wsp, '[res_dir]', '[wdir]', '[DLC]'])
+        # do not add column twice, some might already be in df stats
+        add_cols = list(cols_cc - set(df_stats.columns))
+        add_cols.append('[case_id]')
+        dfc = dfc[add_cols]
         df_stats = pd.merge(df_stats, dfc, on='[case_id]')
         df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
 
@@ -347,7 +357,6 @@ def plot_stats(sim_ids, post_dirs, fig_dir_base=None):
 #            canvas.close()
             fig.clear()
             print('saved: %s' % fig_path)
-
 
             ax2.grid()
             ax2.set_xlim([3, 27])
@@ -972,6 +981,7 @@ class PlotPerf(object):
         print('done')
         self.fig.clear()
 
+
 def plot_dlc01_powercurve(sim_ids, post_dirs, run_dirs, fig_dir_base):
     """
     Create power curve based on steady DLC01 results
@@ -1028,6 +1038,7 @@ def plot_dlc00(sim_ids, post_dirs, run_dirs, fig_dir_base=None, labels=None,
         dlcf = 'dlc' + cc.cases[_cname]['[DLC]']
         fig_path = os.path.join(fig_dir_base, dlcf)
         fp.final(fig_path, _cname.replace('.htc', '.png'))
+
 
 def plot_staircase(sim_ids, post_dirs, run_dirs, fig_dir_base=None,
                    cname='dlc00_stair_wsp04_25_noturb.htc'):
