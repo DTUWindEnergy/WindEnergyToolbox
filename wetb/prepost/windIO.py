@@ -1189,6 +1189,8 @@ class LoadResults(ReadHawc2):
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
+                # FIXME: direction is the same as component, right?
+                channelinfo['direction'] = direction
 
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
@@ -1209,6 +1211,7 @@ class LoadResults(ReadHawc2):
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['coord'] = coord
+                # FIXME: direction is the same as component, right?
                 channelinfo['direction'] = direction
                 channelinfo['blade_nr'] = int(blade_nr)
                 channelinfo['radius'] = float(radius)
