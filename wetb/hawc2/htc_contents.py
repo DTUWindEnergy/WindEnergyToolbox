@@ -133,8 +133,8 @@ class HTCSection(HTCContents):
     begin_comments = ""
     def __init__(self, name, begin_comments="", end_comments=""):
         self.name_ = name
-        self.begin_comments = begin_comments
-        self.end_comments = end_comments
+        self.begin_comments = begin_comments.strip(" \t")
+        self.end_comments = end_comments.strip(" \t")
         self.contents = OrderedDict()
 
     @staticmethod
@@ -174,7 +174,7 @@ class HTCLine(HTCContents):
             name = name[:name.index("__")]
         self.name_ = name
         self.values = list(values)
-        self.comments = comments
+        self.comments = comments.strip(" \t")
 
     def __repr__(self):
         return str(self)
@@ -228,7 +228,7 @@ class HTCOutputSection(HTCSection):
 
 
     def line_from_line(self, lines):
-        while lines[0].strip() == "":
+        while len(lines) and lines[0].strip() == "":
             lines.pop(0)
         name = lines[0].split()[0].strip()
         if name in ['filename', 'data_format', 'buffer', 'time']:
