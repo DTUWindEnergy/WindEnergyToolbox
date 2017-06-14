@@ -29,16 +29,26 @@ import numpy as np
 import os
 import pandas as pd
 
+
 def write_master(path_to_texts,
                  excel_name='DLCs.xlsx', file_end='.txt',
                  delimiter='\t'):
     """ Write a master Excel sheet from a series of text files
 
-    Args:
-        path_to_texts (str): path to directory with text files
-        excel_name (str): filename of generated master Excel file
-        file_end (str): file ending of text files
-        delimiter (str): column delimiter in text files
+    Parameters
+    ----------
+
+    path_to_texts : str
+        path to directory with text files
+
+    excel_name : str
+        filename of generated master Excel file
+
+    file_end : str
+        file ending of text files
+
+    delimiter : str
+        column delimiter in text files
     """
 
     # formatting for header cells
@@ -96,7 +106,6 @@ def write_master(path_to_texts,
     # save worksheet
     writer.save()
 
-    return
 
 if __name__ == '__main__':
 
