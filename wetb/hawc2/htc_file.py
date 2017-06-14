@@ -334,6 +334,7 @@ class HTCFile(HTCContents, HTCDefaults):
                 exe_file = os.path.join(self.modelpath, exe)
             #print (from_unix(getmtime(res_file)), from_unix(getmtime(htc_file)))
             if (isfile(htc_file) and isfile(res_file) and isfile(exe_file) and
+                str(HTCFile(htc_file))==str(self) and
                 getmtime(res_file) > getmtime(htc_file) and getmtime(res_file) > getmtime(exe_file)):
                 if "".join(self.readfilelines(htc_file)) == str(self):
                         return
