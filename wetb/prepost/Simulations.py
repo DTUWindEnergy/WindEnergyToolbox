@@ -1442,70 +1442,71 @@ class HtcMaster(object):
         data_local = os.path.join(self.tags['[model_dir_local]'],
                                   self.tags['[data_dir]'])
         data_run = os.path.join(self.tags['[run_dir]'], self.tags['[data_dir]'])
-        if not data_local == data_run:
+        if data_local == data_run:
+            return
 
-            # copy root files
-            model_root = self.tags['[model_dir_local]']
-            run_root = self.tags['[run_dir]']
-            for fname in self.tags['[zip_root_files]']:
-                shutil.copy2(model_root + fname, run_root + fname)
+        # copy root files
+        model_root = self.tags['[model_dir_local]']
+        run_root = self.tags['[run_dir]']
+        for fname in self.tags['[zip_root_files]']:
+            shutil.copy2(model_root + fname, run_root + fname)
 
-            # copy special files with changing file names
-            if '[ESYSMooring_init_fname]' in self.tags:
-                if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
-                    fname_source = self.tags['[ESYSMooring_init_fname]']
-                    fname_target = 'ESYSMooring_init.dat'
-                    shutil.copy2(model_root + fname_source,
-                                 run_root + fname_target)
+        # copy special files with changing file names
+        if '[ESYSMooring_init_fname]' in self.tags:
+            if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
+                fname_source = self.tags['[ESYSMooring_init_fname]']
+                fname_target = 'ESYSMooring_init.dat'
+                shutil.copy2(model_root + fname_source,
+                             run_root + fname_target)
 
-            # copy the master file into the htc/_master dir
-            src = os.path.join(self.tags['[master_htc_dir]'],
-                               self.tags['[master_htc_file]'])
-            # FIXME: htc_dir can contain the DLC folder name
-            dst = os.path.join(self.tags['[run_dir]'], 'htc', '_master')
-            if not os.path.exists(dst):
-                os.makedirs(dst)
+        # copy the master file into the htc/_master dir
+        src = os.path.join(self.tags['[master_htc_dir]'],
+                           self.tags['[master_htc_file]'])
+        # FIXME: htc_dir can contain the DLC folder name
+        dst = os.path.join(self.tags['[run_dir]'], 'htc', '_master')
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        shutil.copy2(src, dst)
+
+        # copy all content of the following dirs
+        dirs = [self.tags['[control_dir]'], self.tags['[hydro_dir]'],
+                self.tags['[mooring_dir]'], self.tags['[externalforce]'],
+                self.tags['[data_dir]'], 'htc/DLCs/']
+        plocal = self.tags['[model_dir_local]']
+        prun = self.tags['[run_dir]']
+
+        # copy all files present in the specified folders
+        for path in dirs:
+            if not path:
+                continue
+            elif not os.path.exists(os.path.join(plocal, path)):
+                continue
+            for root, dirs, files in os.walk(os.path.join(plocal, path)):
+                for file_name in files:
+                    src = os.path.join(root, file_name)
+                    dst = os.path.abspath(root).replace(os.path.abspath(plocal),
+                                       os.path.abspath(prun))
+                    if not os.path.exists(dst):
+                        os.makedirs(dst)
+                    dst = os.path.join(dst, file_name)
+                    shutil.copy2(src, dst)
+
+        # and last copies: the files with generic input names
+        if not isinstance(self.tags['[fname_source]'], list):
+            raise ValueError('[fname_source] needs to be a list')
+        if not isinstance(self.tags['[fname_default_target]'], list):
+            raise ValueError('[fname_default_target] needs to be a list')
+        len1 = len(self.tags['[fname_source]'])
+        len2 = len(self.tags['[fname_default_target]'])
+        if len1 != len2:
+            raise ValueError('[fname_source] and [fname_default_target] '
+                             'need to have the same number of items')
+        for i in range(len1):
+            src = os.path.join(plocal, self.tags['[fname_source]'][i])
+            dst = os.path.join(prun, self.tags['[fname_default_target]'][i])
+            if not os.path.exists(os.path.dirname(dst)):
+                os.makedirs(os.path.dirname(dst))
             shutil.copy2(src, dst)
-
-            # copy all content of the following dirs
-            dirs = [self.tags['[control_dir]'], self.tags['[hydro_dir]'],
-                    self.tags['[mooring_dir]'], self.tags['[externalforce]'],
-                    self.tags['[data_dir]'], 'htc/DLCs/']
-            plocal = self.tags['[model_dir_local]']
-            prun = self.tags['[run_dir]']
-
-            # copy all files present in the specified folders
-            for path in dirs:
-                if not path:
-                    continue
-                elif not os.path.exists(os.path.join(plocal, path)):
-                    continue
-                for root, dirs, files in os.walk(os.path.join(plocal, path)):
-                    for file_name in files:
-                        src = os.path.join(root, file_name)
-                        dst = os.path.abspath(root).replace(os.path.abspath(plocal),
-                                           os.path.abspath(prun))
-                        if not os.path.exists(dst):
-                            os.makedirs(dst)
-                        dst = os.path.join(dst, file_name)
-                        shutil.copy2(src, dst)
-
-            # and last copies: the files with generic input names
-            if not isinstance(self.tags['[fname_source]'], list):
-                raise ValueError('[fname_source] needs to be a list')
-            if not isinstance(self.tags['[fname_default_target]'], list):
-                raise ValueError('[fname_default_target] needs to be a list')
-            len1 = len(self.tags['[fname_source]'])
-            len2 = len(self.tags['[fname_default_target]'])
-            if len1 != len2:
-                raise ValueError('[fname_source] and [fname_default_target] '
-                                 'need to have the same number of items')
-            for i in range(len1):
-                src = os.path.join(plocal, self.tags['[fname_source]'][i])
-                dst = os.path.join(prun, self.tags['[fname_default_target]'][i])
-                if not os.path.exists(os.path.dirname(dst)):
-                    os.makedirs(os.path.dirname(dst))
-                shutil.copy2(src, dst)
 
     # TODO: copy_model_data and create_model_zip should be the same.
     def create_model_zip(self):
