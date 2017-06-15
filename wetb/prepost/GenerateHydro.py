@@ -66,6 +66,9 @@ class hydro_input(object):
         if os.path.exists(file_path):
             pass
         else:
+            # create directory if non existing
+            if not os.path.exists(folder):
+                os.makedirs(folder)
             FILE = open(file_path,'w+')
             line1 = 'begin wkin_input ;'
             line2 = 'wavetype %d ;' %self.waveno
