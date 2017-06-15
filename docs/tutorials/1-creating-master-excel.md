@@ -90,9 +90,10 @@ from a folder of text files:
     ```python ..\..\wetb\prepost\write_master.py --folder data\DLCs_onshore --filename DLCs_onshore.xlsx```
     * Mac/Linux:  
     ```python ../../wetb/prepost/write_master.py --folder data/DLCs_onshore  --filename DLCs_onshore.xlsx```
-    * Gorm:  
-    ```python  /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/write_master.py --folder /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/docs/tutoria
-ls/data/DLCs_onshore --filename DLCs_onshore.xlsx```
+    * Gorm (Note that you must activate the wetb environment (see Step 5 [here](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/getting-started-with-dlbs.md)
+) before this will work. This command also assumes the folder with your text
+files is called "DLCs_onshore" and is located in the working directory.):  
+    ```python  /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/write_master.py --folder ./DLCs_onshore --filename ./DLCs_onshore.xlsx```
  
 The master Excel file "DLCs_onshore.xlsx" should now be in the your current 
 directory.
