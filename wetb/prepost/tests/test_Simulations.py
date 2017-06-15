@@ -83,37 +83,6 @@ class TestGenerateInputs(Template):
 
 class TestFatigueLifetime(Template):
 
-    def test_leq_1hz(self):
-        """Simple test of wetb.fatigue_tools.fatigue.eq_load using a sine
-        signal.
-        """
-        amplitude = 1
-        m = 1
-        point_per_deg = 100
-
-        # sine signal with 10 periods (20 peaks)
-        nr_periods = 10
-        time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
-        neq = time[-1]
-        # mean value of the signal shouldn't matter
-        signal = amplitude * np.sin(time) + 5
-        r_eq_1hz = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
-        r_eq_1hz_expected = ((2*nr_periods*amplitude**m)/neq)**(1/m)
-        np.testing.assert_allclose(r_eq_1hz, r_eq_1hz_expected)
-
-        # sine signal with 20 periods (40 peaks)
-        nr_periods = 20
-        time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
-        neq = time[-1]
-        # mean value of the signal shouldn't matter
-        signal = amplitude * np.sin(time) + 9
-        r_eq_1hz2 = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
-        r_eq_1hz_expected2 = ((2*nr_periods*amplitude**m)/neq)**(1/m)
-        np.testing.assert_allclose(r_eq_1hz2, r_eq_1hz_expected2)
-
-        # 1hz equivalent load should be independent of the length of the signal
-        np.testing.assert_allclose(r_eq_1hz, r_eq_1hz2)
-
     def test_leq_life(self):
         """Verify if prepost.Simulation.Cases.fatigue_lifetime() returns
         the expected life time equivalent load.
