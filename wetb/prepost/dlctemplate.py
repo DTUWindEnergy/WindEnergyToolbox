@@ -275,6 +275,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
     # see if a htc/DLCs dir exists
     dlcs_dir = os.path.join(P_SOURCE, 'htc', 'DLCs')
+    # Load all DLC definitions and make some assumptions on tags that are not
+    # defined
     if os.path.exists(dlcs_dir):
         opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent)
     else:
@@ -311,13 +313,11 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
     # all tags set in master_tags will be overwritten by the values set in
     # variable_tag_func(), iter_dict and opt_tags
-    # values set in iter_dict have precedence over opt_tags
-    # variable_tag_func() has precedense over iter_dict, which has precedence
-    # over opt_tags. So opt_tags comes last
-    # variable_tag func is not required because everything is already done
-    # in dlcdefs.excel_stabcon
-    no_variable_tag_func = None
-    cases = sim.prepare_launch(iter_dict, opt_tags, master, no_variable_tag_func,
+    # values set in iter_dict have precedence over opt_tags vartag_func()
+    # has precedense over iter_dict, which has precedence over opt_tags.
+    # dlcdefs.vartag_excel_stabcon adds support for creating hydro files
+    vartag_func = dlcdefs.vartag_excel_stabcon
+    cases = sim.prepare_launch(iter_dict, opt_tags, master, vartag_func,
                                write_htc=write_htc, runmethod=runmethod,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
