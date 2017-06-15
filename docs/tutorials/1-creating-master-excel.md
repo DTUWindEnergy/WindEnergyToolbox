@@ -86,13 +86,13 @@ Generate the master Excel file in a few easy steps:
 the Wind Energy Toolbox tutorials directory.
 3. From a terminal/command window, run the code to generate the Excel file 
 from a folder of text files:
-    * Windows:  
+    * Windows (from tutorials folder):  
     ```python ..\..\wetb\prepost\write_master.py --folder data\DLCs_onshore --filename DLCs_onshore.xlsx```
-    * Mac/Linux:  
+    * Mac/Linux (from tutorials folder):  
     ```python ../../wetb/prepost/write_master.py --folder data/DLCs_onshore  --filename DLCs_onshore.xlsx```
-    * Gorm (Note that you must activate the wetb environment (see Step 5 [here](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/getting-started-with-dlbs.md)
-) before this will work. This command also assumes the folder with your text
-files is called "DLCs_onshore" and is located in the working directory.):  
+    * Gorm (you must activate the wetb environment (see Step 5 [here](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/getting-started-with-dlbs.md)
+) before this command will work. This command also assumes the folder with your
+text files is called "DLCs_onshore" and is located in the working directory.):  
     ```python  /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/write_master.py --folder ./DLCs_onshore --filename ./DLCs_onshore.xlsx```
  
 The master Excel file "DLCs_onshore.xlsx" should now be in the your current 
