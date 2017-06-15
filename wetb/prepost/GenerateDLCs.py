@@ -91,13 +91,11 @@ class GeneralDLC(object):
 #                        value = str(value)
 #                dlc[variables_order[icol]].append(value)
         for irow, row in enumerate(cases_index):
+            counter = floor(irow/len(variables['[wsp]']))+1
             for icol, col in enumerate(row):
                 if variables_order[icol] == '[seed]':
-#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
-                    value = '%4.4i' % ( 1000*(row[variables_order.index('[wsp]')]+1) + \
-                                        row[variables_order.index('[seed]')]+1)
-
-                elif variables_order[icol] == '[wave_seed]':  #shfe: wave_seed
+                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+                elif variables_order[icol] == '[wave_seed]':
                     value = '%4.4i' % ( 100*(row[variables_order.index('[wsp]')]+1) + \
                                         row[variables_order.index('[wave_seed]')]+1)
 
