@@ -72,15 +72,41 @@ class GeneralDLC(object):
                     pass
             if tag == '[seed]':
                 cases_len.append(int(v[0]))
+            elif tag == '[wave_seed]':
+                cases_len.append(int(v[0]))
             else:
                 cases_len.append(len(v))
         cases_index = multi_for(list(map(range, cases_len)))
 
+#        for irow, row in enumerate(cases_index):
+#            counter = floor(irow/len(variables['[wsp]']))+1
+#            for icol, col in enumerate(row):
+#                if variables_order[icol] == '[seed]':
+#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+#                elif variables_order[icol] == '[wave_seed]':  #shfe: wave_seed
+#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+#                else:
+#                    value = variables[variables_order[icol]][col]
+#                    if not isinstance(value, float) and not isinstance(value, int):
+#                        value = str(value)
+#                dlc[variables_order[icol]].append(value)
         for irow, row in enumerate(cases_index):
-            counter = floor(irow/len(variables['[wsp]']))+1
             for icol, col in enumerate(row):
                 if variables_order[icol] == '[seed]':
-                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+                    value = '%4.4i' % ( 1000*(row[variables_order.index('[wsp]')]+1) + \
+                                        row[variables_order.index('[seed]')]+1)
+
+                elif variables_order[icol] == '[wave_seed]':  #shfe: wave_seed
+                    value = '%4.4i' % ( 100*(row[variables_order.index('[wsp]')]+1) + \
+                                        row[variables_order.index('[wave_seed]')]+1)
+
+#                    value = '%4.4i' % (irow+1)
+#                    value = '%4.4i' % (10000*(row[variables_order.index('[wave_dir]')]+1) + \
+#                                        1000*(row[variables_order.index('[Hs]')]+1) + \
+#                                        10*(row[variables_order.index('[Tp]')]+1) +\
+#                                        row[variables_order.index('[seed]')]+1)
+
                 else:
                     value = variables[variables_order[icol]][col]
                     if not isinstance(value, float) and not isinstance(value, int):
@@ -125,6 +151,14 @@ class GeneralDLC(object):
 
         keys_list = self.sort_formulas(formulas)
 
+        # specify the precision of the tag as used in the formulas
+        # this does NOT affect the precision of the tag itself, only when used
+        # in a formula based tag.
+        formats = {'[wsp]':'%2.2i', '[gridgustdelay]':'%2.2i',
+                   '[wdir]':'%3.3i', '[G_phi0]':'%3.3i',
+                   '[sign]':'%s',
+                   '[Hs]':'%05.02f', '[Tp]':'%05.02f'}
+
         for fkey in keys_list:
             flist = []
             for i in range(len(dlc['[wsp]'])):
@@ -132,22 +166,22 @@ class GeneralDLC(object):
                 for key in dlc.keys():
                     if key in formula:
                         if formula[0] == '"':
-                            if key == '[wsp]' or key == '[gridgustdelay]':
-                                fmt = '%2.2i'
-                                formula = formula.replace(key, fmt%int(dlc[key][i]))
-                            elif key == '[wdir]' or key == '[G_phi0]':
-                                fmt = '%3.3i'
-                                formula = formula.replace(key, fmt%int(dlc[key][i]))
-                            elif key == '[sign]':
-                                fmt = '%s'
-                                formula = formula.replace(key, fmt%dlc[key][i])
-                            else:
+                            try:
+                                fmt = formats[key]
+                            except KeyError:
                                 fmt = '%4.4i'
-                                formula = formula.replace(key, fmt % int(dlc[key][i]))
+                            try:
+                                value = float(dlc[key][i])
+                            except ValueError:
+                                # this is for string tags
+                                value = dlc[key][i]
+                                fmt = '%s'
+                            formula = formula.replace(key, fmt % value)
                         elif key in formula:
                             formula = formula.replace(key, '%s' % dlc[key][i])
                 formula = formula.replace(',', '.')
                 formula = formula.replace(';', ',')
+                formula = formula.replace('\n', ' ')
                 flist.append(eval(formula))
 
             dlc[fkey] = flist
@@ -275,4 +309,3 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     DLB = GenerateDLCCases()
     DLB.execute(filename=opt.filename, folder=opt.folder)
-

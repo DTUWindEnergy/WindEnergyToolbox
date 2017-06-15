@@ -20,6 +20,8 @@ from glob import glob
 import pandas as pd
 
 from wetb.prepost import misc
+from wetb.prepost.GenerateHydro import hydro_input
+
 
 def casedict2xlsx():
     """
@@ -129,7 +131,7 @@ def variable_tag_func(master, case_id_short=False):
     return master
 
 
-def vartags_dlcs(master):
+def vartag_dlcs(master):
 
     mt = master.tags
 
@@ -153,6 +155,53 @@ def vartags_dlcs(master):
     for ii, jj in mt.items():
         if jj == 'nan':
             mt[ii] = ''
+
+    return master
+
+
+def vartag_excel_stabcon(master):
+    """Variable tag function type that generates a hydro input file for the
+    wave kinematics dll if [hydro input name] is defined properly.
+    """
+
+    mt = master.tags
+    if '[hydro input name]' not in mt or not mt['[hydro input name]']:
+        return master
+
+    print('creating hydro input file for: %s.inp\n' % mt['[hydro input name]'])
+    mt['[wdepth]'] = float(mt['[wdepth]'])
+    mt['[Hs]'] = float(mt['[Hs]'])
+    mt['[Tp]'] = float(mt['[Tp]'])
+
+    if '[wave_gamma]' not in mt or not mt['[wave_gamma]']:
+        mt['[wave_gamma]'] = 3.3
+
+    if '[wave_coef]' not in mt or not mt['[wave_coef]']:
+        mt['[wave_coef]'] = 200
+
+    if '[stretching]' not in mt or not mt['[stretching]']:
+        mt['[stretching]'] = 1
+
+    if mt['[wave_seed]'] is not False:
+        mt['[wave_seed]'] = int(mt['[wave_seed]'])
+    else:
+        mt['[wave_seed]'] = int(mt['[seed]'])
+
+    try:
+        embed_sf = float(master.tags['[embed_sf]'])
+        embed_sf_t0 = int(master.tags['[t0]']) + 20
+    except KeyError:
+        embed_sf = None
+        embed_sf_t0 = None
+
+    hio = hydro_input(wavetype=mt['[wave_type]'], Hs=mt['[Hs]'], Tp=mt['[Tp]'],
+                      gamma=mt['[wave_gamma]'], wdepth=mt['[wdepth]'],
+                      spectrum=mt['[wave_spectrum]'], seed=mt['[wave_seed]'],
+                      stretching=mt['[stretching]'], coef=mt['[wave_coef]'],
+                      embed_sf=embed_sf, embed_sf_t0=embed_sf_t0, spreading=None)
+
+    hio.execute(filename=mt['[hydro input name]'] + '.inp',
+                folder=mt['[hydro_dir]'])
 
     return master
 
@@ -327,11 +376,12 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
 
     if not silent:
         print('found %i Excel file(s), ' % len(dict_dfs), end='')
-    k = 0
-    for df in dict_dfs:
-        k += len(df)
+
     if not silent:
-        print('in which a total of %s cases are defined.' % k)
+        k = 0
+        for df in dict_dfs:
+            k += len(df)
+        print('in which a total of %i cases are defined.' % k)
 
     opt_tags = []
 

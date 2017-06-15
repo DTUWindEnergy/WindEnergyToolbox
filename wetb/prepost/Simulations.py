@@ -738,30 +738,12 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             if verbose:
                 print('created cases for: %s.htc\n' % master.tags['[case_id]'])
 
-            # shfe: flag to generate hydro input file
-            if master.tags['[hydro_dir]'] is not False:
-                if '[hydro input name]' not in master.tags:
-                    continue
-                hydro_filename = master.tags['[hydro input name]']
-                print('creating hydro input file for: %s.inp\n' % hydro_filename)
-                wavetype = master.tags['[wave_type]']
-                wavespectrum = master.tags['[wave_spectrum]']
-                hydro_folder = master.tags['[hydro_dir]']
-                wdepth = float(master.tags['[wdepth]'])
-                hs = float(master.tags['[hs]'])
-                tp = float(master.tags['[tp]'])
-                wave_seed = int(float(master.tags['[wave_seed]']))
-                hydro_inputfile = hydro_input(wavetype=wavetype, Hs=hs, Tp=tp,
-                                              wdepth = wdepth, seed=wave_seed,
-                                              spectrum=wavespectrum,
-                                              spreading=None)
-                hydro_inputfile.execute(filename=hydro_filename + '.inp',
-                                        folder=hydro_folder)
 #    print(master.queue.get())
 
     # only copy data and create zip after all htc files have been created.
     # Note that createcase could also creat other input files
     # create the execution folder structure and copy all data to it
+    # FIXME: this approach only considers the tags as set in the last case!
     if update_model_data:
         master.copy_model_data()
         # create the zip file
