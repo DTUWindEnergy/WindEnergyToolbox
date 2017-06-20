@@ -2136,6 +2136,19 @@ class PBS(object):
             except KeyError:
                 pass
 
+            # one using just one file so it can be used together with the
+            # DLC spreadsheets
+            try:
+                self.copyback_files.append(tag_dict['[copyback_f1]'])
+                self.copyback_frename.append(tag_dict['[copyback_f1_rename]'])
+            except KeyError:
+                pass
+            try:
+                self.copyto_generic.append(tag_dict['[copyto_generic_f1]'])
+                self.copyto_files.append(tag_dict['[copyto_f1]'])
+            except KeyError:
+                pass
+
             # related to the dynamically setting the walltime
             duration = float(tag_dict['[time_stop]'])
             dt = float(tag_dict['[dt_sim]'])
