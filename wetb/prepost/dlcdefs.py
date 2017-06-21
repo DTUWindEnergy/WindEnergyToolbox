@@ -169,24 +169,32 @@ def vartag_excel_stabcon(master):
         return master
 
     print('creating hydro input file for: %s.inp\n' % mt['[hydro input name]'])
+
     mt['[wdepth]'] = float(mt['[wdepth]'])
     mt['[Hs]'] = float(mt['[Hs]'])
     mt['[Tp]'] = float(mt['[Tp]'])
-
+    
+    
     if '[wave_gamma]' not in mt or not mt['[wave_gamma]']:
         mt['[wave_gamma]'] = 3.3
+    else:
+        mt['[wave_gamma]'] = float(mt['[wave_gamma]'])
 
     if '[wave_coef]' not in mt or not mt['[wave_coef]']:
         mt['[wave_coef]'] = 200
+    else:
+        mt['[wave_coef]'] = int(mt['[wave_coef]'])
 
     if '[stretching]' not in mt or not mt['[stretching]']:
         mt['[stretching]'] = 1
-
-    if mt['[wave_seed]'] is not False:
-        mt['[wave_seed]'] = int(mt['[wave_seed]'])
     else:
-        mt['[wave_seed]'] = int(mt['[seed]'])
+        mt['[stretching]'] = int(mt['[stretching]'])
 
+    if '[wave_seed]' not in mt or not mt['[wave_seed]']:
+        mt['[wave_seed]'] = int(mt['[seed]'])
+    else:
+        mt['[wave_seed]'] = int(mt['[wave_seed]'])
+		
     try:
         embed_sf = float(master.tags['[embed_sf]'])
         embed_sf_t0 = int(master.tags['[t0]']) + 20
