@@ -12,7 +12,7 @@ Default constants:	[ref_ti]	[ref_wind_speed]	[tsr]	[hub_height]	[diameter]	[t0]	
 																																					
 																																					
 Default functions:	[Turb base name]	[time stop]	[turb_dx]	[wsp factor]	[wind_ramp_t1]	[wind_ramp_factor1]	[time_start]																														
-	"""turb_wsp[wsp]_s[seed]"""	[t0]+[sim_time]	"[wsp]*[time stop]/8192,0"	[tsr]/[wsp]	[t0]	[wsp factor]	[t0]																														
+	"""turb_wsp[wsp]_s[seed]"""	[t0]+[sim_time]	"[wsp]*[sim_time]/8192,0"	[tsr]/[wsp]	[t0]	[wsp factor]	[t0]																														
 																																					
 																																					
 																																					
