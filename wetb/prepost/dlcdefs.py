@@ -21,6 +21,7 @@ import pandas as pd
 
 from wetb.prepost import misc
 from wetb.prepost.GenerateHydro import hydro_input
+from wetb.prepost import hawcstab2
 
 
 def casedict2xlsx():
@@ -173,8 +174,8 @@ def vartag_excel_stabcon(master):
     mt['[wdepth]'] = float(mt['[wdepth]'])
     mt['[Hs]'] = float(mt['[Hs]'])
     mt['[Tp]'] = float(mt['[Tp]'])
-    
-    
+
+
     if '[wave_gamma]' not in mt or not mt['[wave_gamma]']:
         mt['[wave_gamma]'] = 3.3
     else:
@@ -194,7 +195,7 @@ def vartag_excel_stabcon(master):
         mt['[wave_seed]'] = int(mt['[seed]'])
     else:
         mt['[wave_seed]'] = int(mt['[wave_seed]'])
-		
+
     try:
         embed_sf = float(master.tags['[embed_sf]'])
         embed_sf_t0 = int(master.tags['[t0]']) + 20
@@ -468,6 +469,19 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             t_stop = float(tags_dict['[time_stop]'])
             t0 = float(tags_dict['[t0]'])
             tags_dict['[duration]'] = str(t_stop - t0)
+            # in case there is a controller input file defined
+            if ['[controller_tuning_file]'] in tags_dict:
+                hs2 = hawcstab2.ReadControlTuning()
+                hs2.read_parameters(tags_dict['[controller_tuning_file]'])
+                tags_dict['[pi_gen_reg1.K]'] = hs2.pi_gen_reg1.K
+                tags_dict['[pi_gen_reg2.Kp]'] = hs2.pi_gen_reg2.Kp
+                tags_dict['[pi_gen_reg2.Ki]'] = hs2.pi_gen_reg2.Ki
+                tags_dict['[pi_gen_reg2.Kd]'] = 0.0
+                tags_dict['[pi_pitch_reg3.Kp]'] = hs2.pi_pitch_reg3.Kp
+                tags_dict['[pi_pitch_reg3.Ki]'] = hs2.pi_pitch_reg3.Ki
+                tags_dict['[pi_pitch_reg3.K1]'] = hs2.pi_pitch_reg3.K1
+                tags_dict['[pi_pitch_reg3.K2]'] = hs2.pi_pitch_reg3.K2
+            # save a copy of the current case an one opt_tags entry
             opt_tags.append(tags_dict.copy())
 
     return opt_tags
