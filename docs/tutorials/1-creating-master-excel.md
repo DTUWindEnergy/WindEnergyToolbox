@@ -4,9 +4,9 @@ The Wind Energy Toolbox has a workflow for automatically running design load
 bases (DLBs) on Gorm.
 This workflow has the following steps:
 1. Create a master Excel sheet defining each case in the DLB
-2. Create subordinate Excel sheets from each tab in the master Excel sheet
-3. Create htc files and PBS job scripts for each requisite simulation using 
-the subordinate Excel files and a master htc file.
+2. [Create subordinate Excel sheets from each tab in the master Excel sheet](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/tutorials/2-creating-subordinate-excels.md)
+3. [Create htc files and PBS job scripts for each requisite simulation using 
+the subordinate Excel files and a master htc file.](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/blob/master/docs/tutorials/3-creating-htc-pbs-files.md)
 4. Submit all PBS job scripts to the cluster
 5. Post-process results
 6. Visualize results
