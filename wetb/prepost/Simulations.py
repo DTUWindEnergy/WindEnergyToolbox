@@ -2139,13 +2139,13 @@ class PBS(object):
             # one using just one file so it can be used together with the
             # DLC spreadsheets
             try:
-                self.copyback_files.append(tag_dict['[copyback_f1]'])
-                self.copyback_frename.append(tag_dict['[copyback_f1_rename]'])
+                self.copyback_files = [tag_dict['[copyback_f1]']]
+                self.copyback_frename = [tag_dict['[copyback_f1_rename]']]
             except KeyError:
                 pass
             try:
-                self.copyto_generic.append(tag_dict['[copyto_generic_f1]'])
-                self.copyto_files.append(tag_dict['[copyto_f1]'])
+                self.copyto_generic = [tag_dict['[copyto_generic_f1]']]
+                self.copyto_files = [tag_dict['[copyto_f1]']]
             except KeyError:
                 pass
 
