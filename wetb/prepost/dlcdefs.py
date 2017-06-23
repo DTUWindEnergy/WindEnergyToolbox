@@ -470,7 +470,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             t0 = float(tags_dict['[t0]'])
             tags_dict['[duration]'] = str(t_stop - t0)
             # in case there is a controller input file defined
-            if ['[controller_tuning_file]'] in tags_dict:
+            if '[controller_tuning_file]' in tags_dict:
                 hs2 = hawcstab2.ReadControlTuning()
                 hs2.read_parameters(tags_dict['[controller_tuning_file]'])
                 tags_dict['[pi_gen_reg1.K]'] = hs2.pi_gen_reg1.K
