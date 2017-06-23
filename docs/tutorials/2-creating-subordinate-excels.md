@@ -49,15 +49,18 @@ python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLC
 source deactivate
 ```
 
+The ```export PATH``` command adds the miniconda bin directory to the path, 
+which is necessary for the toolbox.
 The ```source activate wetb_py3``` and ```source deactivate``` are 
 Gorm-specific commands to activate the Wind Energy Toolbox Python environment.
-Note that ```--folder``` and ```--master``` are optional flags to specify the 
-name of the folder to which the subordinate Excel files should be written to 
-and the name of the master Excel file, respectively.
+The ```--folder``` and ```--master``` flags are optional flags to specify, 
+respectively, the name of the folder to which the subordinate Excel files 
+should be written to and the name of the master Excel file.
 The default values for these two options are './' (i.e., the current 
 directory) and 'DLCs.xlsx', respectively.
-This command should successfully have created a folder with all of the 
-required subordinate Excel files.
+
+After running the commands in the above box on Gorm, you should see a folder in 
+your htc directory with all of your subordinate Excel files.
 
 
 ## 3. Issues
