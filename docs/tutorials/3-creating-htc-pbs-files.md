@@ -63,6 +63,7 @@ The first is to call the function directly.
 The second is to wrap it in a job scheduler to submit the job to the HPC cluster.
 The first option is fine if you have only a few htc files or if the job 
 scheduler is not working for some reason.
+The second option is generally preferred.
 
 ### 2.1 Directly generate htc files
 
@@ -84,6 +85,13 @@ case it creates the htc and pbs files.
 
 After running the commands in the above box on Gorm, you should have all of your 
 PBS input files in ```pbs_in/``` and all of your htc files in ```htc```.
+
+### 2.2 Generate files using job scheduler
+
+From the set ID folder, run the following code:
+```
+qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
+```
 
 
 ## 3. Issues
