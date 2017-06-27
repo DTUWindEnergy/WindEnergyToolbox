@@ -415,6 +415,21 @@ Optional
 * ```[mooring_dir] = False```, all files and sub-folders copied to node
 * ```[hydro_dir] = False```, all files and sub-folders copied to node
 
+The mooring line dll has a fixed name init file that has to be in the root of
+the HAWC2 folder. When you have to use various init files (e.g. when the water
+depth is varying for different load cases) it would be convienent to be able
+to control which init file is used for which case (e.g. water depth).
+
+When running a load case for which the mooring lines will run in init mode:
+* ```[copyback_f1]``` = 'ESYSMooring_init.dat'
+* ```[copyback_f1_rename]``` = 'mooringinits/ESYSMooring_init_vXYZ.dat'
+
+When using an a priory cacluated init file for the mooring lines:
+* ```[copyto_generic_f1]``` = 'mooringinits/ESYSMooring_init_vXYZ.dat'
+* ```[copyto_f1]``` = 'ESYSMooring_init.dat'
+
+Replace ```vXYZ``` with an appropriate identifier for your case.
+
 A zip file will be created which contains all files in the model root directory,
 and all the contents (files and folders) of the following directories:
 ```[control_dir], [mooring_dir], [hydro_dir], 'externalforce/', [data_dir]```.
@@ -424,7 +439,7 @@ during simulation time in the ```[log_dir]```, ```[res_dir]```,
 ```[animation_dir]```, and ```[eigenfreq_dir]``` will be copied back.
 
 
-### Advanced configuration options
+### Advanced configuration options by modifying dlctemplate.py
 
 > Note that not all features are documented yet...
 
@@ -432,8 +447,8 @@ Special tags: copy special result files from the compute node back to the HAWC2
 working directory on the network drive, and optionally rename the file in case
 it would otherwise be overwritten by other cases in your DLB:
 * ```[copyback_files] = ['ESYSMooring_init.dat']```
-* ```[copyback_frename] = ['path/to/ESYSMooring_init_vXYZ.dat']```, optionally specify
-a different file path/name
+* ```[copyback_frename] = ['path/to/ESYSMooring_init_vXYZ.dat']```, optionally
+specify a different file path/name
 
 Copy files from the HAWC2 working directory with a special name to the compute
 node for which the a fixed file name is assumed
@@ -470,10 +485,9 @@ tags:
 * ```[hydro input name]```
 * ```[wave_type]``` : see HAWC2 manual for options
 * ```[wave_spectrum]``` : see HAWC2 manual for options
-* ```[hydro_dir]```
 * ```[wdepth]```
-* ```[hs]``` : see HAWC2 manual for options
-* ```[tp]``` : see HAWC2 manual for options
+* ```[Hs]``` : see HAWC2 manual for options
+* ```[Tp]``` : see HAWC2 manual for options
 * ```[wave_seed]``` : see HAWC2 manual for options
 
 And the corresponding section the htc master file:

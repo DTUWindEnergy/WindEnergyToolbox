@@ -17,4 +17,5 @@ pbr
 PyScaffold
 pytest-cov
 sshtunnel
+xlsxwriter
 

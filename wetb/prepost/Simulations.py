@@ -738,30 +738,12 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             if verbose:
                 print('created cases for: %s.htc\n' % master.tags['[case_id]'])
 
-            # shfe: flag to generate hydro input file
-            if master.tags['[hydro_dir]'] is not False:
-                if '[hydro input name]' not in master.tags:
-                    continue
-                hydro_filename = master.tags['[hydro input name]']
-                print('creating hydro input file for: %s.inp\n' % hydro_filename)
-                wavetype = master.tags['[wave_type]']
-                wavespectrum = master.tags['[wave_spectrum]']
-                hydro_folder = master.tags['[hydro_dir]']
-                wdepth = float(master.tags['[wdepth]'])
-                hs = float(master.tags['[hs]'])
-                tp = float(master.tags['[tp]'])
-                wave_seed = int(float(master.tags['[wave_seed]']))
-                hydro_inputfile = hydro_input(wavetype=wavetype, Hs=hs, Tp=tp,
-                                              wdepth = wdepth, seed=wave_seed,
-                                              spectrum=wavespectrum,
-                                              spreading=None)
-                hydro_inputfile.execute(filename=hydro_filename + '.inp',
-                                        folder=hydro_folder)
 #    print(master.queue.get())
 
     # only copy data and create zip after all htc files have been created.
     # Note that createcase could also creat other input files
     # create the execution folder structure and copy all data to it
+    # FIXME: this approach only considers the tags as set in the last case!
     if update_model_data:
         master.copy_model_data()
         # create the zip file
@@ -1442,70 +1424,71 @@ class HtcMaster(object):
         data_local = os.path.join(self.tags['[model_dir_local]'],
                                   self.tags['[data_dir]'])
         data_run = os.path.join(self.tags['[run_dir]'], self.tags['[data_dir]'])
-        if not data_local == data_run:
+        if data_local == data_run:
+            return
 
-            # copy root files
-            model_root = self.tags['[model_dir_local]']
-            run_root = self.tags['[run_dir]']
-            for fname in self.tags['[zip_root_files]']:
-                shutil.copy2(model_root + fname, run_root + fname)
+        # copy root files
+        model_root = self.tags['[model_dir_local]']
+        run_root = self.tags['[run_dir]']
+        for fname in self.tags['[zip_root_files]']:
+            shutil.copy2(model_root + fname, run_root + fname)
 
-            # copy special files with changing file names
-            if '[ESYSMooring_init_fname]' in self.tags:
-                if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
-                    fname_source = self.tags['[ESYSMooring_init_fname]']
-                    fname_target = 'ESYSMooring_init.dat'
-                    shutil.copy2(model_root + fname_source,
-                                 run_root + fname_target)
+        # copy special files with changing file names
+        if '[ESYSMooring_init_fname]' in self.tags:
+            if isinstance(self.tags['[ESYSMooring_init_fname]'], str):
+                fname_source = self.tags['[ESYSMooring_init_fname]']
+                fname_target = 'ESYSMooring_init.dat'
+                shutil.copy2(model_root + fname_source,
+                             run_root + fname_target)
 
-            # copy the master file into the htc/_master dir
-            src = os.path.join(self.tags['[master_htc_dir]'],
-                               self.tags['[master_htc_file]'])
-            # FIXME: htc_dir can contain the DLC folder name
-            dst = os.path.join(self.tags['[run_dir]'], 'htc', '_master')
-            if not os.path.exists(dst):
-                os.makedirs(dst)
+        # copy the master file into the htc/_master dir
+        src = os.path.join(self.tags['[master_htc_dir]'],
+                           self.tags['[master_htc_file]'])
+        # FIXME: htc_dir can contain the DLC folder name
+        dst = os.path.join(self.tags['[run_dir]'], 'htc', '_master')
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        shutil.copy2(src, dst)
+
+        # copy all content of the following dirs
+        dirs = [self.tags['[control_dir]'], self.tags['[hydro_dir]'],
+                self.tags['[mooring_dir]'], self.tags['[externalforce]'],
+                self.tags['[data_dir]'], 'htc/DLCs/']
+        plocal = self.tags['[model_dir_local]']
+        prun = self.tags['[run_dir]']
+
+        # copy all files present in the specified folders
+        for path in dirs:
+            if not path:
+                continue
+            elif not os.path.exists(os.path.join(plocal, path)):
+                continue
+            for root, dirs, files in os.walk(os.path.join(plocal, path)):
+                for file_name in files:
+                    src = os.path.join(root, file_name)
+                    dst = os.path.abspath(root).replace(os.path.abspath(plocal),
+                                       os.path.abspath(prun))
+                    if not os.path.exists(dst):
+                        os.makedirs(dst)
+                    dst = os.path.join(dst, file_name)
+                    shutil.copy2(src, dst)
+
+        # and last copies: the files with generic input names
+        if not isinstance(self.tags['[fname_source]'], list):
+            raise ValueError('[fname_source] needs to be a list')
+        if not isinstance(self.tags['[fname_default_target]'], list):
+            raise ValueError('[fname_default_target] needs to be a list')
+        len1 = len(self.tags['[fname_source]'])
+        len2 = len(self.tags['[fname_default_target]'])
+        if len1 != len2:
+            raise ValueError('[fname_source] and [fname_default_target] '
+                             'need to have the same number of items')
+        for i in range(len1):
+            src = os.path.join(plocal, self.tags['[fname_source]'][i])
+            dst = os.path.join(prun, self.tags['[fname_default_target]'][i])
+            if not os.path.exists(os.path.dirname(dst)):
+                os.makedirs(os.path.dirname(dst))
             shutil.copy2(src, dst)
-
-            # copy all content of the following dirs
-            dirs = [self.tags['[control_dir]'], self.tags['[hydro_dir]'],
-                    self.tags['[mooring_dir]'], self.tags['[externalforce]'],
-                    self.tags['[data_dir]'], 'htc/DLCs/']
-            plocal = self.tags['[model_dir_local]']
-            prun = self.tags['[run_dir]']
-
-            # copy all files present in the specified folders
-            for path in dirs:
-                if not path:
-                    continue
-                elif not os.path.exists(os.path.join(plocal, path)):
-                    continue
-                for root, dirs, files in os.walk(os.path.join(plocal, path)):
-                    for file_name in files:
-                        src = os.path.join(root, file_name)
-                        dst = os.path.abspath(root).replace(os.path.abspath(plocal),
-                                           os.path.abspath(prun))
-                        if not os.path.exists(dst):
-                            os.makedirs(dst)
-                        dst = os.path.join(dst, file_name)
-                        shutil.copy2(src, dst)
-
-            # and last copies: the files with generic input names
-            if not isinstance(self.tags['[fname_source]'], list):
-                raise ValueError('[fname_source] needs to be a list')
-            if not isinstance(self.tags['[fname_default_target]'], list):
-                raise ValueError('[fname_default_target] needs to be a list')
-            len1 = len(self.tags['[fname_source]'])
-            len2 = len(self.tags['[fname_default_target]'])
-            if len1 != len2:
-                raise ValueError('[fname_source] and [fname_default_target] '
-                                 'need to have the same number of items')
-            for i in range(len1):
-                src = os.path.join(plocal, self.tags['[fname_source]'][i])
-                dst = os.path.join(prun, self.tags['[fname_default_target]'][i])
-                if not os.path.exists(os.path.dirname(dst)):
-                    os.makedirs(os.path.dirname(dst))
-                shutil.copy2(src, dst)
 
     # TODO: copy_model_data and create_model_zip should be the same.
     def create_model_zip(self):
@@ -2150,6 +2133,19 @@ class PBS(object):
             try:
                 self.copyto_generic = tag_dict['[copyto_generic]']
                 self.copyto_files = tag_dict['[copyto_files]']
+            except KeyError:
+                pass
+
+            # one using just one file so it can be used together with the
+            # DLC spreadsheets
+            try:
+                self.copyback_files = [tag_dict['[copyback_f1]']]
+                self.copyback_frename = [tag_dict['[copyback_f1_rename]']]
+            except KeyError:
+                pass
+            try:
+                self.copyto_generic = [tag_dict['[copyto_generic_f1]']]
+                self.copyto_files = [tag_dict['[copyto_f1]']]
             except KeyError:
                 pass
 
@@ -3990,6 +3986,15 @@ class Cases(object):
         leq : bool, default=False
 
         columns : list, default=None
+
+        Returns
+        -------
+
+        stats_df : pandas.DataFrame
+
+        Leq_df : pandas.DataFrame
+
+        AEP_df : pandas.DataFrame
         """
         post_dir = kwargs.get('post_dir', self.post_dir)
         sim_id = kwargs.get('sim_id', self.sim_id)
@@ -4678,10 +4683,11 @@ class Cases(object):
             [(filename, hours),...] where, filename is the name of the file
             (can be a full path, but only the base path is considered), hours
             is the number of hours over the life time. When fh_lst is set,
-            res_dir, dlc_folder and dlc_name are not used.
+            years, res_dir, dlc_folder and dlc_name are not used.
 
         years : float, default=20
-            Total life time expressed in years.
+            Total life time expressed in years, only relevant when fh_lst is
+            None.
 
         Returns
         -------
@@ -4797,15 +4803,21 @@ class Cases(object):
                 # in case the original dfs holds multiple DLC cases.
                 dict_Leq[col].append(sel_sort[col].unique()[0])
 
-            # R_eq is usually expressed as the 1Hz equivalent load
-            neq_1hz = sel_sort['neq'].values
+            # R_eq is assumed to be expressed as the 1Hz equivalent load
+            # where neq is set to the simulation lenght
+#            neq_1hz = sel_sort['neq'].values
 
             for m in ms:
                 # sel_sort[m] holds the equivalent loads for each of the DLC
                 # cases: such all the different wind speeds for dlc1.2
                 m_ = float(m.split('=')[1])
-                R_eq_mod = np.power(sel_sort[m].values, m_) * neq_1hz
-                tmp = (R_eq_mod*np.array(hours)).sum()
+                # do not multi-ply out neq_1hz from R_eq
+                R_eq_mod = np.power(sel_sort[m].values, m_)
+                # R_eq_mod will have to be scaled from its simulation length
+                # to 1 hour (hour distribution is in hours...). Since the
+                # simulation time has not been multiplied out of R_eq_mod yet,
+                # we can just multiply with 3600 (instead of doing 3600/neq)
+                tmp = (R_eq_mod * np.array(hours) * 3600).sum()
                 # the effective Leq for each of the material constants
                 dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/m_))
                 # the following is twice as slow:

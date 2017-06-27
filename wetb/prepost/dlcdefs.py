@@ -20,6 +20,9 @@ from glob import glob
 import pandas as pd
 
 from wetb.prepost import misc
+from wetb.prepost.GenerateHydro import hydro_input
+from wetb.prepost import hawcstab2
+
 
 def casedict2xlsx():
     """
@@ -129,7 +132,7 @@ def variable_tag_func(master, case_id_short=False):
     return master
 
 
-def vartags_dlcs(master):
+def vartag_dlcs(master):
 
     mt = master.tags
 
@@ -153,6 +156,61 @@ def vartags_dlcs(master):
     for ii, jj in mt.items():
         if jj == 'nan':
             mt[ii] = ''
+
+    return master
+
+
+def vartag_excel_stabcon(master):
+    """Variable tag function type that generates a hydro input file for the
+    wave kinematics dll if [hydro input name] is defined properly.
+    """
+
+    mt = master.tags
+    if '[hydro input name]' not in mt or not mt['[hydro input name]']:
+        return master
+
+    print('creating hydro input file for: %s.inp\n' % mt['[hydro input name]'])
+
+    mt['[wdepth]'] = float(mt['[wdepth]'])
+    mt['[Hs]'] = float(mt['[Hs]'])
+    mt['[Tp]'] = float(mt['[Tp]'])
+
+
+    if '[wave_gamma]' not in mt or not mt['[wave_gamma]']:
+        mt['[wave_gamma]'] = 3.3
+    else:
+        mt['[wave_gamma]'] = float(mt['[wave_gamma]'])
+
+    if '[wave_coef]' not in mt or not mt['[wave_coef]']:
+        mt['[wave_coef]'] = 200
+    else:
+        mt['[wave_coef]'] = int(mt['[wave_coef]'])
+
+    if '[stretching]' not in mt or not mt['[stretching]']:
+        mt['[stretching]'] = 1
+    else:
+        mt['[stretching]'] = int(mt['[stretching]'])
+
+    if '[wave_seed]' not in mt or not mt['[wave_seed]']:
+        mt['[wave_seed]'] = int(mt['[seed]'])
+    else:
+        mt['[wave_seed]'] = int(mt['[wave_seed]'])
+
+    try:
+        embed_sf = float(master.tags['[embed_sf]'])
+        embed_sf_t0 = int(master.tags['[t0]']) + 20
+    except KeyError:
+        embed_sf = None
+        embed_sf_t0 = None
+
+    hio = hydro_input(wavetype=mt['[wave_type]'], Hs=mt['[Hs]'], Tp=mt['[Tp]'],
+                      gamma=mt['[wave_gamma]'], wdepth=mt['[wdepth]'],
+                      spectrum=mt['[wave_spectrum]'], seed=mt['[wave_seed]'],
+                      stretching=mt['[stretching]'], coef=mt['[wave_coef]'],
+                      embed_sf=embed_sf, embed_sf_t0=embed_sf_t0, spreading=None)
+
+    hio.execute(filename=mt['[hydro input name]'] + '.inp',
+                folder=mt['[hydro_dir]'])
 
     return master
 
@@ -327,11 +385,12 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
 
     if not silent:
         print('found %i Excel file(s), ' % len(dict_dfs), end='')
-    k = 0
-    for df in dict_dfs:
-        k += len(df)
+
     if not silent:
-        print('in which a total of %s cases are defined.' % k)
+        k = 0
+        for df in dict_dfs:
+            k += len(df)
+        print('in which a total of %i cases are defined.' % k)
 
     opt_tags = []
 
@@ -410,6 +469,19 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             t_stop = float(tags_dict['[time_stop]'])
             t0 = float(tags_dict['[t0]'])
             tags_dict['[duration]'] = str(t_stop - t0)
+            # in case there is a controller input file defined
+            if '[controller_tuning_file]' in tags_dict:
+                hs2 = hawcstab2.ReadControlTuning()
+                hs2.read_parameters(tags_dict['[controller_tuning_file]'])
+                tags_dict['[pi_gen_reg1.K]'] = hs2.pi_gen_reg1.K
+                tags_dict['[pi_gen_reg2.Kp]'] = hs2.pi_gen_reg2.Kp
+                tags_dict['[pi_gen_reg2.Ki]'] = hs2.pi_gen_reg2.Ki
+                tags_dict['[pi_gen_reg2.Kd]'] = 0.0
+                tags_dict['[pi_pitch_reg3.Kp]'] = hs2.pi_pitch_reg3.Kp
+                tags_dict['[pi_pitch_reg3.Ki]'] = hs2.pi_pitch_reg3.Ki
+                tags_dict['[pi_pitch_reg3.K1]'] = hs2.pi_pitch_reg3.K1
+                tags_dict['[pi_pitch_reg3.K2]'] = hs2.pi_pitch_reg3.K2
+            # save a copy of the current case an one opt_tags entry
             opt_tags.append(tags_dict.copy())
 
     return opt_tags

@@ -1166,12 +1166,19 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             # WIND SPEED
             # WSP gl. coo.,Vx
+            # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
             elif self.ch_details[ch, 0].startswith('WSP gl.'):
                 units = self.ch_details[ch, 1]
                 direction = self.ch_details[ch, 0].split(',')[1]
                 tmp = self.ch_details[ch, 2].split('pos')[1]
                 x, y, z = tmp.split(',')
                 x, y, z = x.strip(), y.strip(), z.strip()
+                tmp = z.split('  ')
+                sensortag = ''
+                if len(tmp) == 2:
+                    z, sensortag = tmp
+                elif len(tmp) == 1:
+                    z = tmp[0]
 
                 # and tag it
                 tag = 'windspeed-global-%s-%s-%s-%s' % (direction, x, y, z)
@@ -1181,6 +1188,9 @@ class LoadResults(ReadHawc2):
                 channelinfo['pos'] = (x, y, z)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+                channelinfo['sensortag'] = sensortag
+                # FIXME: direction is the same as component, right?
+                channelinfo['direction'] = direction
 
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
@@ -1201,6 +1211,7 @@ class LoadResults(ReadHawc2):
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['coord'] = coord
+                # FIXME: direction is the same as component, right?
                 channelinfo['direction'] = direction
                 channelinfo['blade_nr'] = int(blade_nr)
                 channelinfo['radius'] = float(radius)
