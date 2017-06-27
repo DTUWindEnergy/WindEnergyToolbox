@@ -49,7 +49,13 @@ class HTCContents(object):
     name_ = ""
 
     def __setitem__(self, key, value):
-        self.contents[key] = value
+        if isinstance(key, str):
+            self.contents[key] = value
+        elif isinstance(key, int):
+            self.values[key] = value
+        else:
+            raise NotImplementedError
+            
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -161,9 +167,9 @@ class HTCSection(HTCContents):
         return HTCLine.from_lines(lines)
 
     def __str__(self, level=0):
-        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.begin_comments)[bool(self.begin_comments.strip())])
+        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.begin_comments)[bool(self.begin_comments.strip())]).replace("\t\n","\n"))
         s += "".join([c.__str__(level + 1) for c in self])
-        s += "%send %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.end_comments)[self.end_comments.strip() != ""])
+        s += "%send %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.end_comments)[self.end_comments.strip() != ""]).replace("\t\n","\n"))
         return s
 
 class HTCLine(HTCContents):
@@ -276,7 +282,7 @@ class HTCSensor(HTCLine):
         self.type = type
         self.sensor = sensor
         self.values = values
-        self.comments = comments
+        self.comments = comments.strip(" \t")
 
     @staticmethod
     def from_lines(lines):

@@ -278,7 +278,18 @@ class TestHtcFile(unittest.TestCase):
         self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected", HTCFile, self.testfilepath + "test2.htc")
          
           
-
+    def test_open_eq_save(self):
+        HTCFile(self.testfilepath + "test3.htc","../").save(self.testfilepath + "tmp.htc")
+        htcfile = HTCFile(self.testfilepath + "tmp.htc","../")
+        htcfile.save(self.testfilepath + "tmp.htc")
+        self.assertEqual(str(htcfile).count("\t"), str(HTCFile(self.testfilepath + "tmp.htc", "../")).count("\t"))
+        self.assertEqual(str(htcfile), str(HTCFile(self.testfilepath + "tmp.htc", "../")))
+        
+    def test_2xoutput(self):
+        htc = HTCFile(self.testfilepath + "test_2xoutput.htc","../")
+        self.assertEqual(len(htc.res_file_lst()), 4)
+        
+    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
