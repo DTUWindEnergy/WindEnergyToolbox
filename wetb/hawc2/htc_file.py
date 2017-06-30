@@ -276,9 +276,9 @@ class HTCFile(HTCContents, HTCDefaults):
                          ('new_htc_structure/struct_inertia_output_file_name', 0),
                          ('new_htc_structure/body_eigenanalysis_file_name', 0),
                          ('new_htc_structure/constraint_output_file_name', 0),
-                         ('turb_export/filename_u', 0),
-                         ('turb_export/filename_v', 0),
-                         ('turb_export/filename_w', 0)]:
+                         ('wind/turb_export/filename_u', 0),
+                         ('wind/turb_export/filename_v', 0),
+                         ('wind/turb_export/filename_w', 0)]:
             line = self.get(k)
             if line:
                 files.append(line[index])
@@ -310,16 +310,17 @@ class HTCFile(HTCContents, HTCDefaults):
 
     def res_file_lst(self):
         self.contents # load if not loaded
-        if 'output' not in self:
-            return []
-        dataformat = self.output.get('data_format', 'hawc_ascii')
-        res_filename = self.output.filename[0]
-        if dataformat[0] == "gtsdf" or dataformat[0] == "gtsdf64":
-            return [res_filename + ".hdf5"]
-        elif dataformat[0] == "flex_int":
-            return [res_filename + ".int", os.path.join(os.path.dirname(res_filename), 'sensor')]
-        else:
-            return [res_filename + ".sel", res_filename + ".dat"]
+        res = []
+        for output in [self[k] for k in self.keys() if self[k].name_=="output"]:
+            dataformat = output.get('data_format', 'hawc_ascii')
+            res_filename = output.filename[0]
+            if dataformat[0] == "gtsdf" or dataformat[0] == "gtsdf64":
+                res.append(res_filename + ".hdf5")
+            elif dataformat[0] == "flex_int":
+                res.extend([res_filename + ".int", os.path.join(os.path.dirname(res_filename), 'sensor')])
+            else:
+                res.extend([res_filename + ".sel", res_filename + ".dat"])
+        return res
 
 
     def simulate(self, exe, skip_if_up_to_date=False):
