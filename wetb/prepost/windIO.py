@@ -844,8 +844,9 @@ class LoadResults(ReadHawc2):
         # some channel ID's are unique, use them
         ch_unique = set(['Omega', 'Ae rot. torque', 'Ae rot. power',
                          'Ae rot. thrust', 'Time', 'Azi  1'])
-        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa'])
-        ch_aerogrid = set(['a_grid', 'am_grid'])
+        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa', 'Lift',
+                       'Drag'])
+        ch_aerogrid = set(['a_grid', 'am_grid', 'CT', 'CQ'])
 
         # also safe as df
 #        cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi',
@@ -946,6 +947,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
+            # ELEMENT STATES: pos, vel, acc, rot, ang
             #   0    1  2      3       4      5   6         7    8
             # State pos x  Mbdy:blade E-nr:   1 Z-rel:0.00 coo: blade
             #   0           1     2    3        4    5   6         7     8     9+
@@ -1041,6 +1043,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
                 channelinfo['units'] = self.ch_details[ch, 1]
+                channelinfo['sensortype'] = 'dll-io'
 
             # -----------------------------------------------------------------
             # BEARING OUTPUS
@@ -1061,6 +1064,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['chi'] = ch
 
             # -----------------------------------------------------------------
+            # AS DEFINED IN: ch_aero
             # AERO CL, CD, CM, VREL, ALFA, LIFT, DRAG, etc
             # Cl, R=  0.5     deg      Cl of blade  1 at radius   0.49
             # Azi  1          deg      Azimuth of blade  1
@@ -1112,17 +1116,21 @@ class LoadResults(ReadHawc2):
             # 0: Induc. Vz, rpco, R=  1.4
             # 1: m/s
             # 2: Induced wsp Vz of blade  1 at radius   1.37, RP. coo.
-# Induc. Vx, locco, R=  1.4 // Induced wsp Vx of blade  1 at radius   1.37, local ae coo.
-# Induc. Vy, blco, R=  1.4 // Induced wsp Vy of blade  1 at radius   1.37, local bl coo.
-# Induc. Vz, glco, R=  1.4 // Induced wsp Vz of blade  1 at radius   1.37, global coo.
-# Induc. Vx, rpco, R=  8.4 // Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
+            # Induc. Vx, locco, R=  1.4
+            #    Induced wsp Vx of blade  1 at radius   1.37, local ae coo.
+            # Induc. Vy, blco, R=  1.4
+            #    Induced wsp Vy of blade  1 at radius   1.37, local bl coo.
+            # Induc. Vz, glco, R=  1.4
+            #    Induced wsp Vz of blade  1 at radius   1.37, global coo.
+            # Induc. Vx, rpco, R=  8.4
+            #    Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
             elif self.ch_details[ch, 0].strip()[:5] == 'Induc':
                 items = self.ch_details[ch, 2].split(' ')
                 items = misc.remove_items(items, '')
+                coord = self.ch_details[ch, 2].split(', ')[1].strip()
                 blade_nr = int(items[5])
                 radius = float(items[8].replace(',', ''))
                 items = self.ch_details[ch, 0].split(',')
-                coord = items[1].strip()
                 component = items[0][-2:]
                 units = self.ch_details[ch, 1]
                 # and tag it
@@ -1137,6 +1145,47 @@ class LoadResults(ReadHawc2):
                 channelinfo['component'] = component
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+
+            # -----------------------------------------------------------------
+            # MORE AERO SENSORS
+            # Ae intfrc Fx, rpco, R=  0.0
+            #     Aero int. force Fx of blade  1 at radius   0.00, RP coo.
+            # Ae secfrc Fy, R= 25.0
+            #     Aero force  Fy of blade  1 at radius  24.11
+            # Ae pos x, glco, R= 88.2
+            #     Aero position x of blade  1 at radius  88.17, global coo.
+            elif self.ch_details[ch, 0].strip()[:2] == 'Ae':
+                units = self.ch_details[ch, 1]
+
+                items = self.ch_details[ch, 2].split(' ')
+                items = misc.remove_items(items, '')
+                # find blade number
+                tmp = self.ch_details[ch, 2].split('blade ')[1].strip()
+                blade_nr = int(tmp.split(' ')[0])
+                tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
+                tmp = tmp.split(',')
+                radius = float(tmp[0])
+                if len(tmp) > 1:
+                    coord = tmp[1].strip()
+                else:
+                    coord = 'aero'
+
+                items = self.ch_details[ch, 0].split(' ')
+                sensortype = items[1]
+                component = items[2].replace(',', '')
+
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['blade_nr'] = blade_nr
+                channelinfo['sensortype'] = sensortype
+                channelinfo['radius'] = radius
+                channelinfo['coord'] = coord
+                channelinfo['component'] = component
+                channelinfo['units'] = units
+                channelinfo['chi'] = ch
+
+                rpl = (coord, blade_nr, sensortype, component, radius)
+                tag = 'aero-%s-blade-%1i-%s-%s-r-%03.02f' % rpl
 
             # TODO: wind speed
             # some spaces have been trimmed here
@@ -1191,13 +1240,15 @@ class LoadResults(ReadHawc2):
                 channelinfo['sensortag'] = sensortag
                 # FIXME: direction is the same as component, right?
                 channelinfo['direction'] = direction
+                channelinfo['sensortype'] = 'wsp-global'
 
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
             # 2: Wind speed Vx of blade  1 at radius  61.52, global coo.
             elif self.ch_details[ch, 0].startswith('WSP V'):
                 units = self.ch_details[ch, 1].strip()
-                direction = self.ch_details[ch, 0].split(' ')[1].strip()
+                tmp = self.ch_details[ch, 0].split(' ')[1].strip()
+                direction = tmp.replace(',', '')
                 blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()[:2]
                 radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
                 coord = self.ch_details[ch, 2].split(',')[1].strip()
@@ -1217,6 +1268,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['radius'] = float(radius)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+                channelinfo['sensortype'] = 'wsp-blade'
 
             # FLAP ANGLE
             # 2: Flap angle for blade  3 flap number  1
@@ -1377,6 +1429,15 @@ class LoadResults(ReadHawc2):
             zoomtype = '_zoom_%1.1f-%1.1fsec' % (time[0], time[1])
 
         return slice_, window, zoomtype, time_range
+
+    def sig2df(self):
+        """Convert sig to dataframe with unique channel names as column names.
+        """
+        # channels that are not part of the naming scheme are not included
+        df = pd.DataFrame(self.sig[:,self.ch_df.index],
+                          columns=self.ch_df['unique_ch_name'])
+
+        return df
 
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_stats(self, sig, i0=0, i1=None):
