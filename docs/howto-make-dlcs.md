@@ -421,12 +421,12 @@ depth is varying for different load cases) it would be convienent to be able
 to control which init file is used for which case (e.g. water depth).
 
 When running a load case for which the mooring lines will run in init mode:
-* ```[copyback_f1]``` = 'ESYSMooring_init.dat'
-* ```[copyback_f1_rename]``` = 'mooringinits/ESYSMooring_init_vXYZ.dat'
+* ```[copyback_f1] = 'ESYSMooring_init.dat'```
+* ```[copyback_f1_rename] = 'mooringinits/ESYSMooring_init_vXYZ.dat'```
 
 When using an a priory cacluated init file for the mooring lines:
-* ```[copyto_generic_f1]``` = 'mooringinits/ESYSMooring_init_vXYZ.dat'
-* ```[copyto_f1]``` = 'ESYSMooring_init.dat'
+* ```[copyto_f1] = 'mooringinits/ESYSMooring_init_vXYZ.dat'```
+* ```[copyto_generic_f1] = 'ESYSMooring_init.dat'```
 
 Replace ```vXYZ``` with an appropriate identifier for your case.
 
@@ -748,25 +748,48 @@ g-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_log
 Other options for the original ```dlctemplate.py``` script:
 
 ```
-usage: dlctemplate.py [-h] [--prep] [--check_logs] [--stats] [--fatigue]
-                      [--csv] [--years YEARS] [--no_bins NO_BINS] [--neq NEQ]
-                      [--envelopeblade] [--envelopeturbine]
+(wetb_py3) [dave@jess]$ python dlctemplate.py --help
+usage: dlctemplate.py [-h] [--prep] [--check_logs]
+                      [--pbs_failed_path PBS_FAILED_PATH] [--stats]
+                      [--fatigue] [--AEP] [--csv] [--years YEARS]
+                      [--no_bins NO_BINS] [--neq NEQ] [--rotarea ROTAREA]
+                      [--save_new_sigs] [--dlcplot] [--envelopeblade]
+                      [--envelopeturbine] [--zipchunks] [--pbs_turb]
+                      [--walltime WALLTIME]
 
 pre- or post-processes DLC's
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --prep             create htc, pbs, files (default=False)
-  --check_logs       check the log files (default=False)
-  --stats            calculate statistics and 1Hz equivalent loads (default=False)
-  --fatigue          calculate Leq for a full DLC (default=False)
-  --csv              Save data also as csv file (default=False)
-  --years YEARS      Total life time in years (default=20)
-  --no_bins NO_BINS  Number of bins for fatigue loads (default=46)
-  --neq NEQ          Equivalent cycles neq, default 1 Hz equivalent load
-                     (neq = simulation duration in seconds)
-  --envelopeblade    calculate the load envelope for sensors on the blades
-  --envelopeturbine  calculate the load envelope for sensors on the turbine
+  -h, --help            show this help message and exit
+  --prep                create htc, pbs, files
+  --check_logs          check the log files
+  --pbs_failed_path PBS_FAILED_PATH
+                        Copy pbs launch files of the failed cases to a new
+                        directory in order to prepare a re-run. Default value:
+                        pbs_in_failed.
+  --stats               calculate statistics and 1Hz equivalent loads
+  --fatigue             calculate Leq for a full DLC
+  --AEP                 calculate AEP, requires htc/DLCs/dlc_config.xlsx
+  --csv                 Save data also as csv file
+  --years YEARS         Total life time in years
+  --no_bins NO_BINS     Number of bins for fatigue loads
+  --neq NEQ             Equivalent cycles Neq used for Leq fatigue lifetime
+                        calculations.
+  --rotarea ROTAREA     Rotor area for C_T, C_P
+  --save_new_sigs       Save post-processed sigs
+  --dlcplot             Plot DLC load basis results
+  --envelopeblade       Compute envelopeblade
+  --envelopeturbine     Compute envelopeturbine
+  --zipchunks           Create PBS launch files forrunning in zip-chunk
+                        find+xargs mode.
+  --pbs_turb            Create PBS launch files to create the turbulence boxes
+                        in stand alone mode using the 64-bit Mann turbulence
+                        box generator. This can be usefull if your turbulence
+                        boxes are too big for running in HAWC2 32-bit mode.
+                        Only works on Jess.
+  --walltime WALLTIME   Queue walltime for each case/pbs file, format:
+                        HH:MM:SS Default: 04:00:00
+
 ```
 
 The load envelopes are computed for sensors specified in the
