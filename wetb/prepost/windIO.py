@@ -269,7 +269,12 @@ class LogFile(object):
                     time_step = 0
                 iterations[time_step,2] = 1
 
-        # simulation and simulation output time
+        # remove not-used rows from iterations
+        iterations = iterations[:time_step+1,:]
+
+        # simulation and simulation output time based on the tags
+        # FIXME: ugly, do not mix tags with what is actually happening in the
+        # log files!!
         if case is not None:
             t_stop = float(case['[time_stop]'])
             duration = float(case['[duration]'])
@@ -288,6 +293,8 @@ class LogFile(object):
             exit_correct = True
             elapsed_time = iterations[time_step,0]
             tempLog.append( elapsed_time )
+        # FIXME: this is weird mixing of referring to t_stop from the tags
+        # and the actual last recorded time step
         elif np.allclose(iterations[time_step,0], t_stop):
             exit_correct = True
             elapsed_time = iterations[time_step,0]
@@ -300,8 +307,8 @@ class LogFile(object):
         tempLog.append('%1.11f' % iterations[time_step,0])
 
         # simulation and simulation output time
-        tempLog.append('%1.01f' % t_stop)
-        tempLog.append('%1.04f' % (t_stop/elapsed_time))
+        tempLog.append('%1.01f' % iterations[time_step,0])
+        tempLog.append('%1.04f' % (iterations[time_step,0]/elapsed_time))
         tempLog.append('%1.01f' % duration)
 
         # as last element, add the total number of iterations
@@ -315,14 +322,19 @@ class LogFile(object):
             tempLog.append('failed to find dt')
 
         # number of time steps
-        tempLog.append('%i' % len(iterations) )
+        tempLog.append('%i' % (time_step+1))
 
         # if the simulation didn't end correctly, the elapsed_time doesn't
         # exist. Add the average and maximum nr of iterations per step
         # or, if only the structural and eigen analysis is done, we have 0
         try:
             ratio = float(elapsed_time)/float(itertotal)
-            tempLog.append('%1.6f' % ratio)
+            # FIXME: this needs to be fixed proper while testing the analysis
+            # of various log files and edge cases
+            if elapsed_time < 0:
+                tempLog.append('')
+            else:
+                tempLog.append('%1.6f' % ratio)
         except (UnboundLocalError, ZeroDivisionError, ValueError) as e:
             tempLog.append('')
         # when there are no time steps (structural analysis only)
@@ -414,9 +426,12 @@ class LogFile(object):
         """
         chain_iter = chain.from_iterable
 
+        nr_init = len(self.err_init)
+        nr_sim = len(self.err_sim)
+
         colnames = ['file_name']
         colnames.extend(list(chain_iter(('nr_%i' % i, 'msg_%i' % i)
-                      for i in range(31))) )
+                      for i in range(nr_init))) )
 
         gr = ('first_tstep_%i', 'last_step_%i', 'nr_%i', 'msg_%i')
         colnames.extend(list(chain_iter( (k % i for k in gr)
@@ -437,16 +452,16 @@ class LogFile(object):
         dtypes = {}
 
         # str and float datatypes for
-        msg_cols = ['msg_%i' % i for i in range(30)]
-        msg_cols.extend(['msg_%i' % i for i in range(100,105,1)])
+        msg_cols = ['msg_%i' % i for i in range(nr_init-1)]
+        msg_cols.extend(['msg_%i' % i for i in range(100,100+nr_sim,1)])
         msg_cols.append('msg_extra')
         dtypes.update({k:str for k in msg_cols})
         # make the message/str columns long enough
-        min_itemsize = {'msg_%i' % i : 100 for i in range(30)}
+        min_itemsize = {'msg_%i' % i : 100 for i in range(nr_init-1)}
 
         # column names holding the number of occurances of messages
-        nr_cols = ['nr_%i' % i for i in range(30)]
-        nr_cols.extend(['nr_%i' % i for i in range(100,105,1)])
+        nr_cols = ['nr_%i' % i for i in range(nr_init-1)]
+        nr_cols.extend(['nr_%i' % i for i in range(100,100+nr_sim,1)])
         # other float values
         nr_cols.extend(['elapsted_time', 'total_iterations'])
         # NaN only exists in float arrays, not integers (NumPy limitation)
@@ -560,81 +575,6 @@ class LoadResults(ReadHawc2):
         if self.debug:
             stop = time() - start
             print('time to load HAWC2 file:', stop, 's')
-
-
-    def reformat_sig_details(self):
-        """Change HAWC2 output description of the channels short descriptive
-        strings, usable in plots
-
-        obj.ch_details[channel,(0=ID; 1=units; 2=description)] : np.array
-        """
-
-        # CONFIGURATION: mappings between HAWC2 and short good output:
-        change_list = []
-        change_list.append( ['original', 'new improved'] )
-
-#        change_list.append( ['Mx coo: hub1','blade1 root bending: flap'] )
-#        change_list.append( ['My coo: hub1','blade1 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub1','blade1 root bending: torsion'] )
-#
-#        change_list.append( ['Mx coo: hub2','blade2 root bending: flap'] )
-#        change_list.append( ['My coo: hub2','blade2 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub2','blade2 root bending: torsion'] )
-#
-#        change_list.append( ['Mx coo: hub3','blade3 root bending: flap'] )
-#        change_list.append( ['My coo: hub3','blade3 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub3','blade3 root bending: torsion'] )
-
-        change_list.append(['Mx coo: blade1', 'blade1 flap'])
-        change_list.append(['My coo: blade1', 'blade1 edge'])
-        change_list.append(['Mz coo: blade1', 'blade1 torsion'])
-
-        change_list.append(['Mx coo: blade2', 'blade2 flap'])
-        change_list.append(['My coo: blade2', 'blade2 edge'])
-        change_list.append(['Mz coo: blade2', 'blade2 torsion'])
-
-        change_list.append(['Mx coo: blade3', 'blade3 flap'])
-        change_list.append(['My coo: blade3', 'blade3 edeg'])
-        change_list.append(['Mz coo: blade3', 'blade3 torsion'])
-
-        change_list.append(['Mx coo: hub1', 'blade1 out-of-plane'])
-        change_list.append(['My coo: hub1', 'blade1 in-plane'])
-        change_list.append(['Mz coo: hub1', 'blade1 torsion'])
-
-        change_list.append(['Mx coo: hub2', 'blade2 out-of-plane'])
-        change_list.append(['My coo: hub2', 'blade2 in-plane'])
-        change_list.append(['Mz coo: hub2', 'blade2 torsion'])
-
-        change_list.append(['Mx coo: hub3', 'blade3 out-of-plane'])
-        change_list.append(['My coo: hub3', 'blade3 in-plane'])
-        change_list.append(['Mz coo: hub3', 'blade3 torsion'])
-        # this one will create a false positive for tower node nr1
-        change_list.append(['Mx coo: tower', 'tower top momemt FA'])
-        change_list.append(['My coo: tower', 'tower top momemt SS'])
-        change_list.append(['Mz coo: tower', 'yaw-moment'])
-
-        change_list.append(['Mx coo: chasis', 'chasis momemt FA'])
-        change_list.append(['My coo: chasis', 'yaw-moment chasis'])
-        change_list.append(['Mz coo: chasis', 'chasis moment SS'])
-
-        change_list.append(['DLL inp  2:  2', 'tower clearance'])
-
-        self.ch_details_new = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
-
-        # approach: look for a specific description and change it.
-        # This approach is slow, but will not fail if the channel numbers change
-        # over different simulations
-        for ch in range(self.Nch):
-            # the change_list will always be slower, so this loop will be
-            # inside the bigger loop of all channels
-            self.ch_details_new[ch, :] = self.ch_details[ch, :]
-            for k in range(len(change_list)):
-                if change_list[k][0] == self.ch_details[ch, 0]:
-                    self.ch_details_new[ch, 0] = change_list[k][1]
-                    # channel description should be unique, so delete current
-                    # entry and stop looking in the change list
-                    del change_list[k]
-                    break
 
     # TODO: THIS IS STILL A WIP
     def _make_channel_names(self):
