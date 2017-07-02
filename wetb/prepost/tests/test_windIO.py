@@ -26,6 +26,9 @@ class TestsLoadResults(unittest.TestCase):
                                     '../../hawc2/tests/test_files/hawc2io/')
         self.fascii = 'Hawc2ascii'
         self.fbin = 'Hawc2bin'
+        self.f1_chant = 'hawc2ascii_chantest_1.sel'
+        self.f2_chant = 'hawc2bin_chantest_2.sel'
+        self.f3_chant = 'hawc2bin_chantest_3.sel'
 
     def loadresfile(self, resfile):
         res = windIO.LoadResults(self.respath, resfile)
@@ -61,6 +64,49 @@ class TestsLoadResults(unittest.TestCase):
         self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
         self.assertEqual(res.ch_df.unique_ch_name.values[27],
                          'windspeed-global-Vy--2.50-1.00--52.50')
+
+    def test_unified_chan_names_extensive(self):
+
+        # ---------------------------------------------------------------------
+        res = windIO.LoadResults(self.respath, self.f1_chant, readdata=False)
+        self.assertFalse(hasattr(res, 'sig'))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,422))
+        self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
+        df = res.ch_df
+        self.assertEqual(2, len(df[df['bearing_name']=='shaft_rot']))
+        self.assertEqual(18, len(df[df['sensortype']=='State pos']))
+        self.assertEqual(11, len(df[df['blade_nr']==1]))
+
+        exp = [[38, 'global-blade2-elem-019-zrel-1.00-State pos-z', 'm'],
+               [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
+               [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
+               [415, 'Cl-1-54.82', 'deg'],
+               [421, 'qwerty-is-azerty', 'is']
+              ]
+        for k in exp:
+            self.assertEqual(df.loc[k[0], 'unique_ch_name'], k[1])
+            self.assertEqual(df.loc[k[0], 'units'], k[2])
+            self.assertEqual(res.ch_dict[k[1]]['chi'], k[0])
+            self.assertEqual(res.ch_dict[k[1]]['units'], k[2])
+
+        # ---------------------------------------------------------------------
+        res = windIO.LoadResults(self.respath, self.f2_chant, readdata=False)
+        self.assertFalse(hasattr(res, 'sig'))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,217))
+        df = res.ch_df
+        self.assertEqual(4, len(df[df['sensortype']=='wsp-global']))
+        self.assertEqual(2, len(df[df['sensortype']=='harmonic']))
+        self.assertEqual(2, len(df[df['blade_nr']==3]))
+
+        # ---------------------------------------------------------------------
+        res = windIO.LoadResults(self.respath, self.f3_chant, readdata=False)
+        self.assertFalse(hasattr(res, 'sig'))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,294))
+        df = res.ch_df
+        self.assertEqual(8, len(df[df['sensortype']=='CT']))
+        self.assertEqual(8, len(df[df['sensortype']=='CQ']))
+        self.assertEqual(8, len(df[df['sensortype']=='a_grid']))
+        self.assertEqual(84, len(df[df['blade_nr']==1]))
 
 
 class TestUserWind(unittest.TestCase):

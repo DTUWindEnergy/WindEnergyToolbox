@@ -1,0 +1,448 @@
+________________________________________________________________________________________________________________________
+  Version ID : HAWC2MB 12.4
+                                                            Time : 14:45:39
+                                                            Date : 28:04.2017
+________________________________________________________________________________________________________________________
+  Result file : ./res/dlc12_iec61400-1ed3/dlc12_wsp04_wdir000_s1001_test.dat
+________________________________________________________________________________________________________________________
+   Scans    Channels    Time [sec]        Format
+     120000     217          600.000       BINARY
+
+  Channel   Variable Description               
+
+      1      Time                           s          Time
+      2      bea1 angle                     deg        shaft_rot angle
+      3      bea1 angle_speed               rpm        shaft_rot angle speed
+      4      bea2 angle                     deg        pitch1 angle
+      5      bea2 angle_speed               deg/s      pitch1 angle speed
+      6      bea2 angle                     deg        pitch2 angle
+      7      bea2 angle_speed               deg/s      pitch2 angle speed
+      8      bea2 angle                     deg        pitch3 angle
+      9      bea2 angle_speed               deg/s      pitch3 angle speed
+     10       Omega                         rad/s       Rotor speed
+     11      Ae rot. torque                 kNm        Aero rotor torque
+     12      Ae rot. power                  kW         Aero rotor power
+     13      Ae rot. thrust                 kN         Aero rotor thrust
+     14      WSP gl. coo.,Vx                m/s        Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00, -31.60
+     15      WSP gl. coo.,Vy                m/s        Free wind speed Vy, gl. coo, of gl. pos    0.00,   0.00, -31.60
+     16      WSP gl. coo.,Vz                m/s        Free wind speed Vz, gl. coo, of gl. pos    0.00,   0.00, -31.60
+     17      WSP nonr. rot coo.,Vx          m/s        Free wind speed Vx, nonr. rotor coo, of gl. pos    0.00,   0.00, -31.60
+     18      WSP nonr. rot coo.,Vy          m/s        Free wind speed Vy, nonr. rotor coo, of gl. pos    0.00,   0.00, -31.60
+     19      WSP nonr. rot coo.,Vz          m/s        Free wind speed Vz, nonr. rotor coo, of gl. pos    0.00,   0.00, -31.60
+     20      WSP nonr. rot coo.,Vx          m/s        Free wind speed Vx, nonr. rotor coo, of gl. pos    0.00,   0.00, -45.00
+     21      WSP nonr. rot coo.,Vy          m/s        Free wind speed Vy, nonr. rotor coo, of gl. pos    0.00,   0.00, -45.00
+     22      WSP nonr. rot coo.,Vz          m/s        Free wind speed Vz, nonr. rotor coo, of gl. pos    0.00,   0.00, -45.00
+     23      WSP nonr. rot coo.,Vx          m/s        Free wind speed Vx, nonr. rotor coo, of gl. pos    0.00,   0.00, -15.00
+     24      WSP nonr. rot coo.,Vy          m/s        Free wind speed Vy, nonr. rotor coo, of gl. pos    0.00,   0.00, -15.00
+     25      WSP nonr. rot coo.,Vz          m/s        Free wind speed Vz, nonr. rotor coo, of gl. pos    0.00,   0.00, -15.00
+     26      WSP gl. coo.,Abs_vhor          m/s        Free wind speed Abs_vhor, gl. coo, of gl. pos    0.00,   0.00, -31.60
+     27      Mx coo: tower                  kNm        MomentMx Mbdy:tower nodenr:   1 coo: tower  m tower base
+     28      My coo: tower                  kNm        MomentMy Mbdy:tower nodenr:   1 coo: tower  m tower base
+     29      Mz coo: tower                  kNm        MomentMz Mbdy:tower nodenr:   1 coo: tower  m tower base
+     30      Mx coo: tower                  kNm        MomentMx Mbdy:tower nodenr:  13 coo: tower  m yaw bearing
+     31      My coo: tower                  kNm        MomentMy Mbdy:tower nodenr:  13 coo: tower  m yaw bearing
+     32      Mz coo: tower                  kNm        MomentMz Mbdy:tower nodenr:  13 coo: tower  m yaw bearing
+     33      Mx coo: shaft                  kNm        MomentMx Mbdy:shaft nodenr:   3 coo: shaft  m main bearing
+     34      My coo: shaft                  kNm        MomentMy Mbdy:shaft nodenr:   3 coo: shaft  m main bearing
+     35      Mz coo: shaft                  kNm        MomentMz Mbdy:shaft nodenr:   3 coo: shaft  m main bearing
+     36      Mx coo: hub1                   kNm        MomentMx Mbdy:hub1 nodenr:   2 coo: hub1  m blade 1 root non rotat
+     37      My coo: hub1                   kNm        MomentMy Mbdy:hub1 nodenr:   2 coo: hub1  m blade 1 root non rotat
+     38      Mz coo: hub1                   kNm        MomentMz Mbdy:hub1 nodenr:   2 coo: hub1  m blade 1 root non rotat
+     39      Mx coo: hub2                   kNm        MomentMx Mbdy:hub2 nodenr:   2 coo: hub2  m blade 2 root non rotat
+     40      My coo: hub2                   kNm        MomentMy Mbdy:hub2 nodenr:   2 coo: hub2  m blade 2 root non rotat
+     41      Mz coo: hub2                   kNm        MomentMz Mbdy:hub2 nodenr:   2 coo: hub2  m blade 2 root non rotat
+     42      Mx coo: hub3                   kNm        MomentMx Mbdy:hub3 nodenr:   2 coo: hub3  m blade 3 root non rotat
+     43      My coo: hub3                   kNm        MomentMy Mbdy:hub3 nodenr:   2 coo: hub3  m blade 3 root non rotat
+     44      Mz coo: hub3                   kNm        MomentMz Mbdy:hub3 nodenr:   2 coo: hub3  m blade 3 root non rotat
+     45      State pos x  coo: global       m          State pos x  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange global pos
+     46      State pos y  coo: global       m          State pos y  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange global pos
+     47      State pos z  coo: global       m          State pos z  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange global pos
+     48      State acc x  coo: global       m/s^2      State acc x  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange acceleration
+     49      State acc y  coo: global       m/s^2      State acc y  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange acceleration
+     50      State acc z  coo: global       m/s^2      State acc z  Mbdy:tower E-nr:  12 Z-rel:1.00 coo: global  tower top flange acceleration
+     51      State pos x  coo: global       m          State pos x  Mbdy:tower E-nr:   6 Z-rel:1.00 coo: global  tower approx tip height
+     52      State pos y  coo: global       m          State pos y  Mbdy:tower E-nr:   6 Z-rel:1.00 coo: global  tower approx tip height
+     53      State pos z  coo: global       m          State pos z  Mbdy:tower E-nr:   6 Z-rel:1.00 coo: global  tower approx tip height
+     54      State pos x  coo: blade1       m          State pos x  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: blade1  blade 1 tip pos
+     55      State pos y  coo: blade1       m          State pos y  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: blade1  blade 1 tip pos
+     56      State pos z  coo: blade1       m          State pos z  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: blade1  blade 1 tip pos
+     57      State pos x  coo: blade2       m          State pos x  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: blade2  blade 2 tip pos
+     58      State pos y  coo: blade2       m          State pos y  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: blade2  blade 2 tip pos
+     59      State pos z  coo: blade2       m          State pos z  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: blade2  blade 2 tip pos
+     60      State pos x  coo: blade3       m          State pos x  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: blade3  blade 3 tip pos
+     61      State pos y  coo: blade3       m          State pos y  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: blade3  blade 3 tip pos
+     62      State pos z  coo: blade3       m          State pos z  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: blade3  blade 3 tip pos
+     63      State pos x  coo: global       m          State pos x  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip pos
+     64      State pos y  coo: global       m          State pos y  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip pos
+     65      State pos z  coo: global       m          State pos z  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip pos
+     66      State pos x  coo: global       m          State pos x  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: global  blade 2 tip pos
+     67      State pos y  coo: global       m          State pos y  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: global  blade 2 tip pos
+     68      State pos z  coo: global       m          State pos z  Mbdy:blade2 E-nr:  19 Z-rel:1.00 coo: global  blade 2 tip pos
+     69      State pos x  coo: global       m          State pos x  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: global  blade 3 tip pos
+     70      State pos y  coo: global       m          State pos y  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: global  blade 3 tip pos
+     71      State pos z  coo: global       m          State pos z  Mbdy:blade3 E-nr:  19 Z-rel:1.00 coo: global  blade 3 tip pos
+     72      State pos x  coo: global       m          State pos x  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip_pos_global
+     73      State pos y  coo: global       m          State pos y  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip_pos_global
+     74      State pos z  coo: global       m          State pos z  Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: global  blade 1 tip_pos_global
+     75      proj_ang tz coo: blade1        deg        State_rot proj_ang tz Mbdy:blade1 E-nr:  19 Z-rel:1.00 coo: blade1  blade 1 tip twist
+     76      State pos x  coo: global       m          State pos x  Mbdy:hub1 E-nr:   1 Z-rel:0.00 coo: global  hub1 global pos (end of mainshaft)
+     77      State pos y  coo: global       m          State pos y  Mbdy:hub1 E-nr:   1 Z-rel:0.00 coo: global  hub1 global pos (end of mainshaft)
+     78      State pos z  coo: global       m          State pos z  Mbdy:hub1 E-nr:   1 Z-rel:0.00 coo: global  hub1 global pos (end of mainshaft)
+     79      WSP Vx, glco, R= 14.0          m/s        Wind speed Vx of blade  1 at radius  13.95, global coo.
+     80      WSP Vy, glco, R= 14.0          m/s        Wind speed Vy of blade  1 at radius  13.95, global coo.
+     81      WSP Vz, glco, R= 14.0          m/s        Wind speed Vz of blade  1 at radius  13.95, global coo.
+     82      Alfa, R= 12.9                  deg        Angle of attack of blade  1 at radius  12.90
+     83      Alfa, R= 12.9                  deg        Angle of attack of blade  2 at radius  12.90
+     84      Alfa, R= 12.9                  deg        Angle of attack of blade  3 at radius  12.90
+     85      Cl, R= 13.0                    deg        Cl of blade  1 at radius  12.90
+     86      Cl, R= 13.0                    deg        Cl of blade  2 at radius  12.90
+     87      Cl, R= 13.0                    deg        Cl of blade  3 at radius  12.90
+     88      Vrel, R= 12.9                  m/s        Relative velocity of blade  1 at radius  12.90
+     89      Azi  1                         deg        Azimuth of blade  1
+     90      DLL inp  1:  1                 -          DLL : 1 inpvec :  1  generator torque reference [nm]
+     91      DLL inp  1:  2                 -          DLL : 1 inpvec :  2  pitch angle reference of blade 1 [rad]
+     92      DLL inp  1:  3                 -          DLL : 1 inpvec :  3  pitch angle reference of blade 2 [rad]
+     93      DLL inp  1:  4                 -          DLL : 1 inpvec :  4  pitch angle reference of blade 3 [rad]
+     94      DLL inp  1: 14                 -          DLL : 1 inpvec : 14  torque limit switch based on pitch [-]
+     95      DLL inp  1: 22                 -          DLL : 1 inpvec : 22  status signal [-]
+     96      DLL inp  1: 25                 -          DLL : 1 inpvec : 25  flag for mechnical brake [0=off/1=on]
+     97      DLL inp  1: 26                 -          DLL : 1 inpvec : 26  flag for emergency pitch stop [0=off/1=on]
+     98      DLL inp  1: 27                 -          DLL : 1 inpvec : 27  lp filtered acceleration level [m/s^2]
+     99      DLL inp  2:  1                 -          DLL : 2 inpvec :  1  mgen lss [nm]
+    100      DLL inp  2:  2                 -          DLL : 2 inpvec :  2  pelec w
+    101      DLL inp  2:  3                 -          DLL : 2 inpvec :  3  mframe
+    102      DLL inp  2:  4                 -          DLL : 2 inpvec :  4  mgen hss
+    103      DLL inp  2:  5                 -          DLL : 2 inpvec :  5  generator pmech kw
+    104      DLL inp  2:  6                 -          DLL : 2 inpvec :  6  filtered gen speed
+    105      DLL inp  2:  7                 -          DLL : 2 inpvec :  7  elec. pwr
+    106      DLL inp  2:  8                 -          DLL : 2 inpvec :  8  grid flag
+    107      DLL inp  3:  1                 -          DLL : 3 inpvec :  1  brake torque [nm]
+    108      DLL inp  4:  1                 -          DLL : 4 inpvec :  1  pitch 1
+    109      DLL inp  4:  2                 -          DLL : 4 inpvec :  2  pitch 2
+    110      DLL inp  4:  3                 -          DLL : 4 inpvec :  3  pitch 3
+    111      DLL inp  5:  1                 -          DLL : 5 inpvec :  1  bltip tow min d [m]
+    112      Constant                       -          Constant value
+    113      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:   1 coo: blade1  m blade1 root
+    114      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:   1 coo: blade1  m blade1 root
+    115      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:   1 coo: blade1  m blade1 root
+    116      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:   3 coo: blade1  m blade1 1.596m
+    117      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:   3 coo: blade1  m blade1 1.596m
+    118      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:   3 coo: blade1  m blade1 1.596m
+    119      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:   5 coo: blade1  m blade1 3.486m
+    120      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:   5 coo: blade1  m blade1 3.486m
+    121      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:   5 coo: blade1  m blade1 3.486m
+    122      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:   9 coo: blade1  m blade1 7.618m
+    123      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:   9 coo: blade1  m blade1 7.618m
+    124      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:   9 coo: blade1  m blade1 7.618m
+    125      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:  10 coo: blade1  m blade1 8.598m
+    126      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:  10 coo: blade1  m blade1 8.598m
+    127      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:  10 coo: blade1  m blade1 8.598m
+    128      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:  13 coo: blade1  m blade1 11.125m
+    129      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:  13 coo: blade1  m blade1 11.125m
+    130      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:  13 coo: blade1  m blade1 11.125m
+    131      Mx coo: blade1                 kNm        MomentMx Mbdy:blade1 nodenr:  17 coo: blade1  m blade1 13.352m
+    132      My coo: blade1                 kNm        MomentMy Mbdy:blade1 nodenr:  17 coo: blade1  m blade1 13.352m
+    133      Mz coo: blade1                 kNm        MomentMz Mbdy:blade1 nodenr:  17 coo: blade1  m blade1 13.352m
+    134      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:   1 coo: local  m blade1_local root
+    135      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:   1 coo: local  m blade1_local root
+    136      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:   1 coo: local  m blade1_local root
+    137      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:   3 coo: local  m blade1_local 1.596m
+    138      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:   3 coo: local  m blade1_local 1.596m
+    139      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:   3 coo: local  m blade1_local 1.596m
+    140      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:   5 coo: local  m blade1_local 3.486m
+    141      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:   5 coo: local  m blade1_local 3.486m
+    142      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:   5 coo: local  m blade1_local 3.486m
+    143      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:   9 coo: local  m blade1_local 7.618m
+    144      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:   9 coo: local  m blade1_local 7.618m
+    145      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:   9 coo: local  m blade1_local 7.618m
+    146      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  10 coo: local  m blade1_local 8.598m
+    147      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  10 coo: local  m blade1_local 8.598m
+    148      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  10 coo: local  m blade1_local 8.598m
+    149      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  13 coo: local  m blade1_local 11.125m
+    150      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  13 coo: local  m blade1_local 11.125m
+    151      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  13 coo: local  m blade1_local 11.125m
+    152      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  17 coo: local  m blade1_local 13.352m
+    153      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  17 coo: local  m blade1_local 13.352m
+    154      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  17 coo: local  m blade1_local 13.352m
+    155      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:   1 coo: blade1  f blade 1 root
+    156      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:   1 coo: blade1  f blade 1 root
+    157      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:   1 coo: blade1  f blade 1 root
+    158      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:   3 coo: blade1  f blade 1 1.596m
+    159      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:   3 coo: blade1  f blade 1 1.596m
+    160      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:   3 coo: blade1  f blade 1 1.596m
+    161      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:   5 coo: blade1  f blade 1 3.486m
+    162      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:   5 coo: blade1  f blade 1 3.486m
+    163      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:   5 coo: blade1  f blade 1 3.486m
+    164      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:   9 coo: blade1  f blade 1 7.618m
+    165      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:   9 coo: blade1  f blade 1 7.618m
+    166      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:   9 coo: blade1  f blade 1 7.618m
+    167      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:  10 coo: blade1  f blade 1 8.598m
+    168      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:  10 coo: blade1  f blade 1 8.598m
+    169      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:  10 coo: blade1  f blade 1 8.598m
+    170      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:  13 coo: blade1  f blade 1 11.125m
+    171      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:  13 coo: blade1  f blade 1 11.125m
+    172      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:  13 coo: blade1  f blade 1 11.125m
+    173      Fx coo: blade1                 kN         Force  Fx Mbdy:blade1 nodenr:  17 coo: blade1  f blade 1 13.352m
+    174      Fy coo: blade1                 kN         Force  Fy Mbdy:blade1 nodenr:  17 coo: blade1  f blade 1 13.352m
+    175      Fz coo: blade1                 kN         Force  Fz Mbdy:blade1 nodenr:  17 coo: blade1  f blade 1 13.352m
+    176      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:   1 coo: local  f blade1_local root
+    177      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:   1 coo: local  f blade1_local root
+    178      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:   1 coo: local  f blade1_local root
+    179      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:   3 coo: local  f blade1_local 1.596m
+    180      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:   3 coo: local  f blade1_local 1.596m
+    181      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:   3 coo: local  f blade1_local 1.596m
+    182      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:   5 coo: local  f blade1_local 3.486m
+    183      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:   5 coo: local  f blade1_local 3.486m
+    184      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:   5 coo: local  f blade1_local 3.486m
+    185      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:   9 coo: local  f blade1_local 7.618m
+    186      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:   9 coo: local  f blade1_local 7.618m
+    187      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:   9 coo: local  f blade1_local 7.618m
+    188      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:  10 coo: local  f blade1_local 8.598m
+    189      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:  10 coo: local  f blade1_local 8.598m
+    190      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:  10 coo: local  f blade1_local 8.598m
+    191      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:  13 coo: local  f blade1_local 11.125m
+    192      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:  13 coo: local  f blade1_local 11.125m
+    193      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:  13 coo: local  f blade1_local 11.125m
+    194      Fx coo: local                  kN         Force  Fx Mbdy:blade1 nodenr:  17 coo: local  f blade1_local 13.352m
+    195      Fy coo: local                  kN         Force  Fy Mbdy:blade1 nodenr:  17 coo: local  f blade1_local 13.352m
+    196      Fz coo: local                  kN         Force  Fz Mbdy:blade1 nodenr:  17 coo: local  f blade1_local 13.352m
+    197      Fx coo: blade2                 kN         Force  Fx Mbdy:blade2 nodenr:   1 coo: blade2  f blade 2 root
+    198      Fy coo: blade2                 kN         Force  Fy Mbdy:blade2 nodenr:   1 coo: blade2  f blade 2 root
+    199      Fz coo: blade2                 kN         Force  Fz Mbdy:blade2 nodenr:   1 coo: blade2  f blade 2 root
+    200      Fx coo: blade3                 kN         Force  Fx Mbdy:blade3 nodenr:   1 coo: blade3  f blade 3 root
+    201      Fy coo: blade3                 kN         Force  Fy Mbdy:blade3 nodenr:   1 coo: blade3  f blade 3 root
+    202      Fz coo: blade3                 kN         Force  Fz Mbdy:blade3 nodenr:   1 coo: blade3  f blade 3 root
+    203      Mx coo: blade2                 kNm        MomentMx Mbdy:blade2 nodenr:   1 coo: blade2  m blade 2 root
+    204      My coo: blade2                 kNm        MomentMy Mbdy:blade2 nodenr:   1 coo: blade2  m blade 2 root
+    205      Mz coo: blade2                 kNm        MomentMz Mbdy:blade2 nodenr:   1 coo: blade2  m blade 2 root
+    206      Mx coo: blade2                 kNm        MomentMx Mbdy:blade2 nodenr:  10 coo: blade2  m blade 2 8.598m
+    207      My coo: blade2                 kNm        MomentMy Mbdy:blade2 nodenr:  10 coo: blade2  m blade 2 8.598m
+    208      Mz coo: blade2                 kNm        MomentMz Mbdy:blade2 nodenr:  10 coo: blade2  m blade 2 8.598m
+    209      Mx coo: blade3                 kNm        MomentMx Mbdy:blade3 nodenr:   1 coo: blade3  m blade 3 root
+    210      My coo: blade3                 kNm        MomentMy Mbdy:blade3 nodenr:   1 coo: blade3  m blade 3 root
+    211      Mz coo: blade3                 kNm        MomentMz Mbdy:blade3 nodenr:   1 coo: blade3  m blade 3 root
+    212      Mx coo: blade3                 kNm        MomentMx Mbdy:blade3 nodenr:  10 coo: blade3  m blade 3 8.598m
+    213      My coo: blade3                 kNm        MomentMy Mbdy:blade3 nodenr:  10 coo: blade3  m blade 3 8.598m
+    214      Mz coo: blade3                 kNm        MomentMz Mbdy:blade3 nodenr:  10 coo: blade3  m blade 3 8.598m
+    215      Harmonic                       -          Harmonic sinus function
+    216      Harmonic                       -          Harmonic sinus function    
+    217      Constant                       -          Constant value
+________________________________________________________________________________________________________________________
+Scale factors:
+  2.18750E-02
+  1.12499E-02
+  1.11694E-03
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.16962E-04
+  7.20270E-04
+  2.67446E-03
+  5.49637E-04
+  8.62044E-05
+  2.52680E-04
+  7.90440E-05
+  8.62188E-05
+  2.53421E-04
+  8.20404E-05
+  9.27272E-05
+  2.71635E-04
+  9.33155E-05
+  1.16371E-04
+  2.12015E-04
+  8.17627E-05
+  2.53947E-04
+  1.62670E-02
+  1.47929E-03
+  9.89036E-04
+  2.26919E-03
+  5.71132E-04
+  9.18130E-04
+  1.05471E-03
+  1.17262E-03
+  6.02277E-04
+  2.09855E-03
+  1.06715E-03
+  1.24011E-05
+  2.05293E-03
+  1.01794E-03
+  1.24568E-05
+  2.04933E-03
+  1.01820E-03
+  1.30831E-05
+  1.12572E-07
+  1.04733E-06
+  9.83107E-04
+  5.91110E-06
+  1.36850E-05
+  2.81030E-06
+  3.48182E-08
+  3.75528E-07
+  5.19992E-04
+  2.28345E-06
+  1.60841E-05
+  4.46886E-04
+  2.20456E-06
+  1.58416E-05
+  4.46885E-04
+  2.32338E-06
+  1.61758E-05
+  4.46885E-04
+  4.68802E-04
+  9.47721E-05
+  1.45499E-03
+  4.68795E-04
+  9.46092E-05
+  1.45497E-03
+  4.68791E-04
+  9.45865E-05
+  1.45496E-03
+  4.68802E-04
+  9.47721E-05
+  1.45499E-03
+  1.60892E-03
+  1.50335E-07
+  6.25610E-05
+  9.87555E-04
+  1.38322E-04
+  2.94064E-04
+  9.35080E-05
+  2.79788E-04
+  2.98136E-04
+  2.79592E-04
+  4.02508E-05
+  4.17197E-05
+  4.03574E-05
+  1.65434E-03
+  5.62494E-03
+  4.96182E-01
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  5.78555E-06
+  5.25617E-01
+  1.85698E+00
+  5.03154E-01
+  2.24623E-02
+  1.96714E-03
+  6.02235E-01
+  2.95000E-05
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  1.00000E+00
+  4.39323E-04
+  3.12500E-05
+  2.09646E-03
+  1.08758E-03
+  8.82805E-06
+  1.70852E-03
+  7.82533E-04
+  1.08908E-05
+  1.26920E-03
+  5.22462E-04
+  7.48640E-06
+  4.76656E-04
+  1.46344E-04
+  5.11887E-06
+  3.35911E-04
+  9.66411E-05
+  4.33265E-06
+  9.17069E-05
+  2.14074E-05
+  1.96457E-06
+  5.13476E-06
+  9.76989E-07
+  3.68726E-07
+  2.12883E-03
+  9.15892E-04
+  2.84789E-05
+  1.52509E-03
+  1.25324E-03
+  1.00141E-05
+  1.27769E-03
+  5.15806E-04
+  8.49035E-06
+  4.79445E-04
+  1.29987E-04
+  4.88325E-06
+  3.37635E-04
+  8.74365E-05
+  3.92248E-06
+  9.19368E-05
+  1.99250E-05
+  1.82094E-06
+  5.07849E-06
+  1.28714E-06
+  3.99788E-07
+  1.97016E-04
+  2.55105E-04
+  1.36558E-03
+  1.60239E-04
+  2.50353E-04
+  1.23084E-03
+  1.25299E-04
+  2.35173E-04
+  1.06113E-03
+  5.79355E-05
+  1.64112E-04
+  5.51456E-04
+  4.48024E-05
+  1.40202E-04
+  4.26721E-04
+  1.76842E-05
+  7.35757E-05
+  1.73270E-04
+  2.56166E-06
+  1.49293E-05
+  2.19204E-05
+  1.79881E-04
+  2.41006E-04
+  1.36778E-03
+  2.22201E-04
+  2.51740E-04
+  1.23030E-03
+  1.20893E-04
+  2.33446E-04
+  1.06164E-03
+  5.10718E-05
+  1.55743E-04
+  5.52344E-04
+  3.97026E-05
+  1.33467E-04
+  4.27522E-04
+  1.55107E-05
+  6.48742E-05
+  1.74571E-04
+  3.27825E-06
+  1.33897E-05
+  2.22372E-05
+  1.93884E-04
+  2.50887E-04
+  1.36085E-03
+  1.93945E-04
+  2.52347E-04
+  1.36496E-03
+  2.05070E-03
+  1.03849E-03
+  8.47828E-06
+  3.35416E-04
+  9.16257E-05
+  4.48243E-06
+  2.04719E-03
+  1.03837E-03
+  9.19478E-06
+  3.43366E-04
+  9.45280E-05
+  4.68222E-06
+  6.25000E-05
+  6.25000E-05
+  1.56250E-04
