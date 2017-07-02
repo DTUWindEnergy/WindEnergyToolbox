@@ -482,7 +482,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                 tags_dict['[pi_pitch_reg3.K1]'] = hs2.pi_pitch_reg3.K1
                 tags_dict['[pi_pitch_reg3.K2]'] = hs2.pi_pitch_reg3.K2
                 tags_dict['[aero_damp.Kp2]'] = hs2.aero_damp.Kp2
-                tags_dict['[aero_damp.Ko2]'] = hs2.aero_damp.Ko1
+                tags_dict['[aero_damp.Ko1]'] = hs2.aero_damp.Ko1
                 tags_dict['[aero_damp.Ko2]'] = hs2.aero_damp.Ko2
             # save a copy of the current case an one opt_tags entry
             opt_tags.append(tags_dict.copy())
