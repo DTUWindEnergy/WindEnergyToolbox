@@ -771,7 +771,6 @@ class LoadResults(ReadHawc2):
 
         return names, index
 
-
     def _unified_channel_names(self):
         """
         Make certain channels independent from their index.
@@ -1308,14 +1307,15 @@ class LoadResults(ReadHawc2):
                     tag = base + '_%i' % tag_nr
 
             # -----------------------------------------------------------------
-            # ignore all the other cases we don't know how to deal with
+            # If all this fails, just combine channel name and description
             else:
-                # if we get here, we don't have support yet for that sensor
-                # and hence we can't save it. Continue with next channel
-                continue
+                tag = '-'.join(self.ch_details[ch,:3].tolist())
+                channelinfo = {}
+                channelinfo['chi'] = ch
+                channelinfo['units'] = self.ch_details[ch, 1].strip()
 
             # -----------------------------------------------------------------
-            # ignore if we have a non unique tag
+            # add a v_XXX tag in case the channel already exists
             if tag in self.ch_dict:
                 jj = 1
                 while True:
@@ -1325,9 +1325,7 @@ class LoadResults(ReadHawc2):
                     else:
                         tag = tag_new
                         break
-#                msg = 'non unique tag for HAWC2 results, ignoring: %s' % tag
-#                logging.warn(msg)
-#            else:
+
             self.ch_dict[tag] = copy.copy(channelinfo)
 
             # -----------------------------------------------------------------
