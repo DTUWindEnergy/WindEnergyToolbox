@@ -11,12 +11,122 @@ from future import standard_library
 standard_library.install_aliases()
 
 import unittest
+import io
 import os
 import tempfile
 
 import numpy as np
 
 from wetb.prepost import windIO
+
+
+class TestsLogFile(unittest.TestCase):
+
+    def setUp(self):
+        self.logpath = os.path.join(os.path.dirname(__file__),
+                                    '../../hawc2/tests/test_files/logfiles/')
+
+    def readlog(self, fname):
+        log = windIO.LogFile()
+        log.readlog(os.path.join(self.logpath, fname))
+        return log
+
+    def test_reading(self):
+        fname = 'simulating.log'
+        log = self.readlog(fname)
+        self.assertTrue(hasattr(log, 'MsgListLog'))
+        self.assertTrue(hasattr(log, 'MsgListLog2'))
+        fpath = os.path.join(self.logpath, fname)
+        self.assertEqual(len(log.MsgListLog), 1)
+        self.assertEqual(len(log.MsgListLog2), 1)
+        self.assertEqual(log.MsgListLog[0][0], fpath)
+        self.assertTrue(fpath in log.MsgListLog2)
+        # the current log file doesn't contain any errors and didn't complete
+        self.assertEqual(log.MsgListLog2[fpath], [False, False])
+
+    def test_loganalysis_file(self):
+        fname = 'simulating.log'
+        log = self.readlog(fname)
+        csv = log._header()
+        csv = log._msglistlog2csv(csv)
+        # because our API is really crappy, we emulate writing to StringIO
+        # instead of to a file
+        fcsv = io.StringIO(csv)
+        df = log.csv2df(fcsv)
+        self.assertEqual(df.loc[0,'nr_time_steps'], 25)
+        self.assertEqual(df.loc[0,'total_iterations'], 49)
+        self.assertEqual(df.loc[0,'file_name'], log.MsgListLog[0][0])
+        self.assertAlmostEqual(df.loc[0,'last_time_step'], 0.5, places=5)
+        self.assertAlmostEqual(df.loc[0,'dt'], 0.02)
+        self.assertAlmostEqual(df.loc[0,'max_iters_p_time_step'], 2.0)
+        self.assertAlmostEqual(df.loc[0,'mean_iters_p_time_step'], 1.96)
+        self.assertTrue(np.isnan(df.loc[0,'seconds_p_iteration']))
+
+    def test_read_and_analysis(self):
+
+        fname = 'simulation_error2.log'
+        fpath = os.path.join(self.logpath, fname)
+
+        log = self.readlog(fname)
+        # finish correctly, but with errors
+        self.assertEqual(log.MsgListLog2[fpath], [True, True])
+
+        csv = log._header()
+        csv = log._msglistlog2csv(csv)
+        # because our API is really crappy, we emulate writing to StringIO
+        # instead of to a file
+        fcsv = io.StringIO(csv)
+        df = log.csv2df(fcsv)
+        self.assertEqual(df.loc[0,'nr_time_steps'], 1388)
+        self.assertEqual(df.loc[0,'total_iterations'], 0)
+        self.assertEqual(df.loc[0,'file_name'], log.MsgListLog[0][0])
+        self.assertAlmostEqual(df.loc[0,'dt'], 0.02)
+        self.assertAlmostEqual(df.loc[0,'max_iters_p_time_step'], 0.0)
+        self.assertAlmostEqual(df.loc[0,'mean_iters_p_time_step'], 0.0)
+        self.assertAlmostEqual(df.loc[0,'elapsted_time'], 0.3656563)
+        self.assertAlmostEqual(df.loc[0,'last_time_step'], 27.76, places=5)
+        self.assertAlmostEqual(df.loc[0,'real_sim_time'], 75.9183, places=4)
+        self.assertTrue(np.isnan(df.loc[0,'seconds_p_iteration']))
+
+        self.assertEqual(df.loc[0,'first_tstep_104'], 1385)
+        self.assertEqual(df.loc[0,'last_step_104'], 1387)
+        self.assertEqual(df.loc[0,'nr_104'], 30)
+        msg = ' *** ERROR *** Out of limits in user defined shear field - '
+        msg += 'limit value used'
+        self.assertEqual(df.loc[0,'msg_104'], msg)
+
+    def test_read_and_analysis2(self):
+
+        fname = 'init_error.log'
+        fpath = os.path.join(self.logpath, fname)
+
+        log = self.readlog(fname)
+        # finish correctly, but with errors
+        self.assertEqual(log.MsgListLog2[fpath], [True, True])
+
+        csv = log._header()
+        csv = log._msglistlog2csv(csv)
+        # because our API is really crappy, we emulate writing to StringIO
+        # instead of to a file
+        fcsv = io.StringIO(csv)
+        df = log.csv2df(fcsv)
+
+        msg = ' *** ERROR *** No line termination in command line            8'
+        self.assertEqual(df.loc[0,'msg_5'], msg)
+
+    def test_read_and_analysis3(self):
+
+        fname = 'tmp.log'
+        fpath = os.path.join(self.logpath, fname)
+
+        log = self.readlog(fname)
+        csv = log._header()
+        csv = log._msglistlog2csv(csv)
+        fcsv = io.StringIO(csv)
+        df = log.csv2df(fcsv)
+        # finish correctly, but with errors
+        self.assertAlmostEqual(df.loc[0,'elapsted_time'], 291.6350, places=5)
+        self.assertEqual(log.MsgListLog2[fpath], [True, True])
 
 
 class TestsLoadResults(unittest.TestCase):
