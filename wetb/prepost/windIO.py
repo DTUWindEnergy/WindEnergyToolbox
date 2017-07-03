@@ -301,7 +301,7 @@ class LogFile(object):
             tempLog.append('')
 
         if iterations.shape == (0,3):
-            last_time_step = np.nan
+            last_time_step = 0
         else:
             last_time_step = iterations[time_step-1,0]
 
