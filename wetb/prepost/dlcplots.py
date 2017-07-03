@@ -57,6 +57,9 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
     """
     # map the run_dir to the same order as the post_dirs, labels
     run_dirs = []
+    # avoid saving merged cases if there is only one!
+    if type(sim_ids).__name__ == 'list' and len(sim_ids) == 1:
+        sim_ids = sim_ids[0]
 
     # if sim_id is a list, combine the two dataframes into one
     df_stats = pd.DataFrame()
@@ -99,15 +102,16 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
                     pass
             else:
                 fpath = os.path.join(post_dir, '-'.join(sim_ids) + '.h5')
+            fmerged = fpath.replace('.h5', '_statistics.h5')
             if ii == 0:
                 # and save somewhere so we can add the second data frame on
                 # disc
-                df_stats.to_hdf(fpath, 'table', mode='w', format='table',
+                df_stats.to_hdf(fmerged, 'table', mode='w', format='table',
                                 complevel=9, complib='blosc')
                 print('%s merged stats written to: %s' % (sim_id, fpath))
             else:
                 # instead of doing a concat in memory, add to the hdf store
-                df_stats.to_hdf(fpath, 'table', mode='r+', format='table',
+                df_stats.to_hdf(fmerged, 'table', mode='r+', format='table',
                                 complevel=9, complib='blosc', append=True)
                 print('%s merging stats into:      %s' % (sim_id, fpath))
 #                df_stats = pd.concat([df_stats, df_stats2], ignore_index=True)
@@ -453,7 +457,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
     mfcs3 = ['r', 'w']
     stds = ['r', 'b']
 
-    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]']
+    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]']
     cols = df_stats.columns
     for col in required:
         if col not in cols:

@@ -393,7 +393,8 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
 #        add_sigs = {name:expr}
 
         # in addition, sim_id and case_id are always added by default
-        tags = ['[Case folder]']
+        tags = ['[Case folder]', '[run_dir]', '[res_dir]', '[DLC]',
+                '[wsp]', '[Windspeed]', '[wdir]']
         add = None
         # general statistics for all channels channel
         # set neq=None here to calculate 1Hz equivalent loads
@@ -538,7 +539,6 @@ if __name__ == '__main__':
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
 
-
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
@@ -569,12 +569,11 @@ if __name__ == '__main__':
             for nr in [1, 2, 3]:
                 rpl = (nr, nr, node_nr, comp)
                 chans.append('blade%i-blade%i-node-%03i-momentvec-%s' % rpl)
-            plot_chans['$M_%s B123_{%i}$' % (comp, node_lab)] = chans
+            plot_chans['$M_%s B123_{%s}$' % (comp, node_lab)] = chans
 
         chans = []
         # combine blade 1,2,3 pitch angle stats into a single plot
         for nr in [1, 2, 3]:
-            rpl = (nr, nr, node_nr, comp)
             chans.append('bearing-pitch%i-angle-deg' % nr)
         plot_chans['$B123_{pitch}$'] = chans
 
