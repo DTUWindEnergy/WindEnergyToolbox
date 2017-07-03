@@ -959,7 +959,7 @@ if __name__ == '__main__':
     # PLOT STATS, when comparing cases
     sim_ids = [sim_id]
     run_dirs = [P_RUN]
-    figdir = os.path.join(P_RUN, '..', 'figures/%s' % sim_id)
+    figdir = os.path.join(P_RUN, '..', 'dlcplots/%s' % sim_id)
 
     print('='*79)
     print('   P_RUN: %s' % P_RUN)
