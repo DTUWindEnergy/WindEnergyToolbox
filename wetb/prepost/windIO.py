@@ -176,11 +176,11 @@ class LogFile(object):
         else:
             iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
             dt = False
-        iterations[:,0:2] = -1
+        iterations[:,0:2] = np.nan
         iterations[:,2] = 0
 
         # keep track of the time_step number
-        time_step, init_block = -1, True
+        time_step, init_block = 0, True
         # check for messages in the current line
         # for speed: delete from message watch list if message is found
         for j, line in enumerate(lines):
@@ -192,13 +192,13 @@ class LogFile(object):
 
             # keep track of the number of iterations
             if line[:12] == ' Global time':
-                time_step += 1
                 iterations[time_step,0] = float(line[14:40])
                 # for PY2, new line is 2 characters, for PY3 it is one char
                 iterations[time_step,1] = int(line[-6:])
                 # time step is the first time stamp
                 if not dt:
                     dt = float(line[15:40])
+                time_step += 1
                 # no need to look for messages if global time is mentioned
                 continue
 
@@ -235,10 +235,6 @@ class LogFile(object):
             elif msg in self.err_sim:
                 icol = subcols_sim*self.err_sim[msg]
                 icol += subcols_init*self.init_cols + 1
-                # in case stuff already goes wrong on the first time step
-                if time_step == -1:
-                    time_step = 0
-
                 # 1: time step of first occurance
                 if tempLog[icol]  == '':
                     tempLog[icol] = '%i' % time_step
@@ -253,7 +249,7 @@ class LogFile(object):
                 tempLog[icol+3] = line
 
                 found_error = True
-                iterations[time_step,2] = 1
+                iterations[time_step-1,2] = 1
 
             # method of last resort, we have no idea what message
             elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
@@ -264,13 +260,10 @@ class LogFile(object):
                 # and message
                 tempLog[icol+1] = line
                 found_error = True
-                # in case stuff already goes wrong on the first time step
-                if time_step == -1:
-                    time_step = 0
-                iterations[time_step,2] = 1
+                iterations[time_step-1,2] = 1
 
         # remove not-used rows from iterations
-        iterations = iterations[:time_step+1,:]
+        iterations = iterations[:time_step,:]
 
         # simulation and simulation output time based on the tags
         # FIXME: ugly, do not mix tags with what is actually happening in the
@@ -279,11 +272,15 @@ class LogFile(object):
             t_stop = float(case['[time_stop]'])
             duration = float(case['[duration]'])
         else:
-            t_stop = -1
+            t_stop = np.nan
             duration = -1
 
+        # if no time steps have passed
+        if iterations.shape == (0,3):
+            elapsed_time = -1
+            tempLog.append('')
         # see if the last line holds the sim time
-        if line[:15] ==  ' Elapsed time :':
+        elif line[:15] ==  ' Elapsed time :':
             exit_correct = True
             elapsed_time = float(line[15:-1])
             tempLog.append( elapsed_time )
@@ -291,24 +288,29 @@ class LogFile(object):
         # might be: " Closing of external type2 DLL"
         elif line[:20] == ' Closing of external':
             exit_correct = True
-            elapsed_time = iterations[time_step,0]
+            elapsed_time = iterations[time_step-1,0]
             tempLog.append( elapsed_time )
         # FIXME: this is weird mixing of referring to t_stop from the tags
         # and the actual last recorded time step
-        elif np.allclose(iterations[time_step,0], t_stop):
+        elif np.allclose(iterations[time_step-1,0], t_stop):
             exit_correct = True
-            elapsed_time = iterations[time_step,0]
+            elapsed_time = iterations[time_step-1,0]
             tempLog.append( elapsed_time )
         else:
             elapsed_time = -1
             tempLog.append('')
 
-        # give the last recorded time step
-        tempLog.append('%1.11f' % iterations[time_step,0])
+        if iterations.shape == (0,3):
+            last_time_step = np.nan
+        else:
+            last_time_step = iterations[time_step-1,0]
 
-        # simulation and simulation output time
-        tempLog.append('%1.01f' % iterations[time_step,0])
-        tempLog.append('%1.04f' % (iterations[time_step,0]/elapsed_time))
+        # give the last recorded time step
+        tempLog.append('%1.11f' % last_time_step)
+        # simulation_time, as taken from cases
+        tempLog.append('%1.01f' % t_stop)
+        # real_sim_time
+        tempLog.append('%1.04f' % (last_time_step/elapsed_time))
         tempLog.append('%1.01f' % duration)
 
         # as last element, add the total number of iterations
@@ -319,10 +321,10 @@ class LogFile(object):
         if dt:
             tempLog.append('%1.7f' % dt)
         else:
-            tempLog.append('failed to find dt')
+            tempLog.append('nan')
 
         # number of time steps
-        tempLog.append('%i' % (time_step+1))
+        tempLog.append('%i' % (time_step))
 
         # if the simulation didn't end correctly, the elapsed_time doesn't
         # exist. Add the average and maximum nr of iterations per step
@@ -1007,17 +1009,25 @@ class LoadResults(ReadHawc2):
             # AERO CL, CD, CM, VREL, ALFA, LIFT, DRAG, etc
             # Cl, R=  0.5     deg      Cl of blade  1 at radius   0.49
             # Azi  1          deg      Azimuth of blade  1
+            # NOTE THAT RADIUS FROM ch_details[ch, 0] REFERS TO THE RADIUS
+            # YOU ASKED FOR, AND ch_details[ch, 2] IS WHAT YOU GET, which is
+            # still based on a mean radius (deflections change the game)
             elif self.ch_details[ch, 0].split(',')[0] in ch_aero:
                 dscr_list = self.ch_details[ch, 2].split(' ')
                 dscr_list = misc.remove_items(dscr_list, '')
-
                 sensortype = self.ch_details[ch, 0].split(',')[0]
-                radius = dscr_list[-1]
+
                 # is this always valid?
                 blade_nr = self.ch_details[ch, 2].split('blade  ')[1][0]
                 # sometimes the units for aero sensors are wrong!
                 units = self.ch_details[ch, 1]
                 # there is no label option
+
+                # radius what you get
+#                 radius = dscr_list[-1]
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split('R=')
+                radius = misc.remove_items(tmp, '')[-1].strip()
 
                 # and tag it
                 tag = '%s-%s-%s' % (sensortype, blade_nr, radius)
@@ -1038,6 +1048,7 @@ class LoadResults(ReadHawc2):
                 items2 = items[1].split(' ')
                 items2 = misc.remove_items(items2, '')
                 azi = items2[1]
+                # radius what you asked for
                 radius = items2[3]
                 units = self.ch_details[ch, 1]
                 # and tag it
@@ -1068,13 +1079,20 @@ class LoadResults(ReadHawc2):
                 items = misc.remove_items(items, '')
                 coord = self.ch_details[ch, 2].split(', ')[1].strip()
                 blade_nr = int(items[5])
-                radius = float(items[8].replace(',', ''))
+
+                # radius what you get
+#                 radius = float(items[8].replace(',', ''))
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = float(misc.remove_items(tmp, '')[-1])
+
                 items = self.ch_details[ch, 0].split(',')
                 component = items[0][-2:]
                 units = self.ch_details[ch, 1]
+
                 # and tag it
                 rpl = (coord, blade_nr, component, radius)
-                tag = 'induc-%s-blade-%1i-%s-r-%03.02f' % rpl
+                tag = 'induc-%s-blade-%1i-%s-r-%03.01f' % rpl
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['blade_nr'] = blade_nr
@@ -1103,7 +1121,13 @@ class LoadResults(ReadHawc2):
                 blade_nr = int(tmp.split(' ')[0])
                 tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
                 tmp = tmp.split(',')
-                radius = float(tmp[0])
+
+                # radius what you get
+#                 radius = float(tmp[0])
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = float(misc.remove_items(tmp, '')[-1])
+
                 if len(tmp) > 1:
                     coord = tmp[1].strip()
                 else:
@@ -1124,7 +1148,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['chi'] = ch
 
                 rpl = (coord, blade_nr, sensortype, component, radius)
-                tag = 'aero-%s-blade-%1i-%s-%s-r-%03.02f' % rpl
+                tag = 'aero-%s-blade-%1i-%s-%s-r-%03.01f' % rpl
 
             # TODO: wind speed
             # some spaces have been trimmed here
@@ -1189,11 +1213,15 @@ class LoadResults(ReadHawc2):
                 tmp = self.ch_details[ch, 0].split(' ')[1].strip()
                 direction = tmp.replace(',', '')
                 blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()[:2]
-                radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
                 coord = self.ch_details[ch, 2].split(',')[1].strip()
-
-                radius = radius.strip()
                 blade_nr = blade_nr.strip()
+
+                # radius what you get
+#                 radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
+#                 radius = radius.strip()
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = misc.remove_items(tmp, '')[-1].strip()
 
                 # and tag it
                 rpl = (direction, blade_nr, radius, coord)

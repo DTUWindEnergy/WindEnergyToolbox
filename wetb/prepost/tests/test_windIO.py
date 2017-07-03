@@ -41,7 +41,8 @@ class TestsLogFile(unittest.TestCase):
         self.assertEqual(len(log.MsgListLog2), 1)
         self.assertEqual(log.MsgListLog[0][0], fpath)
         self.assertTrue(fpath in log.MsgListLog2)
-        # the current log file doesn't contain any errors and didn't complete
+        # the current log file doesn't contain any errors but didn't complete
+        # [found_error, exit_correct]
         self.assertEqual(log.MsgListLog2[fpath], [False, False])
 
     def test_loganalysis_file(self):
@@ -62,13 +63,13 @@ class TestsLogFile(unittest.TestCase):
         self.assertAlmostEqual(df.loc[0,'mean_iters_p_time_step'], 1.96)
         self.assertTrue(np.isnan(df.loc[0,'seconds_p_iteration']))
 
-    def test_read_and_analysis(self):
+    def test_read_and_analysis_simulation_error2(self):
 
         fname = 'simulation_error2.log'
         fpath = os.path.join(self.logpath, fname)
 
         log = self.readlog(fname)
-        # finish correctly, but with errors
+        # finish correctly, but with errors, [found_error, exit_correct]
         self.assertEqual(log.MsgListLog2[fpath], [True, True])
 
         csv = log._header()
@@ -88,20 +89,20 @@ class TestsLogFile(unittest.TestCase):
         self.assertAlmostEqual(df.loc[0,'real_sim_time'], 75.9183, places=4)
         self.assertTrue(np.isnan(df.loc[0,'seconds_p_iteration']))
 
-        self.assertEqual(df.loc[0,'first_tstep_104'], 1385)
-        self.assertEqual(df.loc[0,'last_step_104'], 1387)
+        self.assertEqual(df.loc[0,'first_tstep_104'], 1386)
+        self.assertEqual(df.loc[0,'last_step_104'], 1388)
         self.assertEqual(df.loc[0,'nr_104'], 30)
         msg = ' *** ERROR *** Out of limits in user defined shear field - '
         msg += 'limit value used'
         self.assertEqual(df.loc[0,'msg_104'], msg)
 
-    def test_read_and_analysis2(self):
+    def test_read_and_analysis_init_error(self):
 
         fname = 'init_error.log'
         fpath = os.path.join(self.logpath, fname)
 
         log = self.readlog(fname)
-        # finish correctly, but with errors
+        # errors, but no sim time or finish message [found_error, exit_correct]
         self.assertEqual(log.MsgListLog2[fpath], [True, True])
 
         csv = log._header()
@@ -114,7 +115,23 @@ class TestsLogFile(unittest.TestCase):
         msg = ' *** ERROR *** No line termination in command line            8'
         self.assertEqual(df.loc[0,'msg_5'], msg)
 
-    def test_read_and_analysis3(self):
+    def test_read_and_analysis_init(self):
+
+        fname = 'init.log'
+        fpath = os.path.join(self.logpath, fname)
+
+        log = self.readlog(fname)
+        # errors, but no sim time or finish message [found_error, exit_correct]
+        self.assertEqual(log.MsgListLog2[fpath], [False, False])
+
+        csv = log._header()
+        csv = log._msglistlog2csv(csv)
+        # because our API is really crappy, we emulate writing to StringIO
+        # instead of to a file
+        fcsv = io.StringIO(csv)
+        df = log.csv2df(fcsv)
+
+    def test_read_and_analysis_tmp(self):
 
         fname = 'tmp.log'
         fpath = os.path.join(self.logpath, fname)
@@ -190,7 +207,7 @@ class TestsLoadResults(unittest.TestCase):
         exp = [[38, 'global-blade2-elem-019-zrel-1.00-State pos-z', 'm'],
                [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
                [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
-               [415, 'Cl-1-54.82', 'deg'],
+               [415, 'Cl-1-55.7', 'deg'],
                [421, 'qwerty-is-azerty', 'is']
               ]
         for k in exp:
