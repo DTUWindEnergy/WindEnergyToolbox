@@ -315,7 +315,7 @@ class LogFile(object):
 
         # as last element, add the total number of iterations
         itertotal = np.nansum(iterations[:,1])
-        tempLog.append('%i' % itertotal)
+        tempLog.append('%1.0f' % itertotal)
 
         # the delta t used for the simulation
         if dt:
