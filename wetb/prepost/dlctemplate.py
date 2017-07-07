@@ -265,7 +265,7 @@ def variable_tag_func_mod1(master, case_id_short=False):
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
-                      walltime='04:00:00'):
+                      walltime='04:00:00', postpro_node=False):
     """
     Launch load cases defined in Excel files
     """
@@ -273,15 +273,21 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     iter_dict = dict()
     iter_dict['[empty]'] = [False]
 
+    if postpro_node:
+        pyenv = 'wetb_py3'
+    else:
+        pyenv = None
+
     # see if a htc/DLCs dir exists
     dlcs_dir = os.path.join(P_SOURCE, 'htc', 'DLCs')
     # Load all DLC definitions and make some assumptions on tags that are not
     # defined
     if os.path.exists(dlcs_dir):
-        opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent)
+        opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent,
+                                         p_source=P_SOURCE)
     else:
         opt_tags = dlcdefs.excel_stabcon(os.path.join(P_SOURCE, 'htc'),
-                                         silent=silent)
+                                         silent=silent, p_source=P_SOURCE)
 
     if len(opt_tags) < 1:
         raise ValueError('There are is not a single case defined. Make sure '
@@ -322,7 +328,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
-                               silent=silent, verbose=verbose, pyenv=None)
+                               silent=silent, verbose=verbose, pyenv=pyenv)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -337,10 +343,10 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
-                              nr_procs_series=9, walltime='20:00:00',
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess')
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
-                              nr_procs_series=15, walltime='20:00:00',
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-gorm')
 
     df = sim.Cases(cases).cases2df()
@@ -505,10 +511,11 @@ if __name__ == '__main__':
                         action='store', dest='walltime', help='Queue walltime '
                         'for each case/pbs file, format: HH:MM:SS '
                         'Default: 04:00:00')
+    parser.add_argument('--postpro_node', default=False, action='store_true',
+                        dest='postpro_node', help='Perform the log analysis '
+                        'and stats calculation on the node right after the '
+                        'simulation has finished.')
     opt = parser.parse_args()
-
-    # TODO: use arguments to determine the scenario:
-    # --plots, --report, --...
 
     # -------------------------------------------------------------------------
 #    # manually configure paths, HAWC2 model root path is then constructed as
@@ -543,7 +550,8 @@ if __name__ == '__main__':
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
-                          pbs_turb=opt.pbs_turb, walltime=opt.walltime)
+                          pbs_turb=opt.pbs_turb, walltime=opt.walltime,
+                          postpro_node=opt.postpro_node, runmethod=RUNMETHOD)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:
