@@ -334,7 +334,7 @@ def tags_defaults(master):
 
 
 def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
-                  silent=False):
+                  silent=False, p_source=False):
     """
     Read all MS Excel files that hold load case definitions according to
     the team STABCON definitions. Save each case in a list according to the
@@ -367,6 +367,9 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
     sheet : string or int, default=0
         Name or index of the Excel sheet to be considered. By default, the
         first sheet (index=0) is taken.
+
+    p_source : string, default=False
+
 
     Returns
     -------
@@ -472,7 +475,11 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             # in case there is a controller input file defined
             if '[controller_tuning_file]' in tags_dict:
                 hs2 = hawcstab2.ReadControlTuning()
-                hs2.read_parameters(tags_dict['[controller_tuning_file]'])
+                # absolute path of the model root containing the tuning file
+                fpath = tags_dict['[controller_tuning_file]']
+                if p_source:
+                    fpath = os.path.join(p_source, fpath)
+                hs2.read_parameters(fpath)
                 tags_dict['[pi_gen_reg1.K]'] = hs2.pi_gen_reg1.K
                 tags_dict['[pi_gen_reg2.Kp]'] = hs2.pi_gen_reg2.Kp
                 tags_dict['[pi_gen_reg2.Ki]'] = hs2.pi_gen_reg2.Ki
