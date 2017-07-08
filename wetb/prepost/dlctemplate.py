@@ -556,7 +556,7 @@ if __name__ == '__main__':
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
 
-    if opt.gendlc:
+    if opt.gendlcs:
         DLB = GenerateDLCCases()
         DLB.execute(filename=os.path.join(P_SOURCE, opt.dlcmaster),
                     folder=os.path.join(P_RUN, opt.dlcfolder))

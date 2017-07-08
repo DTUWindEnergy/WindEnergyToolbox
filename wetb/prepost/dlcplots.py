@@ -320,6 +320,9 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                 windoffset = [-0.2, 0.2]
             else:
                 windoffset = [0]
+            # in case of a fully empty plot xlims will remain None and there
+            # is no need to save the plot
+            xlims = None
             # instead of groupby, select the run_dir in the same order as
             # occuring in the labels, post_dirs lists
             for ii, run_dir in enumerate(run_dirs):
@@ -384,12 +387,14 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 #            if str(dlc_name) not in ['61', '62']:
 #                ax.set_xticks(gr_ch_dlc_sid['[Windspeed]'].values)
 
+            # don't save empyt plots
+            if xlims is None:
+                continue
+
             ax.grid()
             ax.set_xlim(xlims)
             leg = ax.legend(loc='best', ncol=3)
-            # if no data at all was found
-            if leg is not None:
-                leg.get_frame().set_alpha(0.7)
+            leg.get_frame().set_alpha(0.7)
             ax.set_title(r'{DLC%s} %s' % (dlc_name, ch_dscr))
             ax.set_xlabel(xlabel)
             fig.tight_layout()
