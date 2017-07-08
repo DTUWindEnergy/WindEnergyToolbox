@@ -28,6 +28,7 @@ from wetb.prepost import Simulations as sim
 from wetb.prepost import dlcdefs
 from wetb.prepost import dlcplots
 from wetb.prepost.simchunks import create_chunks_htc_pbs
+from wetb.prepost.GenerateDLCs import GenerateDLCCases
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -515,6 +516,15 @@ if __name__ == '__main__':
                         dest='postpro_node', help='Perform the log analysis '
                         'and stats calculation on the node right after the '
                         'simulation has finished.')
+    parser.add_argument('--gendlcs', default=False, action='store_true',
+                        help='Generate DLC exchange files based on master DLC '
+                        'spreadsheet.')
+    parser.add_argument('--dlcmaster', type=str, default='htc/DLCs.xlsx',
+                        action='store', dest='dlcmaster',
+                        help='Master spreadsheet file location')
+    parser.add_argument('--dlcfolder', type=str, default='htc/DLCs/',
+                        action='store', dest='dlcfolder', help='Destination '
+                        'folder location of the generated DLC exchange files')
     opt = parser.parse_args()
 
     # -------------------------------------------------------------------------
@@ -545,6 +555,11 @@ if __name__ == '__main__':
     # and assume we are in a simulation case of a certain turbine/project
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
+
+    if opt.gendlc:
+        DLB = GenerateDLCCases()
+        DLB.execute(filename=os.path.join(P_SOURCE, opt.dlcmaster),
+                    folder=os.path.join(P_RUN, opt.dlcfolder))
 
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
@@ -600,6 +615,6 @@ if __name__ == '__main__':
         plot_chans['$M_z Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-z']
 
         sim_ids = [sim_id]
-        figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
+        figdir = os.path.join(POST_DIR, 'dlcplots/')
         dlcplots.plot_stats2(sim_ids, [POST_DIR], plot_chans,
                              fig_dir_base=figdir)
