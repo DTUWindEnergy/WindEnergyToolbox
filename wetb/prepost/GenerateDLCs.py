@@ -11,7 +11,8 @@ from __future__ import absolute_import
 
 # arctan and pi are required because they are in the formulas that are
 # evaluated
-from numpy import floor, arctan, pi
+from numpy import (floor, arctan, pi, log, log10, sin, cos, tan, e, arcsin,
+                   arccos)
 import pandas as pd
 import xlrd
 from argparse import ArgumentParser
@@ -244,6 +245,8 @@ class GenerateDLCCases(GeneralDLC):
                 if sheet.cell_value(1, i) is not None:
                     tag = str(sheet.cell_value(1, i))
                     if tag is not '':
+                        # FIXME: only works if [wsp] is defined as variable
+                        # and [seed] tags are present
                         if sheet.cell_value(0, i) == 'C':
                             constants[tag] = sheet.cell_value(2, i)
                         if sheet.cell_value(0, i) == 'V':

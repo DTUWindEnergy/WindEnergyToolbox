@@ -28,6 +28,7 @@ from wetb.prepost import Simulations as sim
 from wetb.prepost import dlcdefs
 from wetb.prepost import dlcplots
 from wetb.prepost.simchunks import create_chunks_htc_pbs
+from wetb.prepost.GenerateDLCs import GenerateDLCCases
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -265,7 +266,7 @@ def variable_tag_func_mod1(master, case_id_short=False):
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
-                      walltime='04:00:00'):
+                      walltime='04:00:00', postpro_node=False):
     """
     Launch load cases defined in Excel files
     """
@@ -273,15 +274,21 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     iter_dict = dict()
     iter_dict['[empty]'] = [False]
 
+    if postpro_node:
+        pyenv = 'wetb_py3'
+    else:
+        pyenv = None
+
     # see if a htc/DLCs dir exists
     dlcs_dir = os.path.join(P_SOURCE, 'htc', 'DLCs')
     # Load all DLC definitions and make some assumptions on tags that are not
     # defined
     if os.path.exists(dlcs_dir):
-        opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent)
+        opt_tags = dlcdefs.excel_stabcon(dlcs_dir, silent=silent,
+                                         p_source=P_SOURCE)
     else:
         opt_tags = dlcdefs.excel_stabcon(os.path.join(P_SOURCE, 'htc'),
-                                         silent=silent)
+                                         silent=silent, p_source=P_SOURCE)
 
     if len(opt_tags) < 1:
         raise ValueError('There are is not a single case defined. Make sure '
@@ -322,7 +329,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
-                               silent=silent, verbose=verbose, pyenv=None)
+                               silent=silent, verbose=verbose, pyenv=pyenv)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -337,10 +344,10 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
-                              nr_procs_series=9, walltime='20:00:00',
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess')
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
-                              nr_procs_series=15, walltime='20:00:00',
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-gorm')
 
     df = sim.Cases(cases).cases2df()
@@ -393,7 +400,8 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
 #        add_sigs = {name:expr}
 
         # in addition, sim_id and case_id are always added by default
-        tags = ['[Case folder]']
+        tags = ['[Case folder]', '[run_dir]', '[res_dir]', '[DLC]',
+                '[wsp]', '[Windspeed]', '[wdir]']
         add = None
         # general statistics for all channels channel
         # set neq=None here to calculate 1Hz equivalent loads
@@ -504,10 +512,20 @@ if __name__ == '__main__':
                         action='store', dest='walltime', help='Queue walltime '
                         'for each case/pbs file, format: HH:MM:SS '
                         'Default: 04:00:00')
+    parser.add_argument('--postpro_node', default=False, action='store_true',
+                        dest='postpro_node', help='Perform the log analysis '
+                        'and stats calculation on the node right after the '
+                        'simulation has finished.')
+    parser.add_argument('--gendlcs', default=False, action='store_true',
+                        help='Generate DLC exchange files based on master DLC '
+                        'spreadsheet.')
+    parser.add_argument('--dlcmaster', type=str, default='htc/DLCs.xlsx',
+                        action='store', dest='dlcmaster',
+                        help='Master spreadsheet file location')
+    parser.add_argument('--dlcfolder', type=str, default='htc/DLCs/',
+                        action='store', dest='dlcfolder', help='Destination '
+                        'folder location of the generated DLC exchange files')
     opt = parser.parse_args()
-
-    # TODO: use arguments to determine the scenario:
-    # --plots, --report, --...
 
     # -------------------------------------------------------------------------
 #    # manually configure paths, HAWC2 model root path is then constructed as
@@ -538,12 +556,17 @@ if __name__ == '__main__':
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
 
+    if opt.gendlcs:
+        DLB = GenerateDLCCases()
+        DLB.execute(filename=os.path.join(P_SOURCE, opt.dlcmaster),
+                    folder=os.path.join(P_RUN, opt.dlcfolder))
 
     # create HTC files and PBS launch scripts (*.p)
     if opt.prep:
         print('Start creating all the htc files and pbs_in files...')
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
-                          pbs_turb=opt.pbs_turb, walltime=opt.walltime)
+                          pbs_turb=opt.pbs_turb, walltime=opt.walltime,
+                          postpro_node=opt.postpro_node, runmethod=RUNMETHOD)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:
@@ -569,12 +592,11 @@ if __name__ == '__main__':
             for nr in [1, 2, 3]:
                 rpl = (nr, nr, node_nr, comp)
                 chans.append('blade%i-blade%i-node-%03i-momentvec-%s' % rpl)
-            plot_chans['$M_%s B123_{%i}$' % (comp, node_lab)] = chans
+            plot_chans['$M_%s B123_{%s}$' % (comp, node_lab)] = chans
 
         chans = []
         # combine blade 1,2,3 pitch angle stats into a single plot
         for nr in [1, 2, 3]:
-            rpl = (nr, nr, node_nr, comp)
             chans.append('bearing-pitch%i-angle-deg' % nr)
         plot_chans['$B123_{pitch}$'] = chans
 
@@ -593,6 +615,6 @@ if __name__ == '__main__':
         plot_chans['$M_z Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-z']
 
         sim_ids = [sim_id]
-        figdir = os.path.join(POST_DIR, 'figures/%s' % '-'.join(sim_ids))
+        figdir = os.path.join(POST_DIR, 'dlcplots/')
         dlcplots.plot_stats2(sim_ids, [POST_DIR], plot_chans,
                              fig_dir_base=figdir)

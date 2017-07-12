@@ -176,11 +176,11 @@ class LogFile(object):
         else:
             iterations = np.ndarray( (len(lines),3), dtype=np.float32 )
             dt = False
-        iterations[:,0:2] = -1
+        iterations[:,0:2] = np.nan
         iterations[:,2] = 0
 
         # keep track of the time_step number
-        time_step, init_block = -1, True
+        time_step, init_block = 0, True
         # check for messages in the current line
         # for speed: delete from message watch list if message is found
         for j, line in enumerate(lines):
@@ -192,13 +192,13 @@ class LogFile(object):
 
             # keep track of the number of iterations
             if line[:12] == ' Global time':
-                time_step += 1
                 iterations[time_step,0] = float(line[14:40])
                 # for PY2, new line is 2 characters, for PY3 it is one char
                 iterations[time_step,1] = int(line[-6:])
                 # time step is the first time stamp
                 if not dt:
                     dt = float(line[15:40])
+                time_step += 1
                 # no need to look for messages if global time is mentioned
                 continue
 
@@ -235,10 +235,6 @@ class LogFile(object):
             elif msg in self.err_sim:
                 icol = subcols_sim*self.err_sim[msg]
                 icol += subcols_init*self.init_cols + 1
-                # in case stuff already goes wrong on the first time step
-                if time_step == -1:
-                    time_step = 0
-
                 # 1: time step of first occurance
                 if tempLog[icol]  == '':
                     tempLog[icol] = '%i' % time_step
@@ -253,7 +249,7 @@ class LogFile(object):
                 tempLog[icol+3] = line
 
                 found_error = True
-                iterations[time_step,2] = 1
+                iterations[time_step-1,2] = 1
 
             # method of last resort, we have no idea what message
             elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
@@ -264,21 +260,27 @@ class LogFile(object):
                 # and message
                 tempLog[icol+1] = line
                 found_error = True
-                # in case stuff already goes wrong on the first time step
-                if time_step == -1:
-                    time_step = 0
-                iterations[time_step,2] = 1
+                iterations[time_step-1,2] = 1
 
-        # simulation and simulation output time
+        # remove not-used rows from iterations
+        iterations = iterations[:time_step,:]
+
+        # simulation and simulation output time based on the tags
+        # FIXME: ugly, do not mix tags with what is actually happening in the
+        # log files!!
         if case is not None:
             t_stop = float(case['[time_stop]'])
             duration = float(case['[duration]'])
         else:
-            t_stop = -1
+            t_stop = np.nan
             duration = -1
 
+        # if no time steps have passed
+        if iterations.shape == (0,3):
+            elapsed_time = -1
+            tempLog.append('')
         # see if the last line holds the sim time
-        if line[:15] ==  ' Elapsed time :':
+        elif line[:15] ==  ' Elapsed time :':
             exit_correct = True
             elapsed_time = float(line[15:-1])
             tempLog.append( elapsed_time )
@@ -286,43 +288,55 @@ class LogFile(object):
         # might be: " Closing of external type2 DLL"
         elif line[:20] == ' Closing of external':
             exit_correct = True
-            elapsed_time = iterations[time_step,0]
+            elapsed_time = iterations[time_step-1,0]
             tempLog.append( elapsed_time )
-        elif np.allclose(iterations[time_step,0], t_stop):
+        # FIXME: this is weird mixing of referring to t_stop from the tags
+        # and the actual last recorded time step
+        elif np.allclose(iterations[time_step-1,0], t_stop):
             exit_correct = True
-            elapsed_time = iterations[time_step,0]
+            elapsed_time = iterations[time_step-1,0]
             tempLog.append( elapsed_time )
         else:
             elapsed_time = -1
             tempLog.append('')
 
-        # give the last recorded time step
-        tempLog.append('%1.11f' % iterations[time_step,0])
+        if iterations.shape == (0,3):
+            last_time_step = 0
+        else:
+            last_time_step = iterations[time_step-1,0]
 
-        # simulation and simulation output time
+        # give the last recorded time step
+        tempLog.append('%1.11f' % last_time_step)
+        # simulation_time, as taken from cases
         tempLog.append('%1.01f' % t_stop)
-        tempLog.append('%1.04f' % (t_stop/elapsed_time))
+        # real_sim_time
+        tempLog.append('%1.04f' % (last_time_step/elapsed_time))
         tempLog.append('%1.01f' % duration)
 
         # as last element, add the total number of iterations
         itertotal = np.nansum(iterations[:,1])
-        tempLog.append('%i' % itertotal)
+        tempLog.append('%1.0f' % itertotal)
 
         # the delta t used for the simulation
         if dt:
             tempLog.append('%1.7f' % dt)
         else:
-            tempLog.append('failed to find dt')
+            tempLog.append('nan')
 
         # number of time steps
-        tempLog.append('%i' % len(iterations) )
+        tempLog.append('%i' % (time_step))
 
         # if the simulation didn't end correctly, the elapsed_time doesn't
         # exist. Add the average and maximum nr of iterations per step
         # or, if only the structural and eigen analysis is done, we have 0
         try:
             ratio = float(elapsed_time)/float(itertotal)
-            tempLog.append('%1.6f' % ratio)
+            # FIXME: this needs to be fixed proper while testing the analysis
+            # of various log files and edge cases
+            if elapsed_time < 0:
+                tempLog.append('')
+            else:
+                tempLog.append('%1.6f' % ratio)
         except (UnboundLocalError, ZeroDivisionError, ValueError) as e:
             tempLog.append('')
         # when there are no time steps (structural analysis only)
@@ -414,9 +428,12 @@ class LogFile(object):
         """
         chain_iter = chain.from_iterable
 
+        nr_init = len(self.err_init)
+        nr_sim = len(self.err_sim)
+
         colnames = ['file_name']
         colnames.extend(list(chain_iter(('nr_%i' % i, 'msg_%i' % i)
-                      for i in range(31))) )
+                      for i in range(nr_init))) )
 
         gr = ('first_tstep_%i', 'last_step_%i', 'nr_%i', 'msg_%i')
         colnames.extend(list(chain_iter( (k % i for k in gr)
@@ -437,16 +454,16 @@ class LogFile(object):
         dtypes = {}
 
         # str and float datatypes for
-        msg_cols = ['msg_%i' % i for i in range(30)]
-        msg_cols.extend(['msg_%i' % i for i in range(100,105,1)])
+        msg_cols = ['msg_%i' % i for i in range(nr_init-1)]
+        msg_cols.extend(['msg_%i' % i for i in range(100,100+nr_sim,1)])
         msg_cols.append('msg_extra')
         dtypes.update({k:str for k in msg_cols})
         # make the message/str columns long enough
-        min_itemsize = {'msg_%i' % i : 100 for i in range(30)}
+        min_itemsize = {'msg_%i' % i : 100 for i in range(nr_init-1)}
 
         # column names holding the number of occurances of messages
-        nr_cols = ['nr_%i' % i for i in range(30)]
-        nr_cols.extend(['nr_%i' % i for i in range(100,105,1)])
+        nr_cols = ['nr_%i' % i for i in range(nr_init-1)]
+        nr_cols.extend(['nr_%i' % i for i in range(100,100+nr_sim,1)])
         # other float values
         nr_cols.extend(['elapsted_time', 'total_iterations'])
         # NaN only exists in float arrays, not integers (NumPy limitation)
@@ -560,81 +577,6 @@ class LoadResults(ReadHawc2):
         if self.debug:
             stop = time() - start
             print('time to load HAWC2 file:', stop, 's')
-
-
-    def reformat_sig_details(self):
-        """Change HAWC2 output description of the channels short descriptive
-        strings, usable in plots
-
-        obj.ch_details[channel,(0=ID; 1=units; 2=description)] : np.array
-        """
-
-        # CONFIGURATION: mappings between HAWC2 and short good output:
-        change_list = []
-        change_list.append( ['original', 'new improved'] )
-
-#        change_list.append( ['Mx coo: hub1','blade1 root bending: flap'] )
-#        change_list.append( ['My coo: hub1','blade1 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub1','blade1 root bending: torsion'] )
-#
-#        change_list.append( ['Mx coo: hub2','blade2 root bending: flap'] )
-#        change_list.append( ['My coo: hub2','blade2 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub2','blade2 root bending: torsion'] )
-#
-#        change_list.append( ['Mx coo: hub3','blade3 root bending: flap'] )
-#        change_list.append( ['My coo: hub3','blade3 root bending: edge'] )
-#        change_list.append( ['Mz coo: hub3','blade3 root bending: torsion'] )
-
-        change_list.append(['Mx coo: blade1', 'blade1 flap'])
-        change_list.append(['My coo: blade1', 'blade1 edge'])
-        change_list.append(['Mz coo: blade1', 'blade1 torsion'])
-
-        change_list.append(['Mx coo: blade2', 'blade2 flap'])
-        change_list.append(['My coo: blade2', 'blade2 edge'])
-        change_list.append(['Mz coo: blade2', 'blade2 torsion'])
-
-        change_list.append(['Mx coo: blade3', 'blade3 flap'])
-        change_list.append(['My coo: blade3', 'blade3 edeg'])
-        change_list.append(['Mz coo: blade3', 'blade3 torsion'])
-
-        change_list.append(['Mx coo: hub1', 'blade1 out-of-plane'])
-        change_list.append(['My coo: hub1', 'blade1 in-plane'])
-        change_list.append(['Mz coo: hub1', 'blade1 torsion'])
-
-        change_list.append(['Mx coo: hub2', 'blade2 out-of-plane'])
-        change_list.append(['My coo: hub2', 'blade2 in-plane'])
-        change_list.append(['Mz coo: hub2', 'blade2 torsion'])
-
-        change_list.append(['Mx coo: hub3', 'blade3 out-of-plane'])
-        change_list.append(['My coo: hub3', 'blade3 in-plane'])
-        change_list.append(['Mz coo: hub3', 'blade3 torsion'])
-        # this one will create a false positive for tower node nr1
-        change_list.append(['Mx coo: tower', 'tower top momemt FA'])
-        change_list.append(['My coo: tower', 'tower top momemt SS'])
-        change_list.append(['Mz coo: tower', 'yaw-moment'])
-
-        change_list.append(['Mx coo: chasis', 'chasis momemt FA'])
-        change_list.append(['My coo: chasis', 'yaw-moment chasis'])
-        change_list.append(['Mz coo: chasis', 'chasis moment SS'])
-
-        change_list.append(['DLL inp  2:  2', 'tower clearance'])
-
-        self.ch_details_new = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
-
-        # approach: look for a specific description and change it.
-        # This approach is slow, but will not fail if the channel numbers change
-        # over different simulations
-        for ch in range(self.Nch):
-            # the change_list will always be slower, so this loop will be
-            # inside the bigger loop of all channels
-            self.ch_details_new[ch, :] = self.ch_details[ch, :]
-            for k in range(len(change_list)):
-                if change_list[k][0] == self.ch_details[ch, 0]:
-                    self.ch_details_new[ch, 0] = change_list[k][1]
-                    # channel description should be unique, so delete current
-                    # entry and stop looking in the change list
-                    del change_list[k]
-                    break
 
     # TODO: THIS IS STILL A WIP
     def _make_channel_names(self):
@@ -771,7 +713,6 @@ class LoadResults(ReadHawc2):
 
         return names, index
 
-
     def _unified_channel_names(self):
         """
         Make certain channels independent from their index.
@@ -844,8 +785,9 @@ class LoadResults(ReadHawc2):
         # some channel ID's are unique, use them
         ch_unique = set(['Omega', 'Ae rot. torque', 'Ae rot. power',
                          'Ae rot. thrust', 'Time', 'Azi  1'])
-        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa'])
-        ch_aerogrid = set(['a_grid', 'am_grid'])
+        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa', 'Lift',
+                       'Drag'])
+        ch_aerogrid = set(['a_grid', 'am_grid', 'CT', 'CQ'])
 
         # also safe as df
 #        cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi',
@@ -946,6 +888,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['units'] = self.ch_details[ch, 1]
 
             # -----------------------------------------------------------------
+            # ELEMENT STATES: pos, vel, acc, rot, ang
             #   0    1  2      3       4      5   6         7    8
             # State pos x  Mbdy:blade E-nr:   1 Z-rel:0.00 coo: blade
             #   0           1     2    3        4    5   6         7     8     9+
@@ -1041,6 +984,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
                 channelinfo['units'] = self.ch_details[ch, 1]
+                channelinfo['sensortype'] = 'dll-io'
 
             # -----------------------------------------------------------------
             # BEARING OUTPUS
@@ -1061,20 +1005,29 @@ class LoadResults(ReadHawc2):
                 channelinfo['chi'] = ch
 
             # -----------------------------------------------------------------
+            # AS DEFINED IN: ch_aero
             # AERO CL, CD, CM, VREL, ALFA, LIFT, DRAG, etc
             # Cl, R=  0.5     deg      Cl of blade  1 at radius   0.49
             # Azi  1          deg      Azimuth of blade  1
+            # NOTE THAT RADIUS FROM ch_details[ch, 0] REFERS TO THE RADIUS
+            # YOU ASKED FOR, AND ch_details[ch, 2] IS WHAT YOU GET, which is
+            # still based on a mean radius (deflections change the game)
             elif self.ch_details[ch, 0].split(',')[0] in ch_aero:
                 dscr_list = self.ch_details[ch, 2].split(' ')
                 dscr_list = misc.remove_items(dscr_list, '')
-
                 sensortype = self.ch_details[ch, 0].split(',')[0]
-                radius = dscr_list[-1]
+
                 # is this always valid?
                 blade_nr = self.ch_details[ch, 2].split('blade  ')[1][0]
                 # sometimes the units for aero sensors are wrong!
                 units = self.ch_details[ch, 1]
                 # there is no label option
+
+                # radius what you get
+#                 radius = dscr_list[-1]
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split('R=')
+                radius = misc.remove_items(tmp, '')[-1].strip()
 
                 # and tag it
                 tag = '%s-%s-%s' % (sensortype, blade_nr, radius)
@@ -1095,6 +1048,7 @@ class LoadResults(ReadHawc2):
                 items2 = items[1].split(' ')
                 items2 = misc.remove_items(items2, '')
                 azi = items2[1]
+                # radius what you asked for
                 radius = items2[3]
                 units = self.ch_details[ch, 1]
                 # and tag it
@@ -1112,22 +1066,33 @@ class LoadResults(ReadHawc2):
             # 0: Induc. Vz, rpco, R=  1.4
             # 1: m/s
             # 2: Induced wsp Vz of blade  1 at radius   1.37, RP. coo.
-# Induc. Vx, locco, R=  1.4 // Induced wsp Vx of blade  1 at radius   1.37, local ae coo.
-# Induc. Vy, blco, R=  1.4 // Induced wsp Vy of blade  1 at radius   1.37, local bl coo.
-# Induc. Vz, glco, R=  1.4 // Induced wsp Vz of blade  1 at radius   1.37, global coo.
-# Induc. Vx, rpco, R=  8.4 // Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
+            # Induc. Vx, locco, R=  1.4
+            #    Induced wsp Vx of blade  1 at radius   1.37, local ae coo.
+            # Induc. Vy, blco, R=  1.4
+            #    Induced wsp Vy of blade  1 at radius   1.37, local bl coo.
+            # Induc. Vz, glco, R=  1.4
+            #    Induced wsp Vz of blade  1 at radius   1.37, global coo.
+            # Induc. Vx, rpco, R=  8.4
+            #    Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
             elif self.ch_details[ch, 0].strip()[:5] == 'Induc':
                 items = self.ch_details[ch, 2].split(' ')
                 items = misc.remove_items(items, '')
+                coord = self.ch_details[ch, 2].split(', ')[1].strip()
                 blade_nr = int(items[5])
-                radius = float(items[8].replace(',', ''))
+
+                # radius what you get
+#                 radius = float(items[8].replace(',', ''))
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = float(misc.remove_items(tmp, '')[-1])
+
                 items = self.ch_details[ch, 0].split(',')
-                coord = items[1].strip()
                 component = items[0][-2:]
                 units = self.ch_details[ch, 1]
+
                 # and tag it
                 rpl = (coord, blade_nr, component, radius)
-                tag = 'induc-%s-blade-%1i-%s-r-%03.02f' % rpl
+                tag = 'induc-%s-blade-%1i-%s-r-%03.01f' % rpl
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['blade_nr'] = blade_nr
@@ -1137,6 +1102,53 @@ class LoadResults(ReadHawc2):
                 channelinfo['component'] = component
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+
+            # -----------------------------------------------------------------
+            # MORE AERO SENSORS
+            # Ae intfrc Fx, rpco, R=  0.0
+            #     Aero int. force Fx of blade  1 at radius   0.00, RP coo.
+            # Ae secfrc Fy, R= 25.0
+            #     Aero force  Fy of blade  1 at radius  24.11
+            # Ae pos x, glco, R= 88.2
+            #     Aero position x of blade  1 at radius  88.17, global coo.
+            elif self.ch_details[ch, 0].strip()[:2] == 'Ae':
+                units = self.ch_details[ch, 1]
+
+                items = self.ch_details[ch, 2].split(' ')
+                items = misc.remove_items(items, '')
+                # find blade number
+                tmp = self.ch_details[ch, 2].split('blade ')[1].strip()
+                blade_nr = int(tmp.split(' ')[0])
+                tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
+                tmp = tmp.split(',')
+
+                # radius what you get
+#                 radius = float(tmp[0])
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = float(misc.remove_items(tmp, '')[-1])
+
+                if len(tmp) > 1:
+                    coord = tmp[1].strip()
+                else:
+                    coord = 'aero'
+
+                items = self.ch_details[ch, 0].split(' ')
+                sensortype = items[1]
+                component = items[2].replace(',', '')
+
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['blade_nr'] = blade_nr
+                channelinfo['sensortype'] = sensortype
+                channelinfo['radius'] = radius
+                channelinfo['coord'] = coord
+                channelinfo['component'] = component
+                channelinfo['units'] = units
+                channelinfo['chi'] = ch
+
+                rpl = (coord, blade_nr, sensortype, component, radius)
+                tag = 'aero-%s-blade-%1i-%s-%s-r-%03.01f' % rpl
 
             # TODO: wind speed
             # some spaces have been trimmed here
@@ -1191,19 +1203,25 @@ class LoadResults(ReadHawc2):
                 channelinfo['sensortag'] = sensortag
                 # FIXME: direction is the same as component, right?
                 channelinfo['direction'] = direction
+                channelinfo['sensortype'] = 'wsp-global'
 
             # WIND SPEED AT BLADE
             # 0: WSP Vx, glco, R= 61.5
             # 2: Wind speed Vx of blade  1 at radius  61.52, global coo.
             elif self.ch_details[ch, 0].startswith('WSP V'):
                 units = self.ch_details[ch, 1].strip()
-                direction = self.ch_details[ch, 0].split(' ')[1].strip()
+                tmp = self.ch_details[ch, 0].split(' ')[1].strip()
+                direction = tmp.replace(',', '')
                 blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()[:2]
-                radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
                 coord = self.ch_details[ch, 2].split(',')[1].strip()
-
-                radius = radius.strip()
                 blade_nr = blade_nr.strip()
+
+                # radius what you get
+#                 radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
+#                 radius = radius.strip()
+                # radius what you asked for
+                tmp = self.ch_details[ch, 0].split(' ')
+                radius = misc.remove_items(tmp, '')[-1].strip()
 
                 # and tag it
                 rpl = (direction, blade_nr, radius, coord)
@@ -1217,6 +1235,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['radius'] = float(radius)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
+                channelinfo['sensortype'] = 'wsp-blade'
 
             # FLAP ANGLE
             # 2: Flap angle for blade  3 flap number  1
@@ -1256,14 +1275,15 @@ class LoadResults(ReadHawc2):
                     tag = base + '_%i' % tag_nr
 
             # -----------------------------------------------------------------
-            # ignore all the other cases we don't know how to deal with
+            # If all this fails, just combine channel name and description
             else:
-                # if we get here, we don't have support yet for that sensor
-                # and hence we can't save it. Continue with next channel
-                continue
+                tag = '-'.join(self.ch_details[ch,:3].tolist())
+                channelinfo = {}
+                channelinfo['chi'] = ch
+                channelinfo['units'] = self.ch_details[ch, 1].strip()
 
             # -----------------------------------------------------------------
-            # ignore if we have a non unique tag
+            # add a v_XXX tag in case the channel already exists
             if tag in self.ch_dict:
                 jj = 1
                 while True:
@@ -1273,9 +1293,7 @@ class LoadResults(ReadHawc2):
                     else:
                         tag = tag_new
                         break
-#                msg = 'non unique tag for HAWC2 results, ignoring: %s' % tag
-#                logging.warn(msg)
-#            else:
+
             self.ch_dict[tag] = copy.copy(channelinfo)
 
             # -----------------------------------------------------------------
@@ -1377,6 +1395,15 @@ class LoadResults(ReadHawc2):
             zoomtype = '_zoom_%1.1f-%1.1fsec' % (time[0], time[1])
 
         return slice_, window, zoomtype, time_range
+
+    def sig2df(self):
+        """Convert sig to dataframe with unique channel names as column names.
+        """
+        # channels that are not part of the naming scheme are not included
+        df = pd.DataFrame(self.sig[:,self.ch_df.index],
+                          columns=self.ch_df['unique_ch_name'])
+
+        return df
 
     # TODO: general signal method, this is not HAWC2 specific, move out
     def calc_stats(self, sig, i0=0, i1=None):
