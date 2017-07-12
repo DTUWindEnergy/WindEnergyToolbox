@@ -483,9 +483,10 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                 tags_dict['[pi_gen_reg1.K]'] = hs2.pi_gen_reg1.K
                 tags_dict['[pi_gen_reg2.Kp]'] = hs2.pi_gen_reg2.Kp
                 tags_dict['[pi_gen_reg2.Ki]'] = hs2.pi_gen_reg2.Ki
-                tags_dict['[pi_gen_reg2.Kd]'] = 0.0
+                tags_dict['[pi_gen_reg2.Kd]'] = hs2.pi_gen_reg2.Kd
                 tags_dict['[pi_pitch_reg3.Kp]'] = hs2.pi_pitch_reg3.Kp
                 tags_dict['[pi_pitch_reg3.Ki]'] = hs2.pi_pitch_reg3.Ki
+                tags_dict['[pi_pitch_reg3.Kd]'] = hs2.pi_pitch_reg3.Kd
                 tags_dict['[pi_pitch_reg3.K1]'] = hs2.pi_pitch_reg3.K1
                 tags_dict['[pi_pitch_reg3.K2]'] = hs2.pi_pitch_reg3.K2
                 tags_dict['[aero_damp.Kp2]'] = hs2.aero_damp.Kp2
