@@ -459,6 +459,10 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
 
 
 def postpro_node_merge():
+    """With postpro_node each individual case has a .csv file for the log file
+    analysis and a .csv file for the statistics tables. Merge all these single
+    files into one table/DataFrame.
+    """
     # -------------------------------------------------------------------------
     # MERGE POSTPRO ON NODE APPROACH INTO ONE DataFrame
     # -------------------------------------------------------------------------
@@ -633,6 +637,8 @@ if __name__ == '__main__':
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
+    if opt.postpro_node_merge:
+        postpro_node_merge()
     if opt.dlcplot:
         plot_chans = {}
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
