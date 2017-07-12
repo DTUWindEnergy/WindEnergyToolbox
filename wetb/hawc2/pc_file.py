@@ -74,6 +74,26 @@ class PCFile(AEFile):
         Cx1 = np.interp(alpha, Cx1[:, 0], Cx1[:, column])
         th0, th1 = thicknesses[index - 1:index + 1]
         return Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
+    
+    def _CxxxH2(self, radius, alpha, column, ae_set_nr=1):
+        thickness = self.thickness(radius, ae_set_nr)
+        pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
+        thicknesses, profiles = self.pc_sets[pc_set_nr]
+        index = np.searchsorted(thicknesses, thickness)
+        if index == 0:
+            index = 1
+
+        Cx0, Cx1 = profiles[index - 1:index + 1]
+        
+        Cx0 = np.interp(np.arange(360), Cx0[:,0]+180, Cx0[:,column])
+        Cx1 = np.interp(np.arange(360), Cx1[:,0]+180, Cx1[:,column])
+        #Cx0 = np.interp(alpha, Cx0[:, 0], Cx0[:, column])
+        #Cx1 = np.interp(alpha, Cx1[:, 0], Cx1[:, column])
+        th0, th1 = thicknesses[index - 1:index + 1]
+        cx = Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
+        return np.interp(alpha+180, np.arange(360), cx)
+    
+        
 
     def CL(self, radius, alpha, ae_set_nr=1):
         """Lift coefficient
@@ -93,6 +113,10 @@ class PCFile(AEFile):
         """
         return self._Cxxx(radius, alpha, 1, ae_set_nr)
 
+
+    def CL_H2(self, radius, alpha, ae_set_nr=1):
+        return self._CxxxH2(radius, alpha, 1, ae_set_nr)
+    
     def CD(self, radius, alpha, ae_set_nr=1):
         """Drag coefficient
 

@@ -60,6 +60,11 @@ class TestAtTimeFile(unittest.TestCase):
         self.assertEqual(atfile.radius_curved_ac(10), 10.2505)
         self.assertEqual(atfile.radius_curved_ac(10.5), 10.2505)
 
+    def test_rotor_name_null(self):
+        atfile = AtTimeFile(self.testfilepath + "at_time/test_rotor_name_null.dat", bladetip_radius=20.501)  # load file
+        print (atfile.radius_s())
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
