@@ -458,10 +458,18 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     return df_stats, df_AEP, df_Leq
 
 
-def postpro_node_merge():
+def postpro_node_merge(tqdm=False):
     """With postpro_node each individual case has a .csv file for the log file
     analysis and a .csv file for the statistics tables. Merge all these single
     files into one table/DataFrame.
+
+    Parameters
+    ----------
+
+    tqdm : boolean, default=False
+        Set to True for displaying a progress bar (provided by the tqdm module)
+        when merging all csv files into a single table/pd.DataFrame.
+
     """
     # -------------------------------------------------------------------------
     # MERGE POSTPRO ON NODE APPROACH INTO ONE DataFrame
@@ -470,7 +478,7 @@ def postpro_node_merge():
     path_pattern = os.path.join(P_RUN, 'logfiles', '*', '*.csv')
     csv_fname = '%s_ErrorLogs.csv' % sim_id
     fcsv = os.path.join(POST_DIR, csv_fname)
-    mdf = AppendDataFrames(tqdm=False)
+    mdf = AppendDataFrames(tqdm=tqdm)
     # individual log file analysis does not have header, make sure to include
     # a line for the header
     mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=None,
@@ -482,7 +490,7 @@ def postpro_node_merge():
     path_pattern = os.path.join(P_RUN, 'res', '*', '*.csv')
     csv_fname = '%s_statistics.csv' % sim_id
     fcsv = os.path.join(POST_DIR, csv_fname)
-    mdf = AppendDataFrames(tqdm=True)
+    mdf = AppendDataFrames(tqdm=tqdm)
     # individual log file analysis does not have header, make sure to include
     # a line for the header
     mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=0, sep=',',
