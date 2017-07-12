@@ -64,8 +64,8 @@ class Dataset(object):
             try:
                 return self(name)
             except:
-                for i, n in enumerate(self.info['attribute_names']):
-                    print (i,n)
+#                 for i, n in enumerate(self.info['attribute_names']):
+#                     print (i,n)
                 raise e
     
     def __contains__(self, name):

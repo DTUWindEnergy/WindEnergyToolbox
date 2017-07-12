@@ -89,7 +89,7 @@ class StFile(object):
     def _value(self, radius, column, mset_nr=1, set_nr=1):
         st_data = self.main_data_sets[mset_nr][set_nr]
         if radius is None:
-            radius = self.radius(None, mset_nr, set_nr)
+            radius = self.radius_st(None, mset_nr, set_nr)
         return np.interp(radius, st_data[:, 0], st_data[:, column])
 
     def radius_st(self, radius=None, mset=1, set=1):

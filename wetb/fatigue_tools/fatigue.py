@@ -19,6 +19,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 from future import standard_library
+import warnings
 standard_library.install_aliases()
 import numpy as np
 from wetb.fatigue_tools.rainflowcounting import rainflowcount
@@ -156,11 +157,12 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     if isinstance(ampl_bins, int):
         ampl_bins = np.linspace(0, 1, num=ampl_bins + 1) * ampls[weights>0].max()
     cycles, ampl_edges, mean_edges = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights)
-
-    ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
-    ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
-    mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
-    mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")     
+        ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
+        ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
+        mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
+        mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
     cycles = cycles / 2  # to get full cycles
     return cycles, ampl_bin_mean, ampl_edges, mean_bin_mean, mean_edges
 

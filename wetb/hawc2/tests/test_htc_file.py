@@ -148,17 +148,35 @@ class TestHtcFile(unittest.TestCase):
         htcfile.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
         s = """begin mann;
     create_turb_parameters\t30.1 1.1 3.3 102 0;\tL, alfaeps, gamma, seed, highfrq compensation
-    filename_u\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102u.turb;
-    filename_v\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102v.turb;
-    filename_w\t./turb/mann_l30.1_ae1.10_g3.3_h0_4096x32x32_1.465x3.12x3.12_s0102w.turb;
-    box_dim_u\t4096 1.4652;
+    filename_u\t./turb/mann_l30.1_ae1.10_g3.3_h0_16384x32x32_0.366x3.12x3.12_s0102u.turb;
+    filename_v\t./turb/mann_l30.1_ae1.10_g3.3_h0_16384x32x32_0.366x3.12x3.12_s0102v.turb;
+    filename_w\t./turb/mann_l30.1_ae1.10_g3.3_h0_16384x32x32_0.366x3.12x3.12_s0102w.turb;
+    box_dim_u\t16384 0.3662;
     box_dim_v\t32 3.2258;
-    box_dim_w\t32 3.2258;
-    std_scaling\t1 0.8 0.5;"""
+    box_dim_w\t32 3.2258;"""
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
         self.assertEqual(htcfile.wind.turb_format.comments, "")
+        
+    def test_add_turb_export(self):
+        htc = HTCFile()
+        htc.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
+        htc.set_time(100,700,0.01)
+        htc.add_turb_export()
+        s = """begin turb_export;
+  filename_u\texport_u.turb;
+  filename_v\texport_v.turb;
+  filename_w\texport_w.turb;
+  samplefrq\t3;
+  time_start\t100;
+  nsteps\t60000.0;
+  box_dim_v\t32 3.2258;
+  box_dim_w\t32 3.2258;
+end turb_export;"""
+        for a, b in zip(s.split("\n"), str(htc.wind.turb_export).split("\n")):
+            self.assertEqual(a.strip(), b.strip())
+
   
   
     def test_sensors(self):
