@@ -64,7 +64,8 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
     check_signal(signal)
     #type <double> is required by <find_extreme> and <rainflow>
     signal = signal.astype(np.double)
-
+    if np.all(np.isnan(signal)):
+        return None
     offset = np.nanmin(signal)
     signal -= offset
     if np.nanmax(signal) > 0:
