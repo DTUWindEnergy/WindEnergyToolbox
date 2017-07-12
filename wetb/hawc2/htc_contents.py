@@ -14,6 +14,7 @@ from builtins import zip
 from builtins import int
 from builtins import str
 from future import standard_library
+import os
 standard_library.install_aliases()
 from collections import OrderedDict
 import collections
@@ -119,8 +120,8 @@ class HTCContents(object):
                 ending = "__%d" % (1 + float("0%s" % ending.replace("__", "")))
             self[contents.name_ + ending] = contents
 
-    def add_section(self, name, allow_duplicate_section=False):
-        if name in self and allow_duplicate_section is False:
+    def add_section(self, name, allow_duplicate=False):
+        if name in self and allow_duplicate is False:
             return self[name]
         section = HTCSection(name)
         self._add_contents(section)
@@ -363,8 +364,9 @@ class HTCDefaults(object):
 
     def add_mann_turbulence(self, L=29.4, ae23=1, Gamma=3.9, seed=1001, high_frq_compensation=True,
                             filenames=None,
-                            no_grid_points=(4096, 32, 32), box_dimension=(6000, 100, 100),
-                            std_scaling=(1, .8, .5)):
+                            no_grid_points=(16384, 32, 32), box_dimension=(6000, 100, 100),
+                            dont_scale=False,
+                            std_scaling=None):
         wind = self.add_section('wind')
         wind.turb_format = 1
         mann = wind.add_section('mann')
@@ -383,15 +385,38 @@ class HTCDefaults(object):
             setattr(mann, 'filename_%s' % c, filename)
         for c, n, dim in zip(['u', 'v', 'w'], no_grid_points, box_dimension):
             setattr(mann, 'box_dim_%s' % c, "%d %.4f" % (n, dim / (n - 1)))
-        if std_scaling is None:
+        if dont_scale:
             mann.dont_scale = 1
         else:
             try:
                 del mann.dont_scale
             except KeyError:
                 pass
+        if std_scaling is not None:
             mann.std_scaling = "%f %f %f" % std_scaling
+        else:
+            try:
+                del mann.std_scaling
+            except KeyError:
+                pass
+            
 
+
+    def add_turb_export(self, filename="export_%s.turb", samplefrq = None):
+        exp = self.wind.add_section('turb_export', allow_duplicate=True)
+        for uvw in 'uvw':
+            exp.add_line('filename_%s'%uvw, [filename%uvw])
+        sf = samplefrq or max(1,int( self.wind.mann.box_dim_u[1]/(self.wind.wsp[0] * self.deltat())))
+        exp.samplefrq = sf
+        if "time" in self.output:
+            exp.time_start = self.output.time[0]
+        else:
+            exp.time_start = 0
+        exp.nsteps = (self.simulation.time_stop[0]-exp.time_start[0]) / self.deltat()
+        for vw in 'vw':
+            exp.add_line('box_dim_%s'%vw, self.wind.mann['box_dim_%s'%vw].values)
+
+        
 
     def import_dtu_we_controller_input(self, filename):
         dtu_we_controller = [dll for dll in self.dll if dll.name[0] == 'dtu_we_controller'][0]

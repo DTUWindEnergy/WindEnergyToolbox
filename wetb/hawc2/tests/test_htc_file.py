@@ -159,6 +159,25 @@ class TestHtcFile(unittest.TestCase):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
         self.assertEqual(htcfile.wind.turb_format.comments, "")
+        
+    def test_add_turb_export(self):
+        htc = HTCFile()
+        htc.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
+        htc.set_time(100,700,0.02)
+        htc.add_turb_export()
+        s = """begin turb_export;
+  filename_u\texport_u.turb;
+  filename_v\texport_v.turb;
+  filename_w\texport_w.turb;
+  samplefrq\t7;
+  time_start\t100;
+  nsteps\t30000.0;
+  box_dim_v\t32 3.2258;
+  box_dim_w\t32 3.2258;
+end turb_export;"""
+        for a, b in zip(s.split("\n"), str(htc.wind.turb_export).split("\n")):
+            self.assertEqual(a.strip(), b.strip())
+
   
   
     def test_sensors(self):
