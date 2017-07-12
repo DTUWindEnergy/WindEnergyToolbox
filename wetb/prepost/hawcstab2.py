@@ -373,6 +373,10 @@ class ReadControlTuning(object):
 
         # set some parameters to zero for the linear case, or when aerodynamic
         # gain scheduling is not used
+        if not hasattr(self.pi_gen_reg2, 'Kd'):
+            setattr(self.pi_gen_reg2, 'Kd', 0.0)
+        if not hasattr(self.pi_pitch_reg3, 'Kd'):
+            setattr(self.pi_pitch_reg3, 'Kd', 0.0)
         if not hasattr(self.pi_pitch_reg3, 'K2'):
             setattr(self.pi_pitch_reg3, 'K2', 0.0)
         if not hasattr(self.aero_damp, 'Kp2'):
@@ -394,10 +398,11 @@ class ReadControlTuning(object):
         tune_tags['[pi_gen_reg2.I]'] = self.pi_gen_reg2.I
         tune_tags['[pi_gen_reg2.Kp]'] = self.pi_gen_reg2.Kp
         tune_tags['[pi_gen_reg2.Ki]'] = self.pi_gen_reg2.Ki
-        tune_tags['[pi_gen_reg2.Kd]'] = 0.0
+        tune_tags['[pi_gen_reg2.Kd]'] = self.pi_gen_reg2.Kd
 
         tune_tags['[pi_pitch_reg3.Kp]'] = self.pi_pitch_reg3.Kp
         tune_tags['[pi_pitch_reg3.Ki]'] = self.pi_pitch_reg3.Ki
+        tune_tags['[pi_pitch_reg3.Kd]'] = self.pi_pitch_reg3.Kd
         tune_tags['[pi_pitch_reg3.K1]'] = self.pi_pitch_reg3.K1
         tune_tags['[pi_pitch_reg3.K2]'] = self.pi_pitch_reg3.K2
 
