@@ -40,8 +40,10 @@ def differentiation(x, type='center', sample_frq=None, cutoff_frq=None):
         x = np.array(x) 
     if type=="left":
         dy = np.r_[np.nan, x[1:]-x[:-1]]
-    if type=="center": 
+    elif type=="center": 
         dy = np.r_[x[1]-x[0], (x[2:]-x[:-2])/2, x[-1]-x[-2]]
-    if type=="right":
+    elif type=="right":
         dy = np.r_[x[1:]-x[:-1], np.nan]
+    else:
+        raise NotImplementedError()
     return dy
