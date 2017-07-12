@@ -236,20 +236,16 @@ class DLCHighLevel(object):
             pass
         elif not hasattr(self, "res_folder") or self.res_folder == "":
             files = glob.glob(os.path.join(self.res_path, "*"+ext)) + glob.glob(os.path.join(self.res_path, "*/*"+ext))
-            if len(files)==0:
-                raise Exception('No *%s files found in:\n%s or\n%s'%(ext, self.res_path, os.path.join(self.res_path, "*/")))
         else:
             files = []
+
             for dlc_id in fatigue_dlcs:
                 dlc_id = str(dlc_id)
                 if "%" in self.res_folder:
                     folder = self.res_folder % dlc_id
                 else:
                     folder = self.res_folder
-                dlc_files = (glob.glob(os.path.join(self.res_path , folder, "*"+ext)))
-                if len(dlc_files)==0:
-                    raise Exception('DLC%s included in fatigue analysis, but no *%s files found in:\n%s'%(dlc_id, ext, os.path.join(self.res_path , folder)))
-                files.extend(dlc_files)
+                files.extend(glob.glob(os.path.join(self.res_path , folder, "*"+ext)))
         keys = list(zip(*self.dist_value_keys))[1]
         fmt = self.format_tag_value
         tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).split("_"), keys)] for f in files]

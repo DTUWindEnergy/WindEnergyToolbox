@@ -32,7 +32,7 @@ def pexec(args, cwd=None):
             args[i] = str(args[i]).replace('/', os.path.sep).replace('\\', os.path.sep).replace('"', '')
 
     cmd = "%s" % '{} /c "{}"'.format (os.environ.get("COMSPEC", "cmd.exe"), subprocess.list2cmdline(args))
-    if cwd and os.path.isfile(cwd):
+    if os.path.isfile(cwd):
         cwd = os.path.dirname(cwd)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=cwd)
     stdout, stderr = proc.communicate()
