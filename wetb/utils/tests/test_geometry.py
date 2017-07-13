@@ -13,7 +13,8 @@ import unittest
 
 
 import numpy as np
-from wetb.utils.geometry import rad, deg, mean_deg, sind, cosd, std_deg, tand
+from wetb.utils.geometry import rad, deg, mean_deg, sind, cosd, std_deg, tand,\
+    rpm2rads, rads2rpm
 import os
 
 
@@ -67,6 +68,10 @@ class TestGeometry(unittest.TestCase):
     def test_std_deg_nan(self):
         self.assertAlmostEqual(std_deg(np.array([0, 90, 180, 270, np.nan])), 57.296, 2)
 
+
+    def test_rpm2rads(self):
+        self.assertAlmostEqual(rpm2rads(1),.1047,4)
+        self.assertAlmostEqual(rads2rpm(rpm2rads(1)), 1)
     
 
 if __name__ == "__main__":

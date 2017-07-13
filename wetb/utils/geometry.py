@@ -89,3 +89,7 @@ def std_rad(dir):
 
 def rpm2rads(rpm):
     return rpm * 2 * np.pi / 60
+
+
+def rads2rpm(rads):
+    return rads/ (2 * np.pi) * 60
