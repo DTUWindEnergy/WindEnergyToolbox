@@ -3,6 +3,7 @@ from builtins import zip
 from builtins import range
 from builtins import str
 from future import standard_library
+from wetb.fatigue_tools.fatigue import eq_load
 standard_library.install_aliases()
 import warnings
 from wetb.gtsdf.unix_time import from_unix
@@ -13,6 +14,7 @@ except ImportError as e:
 import os
 import numpy as np
 import numpy.ma as ma
+import pandas as pd
 block_name_fmt = "block%04d"
 
 def load(filename, dtype=None):
@@ -89,80 +91,95 @@ def load(filename, dtype=None):
      'type': 'General time series data format',
      'description': 'MyDatasetDescription'}
     """
+    f = _open_h5py_file(filename)
+    try:
+        info = _load_info(f)
+        time, data = _load_timedata(f,dtype)
+        return time, data, info
+    finally:
+        try:
+            f.close()
+        except:
+            pass
+
+def _open_h5py_file(filename):
     if isinstance(filename, h5py.File):
         f = filename
         filename = f.filename
     else:
         assert os.path.isfile(filename), "File, %s, does not exists" % filename
         f = h5py.File(filename, 'r')
-    try:
-        def decode(v):
-            if isinstance(v, bytes):
-                return v.decode('latin1')
-            return v
+    return f
 
+def decode(v):
+        if isinstance(v, bytes):
+            return v.decode('latin1')
+        elif hasattr(v,'len'):
+            return [decode(v_) for v_ in v]
+        return v
 
-        info = {k: decode(v) for k, v in f.attrs.items()}
-        check_type(f)
-        if (block_name_fmt % 0) not in f:
-            raise ValueError("HDF5 file must contain a group named '%s'" % (block_name_fmt % 0))
-        block0 = f[block_name_fmt % 0]
-        if 'data' not in block0:
-            raise ValueError("group %s must contain a dataset called 'data'" % (block_name_fmt % 0))
-        _, no_attributes = block0['data'].shape
-        if 'name' not in info:
-            info['name'] = os.path.splitext(os.path.basename(filename))[0]
-        if 'attribute_names' in f:
-            info['attribute_names'] = [v.decode('latin1') for v in f['attribute_names']]
-        if 'attribute_units' in f:
-            info['attribute_units'] = [v.decode('latin1') for v in f['attribute_units']]
-        if 'attribute_descriptions' in f:
-            info['attribute_descriptions'] = [v.decode('latin1') for v in f['attribute_descriptions']]
-        no_blocks = f.attrs['no_blocks']
+def _load_info(f):
+    
 
-        if dtype is None:
-            file_dtype = f[block_name_fmt % 0]['data'].dtype
-            if "float" in str(file_dtype):
-                dtype = file_dtype
-            elif file_dtype in [np.int8, np.uint8, np.int16, np.uint16]:
-                dtype = np.float32
-            else:
-                dtype = np.float64
-        time = []
-        data = []
-        for i in range(no_blocks):
+    info = {k: decode(v) for k, v in f.attrs.items()}
+    check_type(f)
+    if 'name' not in info:
+        info['name'] = os.path.splitext(os.path.basename(f.filename))[0]
+    if 'attribute_names' in f:
+        info['attribute_names'] = [v.decode('latin1') for v in f['attribute_names']]
+    if 'attribute_units' in f:
+        info['attribute_units'] = [v.decode('latin1') for v in f['attribute_units']]
+    if 'attribute_descriptions' in f:
+        info['attribute_descriptions'] = [v.decode('latin1') for v in f['attribute_descriptions']]
+    return info
+    
+def _load_timedata(f, dtype):
+    no_blocks = f.attrs['no_blocks']
+    if (block_name_fmt % 0) not in f:
+        raise ValueError("HDF5 file must contain a group named '%s'" % (block_name_fmt % 0))
+    block0 = f[block_name_fmt % 0]
+    if 'data' not in block0:
+        raise ValueError("group %s must contain a dataset called 'data'" % (block_name_fmt % 0))
+    _, no_attributes = block0['data'].shape
+    
 
-            try:
-                block = f[block_name_fmt % i]
-            except KeyError:
-                continue
-            no_observations, no_attributes = block['data'].shape
-            block_time = (block.get('time', np.arange(no_observations))[:]).astype(np.float64)
-            if 'time_step' in block.attrs:
-                block_time *= block.attrs['time_step']
-            if 'time_start' in block.attrs:
-                block_time += block.attrs['time_start']
-            time.extend(block_time)
+    if dtype is None:
+        file_dtype = f[block_name_fmt % 0]['data'].dtype
+        if "float" in str(file_dtype):
+            dtype = file_dtype
+        elif file_dtype in [np.int8, np.uint8, np.int16, np.uint16]:
+            dtype = np.float32
+        else:
+            dtype = np.float64
+    time = []
+    data = []
+    for i in range(no_blocks):
 
-            block_data = block['data'][:].astype(dtype)
-            if "int" in str(block['data'].dtype):
-                block_data[block_data == np.iinfo(block['data'].dtype).max] = np.nan
+        try:
+            block = f[block_name_fmt % i]
+        except KeyError:
+            continue
+        no_observations, no_attributes = block['data'].shape
+        block_time = (block.get('time', np.arange(no_observations))[:]).astype(np.float64)
+        if 'time_step' in block.attrs:
+            block_time *= block.attrs['time_step']
+        if 'time_start' in block.attrs:
+            block_time += block.attrs['time_start']
+        time.extend(block_time)
 
-            if 'gains' in block:
-                block_data *= block['gains'][:]
-            if 'offsets' in block:
-                block_data += block['offsets'][:]
-            data.append(block_data)
+        block_data = block['data'][:].astype(dtype)
+        if "int" in str(block['data'].dtype):
+            block_data[block_data == np.iinfo(block['data'].dtype).max] = np.nan
 
-        f.close()
-        if no_blocks > 0:
-            data = np.vstack(data)
-        return np.array(time).astype(np.float64), np.array(data).astype(dtype), info
-    except (ValueError, AssertionError):
-        f.close()
-        raise
+        if 'gains' in block:
+            block_data *= block['gains'][:]
+        if 'offsets' in block:
+            block_data += block['offsets'][:]
+        data.append(block_data)
 
-
+    if no_blocks > 0:
+        data = np.vstack(data)
+    return np.array(time).astype(np.float64), np.array(data).astype(dtype)    
 
 def save(filename, data, **kwargs):
     """Save a 'General Time Series Data Format'-hdf5 datafile
@@ -226,36 +243,44 @@ def save(filename, data, **kwargs):
                                       time_step=2,
                                       dtype=np.float64)
     """
-
     if not filename.lower().endswith('.hdf5'):
         filename += ".hdf5"
     # exist_ok does not exist in Python27
     if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
         os.makedirs(os.path.dirname(os.path.abspath(filename)))  #, exist_ok=True)
+    _save_info(filename, data.shape, **kwargs)
+    append_block(filename, data, **kwargs)
+
+def _save_info(filename, data_shape, **kwargs):
+
     f = h5py.File(filename, "w")
     try:
         f.attrs["type"] = "General time series data format"
-        no_observations, no_attributes = data.shape
+        no_observations, no_attributes = data_shape
+        
         if 'name' in kwargs:
             f.attrs['name'] = kwargs['name']
         if 'description' in kwargs:
             f.attrs['description'] = kwargs['description']
         f.attrs['no_attributes'] = no_attributes
         if 'attribute_names' in kwargs:
-            assert len(kwargs['attribute_names']) == no_attributes, "len(attribute_names)=%d but data shape is %s" % (len(kwargs['attribute_names']), data.shape)
+            if no_attributes:
+                assert len(kwargs['attribute_names']) == no_attributes, "len(attribute_names)=%d but data shape is %s" % (len(kwargs['attribute_names']), data_shape)
             f.create_dataset("attribute_names", data=np.array([v.encode('utf-8') for v in kwargs['attribute_names']]))
         if 'attribute_units' in kwargs:
-            assert(len(kwargs['attribute_units']) == no_attributes)
+            if no_attributes:
+                assert(len(kwargs['attribute_units']) == no_attributes)
             f.create_dataset("attribute_units", data=np.array([v.encode('utf-8') for v in kwargs['attribute_units']]))
         if 'attribute_descriptions' in kwargs:
-            assert(len(kwargs['attribute_descriptions']) == no_attributes)
+            if no_attributes:
+                assert(len(kwargs['attribute_descriptions']) == no_attributes)
             f.create_dataset("attribute_descriptions", data=np.array([v.encode('utf-8') for v in kwargs['attribute_descriptions']]))
         f.attrs['no_blocks'] = 0
     except Exception:
         raise
     finally:
         f.close()
-    append_block(filename, data, **kwargs)
+
 
 def append_block(filename, data, **kwargs):
     """Append a data block and corresponding time data to already existing file
@@ -398,3 +423,42 @@ def check_type(f):
         raise ValueError("HDF5 file must contain a 'type'-attribute with the value 'General time series data format'")
     if 'no_blocks' not in f.attrs:
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
+    
+    
+def _get_statistic(time, data, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+    def get_stat(stat):
+        if hasattr(np, stat):
+            return getattr(np,stat)(data,0)
+        elif (stat.startswith("eq") and stat[2:].isdigit()):
+            m = float(stat[2:])
+            return [eq_load(sensor, 46, m, time[-1]-time[0]+time[1]-time[0])[0][0] for sensor in data.T]
+    return np.array([get_stat(stat) for stat in statistics]).T
+    
+def _add_statistic_data(file, stat_data, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+    f = h5py.File(file, "a")
+    stat_grp = f.create_group("Statistic")
+    stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
+    stat_grp.create_dataset("statistic_data", data=stat_data.astype(np.float))
+    f.close()
+    
+def add_statistic(file, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+    time, data, info = load(file)
+    stat_data = _get_statistic(time, data, statistics)
+    _add_statistic_data(file, stat_data, statistics)
+
+    
+def load_statistic(filename):
+    f = _open_h5py_file(filename)
+    info = _load_info(f)
+    names = decode(f['Statistic']['statistic_names'])
+    data =np.array(f['Statistic']['statistic_data'])
+    return pd.DataFrame(data, columns=names), info
+
+def compress2statistics(filename, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+    time, data, info = load(filename)
+    stat_data = _get_statistic(time, data, statistics)
+    _save_info(filename, data.shape, **info)
+    _add_statistic_data(filename, stat_data, statistics)
+    
+    
+    

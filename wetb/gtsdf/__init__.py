@@ -38,6 +38,9 @@ from .gtsdf import save
 from .gtsdf import load
 from .gtsdf import append_block
 from .gtsdf import load_pandas
+from .gtsdf import add_statistic
+from .gtsdf import load_statistic
+from .gtsdf import compress2statistics
 
 class Dataset(object):
     def __init__(self, filename):
