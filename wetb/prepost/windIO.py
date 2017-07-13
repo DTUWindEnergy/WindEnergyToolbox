@@ -380,11 +380,11 @@ class LogFile(object):
             contents = contents + '\n'
         return contents
 
-    def csv2df(self, fname):
+    def csv2df(self, fname, header=0):
         """Read a csv log file analysis and convert to a pandas.DataFrame
         """
         colnames, min_itemsize, dtypes = self.headers4df()
-        df = pd.read_csv(fname, header=0, names=colnames, sep=';', )
+        df = pd.read_csv(fname, header=header, names=colnames, sep=';', )
         for col, dtype in dtypes.items():
             df[col] = df[col].astype(dtype)
             # replace nan with empty for str columns

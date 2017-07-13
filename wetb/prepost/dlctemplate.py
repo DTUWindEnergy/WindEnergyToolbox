@@ -19,15 +19,14 @@ import socket
 from argparse import ArgumentParser
 from sys import platform
 
-#import numpy as np
-#import pandas as pd
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 #import matplotlib as mpl
 
 from wetb.prepost import Simulations as sim
-from wetb.prepost import dlcdefs
-from wetb.prepost import dlcplots
-from wetb.prepost.simchunks import create_chunks_htc_pbs
+from wetb.prepost import (dlcdefs, dlcplots, windIO)
+from wetb.prepost.simchunks import (create_chunks_htc_pbs, AppendDataFrames)
 from wetb.prepost.GenerateDLCs import GenerateDLCCases
 
 plt.rc('font', family='serif')
@@ -459,6 +458,68 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     return df_stats, df_AEP, df_Leq
 
 
+def postpro_node_merge(tqdm=False):
+    """With postpro_node each individual case has a .csv file for the log file
+    analysis and a .csv file for the statistics tables. Merge all these single
+    files into one table/DataFrame.
+
+    Parameters
+    ----------
+
+    tqdm : boolean, default=False
+        Set to True for displaying a progress bar (provided by the tqdm module)
+        when merging all csv files into a single table/pd.DataFrame.
+
+    """
+    # -------------------------------------------------------------------------
+    # MERGE POSTPRO ON NODE APPROACH INTO ONE DataFrame
+    # -------------------------------------------------------------------------
+    lf = windIO.LogFile()
+    path_pattern = os.path.join(P_RUN, 'logfiles', '*', '*.csv')
+    csv_fname = '%s_ErrorLogs.csv' % sim_id
+    fcsv = os.path.join(POST_DIR, csv_fname)
+    mdf = AppendDataFrames(tqdm=tqdm)
+    # individual log file analysis does not have header, make sure to include
+    # a line for the header
+    mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=None,
+                header_fjoined=lf._header(), recursive=True)
+    # convert from CSV to DataFrame
+    df = lf.csv2df(fcsv)
+    df.to_hdf(fcsv.replace('.csv', '.h5'), 'table')
+    # -------------------------------------------------------------------------
+    path_pattern = os.path.join(P_RUN, 'res', '*', '*.csv')
+    csv_fname = '%s_statistics.csv' % sim_id
+    fcsv = os.path.join(POST_DIR, csv_fname)
+    mdf = AppendDataFrames(tqdm=tqdm)
+    # individual log file analysis does not have header, make sure to include
+    # a line for the header
+    mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=0, sep=',',
+                header_fjoined=None, recursive=True, fname_col='[case_id]')
+    # and convert to df: takes 2 minutes
+    fdf = fcsv.replace('.csv', '.h5')
+    store = pd.HDFStore(fdf, mode='w', format='table', complevel=9,
+                        complib='zlib')
+    colnames = ['channel', 'max', 'min', 'mean', 'std', 'range',
+                'absmax', 'rms', 'int', 'm=3', 'm=4', 'm=6', 'm=8', 'm=10',
+                'm=12', 'intabs', '[case_id]']
+    dtypes = {col:np.float64 for col in colnames}
+    dtypes['channel'] = str
+    dtypes['[case_id]'] = str
+    mdf.csv2df_chunks(store, fcsv, chunksize=300000, min_itemsize={}, sep=',',
+                      colnames=colnames, dtypes=dtypes, header=0)
+    store.close()
+    # -------------------------------------------------------------------------
+    # merge missing cols onto stats
+    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
+                '[case_id]']
+    df = pd.read_hdf(fdf, 'table')
+    cc = sim.Cases(POST_DIR, sim_id)
+    df_tags = cc.cases2df()[required]
+    df_stats = pd.merge(df, df_tags, on=['[case_id]'])
+    df_stats.to_hdf(fdf, 'table')
+    df_stats.to_csv(fdf.replace('.h5', '.csv'))
+
+
 if __name__ == '__main__':
 
     parser = ArgumentParser(description = "pre- or post-processes DLC's")
@@ -516,6 +577,12 @@ if __name__ == '__main__':
                         dest='postpro_node', help='Perform the log analysis '
                         'and stats calculation on the node right after the '
                         'simulation has finished.')
+    parser.add_argument('--postpro_node_merge', default=False,
+                        action='store_true', dest='postpro_node_merge',
+                        help='Merge all individual statistics and log file '
+                        'analysis .csv files into one table/pd.DataFrame. '
+                        'Requires that htc files have been created with '
+                        '--prep --postpro_node.')
     parser.add_argument('--gendlcs', default=False, action='store_true',
                         help='Generate DLC exchange files based on master DLC '
                         'spreadsheet.')
@@ -578,6 +645,8 @@ if __name__ == '__main__':
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
+    if opt.postpro_node_merge:
+        postpro_node_merge()
     if opt.dlcplot:
         plot_chans = {}
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
