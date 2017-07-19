@@ -10,7 +10,7 @@ import os
 from scipy.interpolate import RectBivariateSpline
 
 import numpy as np
-from wetb.wind.turbulence.turbulence_spectra import spectra, logbin_spectra, \
+from wetb.wind.turbulence.spectra import spectra, logbin_spectra, \
     plot_spectrum
 
 
@@ -151,8 +151,8 @@ def fit_mann_model_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2,
         _plot_spectra(k1, uu, vv, ww, uw, plt=plt)
         plot_mann_spectra(*x, plt=plt)
         plt.title('ae:%.3f, L:%.1f, G:%.2f' % tuple(x))
-        plt.xlabel = ('Wavenumber, k1 [m$^{-1}$]')
-        plt.xlabel = ('Spectral density, $k_1F(k1) [m^2/s^2]$')
+        plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
+        plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
         plt.legend()
         plt.show()
     return x
@@ -248,8 +248,8 @@ def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
         muu = get_mann_model_spectra(ae, L, G, k1)[0]
         plt.semilogx(k1, k1 * muu, 'g', label='ae:%.3f, L:%.1f, G:%.2f' % (ae, L, G))
         plt.legend()
-        plt.xlabel = ('Wavenumber, k1 [m$^{-1}$]')
-        plt.xlabel = ('Spectral density, $k_1F(k1) [m^2/s^2]$')
+        plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
+        plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
         plt.show()
     return ae
 
@@ -267,6 +267,8 @@ def _plot_spectra(k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2
     def plot(xx, label, color, plt):
         plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , '.' + color, label=label)
     plot(buu, 'uu', 'r', plt)
+    plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
+    plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
     if (bvv) is not None:
         plot(bvv, 'vv', 'g', plt)
     if bww is not None:
@@ -289,9 +291,10 @@ def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv
 if __name__ == "__main__":
     from wetb import gtsdf
     from wetb.wind.dir_mapping import wsp_dir2uv
-    
-    """Example of fitting Mann parameters to a time series"""
     from wetb import wind
+    import matplotlib.pyplot as plt
+
+    """Example of fitting Mann parameters to a time series"""
     ds = gtsdf.Dataset(os.path.dirname(wind.__file__)+"/tests/test_files/WspDataset.hdf5")#'unit_test/test_files/wspdataset.hdf5')
     f = 35
     u, v = wsp_dir2uv(ds.Vhub_85m, ds.Dir_hub_)
@@ -300,7 +303,6 @@ if __name__ == "__main__":
     u -= u_ref
 
     sf = f / u_ref
-    import matplotlib.pyplot as plt
     ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v), plt = plt)
     print (ae, L, G)
 

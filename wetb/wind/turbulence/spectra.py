@@ -87,6 +87,10 @@ def spectra(spacial_frq, u, v=None, w=None, detrend=True):
     if np.mean(u) > 1:
         k /= np.mean(u)
         u = u - np.mean(u, 0)
+    if v is not None:
+        v = v - np.mean(v, 0)
+    if w is not None:
+        w = w - np.mean(w, 0)
     if detrend:
         u, v, w = detrend_wsp(u, v, w)
 

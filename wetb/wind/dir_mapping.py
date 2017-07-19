@@ -105,12 +105,16 @@ def xyz2uvw(x, y, z, left_handed=True):
         y *= -1
     theta = deg(np.arctan2(np.mean(y), np.mean(x)))
     SV = cosd(theta) * y - sind(theta) * x
-    SUW = cosd(theta) * x + sind(theta) * y
 
-    #% rotation around y of tilt
-    tilt = deg(np.arctan2(np.mean(z), np.mean(SUW)))
-    SU = SUW * cosd(tilt) + z * sind(tilt);
-    SW = z * cosd(tilt) - SUW * sind(tilt);
+#     SUW = cosd(theta) * x + sind(theta) * y
+# 
+#     #% rotation around y of tilt
+#     tilt = deg(np.arctan2(np.mean(z), np.mean(SUW)))
+#     SU = SUW * cosd(tilt) + z * sind(tilt);
+#     SW = z * cosd(tilt) - SUW * sind(tilt);
+
+    SU = cosd(theta) * x + sind(theta) * y
+    SW = z
 
     return np.array([SU, SV, SW])
 
@@ -212,3 +216,5 @@ def abvrel2xyz(alpha, beta, vrel):
     z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
 
     return np.array([x, y, z]).T
+
+

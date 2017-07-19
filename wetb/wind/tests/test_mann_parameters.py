@@ -8,7 +8,7 @@ from wetb import gtsdf
 from wetb.wind.dir_mapping import wsp_dir2uv
 from wetb.wind.turbulence.mann_parameters import fit_mann_model_spectra
 import numpy as np
-from wetb.wind.turbulence.turbulence_spectra import spectra
+from wetb.wind.turbulence.spectra import spectra
 import os
 tfp = os.path.join(os.path.dirname(__file__), "test_files/") + "/"
 
