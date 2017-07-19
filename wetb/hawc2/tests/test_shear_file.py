@@ -38,10 +38,10 @@ class TestShearFile(unittest.TestCase):
   0.0000000000 0.0000000000
   0.0000000000 0.0000000000
   0.0000000000 0.0000000000
- # y coordinates
+ # v coordinates
   -55.0000000000
   55.0000000000
- # z coordinates
+ # w coordinates
   30.0000000000
   100.0000000000
   160.0000000000
@@ -68,10 +68,10 @@ class TestShearFile(unittest.TestCase):
   0.0000000000 0.0000000000
   0.0000000000 0.0000000000
   0.0000000000 0.0000000000
- # y coordinates
+ # v coordinates
   -55.0000000000
   55.0000000000
- # z coordinates
+ # w coordinates
   30.0000000000
   100.0000000000
   160.0000000000
