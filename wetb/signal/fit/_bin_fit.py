@@ -191,7 +191,7 @@ def perpendicular_bin_fit(x, y, bins = 30, fit_func=None, bin_min_count=3, plt=N
 #Create mean function
 def _interpolate_fit(bin_x_fit, bin_y_fit, kind='linear'):
     def fit(x):
-        x = x[:].copy().astype(np.float)
+        x = np.atleast_1d(x)[:].copy().astype(np.float)
         x[x<bin_x_fit[0]] = np.nan
         x[x>bin_x_fit[-1]] = np.nan
         m = ~(np.isnan(bin_x_fit)|np.isnan(bin_y_fit))
