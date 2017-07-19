@@ -203,11 +203,12 @@ class SimulationThread(Thread):
         
 
 class PBSClusterSimulationResource(SSHPBSClusterResource):
-    def __init__(self, sshclient, min_cpu, min_free, init_cmd, wine_cmd, python_cmd):
+    def __init__(self, sshclient, min_cpu, min_free, init_cmd, wine_cmd, python_cmd, queue="workq"):
         SSHPBSClusterResource.__init__(self, sshclient, min_cpu, min_free)
         self.init_cmd = init_cmd
         self.wine_cmd = wine_cmd
         self.python_cmd = python_cmd
+        self.queue = queue
         
     
     def is_clean(self):
@@ -245,11 +246,27 @@ class PBSClusterSimulationResource(SSHPBSClusterResource):
             pass
 
 class GormSimulationResource(PBSClusterSimulationResource):
-    def __init__(self, username, password, wine_cmd="WINEARCH=win32 WINEPREFIX=~/.wine32 wine"):
-        init_cmd = """export PATH=/home/python/miniconda3/bin:$PATH
+    init_cmd = """export PATH=/home/python/miniconda3/bin:$PATH
 source activate wetb_py3"""
+    queue = "workq"
+    host = "gorm.risoe.dk"
+    def __init__(self, username, password, wine_cmd="WINEARCH=win32 WINEPREFIX=~/.wine32 wine"):
+
         from wetb.utils.cluster_tools.ssh_client import SSHClient
-        PBSClusterSimulationResource.__init__(self, SSHClient('gorm.risoe.dk', username, password, 22), 25, 100, init_cmd, wine_cmd, "python")
+        PBSClusterSimulationResource.__init__(self, SSHClient(self.host, username, password, 22), 25, 100, self.init_cmd, wine_cmd, "python", self.queue)
+
+class JessSimulationResource(PBSClusterSimulationResource):
+    host = 'jess.dtu.dk'
+    init_cmd = """export PATH=/home/python/miniconda3/bin:$PATH
+source activate wetb_py3
+WINEARCH=win32 WINEPREFIX=~/.wine32 winefix"""
+    queue = "windq"
+    def __init__(self, username, password, wine_cmd="WINEARCH=win32 WINEPREFIX=~/.wine32 wine"):
+    
+        from wetb.utils.cluster_tools.ssh_client import SSHClient
+        PBSClusterSimulationResource.__init__(self, SSHClient(self.host, username, password, 22), 25, 600, self.init_cmd, wine_cmd, "python", self.queue)
+
+
 
 
 class PBSClusterSimulationHost(SimulationHost):
@@ -416,10 +433,10 @@ class PBSClusterSimulationHost(SimulationHost):
 ###PBS -a 201547.53
 #PBS -lnodes=1:ppn=1
 ### Queue name
-#PBS -q workq
+#PBS -q %s
 ### Create scratch directory and copy data to it
 cd $PBS_O_WORKDIR
-pwd"""% (self.simulation_id, self.stdout_filename, walltime)
+pwd"""% (self.simulation_id, self.stdout_filename, walltime, self.resource.queue)
         copy_to="""
 cp -R %s /scratch/$USER/$PBS_JOBID
 ### Execute commands on scratch nodes
