@@ -105,7 +105,9 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
     if 0:  #to be similar to windap
         ampl_bin_mean = (ampl_bin_edges[:-1] + ampl_bin_edges[1:]) / 2
     cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
-    eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")   
+        eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
     return eq_loads, cycles, ampl_bin_mean, ampl_bin_edges
 
 
