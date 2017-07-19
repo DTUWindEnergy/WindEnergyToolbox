@@ -7,6 +7,7 @@ Created on 19. dec. 2016
 from wetb.utils.geometry import mean_deg, rad, tand, sind, deg, cosd
 
 import numpy as np
+from scipy.signal import detrend
 
 
 def wsp_dir2uv(wsp, dir, dir_ref=None):
@@ -218,3 +219,19 @@ def abvrel2xyz(alpha, beta, vrel):
     return np.array([x, y, z]).T
 
 
+def detrend_uvw(u, v=None, w=None):
+#     def _detrend(wsp):
+#         if wsp is None:
+#             return None
+#         dwsp = np.atleast_2d(wsp.copy().T).T
+#         t = np.arange(dwsp.shape[0])
+#         A = np.vstack([t, np.ones(len(t))]).T
+#         for i in range(dwsp.shape[1]):
+#             trend, offset = np.linalg.lstsq(A, dwsp[:, i])[0]
+#             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
+#         return dwsp.reshape(wsp.shape)
+    def _detrend(y):
+        if y is None:
+            return None
+        return detrend(y)
+    return [_detrend(uvw) for uvw in [u, v, w]] 

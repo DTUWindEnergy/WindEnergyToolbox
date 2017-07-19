@@ -5,7 +5,7 @@ Created on 20. feb. 2017
 '''
 import unittest
 from wetb import gtsdf
-from wetb.wind.dir_mapping import wsp_dir2uv
+from wetb.wind.utils import wsp_dir2uv
 from wetb.wind.turbulence.mann_parameters import fit_mann_model_spectra
 import numpy as np
 from wetb.wind.turbulence.spectra import spectra

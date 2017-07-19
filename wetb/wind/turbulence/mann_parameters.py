@@ -290,7 +290,7 @@ def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv
 
 if __name__ == "__main__":
     from wetb import gtsdf
-    from wetb.wind.dir_mapping import wsp_dir2uv
+    from wetb.wind.utils import wsp_dir2uv
     from wetb import wind
     import matplotlib.pyplot as plt
 
