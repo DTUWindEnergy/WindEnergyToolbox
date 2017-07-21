@@ -11,7 +11,8 @@ from scipy.interpolate import RectBivariateSpline
 
 import numpy as np
 from wetb.wind.turbulence.spectra import spectra, logbin_spectra, \
-    plot_spectrum
+    plot_spectrum, plot_spectra
+from wetb.utils.test_files import move2test_files
 
 
 
@@ -24,12 +25,7 @@ RBS2 = RectBivariateSpline(xp, yp, sp2)
 RBS3 = RectBivariateSpline(xp, yp, sp3)
 RBS4 = RectBivariateSpline(xp, yp, sp4)
 
-def estimate_mann_parameters(sf, u, v, w=None):
-    if isinstance(u, (list, tuple)):
-        #return fit_mann_model_spectra(*mean_spectra(sf, u, v, w))
-        raise NotImplementedError
-    else:
-        return fit_mann_model_spectra(*spectra(sf, u, v, w))
+
 
 #def mean_spectra(fs, u_ref_lst, u_lst, v_lst=None, w_lst=None):
 #    if isinstance(fs, (int, float)):
@@ -145,11 +141,13 @@ def fit_mann_model_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2,
     from scipy.optimize import fmin
     x = fmin(_local_error, start_vals_for_optimisation, logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size, min_bin_count), disp=False)
 
-    if plt is not False:
+    if plt:
         if not hasattr(plt, 'plot'):
             import matplotlib.pyplot as plt
-        _plot_spectra(k1, uu, vv, ww, uw, plt=plt)
-        plot_mann_spectra(*x, plt=plt)
+#         plot_spectra(k1, uu, vv, ww, uw, plt=plt)
+#         plot_mann_spectra(*x, plt=plt)
+        ae, L, G = x
+        plot_fit(ae, L, G, k1, uu, vv, ww, uw,  log10_bin_size=log10_bin_size, plt=plt)
         plt.title('ae:%.3f, L:%.1f, G:%.2f' % tuple(x))
         plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
         plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
@@ -254,26 +252,13 @@ def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
     return ae
 
 
-def plot_spectra(ae, L, G, k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
+def plot_fit(ae, L, G, k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
 #    if plt is None:
 #        import matplotlib.pyplot as plt
-    _plot_spectra(k1, uu, vv, ww, uw, mean_u, log10_bin_size, plt)
+    plot_spectra(k1, uu, vv, ww, uw, mean_u, log10_bin_size, plt)
     plot_mann_spectra(ae, L, G, "-", mean_u, plt)
 
-def _plot_spectra(k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None):
-    if plt is None:
-        import matplotlib.pyplot as plt
-    bk1, buu, bvv, bww, buw = logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size)
-    def plot(xx, label, color, plt):
-        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , '.' + color, label=label)
-    plot(buu, 'uu', 'r', plt)
-    plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
-    plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
-    if (bvv) is not None:
-        plot(bvv, 'vv', 'g', plt)
-    if bww is not None:
-        plot(bww, 'ww', 'b', plt)
-        plot(buw, 'uw', 'm', plt)
+
 
 def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv', 'ww', 'uw']):
     if plt is None:
@@ -312,7 +297,8 @@ if __name__ == "__main__":
     nx = 8192
     ny, nz = 8, 8
     sf = (nx / l)
-    fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
+    #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
+    #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
     u, v, w = [np.fromfile(fn % uvw, np.dtype('<f'), -1).reshape(nx , ny * nz) for uvw in ['u', 'v', 'w']]
     ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v, w), plt=plt)
     print (ae, L, G)
