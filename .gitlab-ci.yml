@@ -1,8 +1,7 @@
-variables:
-  GIT_SUBMODULE_STRATEGY: normal
-
 before_script:
   - apt-get update
+  - rm -rf TestFiles
+  - git submodules update --init
 
 
 test-3.4:
