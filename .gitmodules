@@ -1,0 +1,3 @@
+[submodule "TestFiles"]
+	path = TestFiles
+	url = https://mmpe@gitlab.windenergy.dtu.dk/toolbox/TestFiles.git
