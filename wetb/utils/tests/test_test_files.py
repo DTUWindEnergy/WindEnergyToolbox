@@ -25,7 +25,7 @@ class Test_test_files(unittest.TestCase):
 
     def test_test_files(self):
         fn1 = get_test_file(tfp+'test_file.txt')
-        self.assertTrue(fn1)
+        self.assertTrue(os.path.isfile(fn1))
         fn2 = get_test_file('test_file.txt')
         self.assertEqual(fn1, fn2)
         
