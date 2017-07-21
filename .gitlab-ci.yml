@@ -1,7 +1,7 @@
 before_script:
   - apt-get update
   - rm -rf TestFiles
-  - git submodule sync --init
+  - git submodule sync
   - git submodule update --init
 
 
