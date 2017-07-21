@@ -1,5 +1,7 @@
 before_script:
   - apt-get update
+  - git submodule sync
+  - git submodule update --init
 
 test-3.4:
   image: mmpe/wetb
