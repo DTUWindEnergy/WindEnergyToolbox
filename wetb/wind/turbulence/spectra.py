@@ -35,21 +35,20 @@ def spectrum(x, y=None, k=1):
 
     fftx = fftx[:len(fftx) // 2 ] * 2  # positive half * 2
 
-#    if len(fftx.shape) == 2:
-#        fftx = np.mean(fftx, 1)
+    if len(fftx.shape) == 2:
+        fftx = np.mean(fftx, 1)
 
     return np.real(fftx * len(x) / (2 * k))[1:]
 
-def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
+def spectra(spacial_frq, u, v=None, w=None, detrend=True):
     """Return the wave number, the uu, vv, ww autospectra and the uw cross spectra
 
     Parameters
     ----------
-    spatial_resolution : int, float or array_like
-        Distance between samples in meters
-        - For turbulence boxes: 1/dx = Lx/Nx where dx is distance between points, 
-        Nx is number of points and Lx is box length in meters
-        - For time series: Sample frequency / U
+    spacial_frq : inf or float
+        - For time series: Sample frequency, see Notes\n
+        - For turbulence boxes: 1/dx where
+        dx is nx/Lx (number of grid points in length direction / box length in meters)
     u : array_like
         The u-wind component\n
         - if shape is (r,): One time series with *r* observations\n
@@ -75,75 +74,36 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
         - uw: The uw cross spectrum, only if w is provided\n
 
         For two dimensional input, the mean spectra are returned
-    """
-    assert isinstance(spatial_resolution, (int, float))
 
-    k = 2 * np.pi * spatial_resolution
-    if v is not None: assert u.shape==v.shape
-    if w is not None: assert u.shape==w.shape
-    
-    if 1 and len(u.shape)==2:
-        assert np.abs(np.mean(u,0)).max()<1
-        if v is not None: assert np.abs(np.mean(v,0)).max()<1
-        if w is not None: assert np.abs(np.mean(w,0)).max()<1
-        if isinstance(k, float):
-            k = np.repeat(k,u.shape[1])
-        else:
-            assert u.shape[1]==k.shape[0]
-        k1_vec = np.array([np.linspace(0, k_ / 2, len(u) / 2)[1:] for k_ in k]).T
-    else:
-        assert np.abs(np.mean(u))<1
-        if v is not None: assert np.abs(np.mean(v))<1
-        if w is not None: assert np.abs(np.mean(w))<1
-        assert isinstance(k,float)
-        k1_vec = np.linspace(0, k / 2, len(u) / 2)[1:]
+    Notes
+    -----
+    If the 'mean wind speed' or 'shear compensated reference wind speed' are subtracted from u in advance,
+    then the spacial_frq must be divided by the subtracted wind speed
+    """
+    assert isinstance(spacial_frq, (int, float))
+
+    k = 2 * np.pi * spacial_frq
+
+    if np.mean(u) > 1:
+        k /= np.mean(u)
+        u = u - np.mean(u, 0)
+    if v is not None:
+        v = v - np.mean(v, 0)
+    if w is not None:
+        w = w - np.mean(w, 0)
     if detrend:
         u, v, w = detrend_wsp(u, v, w)
 
+    k1_vec = np.linspace(0, k / 2, len(u) / 2)[1:]
     return [k1_vec] + [spectrum(x1, x2, k=k) for x1, x2 in [(u, u), (v, v), (w, w), (w, u)]]
 
-
-def spectra_from_time_series(sample_frq, Uvw_lst):
-    """Return the wave number, the uu, vv, ww autospectra and the uw cross spectra
-
-    Parameters
-    ----------
-    sample_frq : int, float or array_like
-        Sample frequency
-    Uvw_lst : array_like
-        list of U, v and w, [(U1,v1,w1),(U2,v2,w2)...] 
-        
-    Returns
-    -------
-    k1, uu[, vv[, ww, uw]] : 2-5 x array_like
-        - k1: wave number
-        - uu: The uu auto spectrum\n
-        - vv: The vv auto spectrum, only if v is provided\n
-        - ww: The ww auto spectrum, only if w is provided\n
-        - uw: The uw cross spectrum, only if w is provided\n
-
-        For two dimensional input, the mean spectra are returned
-    """
-    assert isinstance(sample_frq, (int, float))
-    U,v,w = [np.array(Uvw_lst)[:,i,:].T for i in range(3)]
-    k = 2 * np.pi * sample_frq / U.mean(0)
-    
-    if v is not None: assert np.abs(np.nanmean(v,0)).max()<1, "Max absolute mean of v is %f"%np.abs(np.nanmean(v,0)).max()
-    if w is not None: assert np.abs(np.nanmean(w,0)).max()<1
-    k1_vec = np.array([np.linspace(0, k_ / 2, U.shape[0] / 2)[1:] for k_ in k]).T
-    u = U-np.nanmean(U, 0)
-    u, v, w = detrend_wsp(u, v, w)
-
-    return [k1_vec] + [spectrum(x1, x2, k=k) for x1, x2 in [(u, u), (v, v), (w, w), (w, u)]]
 
 def bin_spectrum(x, y, bin_size, min_bin_count=2):
     assert min_bin_count > 0
     x = x / bin_size
-    low, high = np.floor(np.nanmin(x)), np.ceil(np.nanmax(x))
+    low, high = np.floor(np.min(x)), np.ceil(np.max(x))
     bins = int(high - low)
     nbr_in_bins = np.histogram(x, bins, range=(low, high))[0]
-    if len(x.shape)==2:
-        min_bin_count*=x.shape[1]
     mask = nbr_in_bins >= min_bin_count
     return np.histogram(x, bins, range=(low, high), weights=y)[0][mask] / nbr_in_bins[mask], nbr_in_bins
 
@@ -178,22 +138,3 @@ def detrend_wsp(u, v=None, w=None):
             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
         return dwsp.reshape(wsp.shape)
     return [_detrend(wsp) for wsp in [u, v, w]]
-
-
-def plot_spectra(k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2, plt=None, marker_style='.'):
-    if plt is None:
-        import matplotlib.pyplot as plt
-    bk1, buu, bvv, bww, buw = logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size)
-    def plot(xx, label, color, plt):
-        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , marker_style + color, label=label)
-    plot(buu, 'uu', 'r', plt)
-    plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
-    if mean_u ==1:
-        plt.ylabel(r'Spectral density $k_{1} F(k_{1}) [m^2/s^2]$')
-    else:
-        plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [-]$')
-    if (bvv) is not None:
-        plot(bvv, 'vv', 'g', plt)
-    if bww is not None:
-        plot(bww, 'ww', 'b', plt)
-        plot(buw, 'uw', 'm', plt)

@@ -22,3 +22,4 @@ wetb/prepost/tests/data/demo_dlc/remote*
 /wetb/fatigue_tools/rainflowcounting/compile.py
 /docs/api
 /htmlcov
+/wetb/wind/tests/test_mann_parameters.py
