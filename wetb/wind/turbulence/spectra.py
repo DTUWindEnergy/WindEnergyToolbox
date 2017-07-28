@@ -6,6 +6,7 @@ Created on 27/11/2015
 
 
 import numpy as np
+import warnings
 def spectrum(x, y=None, k=1):
     """PSD or Cross spectrum (only positive half)
 
@@ -37,8 +38,9 @@ def spectrum(x, y=None, k=1):
 
 #    if len(fftx.shape) == 2:
 #        fftx = np.mean(fftx, 1)
-
-    return np.real(fftx * len(x) / (2 * k))[1:]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  
+        return np.real(fftx * len(x) / (2 * k))[1:]
 
 def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     """Return the wave number, the uu, vv, ww autospectra and the uw cross spectra
