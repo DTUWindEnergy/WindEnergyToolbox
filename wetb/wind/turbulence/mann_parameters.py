@@ -197,6 +197,35 @@ def residual(ae, L, G, k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2):
 
     return np.sqrt(((bk1 * sp_meas - bk1 * sp_fit) ** 2).mean())
 
+
+def fit_ae2var(variance, L, G):
+    """Fit alpha-epsilon to match variance of time series
+
+    Parameters
+    ----------
+    variance : array-like
+        variance of u vind component
+    L : int or float
+        Length scale of Mann model
+    G : int or float
+        Gamma of Mann model
+
+    Returns
+    -------
+    ae : float
+        Alpha epsilon^(2/3) of Mann model that makes the energy of the model equal to the varians of u
+    """
+    
+    k1 = np.logspace(1,10,1000)/100000000
+    def get_var(uu):
+        return np.trapz(2 * uu[:], k1[:])
+
+    v1 = get_var(get_mann_model_spectra(0.1, L, G, k1)[0])
+    v2 = get_var(get_mann_model_spectra(0.2, L, G, k1)[0])
+    ae = (variance - v1) / (v2 - v1) * .1 + .1
+    return ae
+
+
 def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
     """Fit alpha-epsilon to match variance of time series
 
