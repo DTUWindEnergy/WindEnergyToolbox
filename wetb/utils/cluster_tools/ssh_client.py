@@ -116,6 +116,8 @@ class SSHClient(object):
         self.ssh_lock = threading.RLock()
         #self.sftp = None
         self.transport = None
+        self.counter_lock = threading.RLock()
+        self.counter=0
         if key is not None:
             self.key = paramiko.RSAKey.from_private_key(StringIO(key), password=passphrase)
 
@@ -254,7 +256,9 @@ class SSHClient(object):
         files = set([os.path.abspath(f) for f in files])
 
         compression_levels = {0:zipfile.ZIP_STORED, 1:zipfile.ZIP_DEFLATED, 2:zipfile.ZIP_BZIP2, 3:zipfile.ZIP_LZMA}
-        zn =  'tmp_%s_%s.zip'%(id(self),time.time())
+        with self.counter_lock:
+            self.counter+=1
+            zn =  'tmp_%s_%04d.zip'%(id(self),self.counter)
         zipf = zipfile.ZipFile(zn, 'w', compression_levels[compression_level])
         try:
             for f in files:
@@ -276,7 +280,9 @@ class SSHClient(object):
         if not isinstance(file_lst, (tuple, list)):
             file_lst = [file_lst]
         file_lst = [f.replace("\\","/") for f in file_lst]
-        zn =  'tmp_%s_%s.zip'%(id(self),time.time())
+        with self.counter_lock:
+            self.counter+=1
+            zn =  'tmp_%s_%04d.zip'%(id(self),self.counter)
         
         remote_zip = os.path.join(remote_path, zn).replace("\\","/")
         self.execute("cd %s && zip -r %s %s"%(remote_path, zn, " ".join(file_lst)))

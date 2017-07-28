@@ -34,7 +34,7 @@ class sshrisoe_interactive_auth_handler(object):
         return []
     
 tfp = os.path.join(os.path.dirname(__file__), 'test_files/')
-all = 0
+all = 1
 class TestSSHClient(unittest.TestCase):
 
     def setUp(self):
@@ -87,7 +87,7 @@ class TestSSHClient(unittest.TestCase):
                  
         
     def test_folder_transfer_specific_files_uppercase(self):
-        if 0 or all:
+        if 1 or all:
             if x:
                 p = tfp
                 files = [os.path.join(tfp, "TEST.txt")]
@@ -99,7 +99,7 @@ class TestSSHClient(unittest.TestCase):
             
             
     def test_folder_transfer_specific_files(self):
-        if 0 or all:
+        if 1 or all:
             if x:
                 p = r"C:\mmpe\HAWC2\models\version_12.3beta/"
                 p = r'C:\mmpe\programming\python\WindEnergyToolbox\wetb\hawc2\tests\test_files\simulation_setup\DTU10MWRef6.0_IOS/'
@@ -132,7 +132,7 @@ class TestSSHClient(unittest.TestCase):
                 self.assertEqual(out.strip(), "ssh-03.risoe.dk")
 
     def test_ssh_risoe_gorm(self):
-        if 1 or all:
+        if 0 or all:
             if x:
             
                 gateway = SSHClient('ssh.risoe.dk', 'mmpe', password="xxx", interactive_auth_handler = sshrisoe_interactive_auth_handler(x.mmpe))
