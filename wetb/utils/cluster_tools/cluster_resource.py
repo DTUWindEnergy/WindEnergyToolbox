@@ -12,7 +12,6 @@ import threading
 from wetb.utils.cluster_tools import pbswrap
 
 
-
 def unix_path(path, cwd=None, fail_on_missing=False):
     """Convert case insensitive filename into unix case sensitive filename
 
@@ -73,17 +72,20 @@ class Resource(object):
     def ok2submit(self):
         """Always ok to have min_cpu cpus and ok to have more if there are min_free free cpus"""
         try:
-            print ("ok2submit")
+            #print ("ok2submit")
             total, free, user = self.check_resources()
-            print ("ok2submit", total, free, user)
+            user = max(user, self.acquired)
+            user_max = max((self.min_cpu-user), self.cpu_free - self.min_free)
+            #print ("ok2submit", total, free, user, user_max)
+            return user_max
         except:
             return False
-        if user < self.min_cpu:
-            return True
-        elif free > self.min_free:
-            return True
-        else:
-            return False
+#         if user < self.min_cpu:
+#             return True
+#         elif free > self.min_free:
+#             return True
+#         else:
+#             return False
 
     def acquire(self):
         with self.resource_lock:
