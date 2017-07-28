@@ -84,9 +84,12 @@ class HTCContents(object):
             return object.__setattr__(self, *args, **kwargs)
         if isinstance(v, str):
             v = [fmt_value(v) for v in v.split()]
-        if not isinstance(v, (list, tuple)):
-            v = [v]
-        self.contents[k] = HTCLine(k, v, "")
+        if isinstance(v,HTCContents):
+            self.contents[k] = v
+        else:
+            if not isinstance(v, (list, tuple)):
+                v = [v]
+            self.contents[k] = HTCLine(k, v, "")
 
     def __delattr__(self, *args, **kwargs):
         k, = args
