@@ -79,32 +79,31 @@ class GeneralDLC(object):
                 cases_len.append(len(v))
         cases_index = multi_for(list(map(range, cases_len)))
 
-#        for irow, row in enumerate(cases_index):
-#            counter = floor(irow/len(variables['[wsp]']))+1
-#            for icol, col in enumerate(row):
-#                if variables_order[icol] == '[seed]':
-#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
-#                elif variables_order[icol] == '[wave_seed]':  #shfe: wave_seed
-#                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
-#                else:
-#                    value = variables[variables_order[icol]][col]
-#                    if not isinstance(value, float) and not isinstance(value, int):
-#                        value = str(value)
-#                dlc[variables_order[icol]].append(value)
+        if '[wsp]' in variables_order:
+            i_wsp = variables_order.index('[wsp]')
+            len_wsp = len(variables['[wsp]'])
+        else:
+            raise ValueError('Missing VARIABLE (V) [wsp] tag!')
+        if '[seed]' in variables_order:
+            i_seed = variables_order.index('[seed]')
+        if '[wave_seed]' in variables_order:
+            i_wave_seed = variables_order.index('[wave_seed]')
+        if i_seed > i_wsp:
+            raise ValueError('column [seed] should come BEFORE [wsp] !!')
+
         for irow, row in enumerate(cases_index):
-            counter = floor(irow/len(variables['[wsp]']))+1
             for icol, col in enumerate(row):
                 if variables_order[icol] == '[seed]':
-                    value = '%4.4i' % (1000*counter + row[variables_order.index('[wsp]')]+1)
+                    counter = floor(irow/len_wsp) + 1
+                    value = '%4.4i' % (1000*counter + row[i_wsp] + 1)
                 elif variables_order[icol] == '[wave_seed]':
-                    value = '%4.4i' % ( 100*(row[variables_order.index('[wsp]')]+1) + \
-                                        row[variables_order.index('[wave_seed]')]+1)
-
+                    value = '%4.4i' % (100*(row[i_wsp]+1) + row[i_wave_seed] + 1)
+#                    value = '%4.4i' % (1000*counter + row[i_wsp] + 101)
 #                    value = '%4.4i' % (irow+1)
-#                    value = '%4.4i' % (10000*(row[variables_order.index('[wave_dir]')]+1) + \
-#                                        1000*(row[variables_order.index('[Hs]')]+1) + \
-#                                        10*(row[variables_order.index('[Tp]')]+1) +\
-#                                        row[variables_order.index('[seed]')]+1)
+#                    value = '%4.4i' % (10000*(row[i_wave_dir])] + 1) + \
+#                                        1000*(row[i_Hs])] + 1) + \
+#                                        10*(row[i_Tp])] + 1) +\
+#                                        row[i_seed])] + 1)
 
                 else:
                     value = variables[variables_order[icol]][col]
@@ -153,8 +152,8 @@ class GeneralDLC(object):
         # specify the precision of the tag as used in the formulas
         # this does NOT affect the precision of the tag itself, only when used
         # in a formula based tag.
-        formats = {'[wsp]':'%2.2i', '[gridgustdelay]':'%2.2i',
-                   '[wdir]':'%3.3i', '[G_phi0]':'%3.3i',
+        formats = {'[wsp]':'%02i', '[gridgustdelay]':'%02i',
+                   '[wdir]':'%03i', '[G_phi0]':'%03i',
                    '[sign]':'%s',
                    '[Hs]':'%05.02f', '[Tp]':'%05.02f'}
 
@@ -168,7 +167,7 @@ class GeneralDLC(object):
                             try:
                                 fmt = formats[key]
                             except KeyError:
-                                fmt = '%4.4i'
+                                fmt = '%04i'
                             try:
                                 value = float(dlc[key][i])
                             except ValueError:
@@ -209,14 +208,15 @@ class GenerateDLCCases(GeneralDLC):
 
     """
 
-    def execute(self, filename='DLCs.xlsx', folder=''):
+    def execute(self, filename='DLCs.xlsx', folder='', isheets=None):
 
         book = xlrd.open_workbook(filename)
 
-        nsheets = book.nsheets
+        if isheets is None:
+            isheets = list(range(1, book.nsheets))
 
         # Loop through all the sheets. Each sheet correspond to a DLC.
-        for isheet in range(1, nsheets):
+        for isheet in isheets:
 
             # Read all the initialization constants and functions in the
             # first sheet
@@ -276,29 +276,6 @@ class GenerateDLCCases(GeneralDLC):
                 os.makedirs(folder)
             df.to_excel(os.path.join(folder, sheet.name+'.xlsx'), index=False)
 
-
-class RunTest():
-    """
-    Class to perform basic testing of the GenerateDLCCases class. It writes the
-    spreadsheets and compare them with a reference set.
-    """
-    def execute(self):
-
-        from pandas.util.testing import assert_frame_equal
-        a = GenerateDLCCases()
-        a.execute()
-
-        book = xlrd.open_workbook('DLCs.xlsx')
-        nsheets = book.nsheets
-        for isheet in range(1, nsheets):
-            sheet = book.sheets()[isheet]
-            print('Sheet #%i' % isheet, sheet.name)
-            book1 = pd.read_excel('Reference/'+sheet.name+'.xlsx')
-
-            book2 = pd.read_excel(sheet.name+'.xls')
-
-            book2 = book2[book1.columns]
-            assert_frame_equal(book1, book2, check_dtype=False)
 
 if __name__ == '__main__':
 
