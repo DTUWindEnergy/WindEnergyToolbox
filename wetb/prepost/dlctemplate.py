@@ -588,10 +588,13 @@ if __name__ == '__main__':
                         'spreadsheet.')
     parser.add_argument('--dlcmaster', type=str, default='htc/DLCs.xlsx',
                         action='store', dest='dlcmaster',
-                        help='Master spreadsheet file location')
+                        help='Optionally define an other location of the '
+                        'Master spreadsheet file location, default value is: '
+                        'htc/DLCs.xlsx')
     parser.add_argument('--dlcfolder', type=str, default='htc/DLCs/',
-                        action='store', dest='dlcfolder', help='Destination '
-                        'folder location of the generated DLC exchange files')
+                        action='store', dest='dlcfolder', help='Optionally '
+                        'define an other destination folder location for the '
+                        'generated DLC exchange files, default: htc/DLCs/')
     opt = parser.parse_args()
 
     # -------------------------------------------------------------------------
