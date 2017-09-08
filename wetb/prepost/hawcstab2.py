@@ -64,6 +64,7 @@ def ReadFileHAWCStab2Header(fname):
         return df, units
 
 
+# FIXME: with gradients currently ind has columns width of 28 instead of 14!!
 class InductionResults(object):
     def __init__(self):
         pass

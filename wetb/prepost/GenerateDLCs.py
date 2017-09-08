@@ -79,6 +79,8 @@ class GeneralDLC(object):
                 cases_len.append(len(v))
         cases_index = multi_for(list(map(range, cases_len)))
 
+        # when no seeds are used, otherwise i_seed is not set
+        i_seed = -1
         if '[wsp]' in variables_order:
             i_wsp = variables_order.index('[wsp]')
             len_wsp = len(variables['[wsp]'])
@@ -270,6 +272,7 @@ class GenerateDLCCases(GeneralDLC):
             self.add_constants_tag(dlc, constants)
             self.add_formulas(dlc, formulas)
             self.add_formulas(dlc, general_functions)
+            # TODO: before eval, check if all tags in formula's are present
             self.eval_formulas(dlc)
             df = pd.DataFrame(dlc)
             if not os.path.exists(folder):
