@@ -524,11 +524,20 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
                 '[case_id]']
     df = pd.read_hdf(fdf, 'table')
+
+    # df now has case_id as the path to the statistics file: res/dlc12_xxx/yyy
+    # while df_tags will have just yyy as case_id
+    tmp = df['[case_id]'].str.split('/', expand=True)
+    df['[case_id]'] = tmp[tmp.columns[-1]]
+
     cc = sim.Cases(POST_DIR, sim_id)
     df_tags = cc.cases2df()[required]
     df_stats = pd.merge(df, df_tags, on=['[case_id]'])
-    df_stats.to_hdf(fdf, 'table')
-    df_stats.to_csv(fdf.replace('.h5', '.csv'))
+    # if the merge didn't work due to other misaligned case_id tags, do not
+    # overwrite our otherwise ok tables!
+    if len(df_stats) == len(df):
+        df_stats.to_hdf(fdf, 'table', mode='w')
+        df_stats.to_csv(fdf.replace('.h5', '.csv'))
 
 
 if __name__ == '__main__':
@@ -593,7 +602,9 @@ if __name__ == '__main__':
                         help='Merge all individual statistics and log file '
                         'analysis .csv files into one table/pd.DataFrame. '
                         'Requires that htc files have been created with '
-                        '--prep --postpro_node.')
+                        '--prep --postpro_node. Combine with --zipchunks when '
+                        '--prep --zipchunks was used in for generating and '
+                        'running all simulations.')
     parser.add_argument('--gendlcs', default=False, action='store_true',
                         help='Generate DLC exchange files based on master DLC '
                         'spreadsheet.')
