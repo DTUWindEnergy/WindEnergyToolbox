@@ -1,5 +1,6 @@
 # Add your requirements here like:
 six
+cython
 numpy>=1.4
 scipy>=0.9
 matplotlib
