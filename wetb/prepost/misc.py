@@ -31,7 +31,10 @@ import scipy as sp
 from scipy import optimize as opt
 from scipy import stats
 from scipy.interpolate import griddata as interp
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except:
+    pass
 import pandas as pd
 
 
