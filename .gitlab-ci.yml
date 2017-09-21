@@ -1,8 +1,9 @@
 before_script:
   - apt-get update
-  - rm -rf TestFiles
+  # uncomment first time
+  #- rm -rf TestFiles
+  #- git submodule update --init
   - git submodule sync
-  - git submodule update --init
   - git submodule update
 
 
