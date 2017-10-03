@@ -263,7 +263,7 @@ When there is a new version of HAWC2, or when a new license manager is released,
 you can update your local wine directory as follows:
 
 ```
-g-000 $ cp /home/MET/hawc2exe/* /home/$USER/wine_exe/win32/
+g-000 $ rsync -au /home/MET/hawc2exe/win32 /home/$USER/wine_exe/win32 --progress
 ```
 
 The file ```hawc2-latest.exe``` will always be the latest HAWC2
