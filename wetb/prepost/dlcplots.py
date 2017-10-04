@@ -420,7 +420,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             leg.get_frame().set_alpha(0.7)
 #            ax.set_title(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
 #            fig.suptitle(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
-            fig.suptitle(f'{dlc_name} {ch_dscr}')
+            fig.suptitle('%s %s' % (dlc_name, ch_dscr))
             ax.set_xlabel(xlabel)
             if ylabels is not None:
                 ax.set_ylabel(ylabels[ch_name])
