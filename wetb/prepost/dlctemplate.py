@@ -522,7 +522,7 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     # -------------------------------------------------------------------------
     # merge missing cols onto stats
     required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
-                '[case_id]']
+                '[case_id]', '[Case folder]']
     df = pd.read_hdf(fdf, 'table')
 
     # df now has case_id as the path to the statistics file: res/dlc12_xxx/yyy

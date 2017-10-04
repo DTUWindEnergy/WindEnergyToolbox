@@ -414,7 +414,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             if xlims is None:
                 continue
 
-            ax.grid()a sdofjasdkljnh
+            ax.grid()
             ax.set_xlim(xlims)
             leg = ax.legend(bbox_to_anchor=(1, 1), loc='lower right', ncol=3)
             leg.get_frame().set_alpha(0.7)
