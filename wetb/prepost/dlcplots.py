@@ -21,7 +21,7 @@ import gc
 import numpy as np
 
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+#import matplotlib as mpl
 #from matplotlib.figure import Figure
 #from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
 #from scipy import interpolate as interp
@@ -45,8 +45,8 @@ plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
 # do not use tex on Gorm and or Jess
-if not socket.gethostname()[:2] in ['g-', 'je', 'j-']:
-    plt.rc('text', usetex=True)
+#if not socket.gethostname()[:2] in ['g-', 'je', 'j-']:
+#    plt.rc('text', usetex=True)
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
@@ -55,6 +55,9 @@ plt.rc('legend', borderaxespad=0)
 def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
     """
     """
+
+    cols_extra = ['[run_dir]', '[res_dir]', '[wdir]', '[DLC]', '[Case folder]']
+
     # map the run_dir to the same order as the post_dirs, labels
     run_dirs = []
     # avoid saving merged cases if there is only one!
@@ -80,13 +83,18 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
             else:
                 wsp = '[Windspeed]'
             # columns we want to add from cc.cases (cases dict) to stats
-            cols_cc = set(['[run_dir]', wsp, '[res_dir]', '[wdir]', '[DLC]'])
+            cols_cc = set(cols_extra + [wsp])
             # do not add column twice, some might already be in df stats
             add_cols = list(cols_cc - set(df_stats.columns))
             add_cols.append('[case_id]')
             dfc = dfc[add_cols]
             df_stats = pd.merge(df_stats, dfc, on='[case_id]')
-            df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
+            # FIXME: this is very messy, we can end up with both [wsp] and
+            # [Windspeed] columns
+            if '[Windspeed]' in df_stats.columns and '[wsp]' in df_stats.columns:
+                df_stats.drop('[wsp]', axis=1, inplace=True)
+            if wsp != '[Windspeed]':
+                df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
 
             # map the run_dir to the same order as the post_dirs, labels
             run_dirs.append(df_stats['[run_dir]'].unique()[0])
@@ -120,8 +128,8 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
             del df_stats, _, cc
             gc.collect()
         # and load the reduced combined set
-        print('loading merged stats:            %s' % fpath)
-        df_stats = pd.read_hdf(fpath, 'table')
+        print('loading merged stats:            %s' % fmerged)
+        df_stats = pd.read_hdf(fmerged, 'table')
     else:
         sim_id = sim_ids
         sim_ids = [sim_id]
@@ -135,18 +143,21 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
         # stats has only a few columns identifying the different cases
         # add some more for selecting them
         dfc = cc.cases2df()
-        if 'wsp' in dfc.columns:
+        if '[wsp]' in dfc.columns:
             wsp = '[wsp]'
         else:
             wsp = '[Windspeed]'
         # columns we want to add from cc.cases (cases dict) to stats
-        cols_cc = set(['[run_dir]', wsp, '[res_dir]', '[wdir]', '[DLC]'])
+        cols_cc = set(cols_extra + [wsp])
         # do not add column twice, some might already be in df stats
         add_cols = list(cols_cc - set(df_stats.columns))
         add_cols.append('[case_id]')
         dfc = dfc[add_cols]
         df_stats = pd.merge(df_stats, dfc, on='[case_id]')
-        df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
+        if '[Windspeed]' in df_stats.columns and '[wsp]' in df_stats.columns:
+            df_stats.drop('[wsp]', axis=1, inplace=True)
+        if wsp != '[Windspeed]':
+            df_stats.rename(columns={wsp:'[Windspeed]'}, inplace=True)
 
     return run_dirs, df_stats
 
@@ -155,25 +166,27 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
 # =============================================================================
 
 def plot_stats2(sim_ids, post_dirs, plot_chans, fig_dir_base=None, labels=None,
-                post_dir_save=False, dlc_ignore=['00'], figsize=(8,6)):
+                post_dir_save=False, dlc_ignore=['00'], figsize=(8,6),
+                eps=False, ylabels=None):
     """
     Map which channels have to be compared
     """
 
     # reduce required memory, only use following columns
     cols = ['[run_dir]', '[DLC]', 'channel', '[res_dir]', '[Windspeed]',
-            'mean', 'max', 'min', 'std', '[wdir]']
+            'mean', 'max', 'min', 'std', '[wdir]', '[Case folder]']
 
     run_dirs, df_stats = merge_sim_ids(sim_ids, post_dirs,
                                        post_dir_save=post_dir_save)
 
     plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=labels,
-                   figsize=figsize, dlc_ignore=dlc_ignore)
+                   figsize=figsize, dlc_ignore=dlc_ignore, eps=eps,
+                   ylabels=ylabels)
 
 
 def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                    figsize=(8,6), dlc_ignore=['00'], run_dirs=None,
-                   sim_ids=[]):
+                   sim_ids=[], eps=False, ylabels=None):
     """Create for each DLC an overview plot of the statistics.
 
     df_stats required columns:
@@ -205,7 +218,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 
     figsize : tuple, default=(8,6)
 
-    dlc_ignore : list, default=['00']
+    dlc_ignore : list, default=['dlc00']
         By default all but dlc00 (stair case, wind ramp) are plotted. Add
         more dlc numbers here if necessary.
 
@@ -225,7 +238,8 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
     mfcs3 = ['r', 'w']
     stds = ['r', 'b']
 
-    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]']
+    required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
+                '[Case folder]']
     cols = df_stats.columns
     for col in required:
         if col not in cols:
@@ -243,9 +257,15 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             sim_ids.append(run_dir.split(os.path.sep)[-2])
 
     # first, take each DLC appart
-    for dlc_name, gr_dlc in df_stats.groupby(df_stats['[DLC]']):
+    for gr_name, gr_dlc in df_stats.groupby(df_stats['[Case folder]']):
+        dlc_name = gr_name
+        if dlc_name[:3].lower() == 'dlc':
+            # FIXME: this is messy since this places a hard coded dependency
+            # between [Case folder] and [Case id.] when the tag [DLC] is
+            # defined in dlcdefs.py
+            dlc_name = gr_name.split('_')[0]
         # do not plot the stats for dlc00
-        if dlc_name in dlc_ignore:
+        if dlc_name.lower() in dlc_ignore:
             continue
         # cycle through all the target plot channels
         for ch_dscr, ch_names in plot_chans.items():
@@ -253,8 +273,9 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             # identical, we need to manually pick them.
             # figure file name will be the first channel
             if isinstance(ch_names, list):
+                ch_name = ch_names[0]
                 df_chan = gr_dlc[gr_dlc.channel == ch_names[0]]
-                fname_base = ch_names[0].replace(' ', '_')
+                fname_base = ch_names[0]#.replace(' ', '_')
                 try:
                     df2 = gr_dlc[gr_dlc.channel == ch_names[1]]
                     df_chan = pd.concat([df_chan, df2], ignore_index=True)
@@ -262,9 +283,9 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                     pass
             else:
                 ch_name = ch_names
-                ch_names = [ch_name]
+                ch_names = [ch_names]
                 df_chan = gr_dlc[gr_dlc.channel == ch_names]
-                fname_base = ch_names.replace(' ', '_')
+                fname_base = ch_names#.replace(' ', '_')
 
             # if not, than we are missing a channel description, or the channel
             # is simply not available in the given result set
@@ -288,7 +309,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             elif len(ch_names) > 1 and len(lens)==2 and lens[1] < 1:
                 continue
 
-            print('start plotting:  %s %s' % (str(dlc_name).ljust(7), ch_dscr))
+            print('start plotting:  %s %s' % (dlc_name.ljust(10), ch_dscr))
 
             fig, axes = mplutils.make_fig(nrows=1, ncols=1,
                                           figsize=figsize, dpi=120)
@@ -318,8 +339,10 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             # for clarity, set off-set on wind speed when comparing two DLB's
             if len(lens)==2:
                 windoffset = [-0.2, 0.2]
+                dirroffset = [-5, 5]
             else:
                 windoffset = [0]
+                dirroffset = [0]
             # in case of a fully empty plot xlims will remain None and there
             # is no need to save the plot
             xlims = None
@@ -338,8 +361,8 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 #                sid_names.append(sid_name)
                 print('   sim_id/label:', sid_name)
                 # FIXME: will this go wrong in PY3?
-                if str(dlc_name) in ['61', '62']:
-                    xdata = gr_ch_dlc_sid['[wdir]'].values
+                if dlc_name.lower() in ['dlc61', 'dlc62']:
+                    xdata = gr_ch_dlc_sid['[wdir]'].values + dirroffset[ii]
                     xlabel = 'wind direction [deg]'
                     xlims = [0, 360]
                 else:
@@ -354,12 +377,12 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                     lab1 = 'mean'
                     lab2 = 'min'
                     lab3 = 'max'
-                    lab4 = 'std'
+#                    lab4 = 'std'
                 else:
                     lab1 = 'mean %s' % sid_name
                     lab2 = 'min %s' % sid_name
                     lab3 = 'max %s' % sid_name
-                    lab4 = 'std %s' % sid_name
+#                    lab4 = 'std %s' % sid_name
                 mfc1 = mfcs1[ii]
                 mfc2 = mfcs2[ii]
                 mfc3 = mfcs3[ii]
@@ -393,13 +416,18 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 
             ax.grid()
             ax.set_xlim(xlims)
-            leg = ax.legend(loc='best', ncol=3)
+            leg = ax.legend(bbox_to_anchor=(1, 1), loc='lower right', ncol=3)
             leg.get_frame().set_alpha(0.7)
-            ax.set_title(r'{DLC%s} %s' % (dlc_name, ch_dscr))
+#            ax.set_title(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
+#            fig.suptitle(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
+            fig.suptitle('%s %s' % (dlc_name, ch_dscr))
             ax.set_xlabel(xlabel)
+            if ylabels is not None:
+                ax.set_ylabel(ylabels[ch_name])
             fig.tight_layout()
-            fig.subplots_adjust(top=0.92)
-            fig_path = os.path.join(fig_dir, 'dlc%s' % dlc_name)
+            spacing = 0.92 - (0.065 * (ii + 1))
+            fig.subplots_adjust(top=spacing)
+            fig_path = os.path.join(fig_dir, dlc_name)
             if len(sim_ids)==1:
                 fname = fname_base + '.png'
             else:
@@ -408,6 +436,8 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                 os.makedirs(fig_path)
             fig_path = os.path.join(fig_path, fname)
             fig.savefig(fig_path)#.encode('latin-1')
+            if eps:
+                fig.savefig(fig_path.replace('.png', '.eps'))
             fig.clear()
             print('saved: %s' % fig_path)
 
