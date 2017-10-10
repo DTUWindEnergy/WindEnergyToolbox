@@ -44,6 +44,7 @@ from .gtsdf import compress2statistics
 
 class Dataset(object):
     def __init__(self, filename):
+        self.filename = filename
         self.time, self.data, self.info = load(filename)
     def __call__(self, id):
         if isinstance(id, str):

@@ -137,7 +137,7 @@ def cycle_trigger(values, trigger_value=None, step=1, ascending=True, tolerance=
     else:
         return np.where((values[1:] < trigger_value - tolerance) & (values[:-1] >= trigger_value + tolerance))[0][::step]
 
-def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1):
+def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1, plt=None):
     """Returns one index per revolution (minimum rotor position)
     
     Parameters
@@ -157,19 +157,25 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1):
         rotor_speed = np.ones_like(rotor_position)*rotor_speed
     deg_per_sample = rotor_speed*360/60/sample_frq
     thresshold = deg_per_sample.max()*3
-    drp = np.diff(rotor_position)%360
+    drp = (np.diff(rotor_position)+thresshold)%360-thresshold
     rp = rotor_position
 
     
 
     
-    rp = np.array(rotor_position).copy()
+    rp = np.array(rotor_position).copy()%360
     #filter degree increase > thresshold
     rp[np.r_[False, np.diff(rp)>thresshold]] = 180
     
     upper_indexes = np.where((rp[:-1]>(360-thresshold))&(rp[1:]<(360-thresshold)))[0]
     lower_indexes = np.where((rp[:-1]>thresshold)&(rp[1:]<thresshold))[0] +1 
     
+    if plt:
+        plt.plot(rp)
+        plt.plot(lower_indexes, rp[lower_indexes],'.')
+        plt.plot(upper_indexes, rp[upper_indexes],'.')
+        
+
     # Best lower is the first lower after upper
     best_lower = lower_indexes[np.searchsorted(lower_indexes, upper_indexes)]
     upper2lower = best_lower - upper_indexes

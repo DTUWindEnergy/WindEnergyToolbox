@@ -49,8 +49,9 @@ class AtTimeFile(object):
         self.blade_radius = bladetip_radius
         with open(filename, encoding='utf-8') as fid:
             lines = fid.readlines()
-        atttribute_name_line = [l.startswith("# Radius_s") for l in lines].index(True)
-        self.attribute_names = lines[atttribute_name_line].lower().replace("#", "").split()
+        atttribute_name_line = [l.strip().startswith("# Radius_s") for l in lines].index(True)
+        #self.attribute_names = lines[atttribute_name_line].lower().replace("#", "").split()
+        self.attribute_names = [n.strip() for n in lines[atttribute_name_line].lower().split("#")[1:]]
         data = np.array([[float(l) for l in lines[i].split() ] for i in range(atttribute_name_line+1, len(lines))])
         self.data = data
         def func_factory(column):
@@ -97,10 +98,15 @@ class AtTimeFile(object):
 
 if __name__ == "__main__":
     at = AtTimeFile(r"tests/test_files/at.dat", 86.3655) # load file
+    at = AtTimeFile(r'U:\hama\HAWC2-AVATAR\res/avatar-7ntm-scaled-rad.dat')
+    
     at.attribute_names # Attribute names
     at[:3,1] # first 3 twist rows
-    at.twist()[:3] # Twist first 3 twist rows
-    print (at.twist(36, curved_length=True)) # Twist at curved_length = 36 (interpolated)
-    print (at.twist(36)) # Twist at 36 (interpolated)
+    print (len(at.attribute_names))
+    print ("\n".join(at.attribute_names))
+    print (at.data.shape)
+    #at.twist()[:3] # Twist first 3 twist rows
+    #print (at.twist(36, curved_length=True)) # Twist at curved_length = 36 (interpolated)
+    #print (at.twist(36)) # Twist at 36 (interpolated)
     
 

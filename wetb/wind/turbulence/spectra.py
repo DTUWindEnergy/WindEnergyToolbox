@@ -113,7 +113,7 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
     sample_frq : int, float or array_like
         Sample frequency
     Uvw_lst : array_like
-        list of U, v and w, [(U1,v1,w1),(U2,v2,w2)...] 
+        list of U, v and w, [(U1,v1,w1),(U2,v2,w2)...], v and w are optional
         
     Returns
     -------
@@ -127,7 +127,9 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
         For two dimensional input, the mean spectra are returned
     """
     assert isinstance(sample_frq, (int, float))
-    U,v,w = [np.array(Uvw_lst)[:,i,:].T for i in range(3)]
+    Uvw_arr = np.array(Uvw_lst)
+    Ncomp = Uvw_arr.shape[1]
+    U,v,w = [Uvw_arr[:,i,:].T for i in range(Ncomp)] + [None]*(3-Ncomp)
     k = 2 * np.pi * sample_frq / U.mean(0)
     
     if v is not None: assert np.abs(np.nanmean(v,0)).max()<1, "Max absolute mean of v is %f"%np.abs(np.nanmean(v,0)).max()
@@ -137,6 +139,15 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
     u, v, w = detrend_wsp(u, v, w)
 
     return [k1_vec] + [spectrum(x1, x2, k=k) for x1, x2 in [(u, u), (v, v), (w, w), (w, u)]]
+
+
+{'ns':( 298, 0.0455033341592, 30.7642421893, 2.32693322102, 0.00538254487239),
+'nu':( 853, 0.0355868134195, 71.0190181051, 2.95576644546, 0.00268903502954),
+'s' :( 367, 0.0300454276184, 24.7375807569, 2.40165270878, 0.00253338624678),
+'vs':( 223, 0.0149281609201, 11.7467239752, 3.21842435078, 0.00143453350246),
+'n' :( 984, 0.0494970534618, 47.3846412548, 2.83466101838, 0.00513954022345),
+'u' :( 696, 0.0258456660845, 78.9511607824, 2.51128584334, 0.00250014140782),
+'vu':( 468, 0.0218274041889, 73.0730383576, 2.01636095317, 0.00196337613117)}
 
 def bin_spectrum(x, y, bin_size, min_bin_count=2):
     assert min_bin_count > 0

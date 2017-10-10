@@ -189,13 +189,13 @@ def residual(ae, L, G, k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2):
 
     Returns
     -------
-    residual : float
+    residual : array_like
+        rms of each spectrum
     """
-    _3to2list = list(np.array(logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size)))
-    bk1, sp_meas = _3to2list[:1] + [_3to2list[1:]]
-    sp_fit = np.array(logbin_spectra(k1, *get_mann_model_spectra(ae, L, G, k1)))[1:]
-
-    return np.sqrt(((bk1 * sp_meas - bk1 * sp_fit) ** 2).mean())
+    k1_sp = np.array([sp for sp in logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size) if sp is not None])
+    bk1, sp_meas = k1_sp[0], k1_sp[1:]
+    sp_fit = np.array(get_mann_model_spectra(ae, L, G, bk1))[:sp_meas.shape[0]]
+    return np.sqrt(((bk1 * (sp_meas - sp_fit)) ** 2).mean(1))
 
 
 def fit_ae2var(variance, L, G):
