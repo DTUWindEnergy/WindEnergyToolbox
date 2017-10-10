@@ -108,7 +108,7 @@ class TestHtcFile(unittest.TestCase):
     def test_htcfile_setname(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.set_name("mytest")
-        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'..\htc\mytest.htc')
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace("\\","/"), r'../htc/mytest.htc')
         self.assertEqual(htcfile.simulation.logfile[0], './log/mytest.log')
         self.assertEqual(htcfile.output.filename[0], './res/mytest')
   
