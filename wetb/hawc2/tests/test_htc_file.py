@@ -107,12 +107,15 @@ class TestHtcFile(unittest.TestCase):
   
     def test_htcfile_setname(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
-        htcfile.set_name("mytest", htc_folder="htcfiles")
-        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'mytest.htc')
+        htcfile.set_name("mytest")
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'..\htc\mytest.htc')
         self.assertEqual(htcfile.simulation.logfile[0], './log/mytest.log')
         self.assertEqual(htcfile.output.filename[0], './res/mytest')
   
-  
+        htcfile.set_name("mytest", 'subfolder')
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'..\htc\subfolder\mytest.htc')
+        self.assertEqual(htcfile.simulation.logfile[0], './log/subfolder/mytest.log')
+        self.assertEqual(htcfile.output.filename[0], './res/subfolder/mytest')
   
     def test_set_time(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
@@ -248,6 +251,9 @@ end turb_export;"""
             except ValueError:
                 raise ValueError(f + " is not in list")
         self.assertFalse(input_files)
+        
+        htcfile = HTCFile(self.testfilepath + "DTU_10MW_RWT.htc")
+        self.assertTrue('./control/wpdata.100' in htcfile.input_files())
   
     def test_input_files2(self):
         htcfile = HTCFile(self.testfilepath + "ansi.htc",'../')

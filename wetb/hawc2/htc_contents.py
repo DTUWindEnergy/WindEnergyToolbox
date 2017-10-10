@@ -175,6 +175,16 @@ class HTCSection(HTCContents):
         s += "".join([c.__str__(level + 1) for c in self])
         s += "%send %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.end_comments)[self.end_comments.strip() != ""]).replace("\t\n","\n"))
         return s
+    
+    def get_subsection_by_name(self, name):
+        lst = [s for s in self if 'name' in s and s.name[0]==name]
+        if len(lst)==1:
+            return lst[0]
+        else:
+            if len(lst)==0:
+                raise ValueError("subsection '%s' not found"%name)
+            else:
+                raise NotImplementedError()
 
 class HTCLine(HTCContents):
     values = None

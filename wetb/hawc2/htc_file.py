@@ -197,21 +197,21 @@ class HTCFile(HTCContents, HTCDefaults):
         with open(filename, 'w', encoding='cp1252') as fid:
             fid.write(str(self))
 
-    def set_name(self, name, htc_folder="htc", log_folder="log", res_folder="res", animation_folder='animation', visualization_folder="visualization"):
+    def set_name(self, name, subfolder=''):
         #if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
         self.contents #load if not loaded
-        fmt_folder = lambda folder : "./" + os.path.relpath(folder).replace("\\", "/")
-
-        self.filename = os.path.abspath(os.path.join(self.modelpath, fmt_folder(htc_folder), "%s.htc" % name)).replace("\\", "/")
+        fmt_folder = lambda folder, subfolder : "./" + os.path.relpath(os.path.join(folder, subfolder)).replace("\\", "/")
+        
+        self.filename = os.path.abspath(os.path.join(self.modelpath, fmt_folder('htc', subfolder), "%s.htc" % name)).replace("\\", "/")
         if 'simulation' in self and 'logfile' in self.simulation:
-            self.simulation.logfile = os.path.join(fmt_folder(log_folder), "%s.log" % name).replace("\\", "/")
+            self.simulation.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
+            if 'animation' in self.simulation:
+                self.simulation.animation = os.path.join(fmt_folder('animation', subfolder), "%s.dat" % name).replace("\\", "/")
+            if 'visualization' in self.simulation:
+                self.simulation.visualization = os.path.join(fmt_folder('visualization', subfolder), "%s.hdf5" % name).replace("\\", "/")
         elif 'test_structure' in self and 'logfile' in self.test_structure:  # hawc2aero
-            self.test_structure.logfile = os.path.join(fmt_folder(log_folder), "%s.log" % name).replace("\\", "/")
-        if 'simulation' in self and 'animation' in self.simulation:
-            self.simulation.animation = os.path.join(fmt_folder(animation_folder), "%s.dat" % name).replace("\\", "/")
-        if 'simulation' in self and 'visualization' in self.simulation:
-            self.simulation.visualization = os.path.join(fmt_folder(visualization_folder), "%s.hdf5" % name).replace("\\", "/")
-        self.output.filename = os.path.join(fmt_folder(res_folder), "%s" % name).replace("\\", "/")
+            self.test_structure.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
+        self.output.filename = os.path.join(fmt_folder('res', subfolder), "%s" % name).replace("\\", "/")
 
     def set_time(self, start=None, stop=None, step=None):
         self.contents # load if not loaded
@@ -262,6 +262,14 @@ class HTCFile(HTCContents, HTCDefaults):
         if 'soil' in self:
             if 'soil_element' in self.soil:
                 files.append(self.soil.soil_element.get('datafile', [None])[0])
+        try:
+            dtu_we_controller = self.dll.get_subsection_by_name('dtu_we_controller')
+            theta_min = dtu_we_controller.init.constant__5[1]
+            files.append(os.path.join(os.path.dirname(dtu_we_controller.filename[0]), "wpdata.%d"%theta_min).replace("\\","/"))
+        except:
+            pass
+            
+    
         try:
             files.append(self.force.dll.dll[0])
         except:
@@ -362,16 +370,18 @@ class HTCFile(HTCContents, HTCDefaults):
     def deltat(self):
         return self.simulation.newmark.deltat[0]
     
-    def get_body(self, name):
-        lst = [b for b in self.new_htc_structure if b.name_=="main_body" and b.name[0]==name]
-        if len(lst)==1:
-            return lst[0]
-        else:
-            if len(lst)==0:
-                raise ValueError("Body '%s' not found"%name)
-            else:
-                raise NotImplementedError()
-        
+
+#     
+#     def get_body(self, name):
+#         lst = [b for b in self.new_htc_structure if b.name_=="main_body" and b.name[0]==name]
+#         if len(lst)==1:
+#             return lst[0]
+#         else:
+#             if len(lst)==0:
+#                 raise ValueError("Body '%s' not found"%name)
+#             else:
+#                 raise NotImplementedError()
+#         
 
 class H2aeroHTCFile(HTCFile):
     def __init__(self, filename=None, modelpath=None):
