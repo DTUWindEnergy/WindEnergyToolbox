@@ -113,7 +113,7 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.output.filename[0], './res/mytest')
   
         htcfile.set_name("mytest", 'subfolder')
-        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath), r'..\htc\subfolder\mytest.htc')
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace("\\","/"), r'../htc/subfolder/mytest.htc')
         self.assertEqual(htcfile.simulation.logfile[0], './log/subfolder/mytest.log')
         self.assertEqual(htcfile.output.filename[0], './res/subfolder/mytest')
   
