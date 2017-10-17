@@ -9,18 +9,19 @@ from __future__ import division
 from __future__ import absolute_import
 from io import open
 from future import standard_library
+from wetb.hawc2.shear_file import ShearFile
 standard_library.install_aliases()
 import unittest
 from wetb.hawc2 import shear_file
 import numpy as np
 import os
 import shutil
-testfilepath = 'test_files/'
+tfp = os.path.join(os.path.dirname(__file__), 'test_files/')
 class TestShearFile(unittest.TestCase):
 
 
-    def test_shearfile(self):
-        f = testfilepath + "tmp_shearfile1.dat"
+    def test_shearfile_save(self):
+        f = tfp + "tmp_shearfile1.dat"
         shear_file.save(f, [-55, 55], [30, 100, 160] , u=np.array([[0.7, 1, 1.3], [0.7, 1, 1.3]]).T)
         with open(f) as fid:
             self.assertEqual(fid.read(),
@@ -50,7 +51,7 @@ class TestShearFile(unittest.TestCase):
 
 
     def test_shearfile2(self):
-        f = testfilepath + "tmp_shearfile2.dat"
+        f = tfp + "tmp_shearfile2.dat"
         shear_file.save(f, [-55, 55], [30, 100, 160] , u=np.array([0.7, 1, 1.3]).T)
         with open(f) as fid:
             self.assertEqual(fid.read(),
@@ -79,10 +80,20 @@ class TestShearFile(unittest.TestCase):
         os.remove(f)
 
     def test_shear_makedirs(self):
-        f = testfilepath + "shear/tmp_shearfile2.dat"
+        f = tfp + "shear/tmp_shearfile2.dat"
         shear_file.save(f, [-55, 55], [30, 100, 160] , u=np.array([0.7, 1, 1.3]).T)
-        shutil.rmtree(testfilepath + "shear")
-
+        shutil.rmtree(tfp + "shear")
+        
+    def test_shear_load(self):
+        shear_file = ShearFile.load(tfp+"data/user_shear.dat")
+        np.testing.assert_array_equal(shear_file.w_positions, [30,100,160])
+        self.assertEqual(shear_file.uvw(0,65)[0],.85)
+        self.assertEqual(shear_file.uvw(-55,65)[0],.9)
+        np.testing.assert_array_equal(shear_file.uvw([0,-55],[65,65])[0],[.85,.9])
+        
+        shear_file = ShearFile.load_from_htc(tfp+"htcfiles/test.htc")
+        np.testing.assert_array_equal(shear_file.w_positions, [30,100,160])
+        np.testing.assert_array_almost_equal(shear_file.uvw([0,-55],[65,65])[0],np.array([.85,.9])*8.860807038)
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_shearfile']
     unittest.main()
