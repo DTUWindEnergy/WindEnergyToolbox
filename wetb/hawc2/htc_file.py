@@ -18,8 +18,8 @@ from wetb.utils.cluster_tools.cluster_resource import unix_path_old
 standard_library.install_aliases()
 from collections import OrderedDict
 
-from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine, \
-    HTCDefaults
+from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
+from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
 import os
 from copy import copy
 
@@ -27,7 +27,7 @@ from copy import copy
 def fmt_path(path):
     return path.lower().replace("\\","/")
 
-class HTCFile(HTCContents, HTCDefaults):
+class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     """Wrapper for HTC files
 
     Examples:

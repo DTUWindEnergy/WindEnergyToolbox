@@ -244,6 +244,7 @@ end turb_export;"""
                   './control/mech_brake.dll',
                   './control/servo_with_limits.dll',
                   './control/towclearsens.dll',
+                  './data/user_shear.dat',
                   self.testfilepath.replace("\\","/") + 'test.htc'
                   ]:
             try:
@@ -313,7 +314,6 @@ end turb_export;"""
         htc = HTCFile(self.testfilepath + "test_2xoutput.htc","../")
         self.assertEqual(len(htc.res_file_lst()), 4)
         
-    
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
