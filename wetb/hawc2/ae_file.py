@@ -67,10 +67,10 @@ class AEFile(object):
         ae_data = self.ae_sets[set_nr]
         index = np.searchsorted(ae_data[:, 0], radius)
         index = max(1, index)
-        setnr1, setnr2 = ae_data[index - 1:index + 1, 3]
-        if setnr1 != setnr2:
+        setnrs = ae_data[index - 1:index + 1, 3]
+        if setnrs[0] != setnrs[-1]:
             raise NotImplementedError
-        return setnr1
+        return setnrs[0]
 
 
 

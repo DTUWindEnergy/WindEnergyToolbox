@@ -241,6 +241,9 @@ class SSHClient(object):
                 size = len(localfile.read())
                 localfile.seek(0)
                 ret = self.sftp.putfo(localfile, filepath, file_size=size, callback=callback)
+        except Exception as e:
+            print ("upload failed ", str(e))
+            raise e
         finally:
             SSHClient.__exit__(self)
         if verbose:
@@ -271,6 +274,8 @@ class SSHClient(object):
                 self.upload(zn, remote_zn, callback=callback)
                 self.execute("unzip %s -d %s && rm %s"%(remote_zn, remotepath, remote_zn))
         except:
+            print ("upload files failed", )
+            traceback.print_exc()
             raise
         finally:
             os.remove(zn)

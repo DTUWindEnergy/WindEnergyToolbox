@@ -140,7 +140,6 @@ class SSHPBSClusterResource(Resource):
                     _, output, _ = self.ssh.execute('qstat -n1')
                     users, host, nodesload = pbswrap.parse_qstat_n1(output.split("\n"), self.ssh.host)
 
-
                 # if the user does not have any jobs, this will not exist
                 try:
                     cpu_user = users[self.ssh.username]['cpus']

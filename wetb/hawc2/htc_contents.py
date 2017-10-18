@@ -176,8 +176,8 @@ class HTCSection(HTCContents):
         s += "%send %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.end_comments)[self.end_comments.strip() != ""]).replace("\t\n","\n"))
         return s
     
-    def get_subsection_by_name(self, name):
-        lst = [s for s in self if 'name' in s and s.name[0]==name]
+    def get_subsection_by_name(self, name, field='name'):
+        lst = [s for s in self if field in s and s[field][0]==name]
         if len(lst)==1:
             return lst[0]
         else:

@@ -40,6 +40,17 @@ def MoninObukhov_length(u,v,w, T):
 def L2category(L, full_category_name=False):
     """Stability category from Monin-Obukhov length
     
+    Categories:
+    0>L>-50: Extreme unstable (eu)
+    -50>L>-100: Very unstable (vu)
+    -100>L>-200: Unstable (u)
+    -200>L>-500: Near unstable (nu)
+    500<|L|: Neutral (n)
+    200<L<500: Near stable (ns)
+    50<L<200: Stable (s)
+    10<L<50: Very stable (vs)
+    0<L<10: Extreme stable (es)
+    L=NaN: Undefined (-)
     Parameters
     ----------
     L : float or int
@@ -57,12 +68,12 @@ def L2category(L, full_category_name=False):
     >>> L2category(1000)
     n 
     """
-    cat_limits = np.array([-50,-100,-200,-500,500,200,50,10])
+    cat_limits = np.array([-1e-99,-50,-100,-200,-500,500,200,50,10,1e-99])
     index = np.searchsorted( 1/cat_limits, 1/np.array(L))-1
     if full_category_name:
-        return np.array(['Very unstable','Unstable','Near unstable','Neutral','Near stable','Stable','Very stable','undefined'])[index]
+        return np.array(['Extreme unstable', 'Very unstable','Unstable','Near unstable','Neutral','Near stable','Stable','Very stable','Extreme stable','Undefined'])[index]
     else:
-        return np.array(['vu','u','nu','n','ns','s','vs','-'])[index]
+        return np.array(['eu', 'vu','u','nu','n','ns','s','vs','es','-'])[index]
     
 def MoninObukhov_length2(u_star, w, T, specific_humidity=None):
     """Calculate the Monin Obukhov length
