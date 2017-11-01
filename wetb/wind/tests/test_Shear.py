@@ -158,8 +158,8 @@ class TestShear(unittest.TestCase):
 
 
     def test_log_shear(self):
-        u = log_shear(2, 3, 9)
-        self.assertAlmostEqual(u, 5.49306144)
+        shear = log_shear(2, 3)
+        self.assertAlmostEqual(shear(9), 5.49306144)
 
     def test_fit_log_shear(self):
         zu = [(85, 8.88131), (21, 4.41832)]
@@ -171,8 +171,9 @@ class TestShear(unittest.TestCase):
             plt.plot(log_shear(u_star, z0, z), z)
             plt.show()
 
-        for _zu, b in zip(zu, log_shear(u_star, z0, [85, 21])):
-            self.assertAlmostEqual(_zu[1], b, 4)
+        shear = log_shear(u_star, z0)
+        for z,u in zu:
+            self.assertAlmostEqual(u, shear(z), 4)
 
 
     def test_show_log_shear(self):
