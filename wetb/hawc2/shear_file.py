@@ -31,7 +31,7 @@ class ShearFile(object):
     >>> sf.save('test.dat')
     """
     
-    def __init__(self,v_positions, w_positions, u=None, v=None, w=None, shear=None):
+    def __init__(self,v_positions, w_positions, u=None, v=None, w=None, u0=None, shear=None):
         """
         Parameters
         ----------
@@ -48,6 +48,10 @@ class ShearFile(object):
         w : array_like, optional
             shear_w component, normalized with U_mean\n
             shape must be (#w_positions, #v_positions) or (#w_positions,)
+        u0 : int or float
+            Mean wind speed
+        shear : function
+            Shear function: f(height)->wsp
         """
         self.v_positions = v_positions
         self.w_positions = w_positions
@@ -66,9 +70,10 @@ class ShearFile(object):
     
                 assert uvw[i].shape == shape, (i, uvw[i].shape, shape)
         self.u, self.v, self.w = uvw
+        self.u0 = u0
         self.shear = shear
     
-    def uvw(self, v,w,shear=None):
+    def uvw(self, v,w,u0=None,shear=None):
         """Calculate u,v,w wind speeds at position(s) (v,w)
         Parameters
         ----------
@@ -76,6 +81,8 @@ class ShearFile(object):
             v-coordinate(s)
         w : int, float or array_like
             w-coordinates(s)
+        u0 : int or float
+            mean wind speed
         shear : function or None
             if function: f(height)->wsp
             if None: self.shear is used, if not None. 
@@ -86,10 +93,11 @@ class ShearFile(object):
         u,v,w 
             wind speed(s) or wind speed factor(s) if shear not defined
         """
-        shear = shear or self.shear or (lambda z: 1)
+        u0 =u0 or self.u0 or 1
+        shear = shear or self.shear or (lambda z: 0)
         from scipy.interpolate import RegularGridInterpolator
         wv = np.array([w,v]).T
-        return [RegularGridInterpolator((self.w_positions, self.v_positions), uvw)(wv)*shear(w) 
+        return [(RegularGridInterpolator((self.w_positions, self.v_positions), uvw)(wv))*u0+shear(w) 
                             for uvw in [self.u, self.v, self.w] if uvw is not None]
         
 
@@ -156,6 +164,7 @@ class ShearFile(object):
         user_defined_shear_filename = os.path.join(htc_file.modelpath, htc_file.wind.user_defined_shear[0])
         shear_file = ShearFile.load(user_defined_shear_filename)
         shear_file.shear = htc_file.get_shear()
+        shear_file.u0 = htc_file.wind.wsp[0]
         return shear_file
 
 def save(filename, v_coordinates, w_coordinates, u=None, v=None, w=None):

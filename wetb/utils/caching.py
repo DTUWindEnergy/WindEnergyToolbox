@@ -10,9 +10,10 @@ from __future__ import absolute_import
 from future import standard_library
 import sys
 from collections import OrderedDict
+import os
 standard_library.install_aliases()
 import inspect
-
+import numpy as np
 def set_cache_property(obj, name, get_func, set_func=None):
     """Create a cached property
 
@@ -107,3 +108,14 @@ class cache_method():
                     self.cache_dict.popitem(last=False)
             return self.cache_dict[arg_id]
         return wrapped
+    
+def cache_binary(f):
+    def wrap(filename,*args,**kwargs):
+        np_filename = os.path.splitext(filename)[0] + ".npy"
+        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
+            return np.load(np_filename)
+        else:
+            res = f(filename,*args,**kwargs)
+            np.save(np_filename,res)
+            return res
+    return wrap

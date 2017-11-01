@@ -9,16 +9,18 @@ from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
 from collections import OrderedDict
+import os
 standard_library.install_aliases()
 import multiprocessing
 import time
 import unittest
-
+import numpy as np
 
 from wetb.utils.timing import get_time
-from wetb.utils.caching import cache_function, set_cache_property, cache_method
+from wetb.utils.caching import cache_function, set_cache_property, cache_method,\
+    cache_binary
 
-
+tfp = os.path.dirname(__file__) + "/test_files/"
 class Example(object):
     def __init__(self, *args, **kwargs):
         object.__init__(self, *args, **kwargs)
@@ -54,7 +56,9 @@ class Example(object):
         time.sleep(1)
         return x*2
 
-
+@cache_binary
+def open_csv(filename):
+    return np.loadtxt(filename)
 
 def f(x):
     return x ** 2
@@ -110,6 +114,19 @@ class TestCacheProperty(unittest.TestCase):
         t = time.time()
         e.test_cache_property
         self.assertAlmostEqual(time.time()-t, 0, places=1)
+        
+    def test_cache_binary(self):
+        if os.path.isfile(tfp+"test.npy"):
+            os.remove(tfp+'test.npy')
+        A = open_csv(tfp + "test.csv")
+        self.assertTrue(os.path.isfile(tfp+"test.npy"))
+        np.testing.assert_array_equal(A,np.loadtxt(tfp + "test.csv"))
+        A[0]=-1
+        np.save(tfp+"test.npy",A)
+        B = open_csv(tfp + "test.csv")
+        np.testing.assert_array_equal(A,B)
+        os.remove(tfp+'test.npy')
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

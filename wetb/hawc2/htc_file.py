@@ -66,6 +66,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     This is a comment
     >>> print (hydro_element.wave_breaking[0]) # first value
     2
+    
+    #Delete element
+    del htc.simulation.logfile #Delete logfile line. Raise keyerror if not exists
     """
 
     filename = None

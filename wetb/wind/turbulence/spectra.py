@@ -49,7 +49,7 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     ----------
     spatial_resolution : int, float or array_like
         Distance between samples in meters
-        - For turbulence boxes: 1/dx = Lx/Nx where dx is distance between points, 
+        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points, 
         Nx is number of points and Lx is box length in meters
         - For time series: Sample frequency / U
     u : array_like

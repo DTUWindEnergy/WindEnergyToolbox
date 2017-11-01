@@ -93,7 +93,7 @@ class TestShearFile(unittest.TestCase):
         
         shear_file = ShearFile.load_from_htc(tfp+"htcfiles/test.htc")
         np.testing.assert_array_equal(shear_file.w_positions, [30,100,160])
-        np.testing.assert_array_almost_equal(shear_file.uvw([0,-55],[65,65])[0],np.array([.85,.9])*8.860807038)
+        np.testing.assert_array_almost_equal(shear_file.uvw([0,-55],[65,65])[0],np.array([.85,.9])*10+8.860807038)
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.test_shearfile']
     unittest.main()
