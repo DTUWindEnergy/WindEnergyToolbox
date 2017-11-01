@@ -11,6 +11,8 @@ from scipy.interpolate.interpolate import interp1d
 import os
 from wetb.utils.geometry import rad
 from wetb.hawc2.st_file import StFile
+from wetb.hawc2.ae_file import AEFile
+from wetb.hawc2.mainbody import MainBody
 
 
 
@@ -61,7 +63,7 @@ from wetb.hawc2.st_file import StFile
 #         """
 
 
-class H2aeroBladeInfo(PCFile, AtTimeFile):
+class H2aeroBlade(PCFile, AEFile, AtTimeFile):
     """Provide HAWC2 info about a blade
     
     From AE file:
@@ -86,36 +88,37 @@ class H2aeroBladeInfo(PCFile, AtTimeFile):
         
     """
 
-    def __init__(self, htcfile, ae_filename=None, pc_filename=None, at_time_filename=None, blade_name=None):
-        
-        if isinstance(htcfile, str):
-            assert htcfile.lower().endswith('.htc')
-            htcfile = HTCFile(htcfile)
-        self.htcfile = htcfile
-        blade_name = blade_name or htcfile.aero.link[2]
-        #s = htcfile.new_htc_structure
-        at_time_filename = at_time_filename or ("output_at_time" in htcfile and os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat"))
-        pc_filename = pc_filename or os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0])
-        ae_filename = ae_filename or os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0])
-        
+    def __init__(self, htcfile=None, ae_filename=None, pc_filename=None, at_time_filename=None, blade_name=None):
+        if htcfile:
+            if isinstance(htcfile, str):
+                assert htcfile.lower().endswith('.htc')
+                htcfile = HTCFile(htcfile)
+            self.htcfile = htcfile
+            blade_name = blade_name or htcfile.aero.link[2]
+            at_time_filename = at_time_filename or ("output_at_time" in htcfile and os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat"))
+            pc_filename = pc_filename or os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0])
+            ae_filename = ae_filename or os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0])
+            self.hawc2_splines_data = self.hawc2_splines()
+            
         #mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
         #self.mainbody_blade = [mb for mb in mainbodies if mb.name[0] == blade_name][0]
         
         if os.path.isfile(pc_filename) and os.path.isfile(ae_filename):
-            PCFile.__init__(self, pc_filename, ae_filename)
+            AEFile.__init__(self, ae_filename)
+            PCFile.__init__(self, pc_filename)
             blade_radius = self.ae_sets[1][-1,0]
         
-        if os.path.isfile(at_time_filename):
+        if at_time_filename and os.path.isfile(at_time_filename):
             AtTimeFile.__init__(self, at_time_filename, blade_radius)
             self.curved_length = self.radius_curved_ac()[-1]
         else:
-            raise NotImplementedError
+            self.curved_length = None
             #z_nd = (np.cos(np.linspace(np.pi, np.pi*2,len(curved_length)-1))+1)/2
             #self.curved_length = np.cumsum(np.sqrt(np.sum(np.diff(self.c2def[:, :3], 1, 0) ** 2, 1)))[-1]
 
         
         
-        self.hawc2_splines_data = self.hawc2_splines()
+        
         
         
     @property
@@ -222,8 +225,103 @@ class H2aeroBladeInfo(PCFile, AtTimeFile):
                 assert np.all(l>=self.c2def[0,2]) and np.all(l<=self.c2def[-1,2])
                 return self.c2nd(l/self.c2def[-1, 2])
             
+    def _Cxxx(self, radius, alpha, column, ae_set_nr=1):
+        thickness = self.thickness(radius, ae_set_nr)
+        pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
+        thicknesses, profiles = self.pc_sets[pc_set_nr]
+        index = np.searchsorted(thicknesses, thickness)
+        if index == 0:
+            index = 1
+
+        Cx0, Cx1 = profiles[index - 1:index + 1]
+        Cx0 = np.interp(alpha, Cx0[:, 0], Cx0[:, column])
+        Cx1 = np.interp(alpha, Cx1[:, 0], Cx1[:, column])
+        th0, th1 = thicknesses[index - 1:index + 1]
+        return Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
+    
+    def _CxxxH2(self, radius, alpha, column, ae_set_nr=1):
+        thickness = self.thickness(radius, ae_set_nr)
+        pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
+        thicknesses, profiles = self.pc_sets[pc_set_nr]
+        index = np.searchsorted(thicknesses, thickness)
+        if index == 0:
+            index = 1
+
+        Cx0, Cx1 = profiles[index - 1:index + 1]
+        
+        Cx0 = np.interp(np.arange(360), Cx0[:,0]+180, Cx0[:,column])
+        Cx1 = np.interp(np.arange(360), Cx1[:,0]+180, Cx1[:,column])
+        #Cx0 = np.interp(alpha, Cx0[:, 0], Cx0[:, column])
+        #Cx1 = np.interp(alpha, Cx1[:, 0], Cx1[:, column])
+        th0, th1 = thicknesses[index - 1:index + 1]
+        cx = Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
+        return np.interp(alpha+180, np.arange(360), cx)
+    
+        
+
+    def CL(self, radius, alpha, ae_set_nr=1):
+        """Lift coefficient
+
+        Parameters
+        ---------
+        radius : float
+            radius [m]
+        alpha : float
+            Angle of attack [deg]
+        ae_set_nr : int optional
+            Aerdynamic set number, default is 1
+
+        Returns
+        -------
+        Lift coefficient : float
+        """
+        return self._Cxxx(radius, alpha, 1, ae_set_nr)
+
+
+    def CL_H2(self, radius, alpha, ae_set_nr=1):
+        return self._CxxxH2(radius, alpha, 1, ae_set_nr)
+    
+    def CD(self, radius, alpha, ae_set_nr=1):
+        """Drag coefficient
+
+        Parameters
+        ---------
+        radius : float
+            radius [m]
+        alpha : float
+            Angle of attack [deg]
+        ae_set_nr : int optional
+            Aerdynamic set number, default is 1
+
+        Returns
+        -------
+        Drag coefficient : float
+        """
+        return self._Cxxx(radius, alpha, 2, ae_set_nr)
+
+    def CM(self, radius, alpha, ae_set_nr=1):
+        return self._Cxxx(radius, alpha, 3, ae_set_nr)
             
-class H2BladeInfo(H2aeroBladeInfo):
+            
+    def plot_xz_geometry(self, plt):
+
+        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]), label='Center line')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) + self.chord(z) / 2, label='Leading edge')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 0]) - self.chord(z) / 2, label="Trailing edge")
+        curve_l_nd, x, y, z, twist = self.hawc2_splines()
+        plt.plot(z, x, label='Hawc2spline')
+
+    def plot_yz_geometry(self, plt):
+
+        z = np.linspace(self.c2def[0, 2], self.c2def[-1, 2], 100)
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]), label='Center line')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) + self.thickness(z) / 100 * self.chord(z) / 2, label='Suction side')
+        plt.plot(z, np.interp(z, self.c2def[:, 2], self.c2def[:, 1]) - self.thickness(z) / 100 * self.chord(z) / 2, label="Pressure side")
+        curve_l_nd, x, y, z, twist = self.hawc2_splines()
+        plt.plot(z, y, label='Hawc2spline')
+            
+class H2Blade(H2aeroBlade, MainBody):
     """Provide HAWC2 info about a blade
     
     From AE file:
@@ -247,19 +345,24 @@ class H2BladeInfo(H2aeroBladeInfo):
     with template
         
     """
-    def __init__(self, htcfile, ae_filename=None, pc_filename=None, at_time_filename=None, st_filename=None, blade_name=None):
-        if isinstance(htcfile, str):
-            htcfile = HTCFile(htcfile)
-        s = htcfile.new_htc_structure
+    def __init__(self, htcfile=None, ae_filename=None, pc_filename=None, at_time_filename=None, st_filename=None, blade_name=None):
+        if htcfile is not None:
+            if isinstance(htcfile, str):
+                htcfile = HTCFile(htcfile)
+            s = htcfile.new_htc_structure
 #         at_time_filename = at_time_filename or ("output_at_time" in htcfile and os.path.join(htcfile.modelpath, htcfile.output_at_time.filename[0] + ".dat"))
 #         pc_filename = pc_filename or os.path.join(htcfile.modelpath, htcfile.aero.pc_filename[0])
 #         ae_filename = ae_filename or os.path.join(htcfile.modelpath, htcfile.aero.ae_filename[0])
 #         
-        mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
-        if blade_name is None:
-            blade_name = htcfile.aero.link[2]
-        self.mainbody_blade = [mb for mb in mainbodies if mb.name[0] == blade_name][0]
-        H2aeroBladeInfo.__init__(self, htcfile, ae_filename=ae_filename, pc_filename=pc_filename, at_time_filename=at_time_filename, blade_name=blade_name)
+            mainbodies = [s[k] for k in s.keys() if s[k].name_ == "main_body"]
+            if blade_name is None:
+                blade_name = htcfile.aero.link[2]
+            self.mainbody_blade = htcfile.new_htc_structure.get_subsection_by_name(blade_name)
+            st_filename = st_filename or os.path.join(htcfile.modelpath, self.mainbody_blade.timoschenko_input.filename[0])
+            MainBody.__init__(self, htcfile, blade_name)
+        elif st_filename and os.path.isfile(st_filename):
+            StFile.__init__(self, st_filename)
+        H2aeroBlade.__init__(self, htcfile, ae_filename=ae_filename, pc_filename=pc_filename, at_time_filename=at_time_filename, blade_name=blade_name)
         
 #     def __init__(self, htcfile, ae_filename=None, pc_filename=None, at_time_filename=None, st_filename=None, blade_name=None):
 #         
@@ -268,14 +371,12 @@ class H2BladeInfo(H2aeroBladeInfo):
 #             htcfile = HTCFile(htcfile)
 #         
 #         blade_name = blade_name or htcfile.aero.link[2]
-        st_filename = st_filename or os.path.join(htcfile.modelpath, self.mainbody_blade.timoschenko_input.filename[0])
 #         
 #         if os.path.isfile(pc_filename) and os.path.isfile(ae_filename):
 #             PCFile.__init__(self, pc_filename, ae_filename)
 #             blade_radius = self.ae_sets[1][-1,0]
-#         
-        if os.path.isfile(st_filename):
-            StFile.__init__(self, st_filename)
+#    
+        
 #         if os.path.isfile(at_time_filename):
 #             AtTimeFile.__init__(self, at_time_filename, blade_radius)
 #             self.curved_length = self.radius_curved_ac()[-1]
@@ -287,6 +388,7 @@ class H2BladeInfo(H2aeroBladeInfo):
 #         self.c2def = np.array([v.values[1:5] for v in mainbody_blade.c2_def if v.name_ == "sec"])
 #         
 #         self.hawc2_splines_data = self.hawc2_splines()       
+    
     @property
     def c2def(self):
         if not hasattr(self, "_c2def"):
@@ -294,7 +396,7 @@ class H2BladeInfo(H2aeroBladeInfo):
         return self._c2def
    
 #         
-# class H2aeroBladeInfo(H2BladeInfo):
+# class H2aeroBlade(H2Blade):
 # 
 #     def __init__(self, at_time_filename, ae_filename, pc_filename, htc_filename):
 #         """

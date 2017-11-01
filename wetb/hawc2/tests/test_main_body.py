@@ -5,13 +5,14 @@ Created on 01/08/2016
 '''
 import unittest
 import os
-from wetb.hawc2.mainbody import MainBody, Blade
+from wetb.hawc2.mainbody import MainBody
+from wetb.hawc2.blade import H2Blade
 
 tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 class TestMainBody(unittest.TestCase):
     
     def test_MainBody(self):
-        mainbody = MainBody(tfp+"htcfiles/test.htc", "../", "towertop")
+        mainbody = MainBody(tfp+"htcfiles/test.htc", "blade1")
         if 0:
             import matplotlib.pyplot as plt
             plt.figure()
@@ -21,7 +22,7 @@ class TestMainBody(unittest.TestCase):
             plt.show()
              
     def test_Blade(self):
-        blade = Blade(tfp+"htcfiles/test.htc", "../")
+        blade = H2Blade(tfp+"htcfiles/test.htc")
         if 0:
             import matplotlib.pyplot as plt
             plt.figure()
