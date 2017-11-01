@@ -16,7 +16,7 @@ standard_library.install_aliases()
 from wetb.hawc2.ae_file import AEFile
 import numpy as np
 
-class PCFile(AEFile):
+class PCFile(object):
     """Read HAWC2 PC (profile coefficients) file
 
     examples
@@ -37,9 +37,7 @@ class PCFile(AEFile):
     >>> pcfile.CM(36,10) # CM at radius=36m and AOA=10deg
     -0.1103
     """
-    def __init__(self, filename, ae_filename):
-        AEFile.__init__(self, ae_filename)
-
+    def __init__(self, filename):
         with open (filename) as fid:
             lines = fid.readlines()
         nsets = int(lines[0].split()[0])
@@ -61,9 +59,7 @@ class PCFile(AEFile):
                 lptr += n_rows
             self.pc_sets[nset] = (np.array(thicknesses), profiles)
 
-    def _Cxxx(self, radius, alpha, column, ae_set_nr=1):
-        thickness = self.thickness(radius, ae_set_nr)
-        pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
+    def _Cxxx(self, thickness, alpha, column, ae_set_nr=1, pc_set_nr=1):
         thicknesses, profiles = self.pc_sets[pc_set_nr]
         index = np.searchsorted(thicknesses, thickness)
         if index == 0:
@@ -75,9 +71,7 @@ class PCFile(AEFile):
         th0, th1 = thicknesses[index - 1:index + 1]
         return Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
     
-    def _CxxxH2(self, radius, alpha, column, ae_set_nr=1):
-        thickness = self.thickness(radius, ae_set_nr)
-        pc_set_nr = self.pc_set_nr(radius, ae_set_nr)
+    def _CxxxH2(self, thickness, alpha, column, ae_set_nr=1,pc_set_nr=1):
         thicknesses, profiles = self.pc_sets[pc_set_nr]
         index = np.searchsorted(thicknesses, thickness)
         if index == 0:
@@ -95,13 +89,13 @@ class PCFile(AEFile):
     
         
 
-    def CL(self, radius, alpha, ae_set_nr=1):
+    def CL(self, thickness, alpha, ae_set_nr=1,pc_set_nr=1):
         """Lift coefficient
 
         Parameters
         ---------
-        radius : float
-            radius [m]
+        thickness : float
+            thickness [5]
         alpha : float
             Angle of attack [deg]
         ae_set_nr : int optional
@@ -111,13 +105,13 @@ class PCFile(AEFile):
         -------
         Lift coefficient : float
         """
-        return self._Cxxx(radius, alpha, 1, ae_set_nr)
+        return self._Cxxx(thickness, alpha, 1, ae_set_nr, pc_set_nr)
 
 
-    def CL_H2(self, radius, alpha, ae_set_nr=1):
-        return self._CxxxH2(radius, alpha, 1, ae_set_nr)
+    def CL_H2(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
+        return self._CxxxH2(thickness, alpha, 1, ae_set_nr, pc_set_nr)
     
-    def CD(self, radius, alpha, ae_set_nr=1):
+    def CD(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
         """Drag coefficient
 
         Parameters
@@ -133,10 +127,10 @@ class PCFile(AEFile):
         -------
         Drag coefficient : float
         """
-        return self._Cxxx(radius, alpha, 2, ae_set_nr)
+        return self._Cxxx(thickness, alpha, 2, ae_set_nr, pc_set_nr)
 
-    def CM(self, radius, alpha, ae_set_nr=1):
-        return self._Cxxx(radius, alpha, 3, ae_set_nr)
+    def CM(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
+        return self._Cxxx(thickness, alpha, 3, ae_set_nr,pc_set_nr)
 
 if __name__ == "__main__":
     pc = PCFile(r"C:\mmpe\Projects\inflow\Hawc2aero_setup/data/Hawc_pc.b52", r"C:\mmpe\Projects\inflow\Hawc2aero_setup/data/S36_ae_h2.001")
