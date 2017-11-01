@@ -16,8 +16,7 @@ standard_library.install_aliases()
 from wetb.hawc2.ae_file import AEFile
 import numpy as np
 
-
-class PCFile(object):
+class PCFile(AEFile):
     """Read HAWC2 PC (profile coefficients) file
 
     examples
@@ -38,7 +37,9 @@ class PCFile(object):
     >>> pcfile.CM(36,10) # CM at radius=36m and AOA=10deg
     -0.1103
     """
-    def __init__(self, filename):
+    def __init__(self, filename, ae_filename):
+        AEFile.__init__(self, ae_filename)
+
         with open (filename) as fid:
             lines = fid.readlines()
         nsets = int(lines[0].split()[0])
