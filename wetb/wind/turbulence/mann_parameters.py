@@ -10,9 +10,9 @@ import os
 from scipy.interpolate import RectBivariateSpline
 
 import numpy as np
-from wetb.wind.turbulence.spectra import spectra, logbin_spectra, \
-    plot_spectrum, plot_spectra
-from wetb.utils.test_files import move2test_files
+from wetb.wind.turbulence.spectra import spectra, logbin_spectra, plot_spectra,\
+    detrend_wsp
+
 
 
 
@@ -198,13 +198,19 @@ def residual(ae, L, G, k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2):
     return np.sqrt(((bk1 * (sp_meas - sp_fit)) ** 2).mean(1))
 
 
-def fit_ae2var(variance, L, G):
+def var2ae(variance, spatial_resolution, N, L, G):
     """Fit alpha-epsilon to match variance of time series
 
     Parameters
     ----------
     variance : array-like
         variance of u vind component
+    spatial_resolution : int, float or array_like
+        Distance between samples in meters
+        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points, 
+        Nx is number of points and Lx is box length in meters
+        - For time series: Sample frequency / U
+    N : int
     L : int or float
         Length scale of Mann model
     G : int or float
@@ -226,13 +232,17 @@ def fit_ae2var(variance, L, G):
     return ae
 
 
-def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
+
+def fit_ae(spatial_resolution, u, L, G, plt=False):
     """Fit alpha-epsilon to match variance of time series
 
     Parameters
     ----------
-    sf : int or float
-        Sample frequency
+    spatial_resolution : int, float or array_like
+        Distance between samples in meters
+        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points, 
+        Nx is number of points and Lx is box length in meters
+        - For time series: Sample frequency / U
     u : array-like
         u vind component
     L : int or float
@@ -245,33 +255,37 @@ def fit_ae(sf, u, L, G, min_bin_count=None, plt=False):
     ae : float
         Alpha epsilon^(2/3) of Mann model that makes the energy of the model equal to the varians of u
     """
-#    def get_var(k1, ae):
-#        uu = get_mann_model_spectra(ae, L, G, k1)[0]
-#        return np.trapz(2 * uu, k1)
-#        return (np.sum(uu) * 2 * (k1[1] - k1[0]))
-    if len(u.shape) == 1:
-        u = u.reshape(len(u), 1)
-    if min_bin_count is None:
-        min_bin_count = max(2, 6 - u.shape[1] / 2)
-
+    #if len(u.shape) == 1:
+    #    u = u.reshape(len(u), 1)
+#     if min_bin_count is None:
+#         min_bin_count = max(2, 6 - u.shape[0] / 2)
+#     min_bin_count = 1
     def get_var(k1, uu):
         l = 0  #128 // np.sqrt(u.shape[1])
         return np.trapz(2 * uu[l:], k1[l:])
 
-    k1 = spectra(sf, u)[0]
-    v1 = get_var(*logbin_spectra(k1, get_mann_model_spectra(0.1, L, G, k1)[0], min_bin_count=min_bin_count)[:2])
-    v2 = get_var(*logbin_spectra(k1, get_mann_model_spectra(0.2, L, G, k1)[0], min_bin_count=min_bin_count)[:2])
-    k1, uu = logbin_spectra(*spectra(sf, u), min_bin_count=2)[:2]
-    #variance = np.mean([detrend_wsp(u_)[0].var() for u_ in u.T])
-    v = get_var(k1, uu)
+    k1, uu = spectra(spatial_resolution, u)[:2]
+    v = get_var(k1,uu)
+    v1 = get_var(k1, get_mann_model_spectra(0.1, L, G, k1)[0])
+    v2 = get_var(k1, get_mann_model_spectra(0.2, L, G, k1)[0])
     ae = (v - v1) / (v2 - v1) * .1 + .1
+#     print (ae)
+#     
+#     k1 = spectra(sf, u)[0]
+#     v1 = get_var(*logbin_spectra(k1, get_mann_model_spectra(0.1, L, G, k1)[0], min_bin_count=min_bin_count)[:2])
+#     v2 = get_var(*logbin_spectra(k1, get_mann_model_spectra(0.2, L, G, k1)[0], min_bin_count=min_bin_count)[:2])
+#     k1, uu = logbin_spectra(*spectra(sf, u), min_bin_count=2)[:2]
+#     #variance = np.mean([detrend_wsp(u_)[0].var() for u_ in u.T])
+#     v = get_var(k1, uu)
+#     ae = (v - v1) / (v2 - v1) * .1 + .1
+#     print (ae)
     if plt is not False:
         if not hasattr(plt, 'plot'):
             import matplotlib.pyplot as plt
         plt.semilogx(k1, k1 * uu, 'b-', label='uu')
-        k1, uu = logbin_spectra(*spectra(sf, u), min_bin_count=1)[:2]
+        k1_lb, uu_lb = logbin_spectra(*spectra(sf, u), min_bin_count=1)[:2]
 
-        plt.semilogx(k1, k1 * uu, 'r--', label='uu_logbin')
+        plt.semilogx(k1_lb, k1_lb * uu_lb, 'r--', label='uu_logbin')
         muu = get_mann_model_spectra(ae, L, G, k1)[0]
         plt.semilogx(k1, k1 * muu, 'g', label='ae:%.3f, L:%.1f, G:%.2f' % (ae, L, G))
         plt.legend()
@@ -312,22 +326,51 @@ if __name__ == "__main__":
     ds = gtsdf.Dataset(os.path.dirname(wind.__file__)+"/tests/test_files/WspDataset.hdf5")#'unit_test/test_files/wspdataset.hdf5')
     f = 35
     u, v = wsp_dir2uv(ds.Vhub_85m, ds.Dir_hub_)
-
+ 
     u_ref = np.mean(u)
     u -= u_ref
-
+ 
     sf = f / u_ref
-    ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v), plt = plt)
+    ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v), plt = None)
     print (ae, L, G)
+    print (u.shape)
+    print (ds.Time[-1])
+    plt.plot(u)
+    plt.plot(detrend_wsp(u)[0])
+    plt.show()
+    print (fit_ae(sf, detrend_wsp(u)[0], L,  G, plt))
+    print (var2ae(detrend_wsp(u)[0].var(), L,  G,))
+    print ()
+    print (fit_ae(sf, u[:21000], L,  G))
+    print (var2ae(u[:21000].var(), L,  G,))
+    
+
 
  
-    """Example of fitting Mann parameters to a "series" of a turbulence box"""
-    l = 16384
-    nx = 8192
-    ny, nz = 8, 8
-    sf = (nx / l)
-    #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
-    #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
-    u, v, w = [np.fromfile(fn % uvw, np.dtype('<f'), -1).reshape(nx , ny * nz) for uvw in ['u', 'v', 'w']]
-    ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v, w), plt=plt)
-    print (ae, L, G)
+#     """Example of fitting Mann parameters to a "series" of a turbulence box"""
+#     l = 16384
+#     nx = 8192
+#     ny, nz = 8, 8
+#     sf = (nx / l)
+#     #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
+#     #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
+#     u, v, w = [np.fromfile(fn % uvw, np.dtype('<f'), -1).reshape(nx , ny * nz) for uvw in ['u', 'v', 'w']]
+#     ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v, w), plt=plt)
+#     print (ae, L, G)
+
+
+
+#     """Example of fitting Mann parameters to a "series" of a turbulence box"""
+#     l = 4778.3936
+#     nx = 8192
+#     ny, nz = 32,32
+#     sf = (nx / l)
+#     #fn = os.path.dirname(wind.__file__)+"/tests/test_files/turb/h2a8192_8_8_16384_32_32_0.15_10_3.3%s.dat"
+#     for s in [1,2,3,4,5,6]:
+#         fn = r'C:\mmpe\HAWC2\models\SWT3.6-107\turb/mann_l73.1_ae0.00_g2.0_h1_8192x32x32_0.583x3.44x3.44_s160%d%%s.turb'%s
+#         u, v, w = [np.fromfile(fn % uvw, np.dtype('<f'), -1).reshape(nx , ny * nz) for uvw in ['u', 'v', 'w']]
+#         u = np.fromfile(fn % 'u', np.dtype('<f'), -1).reshape(nx , ny * nz)
+#         #ae, L, G = fit_mann_model_spectra(*spectra(sf, u, v, w), plt=plt)
+#         #print (fit_ae(sf, u, 73.0730383576,  2.01636095317))
+#         print (u.std())
+#     #print (ae, L, G)

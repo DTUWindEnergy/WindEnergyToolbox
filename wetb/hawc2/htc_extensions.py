@@ -15,7 +15,8 @@ from builtins import int
 from builtins import str
 from future import standard_library
 import os
-from wetb.wind.shear import log_shear, power_shear
+
+
 standard_library.install_aliases()
 
 
@@ -82,10 +83,11 @@ class HTCDefaults(object):
         else:
             mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)], "L, alfaeps, gamma, seed, highfrq compensation")
         if filenames is None:
-            fmt = "mann_l%.1f_ae%.2f_g%.1f_h%d_%dx%dx%d_%.3fx%.2fx%.2f_s%04d%c.turb"
+            
             import numpy as np
             dxyz = tuple(np.array(box_dimension) / no_grid_points)
-            filenames = ["./turb/" + fmt % ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw)) for uvw in ['u', 'v', 'w']]
+            from wetb.wind.turbulence import mann_turbulence
+            filenames = ["./turb/" + mann_turbulence.name_format % ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw)) for uvw in ['u', 'v', 'w']]
         if isinstance(filenames, str):
             filenames = ["./turb/%s_s%04d%s.bin" % (filenames, seed, c) for c in ['u', 'v', 'w']]
         for filename, c in zip(filenames, ['u', 'v', 'w']):
@@ -153,8 +155,9 @@ class HTCExtensions(object):
         z0 = -self.wind.center_pos0[2]
         wsp = self.wind.wsp[0]
         if shear_type==1: #constant
-            return lambda z : parameter
+            return lambda z : wsp
         elif shear_type==3:
+            from wetb.wind.shear import power_shear
             return power_shear(parameter, z0, wsp)
         else:
             raise NotImplementedError

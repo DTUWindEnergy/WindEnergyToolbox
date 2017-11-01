@@ -32,7 +32,6 @@ def MoninObukhov_length(u,v,w, T):
     v = v-np.mean(v)
     w = w-np.mean(w)
     u_star = (np.mean(u*w)**2+np.mean(v*w)**2)**(1/4)
-    t = T-T.mean()
     wT = np.mean(w*T)
     return -u_star ** 3 * (T.mean() + 273.15) / (K * g * wT)
 

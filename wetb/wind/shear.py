@@ -114,7 +114,7 @@ def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
 
 
 
-def log_shear(u_star, z0, z, Obukhov_length=None):
+def log_shear(u_star, z0):
     """logarithmic shear
 
     Parameters
@@ -123,24 +123,28 @@ def log_shear(u_star, z0, z, Obukhov_length=None):
         Friction velocity
     z0 : int or float
         Surface roughness [m]
-    z : int, float or array_like
-        The heights of interest
 
     Returns
     -------
-    log_shear : array-like
-        Wind speeds at height z
+    log_shear : function f(z,L=None) -> wsp
+        z : int, float or array_like
+            The heights of interest
+        L : int, float or array_like, optional
+            The corresponding Monin-Obukhov length
 
     Example
     --------
-    >>> log_shear(1, 10, [20, 50, 70])
+    >>> shear = log_shear(1, 10)
+    >>> shear([20, 50, 70])
     [ 1.73286795  4.02359478  4.86477537]
     """
     K = 0.4  # von Karmans constant
-    if Obukhov_length is None:
-        return u_star / K * (np.log(np.array(z) / z0))
-    else:
-        return u_star / K * (np.log(z / z0) - stability_term(z, z0, Obukhov_length))
+    def log_shear(z,Obukhov_length=None):
+        if Obukhov_length is None:
+            return u_star / K * (np.log(np.array(z) / z0))
+        else:
+            return u_star / K * (np.log(z / z0) - stability_term(z, z0, Obukhov_length))
+    return log_shear
 
 def stability_term(z, z0, L):
     """Calculate the stability term for the log shear
@@ -169,6 +173,8 @@ def fit_log_shear(z_u_lst, include_R=False):
         - u_z1: Wind speeds or mean wind speed at z1
         - z2: another height
         - u_z2: Wind speeds or mean wind speeds at z2
+    include_R : boolean, optional
+        If True, the R^2 error is returned
 
     Returns
     -------
