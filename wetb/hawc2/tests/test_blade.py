@@ -13,17 +13,17 @@ tfp = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 class Test(unittest.TestCase):
 
 
-    def testBladeInfo(self):
-        bi = H2Blade(tfp + "simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc")
-        if 0:
-            import matplotlib.pyplot as plt
-            print (dir(bi))
-            #print (bi.radius_s())
-            plt.plot(bi.radius_s(), bi.twist())
-            plt.plot(bi.c2def[:,2], bi.c2def[:,3])
-            x = np.linspace(0,1,1000)
-            plt.plot(bi.blade_radius*x, bi.c2nd(x)[:,3])
-            plt.show()
+#     def testBladeInfo(self):
+#         bi = H2Blade(tfp + "simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc")
+#         if 0:
+#             import matplotlib.pyplot as plt
+#             print (dir(bi))
+#             #print (bi.radius_s())
+#             plt.plot(bi.radius_s(), bi.twist())
+#             plt.plot(bi.c2def[:,2], bi.c2def[:,3])
+#             x = np.linspace(0,1,1000)
+#             plt.plot(bi.blade_radius*x, bi.c2nd(x)[:,3])
+#             plt.show()
 
             
     def testBladeInfo_AE(self):
