@@ -21,20 +21,12 @@ class PCFile(object):
 
     examples
     --------
-    >>> pcfile = PCFile("tests/test_files/NREL_5MW_pc.txt", "tests/test_files/NREL_5MW_ae.txt")
-    # Same attributes as AEFile
-    >>> pcfile.thickness(36) # Interpolated thickness at radius 36
-    23.78048780487805
-    >>> pcfile.chord(36) # Interpolated chord at radius 36
-    3.673
-    >>> pcfile.pc_set_nr(36) # pc set number at radius 36
-    1
-    # Additional attributes
-    >>> pcfile.CL(36,10) # CL at radius=36m and AOA=10deg
+    >>> pcfile = PCFile("tests/test_files/NREL_5MW_pc.txt")
+    >>> pcfile.CL(21,10) # CL for thickness 21% and AOA=10deg
     1.358
-    >>> pcfile.CD(36,10) # CD at radius=36m and AOA=10deg
+    >>> pcfile.CD(21,10) # CD for thickness 21% and AOA=10deg
     0.0255
-    >>> pcfile.CM(36,10) # CM at radius=36m and AOA=10deg
+    >>> pcfile.CM(21,10) # CM for thickness 21% and AOA=10deg
     -0.1103
     """
     def __init__(self, filename):
@@ -59,7 +51,7 @@ class PCFile(object):
                 lptr += n_rows
             self.pc_sets[nset] = (np.array(thicknesses), profiles)
 
-    def _Cxxx(self, thickness, alpha, column, ae_set_nr=1, pc_set_nr=1):
+    def _Cxxx(self, thickness, alpha, column, pc_set_nr=1):
         thicknesses, profiles = self.pc_sets[pc_set_nr]
         index = np.searchsorted(thicknesses, thickness)
         if index == 0:
@@ -71,7 +63,7 @@ class PCFile(object):
         th0, th1 = thicknesses[index - 1:index + 1]
         return Cx0 + (Cx1 - Cx0) * (thickness - th0) / (th1 - th0)
     
-    def _CxxxH2(self, thickness, alpha, column, ae_set_nr=1,pc_set_nr=1):
+    def _CxxxH2(self, thickness, alpha, column, pc_set_nr=1):
         thicknesses, profiles = self.pc_sets[pc_set_nr]
         index = np.searchsorted(thicknesses, thickness)
         if index == 0:
@@ -89,7 +81,7 @@ class PCFile(object):
     
         
 
-    def CL(self, thickness, alpha, ae_set_nr=1,pc_set_nr=1):
+    def CL(self, thickness, alpha, pc_set_nr=1):
         """Lift coefficient
 
         Parameters
@@ -98,20 +90,20 @@ class PCFile(object):
             thickness [5]
         alpha : float
             Angle of attack [deg]
-        ae_set_nr : int optional
-            Aerdynamic set number, default is 1
+        pc_set_nr : int optional
+            pc set number, default is 1, normally obtained from ae-file
 
         Returns
         -------
         Lift coefficient : float
         """
-        return self._Cxxx(thickness, alpha, 1, ae_set_nr, pc_set_nr)
+        return self._Cxxx(thickness, alpha, 1, pc_set_nr)
 
 
-    def CL_H2(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
-        return self._CxxxH2(thickness, alpha, 1, ae_set_nr, pc_set_nr)
+    def CL_H2(self, thickness, alpha, pc_set_nr=1):
+        return self._CxxxH2(thickness, alpha, 1, pc_set_nr)
     
-    def CD(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
+    def CD(self, thickness, alpha, pc_set_nr=1):
         """Drag coefficient
 
         Parameters
@@ -120,18 +112,26 @@ class PCFile(object):
             radius [m]
         alpha : float
             Angle of attack [deg]
-        ae_set_nr : int optional
-            Aerdynamic set number, default is 1
+        pc_set_nr : int optional
+            pc set number, default is 1, normally obtained from ae-file
 
         Returns
         -------
         Drag coefficient : float
         """
-        return self._Cxxx(thickness, alpha, 2, ae_set_nr, pc_set_nr)
+        return self._Cxxx(thickness, alpha, 2, pc_set_nr)
 
-    def CM(self, thickness, alpha, ae_set_nr=1, pc_set_nr=1):
-        return self._Cxxx(thickness, alpha, 3, ae_set_nr,pc_set_nr)
+    def CM(self, thickness, alpha, pc_set_nr=1):
+        return self._Cxxx(thickness, alpha, 3, pc_set_nr)
 
 if __name__ == "__main__":
-    pc = PCFile(r"C:\mmpe\Projects\inflow\Hawc2aero_setup/data/Hawc_pc.b52", r"C:\mmpe\Projects\inflow\Hawc2aero_setup/data/S36_ae_h2.001")
-    print (pc)
+    pcfile = PCFile("tests/test_files/NREL_5MW_pc.txt")
+    aefile = AEFile("tests/test_files/NREL_5MW_ae.txt")
+    print (aefile.thickness(36))
+    
+    print (pcfile.CL(21,10)) # CL for thickness 21% and AOA=10deg
+    #1.358
+    print (pcfile.CD(21,10)) # CD for thickness 21% and AOA=10deg
+    #0.0255
+    print (pcfile.CM(21,10)) # CM for thickness 21% and AOA=10deg
+    #-0.1103
