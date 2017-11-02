@@ -18,7 +18,7 @@ import numpy as np
 
 from wetb.utils.timing import get_time
 from wetb.utils.caching import cache_function, set_cache_property, cache_method,\
-    cache_binary
+    cache_npsavez, cache_npsave, cache_npsavez_compressed
 
 tfp = os.path.dirname(__file__) + "/test_files/"
 class Example(object):
@@ -56,9 +56,17 @@ class Example(object):
         time.sleep(1)
         return x*2
 
-@cache_binary
+@cache_npsave
 def open_csv(filename):
     return np.loadtxt(filename)
+
+@cache_npsavez
+def open_csv2(filename):
+    return np.loadtxt(filename), np.loadtxt(filename)
+
+@cache_npsavez_compressed
+def open_csv3(filename):
+    return np.loadtxt(filename), np.loadtxt(filename)
 
 def f(x):
     return x ** 2
@@ -115,7 +123,7 @@ class TestCacheProperty(unittest.TestCase):
         e.test_cache_property
         self.assertAlmostEqual(time.time()-t, 0, places=1)
         
-    def test_cache_binary(self):
+    def test_cache_save(self):
         if os.path.isfile(tfp+"test.npy"):
             os.remove(tfp+'test.npy')
         A = open_csv(tfp + "test.csv")
@@ -126,7 +134,31 @@ class TestCacheProperty(unittest.TestCase):
         B = open_csv(tfp + "test.csv")
         np.testing.assert_array_equal(A,B)
         os.remove(tfp+'test.npy')
+
+    def test_cache_savez(self):
+        if os.path.isfile(tfp+"test.npy.npy"):
+            os.remove(tfp+'test.npy.npy')
+        A = open_csv2(tfp + "test.csv")
+        self.assertTrue(os.path.isfile(tfp+"test.npy.npz"))
+        np.testing.assert_array_equal(A[0],np.loadtxt(tfp + "test.csv"))
+        A[0][0]=-1
+        np.save(tfp+"test.npy",A)
+        B = open_csv(tfp + "test.csv")
+        np.testing.assert_array_equal(A,B)
+        os.remove(tfp+'test.npy')
         
+    def test_cache_savez_compressed(self):
+        if os.path.isfile(tfp+"test2.npy.npy"):
+            os.remove(tfp+'test2.npy.npy')
+        A = open_csv2(tfp + "test2.csv")
+        self.assertTrue(os.path.isfile(tfp+"test2.npy.npz"))
+        np.testing.assert_array_equal(A[0],np.loadtxt(tfp + "test2.csv"))
+        A[0][0]=-1
+        np.save(tfp+"test2.npy",A)
+        B = open_csv(tfp + "test2.csv")
+        np.testing.assert_array_equal(A,B)
+        os.remove(tfp+'test2.npy')
+                
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

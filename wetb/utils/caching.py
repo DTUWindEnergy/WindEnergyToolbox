@@ -96,26 +96,68 @@ def cache_function(f):
 class cache_method():
     def __init__(self, N):
         self.N = N
-        self.cache_dict = OrderedDict()
+        
         
     def __call__(self, f):
-        def wrapped(*args):
+        def wrapped(caller_obj, *args):
             name = "_" + f.__name__
             arg_id = ";".join([str(a) for a in args])
-            if arg_id not in self.cache_dict: 
-                self.cache_dict[arg_id] = f(*args)
-                if len(self.cache_dict)>self.N:
-                    self.cache_dict.popitem(last=False)
-            return self.cache_dict[arg_id]
+            if not hasattr(caller_obj,'%s_cache_dict'%name):
+                setattr(caller_obj,'%s_cache_dict'%name, OrderedDict())
+            cache_dict = getattr(caller_obj,'%s_cache_dict'%name)
+            if arg_id not in cache_dict: 
+                cache_dict[arg_id] = f(caller_obj, *args)
+                if len(cache_dict)>self.N:
+                    cache_dict.popitem(last=False)
+            return cache_dict[arg_id]
         return wrapped
     
-def cache_binary(f):
+def cache_npsave(f):
     def wrap(filename,*args,**kwargs):
         np_filename = os.path.splitext(filename)[0] + ".npy"
-        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
-            return np.load(np_filename)
-        else:
+        def loadsave():
             res = f(filename,*args,**kwargs)
             np.save(np_filename,res)
             return res
+        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
+            try:
+                return np.load(np_filename)
+            except:
+                return loadsave()
+        else:
+            return loadsave()
+    return wrap
+
+def cache_npsavez(f):
+    def wrap(filename,*args,**kwargs):
+        np_filename = os.path.splitext(filename)[0] + ".npy.npz"
+        def loadsave():
+            res = f(filename,*args,**kwargs)
+            np.savez(np_filename,*res)
+            return res
+        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
+            try:
+                npzfile = np.load(np_filename)
+                return [npzfile['arr_%d'%i] for i in range(len(f.files()))]
+            except:
+                return loadsave()
+        else:
+            return loadsave()
+    return wrap
+
+
+def cache_npsavez_compressed(f):
+    def wrap(filename,*args,**kwargs):
+        np_filename = os.path.splitext(filename)[0] + ".npy.npz"
+        def loadsave():
+            res = f(filename,*args,**kwargs)
+            np.savez_compressed(np_filename,*res)
+            return res
+        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
+            try:
+                return [f['arr_%d'%i] for i in range(len(f.files()))]
+            except:
+                return loadsave()
+        else:
+            return loadsave()
     return wrap
