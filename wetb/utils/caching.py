@@ -130,7 +130,7 @@ def cache_npsave(f):
 
 def _get_npsavez_wrap(f, compress):
     def wrap(filename,*args,**kwargs):
-        np_filename = os.path.splitext(filename)[0] + ".npy.npz"+("","c")[compress]
+        np_filename = os.path.splitext(filename)[0] + ".npy%s.npz"%("",".c")[compress]
         def loadsave():
             res = f(filename,*args,**kwargs)
             if compress:

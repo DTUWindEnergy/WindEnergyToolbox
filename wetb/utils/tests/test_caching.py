@@ -150,7 +150,7 @@ class TestCacheProperty(unittest.TestCase):
         os.remove(npfilename)
         
     def test_cache_savez_compressed(self):
-        npfilename = tfp+"test.npy.npzc"
+        npfilename = tfp+"test.npy.c.npz"
         func = open_csv3
         if os.path.isfile(npfilename):
             os.remove(npfilename)
