@@ -136,28 +136,32 @@ class TestCacheProperty(unittest.TestCase):
         os.remove(tfp+'test.npy')
 
     def test_cache_savez(self):
-        if os.path.isfile(tfp+"test.npy.npy"):
-            os.remove(tfp+'test.npy.npy')
-        A = open_csv2(tfp + "test.csv")
-        self.assertTrue(os.path.isfile(tfp+"test.npy.npz"))
+        npfilename = tfp+"test.npy.npz"
+        func = open_csv2
+        if os.path.isfile(npfilename):
+            os.remove(npfilename)
+        A = func(tfp + "test.csv")
+        self.assertTrue(os.path.isfile(npfilename))
         np.testing.assert_array_equal(A[0],np.loadtxt(tfp + "test.csv"))
         A[0][0]=-1
-        np.save(tfp+"test.npy",A)
-        B = open_csv(tfp + "test.csv")
+        np.savez(npfilename,A[0],A[1])
+        B = func(tfp + "test.csv")
         np.testing.assert_array_equal(A,B)
-        os.remove(tfp+'test.npy')
+        os.remove(npfilename)
         
     def test_cache_savez_compressed(self):
-        if os.path.isfile(tfp+"test2.npy.npy"):
-            os.remove(tfp+'test2.npy.npy')
-        A = open_csv2(tfp + "test2.csv")
-        self.assertTrue(os.path.isfile(tfp+"test2.npy.npz"))
-        np.testing.assert_array_equal(A[0],np.loadtxt(tfp + "test2.csv"))
+        npfilename = tfp+"test.npy.npzc"
+        func = open_csv3
+        if os.path.isfile(npfilename):
+            os.remove(npfilename)
+        A = func(tfp + "test.csv")
+        self.assertTrue(os.path.isfile(npfilename))
+        np.testing.assert_array_equal(A[0],np.loadtxt(tfp + "test.csv"))
         A[0][0]=-1
-        np.save(tfp+"test2.npy",A)
-        B = open_csv(tfp + "test2.csv")
+        np.savez(npfilename,A[0],A[1])
+        B = func(tfp + "test.csv")
         np.testing.assert_array_equal(A,B)
-        os.remove(tfp+'test2.npy')
+        os.remove(npfilename)
                 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

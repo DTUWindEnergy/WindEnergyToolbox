@@ -128,36 +128,29 @@ def cache_npsave(f):
             return loadsave()
     return wrap
 
-def cache_npsavez(f):
+def _get_npsavez_wrap(f, compress):
     def wrap(filename,*args,**kwargs):
-        np_filename = os.path.splitext(filename)[0] + ".npy.npz"
+        np_filename = os.path.splitext(filename)[0] + ".npy.npz"+("","c")[compress]
         def loadsave():
             res = f(filename,*args,**kwargs)
-            np.savez(np_filename,*res)
+            if compress:
+                np.savez_compressed(np_filename,*res)
+            else:
+                np.savez(np_filename,*res)
             return res
         if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
             try:
                 npzfile = np.load(np_filename)
-                return [npzfile['arr_%d'%i] for i in range(len(f.files()))]
+                return [npzfile['arr_%d'%i] for i in range(len(npzfile.files))]
             except:
                 return loadsave()
         else:
             return loadsave()
     return wrap
+
+def cache_npsavez(f):
+    return _get_npsavez_wrap(f,False)
 
 
 def cache_npsavez_compressed(f):
-    def wrap(filename,*args,**kwargs):
-        np_filename = os.path.splitext(filename)[0] + ".npy.npz"
-        def loadsave():
-            res = f(filename,*args,**kwargs)
-            np.savez_compressed(np_filename,*res)
-            return res
-        if os.path.isfile(np_filename) and (not os.path.isfile(filename) or os.path.getmtime(np_filename) > os.path.getmtime(filename)):
-            try:
-                return [f['arr_%d'%i] for i in range(len(f.files()))]
-            except:
-                return loadsave()
-        else:
-            return loadsave()
-    return wrap
+    return _get_npsavez_wrap(f, True)
