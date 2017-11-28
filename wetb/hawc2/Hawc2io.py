@@ -41,6 +41,8 @@ from builtins import object
 import numpy as np
 import os
 
+from wetb import gtsdf
+
 # FIXME: numpy doesn't like io.open binary fid in PY27, why is that? As a hack
 # workaround, use opent for PY23 compatibility when handling text files,
 # and default open for binary
@@ -82,9 +84,11 @@ class ReadHawc2(object):
         # findes general result info (number of scans, number of channels,
         # simulation time and file format)
         temp = Lines[8].split()
-        self.NrSc = int(temp[0]); self.NrCh = int(temp[1])
-        self.Time = float(temp[2]); self.Freq = self.NrSc / self.Time;
-        self.t = np.linspace(0, self.Time, self.NrSc + 1)[1:];
+        self.NrSc = int(temp[0])
+        self.NrCh = int(temp[1])
+        self.Time = float(temp[2])
+        self.Freq = self.NrSc / self.Time
+        self.t = np.linspace(0, self.Time, self.NrSc + 1)[1:]
         Format = temp[3]
         # reads channel info (name, unit and description)
         Name = []; Unit = []; Description = [];
@@ -151,6 +155,8 @@ class ReadHawc2(object):
         elif os.path.isfile(self.FileName + ".int"):
              self.FileFormat = 'FLEX'
              self._ReadSensorFile()
+        elif os.path.isfile(self.FileName + ".hdf5"):
+            self.FileFormat = 'GTSDF'
         else:
             print ("unknown file: " + FileName)
 ################################################################################
@@ -184,14 +190,30 @@ class ReadHawc2(object):
         fid.close()
         return np.dot(temp[:, ChVec], np.diag(self.ScaleFactor[ChVec]))
 ################################################################################
+# Read results in GTSD format
+    def ReadGtsdf(self):
+        self.t, data, info = gtsdf.load(self.FileName + '.hdf5')
+        self.Time = self.t[-1]
+        self.ChInfo = [info['attribute_names'],
+                       info['attribute_units'],
+                       info['attribute_descriptions']]
+        self.NrCh = data.shape[1]
+        self.NrSc = data.shape[0]
+        self.Freq = self.NrSc / self.Time
+        self.FileFormat = 'GTSDF'
+        self.gtsdf_description = info['description']
+        return data
+################################################################################
 # One stop call for reading all data formats
     def ReadAll(self, ChVec=[]):
-        if not ChVec:
+        if not ChVec and not self.FileFormat == 'GTSDF':
             ChVec = range(0, self.NrCh)
         if self.FileFormat == 'HAWC2_BINARY':
             return self.ReadBinary(ChVec)
         elif self.FileFormat == 'HAWC2_ASCII':
             return self.ReadAscii(ChVec)
+        elif self.FileFormat == 'GTSDF':
+            return self.ReadGtsdf()
         else:
             return self.ReadFLEX(ChVec)
 ################################################################################

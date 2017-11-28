@@ -550,29 +550,35 @@ class LoadResults(ReadHawc2):
 
         self.file_path = file_path
         # remove .log, .dat, .sel extensions who might be accedental left
-        if file_name[-4:] in ['.htc', '.sel', '.dat', '.log']:
-            file_name = file_name[:-4]
+        ext = file_name.split('.')[-1]
+        if ext in ['htc', 'sel', 'dat', 'log', 'hdf5']:
+            file_name = file_name.replace('.' + ext, '')
         # FIXME: since HAWC2 will always have lower case output files, convert
         # any wrongly used upper case letters to lower case here
         self.file_name = file_name
         FileName = os.path.join(self.file_path, self.file_name)
 
-        ReadOnly = 0 if readdata else 1
-        super(LoadResults, self).__init__(FileName, ReadOnly=ReadOnly)
-        self.FileType = self.FileFormat[6:]
-        self.N = int(self.NrSc)
-        self.Nch = int(self.NrCh)
-        self.ch_details = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
-        for ic in range(self.Nch):
-            self.ch_details[ic, 0] = self.ChInfo[0][ic]
-            self.ch_details[ic, 1] = self.ChInfo[1][ic]
-            self.ch_details[ic, 2] = self.ChInfo[2][ic]
+        super(LoadResults, self).__init__(FileName, ReadOnly=readdata)
+        self.FileType = self.FileFormat
+        if self.FileType.find('HAWC2_'):
+            self.FileType = self.FileType[6:]
 
-        ChVec = [] if usecols is None else usecols
+        if readdata:
+            ChVec = [] if usecols is None else usecols
+            self.sig = self.ReadAll(ChVec=ChVec)
+
+        # info in sel file is not available when not reading gtsdf
+        # so this is only skipped when readdata is false and FileType is gtsdf
+        if not (not readdata and (self.FileType == 'GTSDF')):
+            self.N = int(self.NrSc)
+            self.Nch = int(self.NrCh)
+            self.ch_details = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
+            for ic in range(self.Nch):
+                self.ch_details[ic, 0] = self.ChInfo[0][ic]
+                self.ch_details[ic, 1] = self.ChInfo[1][ic]
+                self.ch_details[ic, 2] = self.ChInfo[2][ic]
 
         self._unified_channel_names()
-        if readdata:
-            self.sig = super(LoadResults, self).__call__(ChVec=ChVec)
 
         if self.debug:
             stop = time() - start
