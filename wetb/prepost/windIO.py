@@ -560,7 +560,7 @@ class LoadResults(ReadHawc2):
 
         super(LoadResults, self).__init__(FileName, ReadOnly=readdata)
         self.FileType = self.FileFormat
-        if self.FileType.find('HAWC2_'):
+        if self.FileType.find('HAWC2_') > -1:
             self.FileType = self.FileType[6:]
 
         if readdata:
