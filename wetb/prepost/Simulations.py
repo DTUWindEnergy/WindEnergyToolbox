@@ -4720,6 +4720,8 @@ class Cases(object):
             sim_id = new_sim_id
 
         if fh_lst is None:
+            # FIXME: wb has overlap with dlc_config.xlsx, and shape_k doesn't
+            # seemed to be used by DLCHighLevel
             wb = WeibullParameters()
             if 'Weibull' in self.config:
                 for key in self.config['Weibull']:
@@ -4732,7 +4734,13 @@ class Cases(object):
                                        fail_on_resfile_not_found=True)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
-            fh_lst = dlc_cfg.file_hour_lst(years=years)
+            # no need to build list of result files, we already have it form
+            # the statistics analysis
+            # TODO: could be faster if working with df directly, but how to
+            # assure you're res_dir is always ending with path separator?
+            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
+            fh_lst = dlc_cfg.file_hour_lst(years=years, files=files)
 
         # now we have a full path to the result files, but we only need the
         # the case_id to indentify the corresponding entry from the statistics
@@ -4898,7 +4906,11 @@ class Cases(object):
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
-            fh_lst = dlc_cfg.file_hour_lst(years=1.0)
+            # TODO: could be faster if working with df directly, but how to
+            # assure you're res_dir is always ending with path separator?
+            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
+            fh_lst = dlc_cfg.file_hour_lst(years=1.0, files=files)
 
         # now we have a full path to the result files, but we only need the
         # the case_id to indentify the corresponding entry from the statistics
