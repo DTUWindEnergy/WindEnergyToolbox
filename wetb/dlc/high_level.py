@@ -46,21 +46,21 @@ def Weibull2(u, k, wsp_lst):
 
 def Weibull_IEC(Vref, Vhub_lst):
     """Weibull distribution according to IEC 61400-1:2005, page 24
-    
+
     Parameters
     ----------
     Vref : int or float
         Vref of wind turbine class
     Vhub_lst : array_like
         Wind speed at hub height. Must be equally spaced.
-    
+
     Returns
     -------
     nd_array : list of probabilities
-        
+
     Examples
     --------
-    >>> Weibull_IEC(50, [4,6,8]) 
+    >>> Weibull_IEC(50, [4,6,8])
     [ 0.11002961  0.14116891  0.15124155]
     """
     Vhub_lst = np.array(Vhub_lst)
@@ -68,7 +68,7 @@ def Weibull_IEC(Vref, Vhub_lst):
     Vave=.2*Vref
     #Rayleigh distribution
     Pr = lambda x : 1 - np.exp(-np.pi*(x/(2*Vave))**2)
-    #Wsp bin edges: [4,6,8] -> [3,5,7,9] 
+    #Wsp bin edges: [4,6,8] -> [3,5,7,9]
     wsp_bin_edges = np.r_[Vhub_lst[0] - (Vhub_lst[1] - Vhub_lst[0]) / 2, (Vhub_lst[1:] + Vhub_lst[:-1]) / 2, Vhub_lst[-1] + (Vhub_lst[-1] - Vhub_lst[-2]) / 2]
     #probabilities of 3-5, 5-7, 7-9
     return np.array([-Pr(e1) + Pr(e2) for e1, e2 in zip(wsp_bin_edges[:-1], wsp_bin_edges[1:])])
@@ -134,7 +134,7 @@ class DLCHighLevel(object):
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
         self.sensor_df.columns = [k.lower() for k in self.sensor_df.columns]
-        
+
         for k in ['Name', 'Nr']:
             assert k.lower() in self.sensor_df.keys(), "Sensor sheet must have a '%s' column" % k
         self.sensor_df = self.sensor_df[self.sensor_df.name!=""]
@@ -285,7 +285,7 @@ class DLCHighLevel(object):
                 total_prop *= prop
         return total_prop
 
-    def file_hour_lst(self, years=20, files_dict=None, dist_dict=None):
+    def file_hour_lst(self, years=20, files_dict=None, dist_dict=None, files=None):
         """Create a list of (filename, hours_pr_year) that can be used as input for LifeTimeEqLoad
 
         Returns
@@ -300,7 +300,7 @@ class DLCHighLevel(object):
         if dist_dict is None:
             dist_dict = self.fatigue_distribution()
         if files_dict is None:
-            files_dict = self.files_dict()
+            files_dict = self.files_dict(files=files)
 
         for dlc_id in sorted(dist_dict.keys()):
             dlc_id = str(dlc_id)
