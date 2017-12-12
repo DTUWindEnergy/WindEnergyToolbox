@@ -445,7 +445,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
             dlc_case = tags_dict['[Case folder]']
             tags_dict['[data_dir]'] = 'data/'
-            tags_dict['[res_dir]'] = 'res/%s/' % dlc_case
+            if '[res_dir]' not in tags_dict:
+                tags_dict['[res_dir]'] = 'res/%s/' % dlc_case
             tags_dict['[log_dir]'] = 'logfiles/%s/' % dlc_case
             tags_dict['[htc_dir]'] = 'htc/%s/' % dlc_case
             if '[Case id.]' in tags_dict.keys():
