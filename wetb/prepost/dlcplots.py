@@ -167,7 +167,7 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
 
 def plot_stats2(sim_ids, post_dirs, plot_chans, fig_dir_base=None, labels=None,
                 post_dir_save=False, dlc_ignore=['00'], figsize=(8,6),
-                eps=False, ylabels=None):
+                eps=False, ylabels=None, title=True, chans_ms_1hz={}):
     """
     Map which channels have to be compared
     """
@@ -181,12 +181,13 @@ def plot_stats2(sim_ids, post_dirs, plot_chans, fig_dir_base=None, labels=None,
 
     plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=labels,
                    figsize=figsize, dlc_ignore=dlc_ignore, eps=eps,
-                   ylabels=ylabels)
+                   ylabels=ylabels, title=title, chans_ms_1hz=chans_ms_1hz)
 
 
 def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                    figsize=(8,6), dlc_ignore=['00'], run_dirs=None,
-                   sim_ids=[], eps=False, ylabels=None):
+                   sim_ids=[], eps=False, ylabels=None, title=True,
+                   chans_ms_1hz={}):
     """Create for each DLC an overview plot of the statistics.
 
     df_stats required columns:
@@ -231,12 +232,47 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
         Only used when creating the file name of the figures: appended at
         the end of the file name (which starts with the unique channel name).
 
+    chans_ms_1hz : dict, default={}
+        Key/value pairs of channel and list of to be plotten m values. Channel
+        refers to plot title as used as the key value in plot_chans.
+
     """
+
+    def fig_epilogue(fig, ax, fname_base):
+        ax.grid()
+        ax.set_xlim(xlims)
+        leg = ax.legend(bbox_to_anchor=(1, 1), loc='lower right', ncol=3)
+        leg.get_frame().set_alpha(0.7)
+        title_space = 0.0
+        if title:
+            fig.suptitle('%s %s' % (dlc_name, ch_dscr))
+            title_space = 0.02
+        ax.set_xlabel(xlabel)
+        if ylabels is not None:
+            ax.set_ylabel(ylabels[ch_name])
+        fig.tight_layout()
+        spacing = 0.94 - title_space - (0.065 * (ii + 1))
+        fig.subplots_adjust(top=spacing)
+        fig_path = os.path.join(fig_dir, dlc_name)
+        if len(sim_ids)==1:
+            fname = fname_base + '.png'
+        else:
+            fname = '%s_%s.png' % (fname_base, '_'.join(sim_ids))
+        if not os.path.exists(fig_path):
+            os.makedirs(fig_path)
+        fig_path = os.path.join(fig_path, fname)
+        fig.savefig(fig_path)#.encode('latin-1')
+        if eps:
+            fig.savefig(fig_path.replace('.png', '.eps'))
+        fig.clear()
+        print('saved: %s' % fig_path)
 
     mfcs1 = ['k', 'w']
     mfcs2 = ['b', 'w']
     mfcs3 = ['r', 'w']
-    stds = ['r', 'b']
+    mfcs4 = ['k', 'b']
+    mark4 = ['s', 'o', '<', '>']
+    mfls4 = ['-', '--']
 
     required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
                 '[Case folder]']
@@ -274,13 +310,8 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             # figure file name will be the first channel
             if isinstance(ch_names, list):
                 ch_name = ch_names[0]
-                df_chan = gr_dlc[gr_dlc.channel == ch_names[0]]
                 fname_base = ch_names[0]#.replace(' ', '_')
-                try:
-                    df2 = gr_dlc[gr_dlc.channel == ch_names[1]]
-                    df_chan = pd.concat([df_chan, df2], ignore_index=True)
-                except IndexError:
-                    pass
+                df_chan = gr_dlc[gr_dlc.channel.isin(ch_names)]
             else:
                 ch_name = ch_names
                 ch_names = [ch_names]
@@ -314,10 +345,10 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             fig, axes = mplutils.make_fig(nrows=1, ncols=1,
                                           figsize=figsize, dpi=120)
             ax = axes[0,0]
-            # seperate figure for the standard deviations
-#            fig2, axes2 = mplutils.make_fig(nrows=1, ncols=1,
-#                                            figsize=figsize, dpi=120)
-#            ax2 = axes2[0,0]
+            # seperate figure for the mean of the 1Hz equivalent loads
+            fig2, axes2 = mplutils.make_fig(nrows=1, ncols=1,
+                                            figsize=figsize, dpi=120)
+            ax2 = axes2[0,0]
 
             if fig_dir_base is None and len(sim_ids) < 2:
                 res_dir = df_chan['[res_dir]'][:1].values[0]
@@ -362,11 +393,13 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                 print('   sim_id/label:', sid_name)
                 # FIXME: will this go wrong in PY3?
                 if dlc_name.lower() in ['dlc61', 'dlc62']:
-                    xdata = gr_ch_dlc_sid['[wdir]'].values + dirroffset[ii]
+                    key = '[wdir]'
+                    xdata = gr_ch_dlc_sid[key].values + dirroffset[ii]
                     xlabel = 'wind direction [deg]'
                     xlims = [0, 360]
                 else:
-                    xdata = gr_ch_dlc_sid['[Windspeed]'].values + windoffset[ii]
+                    key = '[Windspeed]'
+                    xdata = gr_ch_dlc_sid[key].values + windoffset[ii]
                     xlabel = 'Wind speed [m/s]'
                     xlims = [3, 27]
                 dmin = gr_ch_dlc_sid['min'].values
@@ -377,12 +410,12 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                     lab1 = 'mean'
                     lab2 = 'min'
                     lab3 = 'max'
-#                    lab4 = 'std'
+                    lab4 = '1Hz EqL'
                 else:
                     lab1 = 'mean %s' % sid_name
                     lab2 = 'min %s' % sid_name
                     lab3 = 'max %s' % sid_name
-#                    lab4 = 'std %s' % sid_name
+                    lab4 = '1Hz EqL %s' % sid_name
                 mfc1 = mfcs1[ii]
                 mfc2 = mfcs2[ii]
                 mfc3 = mfcs3[ii]
@@ -393,8 +426,18 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                 ax.plot(xdata, dmax, mec='r', marker='v', mfc=mfc3, ls='',
                         label=lab3, alpha=0.7)
 
-#                ax2.plot(xdata, dstd, mec=stds[ii], marker='s', mfc=stds[ii],
-#                        ls='', label=lab4, alpha=0.7)
+                # mean of 1Hz equivalent loads
+                ms = []
+                if ch_dscr in chans_ms_1hz:
+                    ms = chans_ms_1hz[ch_dscr]
+                for im, m in enumerate(ms):
+                    # average over seed and possibly yaw angles
+                    gr_key = gr_ch_dlc_sid[key]
+                    d1hz = gr_ch_dlc_sid[m].groupby(gr_key).mean()
+
+                    ax2.plot(d1hz.index, d1hz.values, mec=mfcs4[ii], alpha=0.7,
+                             marker=mark4[im], ls=mfls4[ii], mfc=mfc1,
+                             label=lab4, color=mfcs4[ii])
 
 #            for wind, gr_wind in  gr_ch_dlc.groupby(df_stats['[Windspeed]']):
 #                wind = gr_wind['[Windspeed]'].values
@@ -414,53 +457,13 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             if xlims is None:
                 continue
 
-            ax.grid()
-            ax.set_xlim(xlims)
-            leg = ax.legend(bbox_to_anchor=(1, 1), loc='lower right', ncol=3)
-            leg.get_frame().set_alpha(0.7)
-#            ax.set_title(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
-#            fig.suptitle(r'{%s} %s' % (dlc_name.replace('_', '\\_'), ch_dscr))
-            fig.suptitle('%s %s' % (dlc_name, ch_dscr))
-            ax.set_xlabel(xlabel)
-            if ylabels is not None:
-                ax.set_ylabel(ylabels[ch_name])
-            fig.tight_layout()
-            spacing = 0.92 - (0.065 * (ii + 1))
-            fig.subplots_adjust(top=spacing)
-            fig_path = os.path.join(fig_dir, dlc_name)
-            if len(sim_ids)==1:
-                fname = fname_base + '.png'
-            else:
-                fname = '%s_%s.png' % (fname_base, '_'.join(sim_ids))
-            if not os.path.exists(fig_path):
-                os.makedirs(fig_path)
-            fig_path = os.path.join(fig_path, fname)
-            fig.savefig(fig_path)#.encode('latin-1')
-            if eps:
-                fig.savefig(fig_path.replace('.png', '.eps'))
-            fig.clear()
-            print('saved: %s' % fig_path)
+            fig_epilogue(fig, ax, fname_base)
 
-#            ax2.grid()
-#            ax2.set_xlim(xlims)
-#            leg = ax2.legend(loc='best', ncol=3)
-#            leg.get_frame().set_alpha(0.7)
-#            ax2.set_title(r'{DLC%s} $%s$' % (dlc_name, ch_dscr))
-#            ax2.set_xlabel('Wind speed [m/s]')
-#            fig2.tight_layout()
-#            fig2.subplots_adjust(top=0.92)
-#            if not sim_ids:
-#                fig_path = os.path.join(fig_dir, fname_base + '_std.png')
-#            else:
-#                sids = '_'.join(sid_names)
-#                fname = '%s_std_%s.png' % (fname_base, sids)
-#                fig_path = os.path.join(fig_dir, 'dlc%s/' % dlc_name)
-#                if not os.path.exists(fig_path):
-#                    os.makedirs(fig_path)
-#                fig_path = fig_path + fname
-#            fig2.savefig(fig_path)#.encode('latin-1')
-#            fig2.clear()
-#            print('saved: %s' % fig_path)
+            # don't save empty plots
+            if len(ms) < 1:
+                continue
+
+            fig_epilogue(fig2, ax2, fname_base + '_1hz_eql')
 
 
 class PlotStats(object):
@@ -964,6 +967,7 @@ def plot_staircase(sim_ids, post_dirs, run_dirs, fig_dir_base=None,
     fig.savefig(fig_path)#.encode('latin-1')
     print('done')
     fig.clear()
+
 
 if __name__ == '__main__':
 
