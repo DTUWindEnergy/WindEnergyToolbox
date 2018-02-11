@@ -334,6 +334,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
         # MannTurb64 places PBS launch scripts in a "pbs_in_turb" folder
         mann64 = sim.MannTurb64(silent=silent)
+        mann64.walltime = '00:59:59'
+        mann64.queue = 'workq'
         mann64.gen_pbs(cases)
 
     if zipchunks:
@@ -525,6 +527,9 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
                 '[case_id]', '[Case folder]']
     df = pd.read_hdf(fdf, 'table')
 
+    # FIXME: why do some cases have a leading ./ (but most do not)?
+    sel = df['[case_id]'].str.startswith('./')
+    df.loc[sel,'[case_id]'] = df.loc[sel,'[case_id]'].str.replace('./', '', 1)
     # df now has case_id as the path to the statistics file: res/dlc12_xxx/yyy
     # while df_tags will have just yyy as case_id
     tmp = df['[case_id]'].str.split('/', expand=True)
@@ -535,9 +540,19 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     df_stats = pd.merge(df, df_tags, on=['[case_id]'])
     # if the merge didn't work due to other misaligned case_id tags, do not
     # overwrite our otherwise ok tables!
-    if len(df_stats) == len(df):
-        df_stats.to_hdf(fdf, 'table', mode='w')
-        df_stats.to_csv(fdf.replace('.h5', '.csv'))
+    if len(df_stats) != len(df):
+        print('failed to merge required tags, something is wrong!')
+        # find out which cases we lost and why
+        print('number of entries lost:', len(df)-len(df_stats))
+        s_df = set(df['[case_id]'].unique())
+        s_stats = set(df_stats['[case_id]'].unique())
+        print('nr of channels:', len(df['channel'].unique()))
+        print((len(df)-len(df_stats))/len(df['channel'].unique()))
+        print('following case_ids have mysteriously disappeared:')
+        print(s_df-s_stats)
+        return
+    df_stats.to_hdf(fdf, 'table', mode='w')
+    df_stats.to_csv(fdf.replace('.h5', '.csv'))
 
 
 if __name__ == '__main__':
