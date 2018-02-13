@@ -432,7 +432,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                 'blade%i-blade%i-node-%3.3i-forcevec-x' % rpl,
                                 'blade%i-blade%i-node-%3.3i-forcevec-y' % rpl,
                                 'blade%i-blade%i-node-%3.3i-forcevec-z' % rpl])
-        cc.envelope(ch_list=ch_list, append='_blade')
+        cc.envelopes(ch_list=ch_list, append='_blade')
 
     if envelopeturbine:
         ch_list = [['tower-tower-node-001-momentvec-x',
@@ -447,7 +447,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                    ['hub1-hub1-node-001-momentvec-x',
                    'hub1-hub1-node-001-momentvec-y',
                    'hub1-hub1-node-001-momentvec-z']]
-        cc.envelope(ch_list=ch_list, append='_turbine')
+        cc.envelopes(ch_list=ch_list, append='_turbine')
 
     if fatigue:
         # load the statistics in case they are missing
