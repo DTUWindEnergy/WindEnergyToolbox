@@ -518,7 +518,9 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     dtypes = {col:np.float64 for col in colnames}
     dtypes['channel'] = str
     dtypes['[case_id]'] = str
-    mdf.csv2df_chunks(store, fcsv, chunksize=300000, min_itemsize={}, sep=',',
+    # when using min_itemsize the column names should be valid variable names
+    # mitemsize = {'channel':60, '[case_id]':60}
+    mdf.csv2df_chunks(store, fcsv, chunksize=1000000, min_itemsize={}, sep=',',
                       colnames=colnames, dtypes=dtypes, header=0)
     store.close()
     # -------------------------------------------------------------------------
@@ -547,7 +549,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
         s_df = set(df['[case_id]'].unique())
         s_stats = set(df_stats['[case_id]'].unique())
         print('nr of channels:', len(df['channel'].unique()))
-        print((len(df)-len(df_stats))/len(df['channel'].unique()))
+        msg = 'nr of case_ids lost:'
+        print(msg, (len(df)-len(df_stats))/len(df['channel'].unique()))
         print('following case_ids have mysteriously disappeared:')
         print(s_df-s_stats)
         return
