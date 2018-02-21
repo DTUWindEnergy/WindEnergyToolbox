@@ -361,7 +361,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'echo "copy from %s to $PBS_O_WORKDIR/"\n' % tmp
         pbs += 'time rsync -au --remove-source-files %s $PBS_O_WORKDIR/ \\\n' % tmp
         pbs += '    --exclude %s \\\n' % os.path.join(pbs_in_base, '*')
-        pbs += '    --exclude %s \n' % os.path.join(htc_base, '*')
+        pbs += '    --exclude *.htc \n'
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
         pbs += 'source deactivate\n'
