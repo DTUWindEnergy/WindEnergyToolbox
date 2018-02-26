@@ -60,10 +60,11 @@
                     [tu_model] : 0                   
                      [tu_seed] : 0                   
               [turb_base_name] : none                
-                     [turb_dx] : 0.0390625           
+                     [turb_dx] : 0.03906             
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 1.0                 
+                         [wsp] : 8                   
               [zip_root_files] : []                  
 
 -------------------------------------------------------------------------------
@@ -88,7 +89,7 @@
                [Rotor azimuth] : 0                   
                 [Rotor locked] : False               
                    [Stop type] : 1                   
-                          [TI] : 0.219555555556      
+                          [TI] : 0.2196              
           [Time pitch runaway] : 5000                
            [Time stuck DLC22b] : -1                  
               [Turb base name] : none                
@@ -117,10 +118,11 @@
                     [tu_model] : 0                   
                      [tu_seed] : 0                   
               [turb_base_name] : none                
-                     [turb_dx] : 0.0439453125        
+                     [turb_dx] : 0.04395             
                         [wdir] : 0                   
                     [windramp] : False               
-                  [wsp factor] : 0.888888888889      
+                  [wsp factor] : 0.8889              
+                         [wsp] : 9                   
               [zip_root_files] : []                  
 
 -------------------------------------------------------------------------------
@@ -178,6 +180,7 @@
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.8                 
+                         [wsp] : 10                  
               [zip_root_files] : []                  
 
 -------------------------------------------------------------------------------
@@ -202,7 +205,7 @@
                [Rotor azimuth] : 0                   
                 [Rotor locked] : False               
                    [Stop type] : 1                   
-                          [TI] : 0.201454545455      
+                          [TI] : 0.2015              
           [Time pitch runaway] : 5000                
            [Time stuck DLC22b] : -1                  
               [Turb base name] : turb_s101_11ms      
@@ -231,8 +234,9 @@
                     [tu_model] : 1                   
                      [tu_seed] : 100                 
               [turb_base_name] : turb_s101_11ms      
-                     [turb_dx] : 0.859375            
+                     [turb_dx] : 0.85938             
                         [wdir] : 0                   
                     [windramp] : False               
-                  [wsp factor] : 0.727272727273      
+                  [wsp factor] : 0.7273              
+                         [wsp] : 11                  
               [zip_root_files] : []                  

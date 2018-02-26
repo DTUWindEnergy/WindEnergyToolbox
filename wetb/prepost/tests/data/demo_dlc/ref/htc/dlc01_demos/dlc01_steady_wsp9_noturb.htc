@@ -341,7 +341,7 @@ end new_htc_structure;
 begin wind ;
   density                 1.225 ;
   wsp                     9   ;
-  tint                    0.219555555556   ;
+  tint                    0.2196   ;
   horizontal_input        1     ;
   windfield_rotations     0 8.0 0.0 ;    yaw, tilt (positive=upflow=wind coming from below), rotation
   center_pos0             0.0 0.0 -127 ; hub heigth
@@ -349,7 +349,7 @@ begin wind ;
   turb_format             0     ;  0=none, 1=mann,2=flex
   tower_shadow_method     3     ;  0=none, 1=potential flow, 2=jet
   scale_time_start       20 ;
-  wind_ramp_factor   0.0 20 0.888888888889 1.0 ;
+  wind_ramp_factor   0.0 20 0.8889 1.0 ;
   ; iec_gust      ;
 ;
 ;  wind_ramp_abs  400.0  401.0  0.0   1.0 ;   wsp. after the step:  5.0
@@ -382,7 +382,7 @@ begin wind ;
     filename_u    ./turb/noneu.bin ;
     filename_v    ./turb/nonev.bin ;
     filename_w    ./turb/nonew.bin ;
-    box_dim_u    512 0.0439453125 ;
+    box_dim_u    512 0.04395 ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;
