@@ -429,6 +429,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             # tag spec/naming convention, and with special tag prefix
             if '[Windspeed]' not in tags_dict and '[wsp]' in tags_dict:
                 tags_dict['[Windspeed]'] = tags_dict['[wsp]']
+            elif '[Windspeed]' in tags_dict and '[wsp]' not in tags_dict:
+                tags_dict['[wsp]'] = tags_dict['[Windspeed]']
             # avoid that any possible default tags from wetb will be used
             # instead of the ones from the spreadsheet
             if '[seed]' in tags_dict:
