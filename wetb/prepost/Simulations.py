@@ -5143,16 +5143,15 @@ class Cases(object):
             print('statistics for %s, nr cases: %i' % (sim_id, nrcases))
 
         fname = os.path.join(post_dir, sim_id + '_envelope' + append + '.h5')
-        h5f = tbl.openFile(fname, mode="w", title=str(sim_id),
-                           filters=tbl.Filters(complevel=9))
+        h5f = tbl.open_file(fname, mode="w", title=str(sim_id),
+                            filters=tbl.Filters(complevel=9))
 
         # Create a new group under "/" (root)
         for ii, (cname, case) in enumerate(self.cases.items()):
 
             groupname = str(cname[:-4])
             groupname = groupname.replace('-', '_')
-            h5f.createGroup("/", groupname)
-            ctab = getattr(h5f.root, groupname)
+            ctab = h5f.create_group("/", groupname)
 
             if not silent:
                 pc = '%6.2f' % (float(ii)*100.0/float(nrcases))
@@ -5164,10 +5163,10 @@ class Cases(object):
             envelope = self.compute_envelopes(ch_list, int_env=False, Nx=300)
 
             for ch_id in ch_list:
-                h5f.createTable(ctab, str(ch_id[0].replace('-', '_')),
-                                EnvelopeClass.section,
-                                title=str(ch_id[0].replace('-', '_')))
-                csv_table = getattr(ctab, str(ch_id[0].replace('-', '_')))
+                title = str(ch_id[0].replace('-', '_'))
+                csv_table = h5f.create_table(ctab, title,
+                                             EnvelopeClass.section,
+                                             title=title)
                 tablerow = csv_table.row
                 for row in envelope[ch_id[0]]:
                     tablerow['Mx'] = float(row[0])
