@@ -3830,7 +3830,7 @@ class Cases(object):
         # missing files: those present in df_cases but not in the error log
         # this means file_name is a nan or empty
         # logids_missing2 = set(df_cases['logid']) - set(df_err['file_name'])
-        logids_missing = df[df['file_name'].isna() | (df['file_name']=='')]
+        logids_missing = df[df['file_name'].isnull() | (df['file_name']=='')]
         for case_id in logids_missing['[case_id]']:
             cname = case_id + '.htc'
             self.cases_fail[cname] = copy.copy(self.cases[cname])
