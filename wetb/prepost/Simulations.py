@@ -3584,6 +3584,18 @@ class Cases(object):
 
         return beam, body, eigen_body, eigen_struct, struct_inertia
 
+    def load_errorlogs(self):
+        """Load error log analysis
+        """
+
+        fpath = os.path.join(self.post_dir, self.sim_id + '_ErrorLogs.h5')
+        try:
+            df_err = pd.read_hdf(fpath, 'table')
+        except FileNotFoundError:
+            df_err = pd.read_csv(fpath.replace('.h5', '.csv'))
+
+        return df_err
+
     def change_results_dir(self, forcedir, post_dir=False):
         """
         if the post processing concerns simulations done by thyra/gorm, and
@@ -3769,6 +3781,66 @@ class Cases(object):
             chiy.append(db.dict_sel[key]['chi'])
 
         return np.array(zvals), np.array(yvals)
+
+    def find_failed(self, df_cases=None, df_err=None, save=True,
+                    rem_failed=None):
+        """Given the log file analysis and the Cases tag list, generate a list
+        of failed cases. This is usefull when either some cases have been
+        re-run or when the post-processing is done at the same time as the
+        simulations (e.g. zipchunks approach).
+
+        Parameters
+        ----------
+
+        df_cases : df, default=None
+            If None the current cases dict object is converted to a dataframe
+            using self.cases2df()
+
+        df_err : df, default=None
+            If None the current error log is converted to a dataframe using
+            self.load_errorlogs()
+
+        save : boolean, default=True
+            save the failed cases dict using pickle.
+
+        rem_failed : boolean, default=None
+            if None the already set value self.rem_failed is used. Otherwise
+            self.rem_failed is overwritten. If True, failed cases are removed
+            from self.cases.
+        """
+
+        if df_cases is None:
+            df_cases = self.cases2df()
+        if df_err is None:
+            df_err = self.load_errorlogs()
+        if rem_failed is None:
+            rem_failed = self.rem_failed
+        else:
+            self.rem_failed = rem_failed
+
+        self.cases_fail = {}
+
+        # convert case_id to log file names
+        # logids = pd.DataFrame(columns=[''])
+        df_cases['logid'] = df_cases['[log_dir]'] + df_cases['[case_id]'] + '.log'
+        # we only need to merge with errorlogs using a portion of the data
+        # join error logs and df_cases on the logid
+        df = pd.merge(df_cases[['logid', '[case_id]']], df_err[['file_name']],
+                      left_on='logid', right_on='file_name', how='outer')
+        # missing files: those present in df_cases but not in the error log
+        # this means file_name is a nan or empty
+        # logids_missing2 = set(df_cases['logid']) - set(df_err['file_name'])
+        logids_missing = df[pd.isna(df['file_name']) | (df['file_name']=='')]
+        for case_id in logids_missing['[case_id]']:
+            cname = case_id + '.htc'
+            self.cases_fail[cname] = copy.copy(self.cases[cname])
+
+        if rem_failed:
+            self.rem_failed()
+
+        if save:
+            save_pickle(os.path.join(self.post_dir, self.sim_id + '_fail.pkl'),
+                        self.cases_fail)
 
     def remove_failed(self):
 
