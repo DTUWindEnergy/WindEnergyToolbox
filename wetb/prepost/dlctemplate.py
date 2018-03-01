@@ -570,8 +570,9 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     pd.DataFrame(chans).to_csv(fname)
 
     # -------------------------------------------------------------------------
-    # created failed cases list
+    # find failed cases and create pbs_in_failed dir
     cc.find_failed(df_cases=df_tags)
+    sim.copy_pbs_in_failedcases(cc.cases_fail, path=opt.pbs_failed_path)
 
 
 if __name__ == '__main__':
