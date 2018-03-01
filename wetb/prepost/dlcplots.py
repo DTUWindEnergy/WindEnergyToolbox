@@ -15,13 +15,13 @@ standard_library.install_aliases()
 #print(*objects, sep=' ', end='\n', file=sys.stdout)
 
 import os
-import socket
+# import socket
 import gc
 
 import numpy as np
 
 import matplotlib.pyplot as plt
-#import matplotlib as mpl
+import matplotlib as mpl
 #from matplotlib.figure import Figure
 #from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
 #from scipy import interpolate as interp
@@ -234,7 +234,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 
     chans_ms_1hz : dict, default={}
         Key/value pairs of channel and list of to be plotten m values. Channel
-        refers to plot title as used as the key value in plot_chans.
+        refers to plot title/label as used as the key value in plot_chans.
 
     """
 
@@ -245,7 +245,12 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
         leg.get_frame().set_alpha(0.7)
         title_space = 0.0
         if title:
-            fig.suptitle('%s %s' % (dlc_name, ch_dscr))
+            fig_title = '%s %s' % (dlc_name, ch_dscr)
+            # FIXME: dlc_name is assumed to be not in math mode ($$), so
+            # escape underscores to avoid latex going bananas
+            if mpl.rcParams['text.usetex']:
+                fig_title = '%s %s' % (dlc_name.replace('_', '\\_'), ch_dscr)
+            fig.suptitle(fig_title)
             title_space = 0.02
         ax.set_xlabel(xlabel)
         if ylabels is not None:
@@ -290,7 +295,9 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
     if not sim_ids:
         sim_ids = []
         for run_dir in run_dirs:
-            sim_ids.append(run_dir.split(os.path.sep)[-2])
+            # in case this is a windows path:
+            tmp = run_dir.replace('\\', '/').replace(':', '')
+            sim_ids.append(tmp.split('/')[-2])
 
     # first, take each DLC appart
     for gr_name, gr_dlc in df_stats.groupby(df_stats['[Case folder]']):
@@ -432,6 +439,7 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
                     ms = chans_ms_1hz[ch_dscr]
                 for im, m in enumerate(ms):
                     # average over seed and possibly yaw angles
+                    # wind speed or yaw inflow according to dlc case
                     gr_key = gr_ch_dlc_sid[key]
                     d1hz = gr_ch_dlc_sid[m].groupby(gr_key).mean()
 
