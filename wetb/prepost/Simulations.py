@@ -3836,7 +3836,7 @@ class Cases(object):
             self.cases_fail[cname] = copy.copy(self.cases[cname])
 
         if rem_failed:
-            self.rem_failed()
+            self.remove_failed()
 
         if save:
             save_pickle(os.path.join(self.post_dir, self.sim_id + '_fail.pkl'),
