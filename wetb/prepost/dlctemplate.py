@@ -412,6 +412,11 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                  suffix=suffix, save_new_sigs=save_new_sigs,
                                  csv=csv, m=m, neq=None, no_bins=no_bins,
                                  chs_resultant=[], A=A, add_sigs={})
+        # save channel list
+        chans = df_stats['channel'].unique()
+        chans.sort()
+        fname = os.path.join(POST_DIR, '%s_unique-channel-names.csv' % sim_id)
+        pd.DataFrame(chans).to_csv(fname)
 
     # annual energy production
     if AEP:
@@ -538,8 +543,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     df['[case_id]'] = tmp[tmp.columns[-1]]
 
     cc = sim.Cases(POST_DIR, sim_id)
-    df_tags = cc.cases2df()[required]
-    df_stats = pd.merge(df, df_tags, on=['[case_id]'])
+    df_tags = cc.cases2df()
+    df_stats = pd.merge(df, df_tags[required], on=['[case_id]'])
     # if the merge didn't work due to other misaligned case_id tags, do not
     # overwrite our otherwise ok tables!
     if len(df_stats) != len(df):
@@ -556,6 +561,17 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
         return
     df_stats.to_hdf(fdf, 'table', mode='w')
     df_stats.to_csv(fdf.replace('.h5', '.csv'))
+
+    # -------------------------------------------------------------------------
+    # save channel list
+    chans = df_stats['channel'].unique()
+    chans.sort()
+    fname = os.path.join(POST_DIR, '%s_unique-channel-names.csv' % sim_id)
+    pd.DataFrame(chans).to_csv(fname)
+
+    # -------------------------------------------------------------------------
+    # created failed cases list
+    cc.find_failed(df_cases=df_tags)
 
 
 if __name__ == '__main__':
