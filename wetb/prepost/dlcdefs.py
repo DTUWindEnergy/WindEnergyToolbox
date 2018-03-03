@@ -446,11 +446,14 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
             dlc_case = tags_dict['[Case folder]']
-            tags_dict['[data_dir]'] = 'data/'
+            if '[data_dir]' not in tags_dict:
+                tags_dict['[data_dir]'] = 'data/'
             if '[res_dir]' not in tags_dict:
                 tags_dict['[res_dir]'] = 'res/%s/' % dlc_case
-            tags_dict['[log_dir]'] = 'logfiles/%s/' % dlc_case
-            tags_dict['[htc_dir]'] = 'htc/%s/' % dlc_case
+            if '[log_dir]' not in tags_dict:
+                tags_dict['[log_dir]'] = 'logfiles/%s/' % dlc_case
+            if '[htc_dir]' not in tags_dict:
+                tags_dict['[htc_dir]'] = 'htc/%s/' % dlc_case
             if '[Case id.]' in tags_dict.keys():
                 tags_dict['[case_id]'] = tags_dict['[Case id.]']
             if '[time stop]' in tags_dict.keys():
@@ -463,9 +466,12 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                 tags_dict['[turb_base_name]'] = None
                 tags_dict['[Turb base name]'] = None
             tags_dict['[DLC]'] = tags_dict['[Case id.]'].split('_')[0][3:]
-            tags_dict['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
-            tags_dict['[pbs_in_dir]'] = 'pbs_in/%s/' % dlc_case
-            tags_dict['[iter_dir]'] = 'iter/%s/' % dlc_case
+            if '[pbs_out_dir]' not in tags_dict:
+                tags_dict['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
+            if '[pbs_in_dir]' not in tags_dict:
+                tags_dict['[pbs_in_dir]'] = 'pbs_in/%s/' % dlc_case
+            if '[iter_dir]' not in tags_dict:
+                tags_dict['[iter_dir]'] = 'iter/%s/' % dlc_case
             # the default spreadsheets do not define the tags related to the
             # eigen analsyis yet
             if '[eigen_analysis]' in tags_dict and tags_dict['[eigen_analysis]']:
