@@ -266,7 +266,7 @@ def variable_tag_func_mod1(master, case_id_short=False):
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False,
-                      dlcs_dir='htc/DLCs'):
+                      dlcs_dir='htc/DLCs', compress=False):
     """
     Launch load cases defined in Excel files
     """
@@ -346,10 +346,10 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
                               nr_procs_series=3, walltime='20:00:00',
-                              chunks_dir='zip-chunks-jess')
+                              chunks_dir='zip-chunks-jess', compress=compress)
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
                               nr_procs_series=3, walltime='20:00:00',
-                              chunks_dir='zip-chunks-gorm')
+                              chunks_dir='zip-chunks-gorm', compress=compress)
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
@@ -617,6 +617,9 @@ if __name__ == '__main__':
     parser.add_argument('--zipchunks', default=False, action='store_true',
                         dest='zipchunks', help='Create PBS launch files for'
                         'running in zip-chunk find+xargs mode.')
+    parser.add_argument('--compress', default=False, action='store_true',
+                        dest='compress', help='When running in zip-chunk mode,'
+                        'compress log and results files into chunks.')
     parser.add_argument('--pbs_turb', default=False, action='store_true',
                         dest='pbs_turb', help='Create PBS launch files to '
                         'create the turbulence boxes in stand alone mode '
@@ -694,7 +697,8 @@ if __name__ == '__main__':
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime,
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
-                          dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'))
+                          dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
+                          compress=opt.compress)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:

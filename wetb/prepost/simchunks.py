@@ -36,7 +36,8 @@ from wetb.prepost.Simulations import Cases
 
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           nr_procs_series=9, queue='workq', pyenv='wetb_py3',
-                          walltime='24:00:00', chunks_dir='zip-chunks-jess'):
+                          walltime='24:00:00', chunks_dir='zip-chunks-jess',
+                          compress=False):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -146,7 +147,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
 """
 
-    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip):
+    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -315,25 +316,25 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
         pbs += 'find \n'
 
-        # compress all result files into an archive, first *.sel files
-        # FIXME: why doesn this work with -name "*.sel" -o -name "*.dat"??
-        pbs += '\necho "move results into compressed archive"\n'
-        pbs += 'find %s -name "*.sel" -print0 ' % res_base
-        fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
-        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-        # now add the *.dat files to the archive
-        pbs += 'find %s -name "*.dat" -print0 ' % res_base
-        fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
-        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+        if compress:
+            # compress all result files into an archive, first *.sel files
+            # FIXME: why doesn this work with -name "*.sel" -o -name "*.dat"??
+            pbs += '\necho "move results into compressed archive"\n'
+            pbs += 'find %s -name "*.sel" -print0 ' % res_base
+            fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
+            pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+            # now add the *.dat files to the archive
+            pbs += 'find %s -name "*.dat" -print0 ' % res_base
+            fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
+            pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+            pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
-        pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
-
-        # compress all logfiles into an archive
-        pbs += '\necho "move logfiles into compressed archive"\n'
-        pbs += 'find %s -name "*.log" -print0 ' % log_base
-        fname = os.path.join(log_base, 'logfiles_chnk_%05i' % ii)
-        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-        pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
+            # compress all logfiles into an archive
+            pbs += '\necho "move logfiles into compressed archive"\n'
+            pbs += 'find %s -name "*.log" -print0 ' % log_base
+            fname = os.path.join(log_base, 'logfiles_chnk_%05i' % ii)
+            pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
+            pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move statsdel into compressed archive"\n'
@@ -411,7 +412,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     df_ind.index.name = '[case_id]'
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
-        make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
+        make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
+                        compress=compress)
         df_ind = df_ind.append(ind)
         print(fname)
 
