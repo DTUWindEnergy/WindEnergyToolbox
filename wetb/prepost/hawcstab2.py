@@ -21,7 +21,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from wetb.prepost import mplutils
+from wetb.prepost import (mplutils, misc)
 
 
 class dummy(object):
@@ -64,17 +64,31 @@ def ReadFileHAWCStab2Header(fname):
         return df, units
 
 
-# FIXME: with gradients currently ind has columns width of 28 instead of 14!!
 class InductionResults(object):
-    def __init__(self):
-        pass
+    """Column width can vary between versions and with/withouth gradient in
+    output. Use get_col_width() for automatic detection.
+    """
+    def __init__(self, colwidth=14):
+        """with gradients currently ind has columns width of 28 instead of 14!
+        """
+        self.cw = colwidth
+
+    def get_col_width(self, fname):
+        # figure out column width
+        with open(fname) as fid:
+            fid.readline()
+            line2 = fid.readline()
+        cols = misc.remove_items(line2.split(' '), '')
+        if len(cols[0]) > 15:
+            self.cw = 28
+
     def read(self, fname):
         self.data = np.loadtxt(fname)
         self.wsp = int(fname.split('_u')[-1][:-4]) / 1000.0
         try:
-            self.df_data = pd.read_fwf(fname, header=0, widths=[14]*38)
+            self.df_data = pd.read_fwf(fname, header=0, widths=[self.cw]*38)
         except:
-            self.df_data = pd.read_fwf(fname, header=0, widths=[14]*34)
+            self.df_data = pd.read_fwf(fname, header=0, widths=[self.cw]*34)
         # sanitize the headers
         cols = self.df_data.columns
         self.df_data.columns = [k[:-2].replace('#', '').strip() for k in cols]
@@ -150,8 +164,13 @@ class results(object):
 
         return frf
 
-    def load_ind(self, fname):
-        self.ind = InductionResults()
+    def load_ind(self, fname, colwidth=None):
+        """for results withouth gradients, colwidth=14, otherwise 28. Set to
+        None to derive automatically.
+        """
+        self.ind = InductionResults(colwidth=colwidth)
+        if colwidth is None:
+            self.ind.get_col_width(fname)
         self.ind.read(fname)
 
     def load_amp(self, fname):
@@ -289,14 +308,19 @@ class results(object):
                                        dpi=dpi, num=0)
         for i, res in enumerate(results):
             ax = axes[0,0]
-            ax.plot(res.wind, res.power, color=colors[i], label=labels[i],
+            ax.plot(res.wind, res.power, color=colors[i],
+                    label='Power %s ' % labels[i],
                     marker=symbols[i], ls='-', alpha=alphas[i])
-            ax.set_title('Aerodynamic Power [kW]')
+            ax.set_title('Aerodynamic Power [kW]')#, RPM')
 
             ax = axes[0,1]
-            ax.plot(res.wind, res.pitch_deg, color=colors[i], label=labels[i],
+            ax.plot(res.wind, res.pitch_deg, color=colors[i],
+                    label='Pitch %s' % labels[i],
                     marker=symbols[i], ls='-', alpha=alphas[i])
-            ax.set_title('Pitch [deg]')
+            ax.plot(res.wind, res.rpm, color=colors[i],
+                    label='RPM %s ' % labels[i],
+                    marker=symbols[i], ls='--', alpha=alphas[i])
+            ax.set_title('Pitch [deg], RPM')
 
             ax = axes[1,0]
             ax.plot(res.wind, res.thrust, color=colors[i], label=labels[i],
