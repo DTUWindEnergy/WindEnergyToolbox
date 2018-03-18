@@ -31,13 +31,17 @@ class Tests(unittest.TestCase):
     def test_cmb_df(self):
         fname1 = os.path.join(os.path.dirname(__file__),
                               'data/campbell_diagram.cmb')
-        speed, freq, damp = results().load_cmb(fname1)
+        speed, freq, damp, real_eig = results().load_cmb(fname1)
+
+        self.assertIsNone(real_eig)
 
         df = results().load_cmb_df(fname1)
-        #mods = freq.shape[1]
+        mods = freq.shape[1]
         ops = freq.shape[0]
 
         self.assertEqual(len(speed), ops)
+        self.assertEqual(ops, 22)
+        self.assertEqual(mods, 10)
 
         for k in range(ops):
             df_oper = df[df['wind_ms']==speed[k]]

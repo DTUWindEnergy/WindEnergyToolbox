@@ -121,17 +121,25 @@ class results(object):
         return ReadFileHAWCStab2Header(fname)
 
     def load_cmb(self, fname):
-        cmb = np.loadtxt(fname)
+        # aero-(servo)-elastic results for HS2>=2.14 have real_eig as 3th set
+        with open(fname) as f:
+            header = f.readline().replace('\n', '')
+            cmb = np.loadtxt(f)
+        # first column header has the units of the type of opearing points
+        cols = misc.remove_items(header.split(']')[1].split(' '), '')
+        nrmodes = np.array([int(k) for k in cols]).max()
         # when there is only data for one operating condition we only have one
         # row and consequently only a 1D array
         if len(cmb.shape) == 1:
             cmb = cmb.reshape( (1, cmb.shape[0]) )
         wind = cmb[:,0]
-        ii = int((cmb.shape[1]-1)/2)
-        freq = cmb[:,1:ii+1]
-        damp = cmb[:,ii+1:]
+        freq = cmb[:,1:nrmodes+1]
+        damp = cmb[:,nrmodes+1:nrmodes*2+1]
+        real_eig = None
+        if cmb.shape[1] > nrmodes*2+1:
+            real_eig = cmb[:,nrmodes*2+1:]
 
-        return wind, freq, damp
+        return wind, freq, damp, real_eig
 
     def load_cmb_df(self, fname):
         # index name can be rotor speed or wind speed
@@ -141,13 +149,15 @@ class results(object):
         oper_name = oper_name.replace(' ', '').replace('[', '_')[:-1]
         oper_name = oper_name.replace('/', '')
 
-        speed, freq, damp = self.load_cmb(fname)
+        speed, freq, damp, real_eig = self.load_cmb(fname)
         mods = freq.shape[1]
         ops = freq.shape[0]
 
         df = pd.DataFrame(columns=[oper_name, 'Fd_hz', 'damp_ratio', 'mode'])
         df['Fd_hz'] = freq.flatten()
         df['damp_ratio'] = damp.flatten()
+        if real_eig is not None:
+            df['real_eig'] = real_eig.flatten()
         # now each mode number is a row so that means that each operating
         # point is now repeated as many times as there are modes
         df[oper_name] = speed.repeat(mods)
