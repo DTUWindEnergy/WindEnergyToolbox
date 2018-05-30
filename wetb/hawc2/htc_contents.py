@@ -48,6 +48,7 @@ class HTCContents(object):
     lines = []
     contents = None
     name_ = ""
+    parent=None
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
@@ -56,6 +57,7 @@ class HTCContents(object):
             self.values[key] = value
         else:
             raise NotImplementedError
+        value.parent=self
             
 
     def __getitem__(self, key):
@@ -72,6 +74,9 @@ class HTCContents(object):
             return self.values[key]
 
     def __getattr__(self, *args, **kwargs):
+        if args[0] in ['__members__','__methods__']:
+            # fix python2 related issue. In py2, dir(self) calls __getattr__(('__members__',)), and this call must fail unhandled to work
+            return object.__getattribute__(self, *args, **kwargs)
         try:
             return object.__getattribute__(self, *args, **kwargs)
         except:
@@ -135,7 +140,11 @@ class HTCContents(object):
         self._add_contents(line)
         return line
 
-
+    def location(self):
+        if self.parent is None:
+            return os.path.basename(self.filename)
+        else:
+            return self.parent.location() + "/" + self.name_
 
 
 class HTCSection(HTCContents):
@@ -209,7 +218,10 @@ class HTCLine(HTCContents):
         return " ".join([str(v).lower() for v in self.values])
 
     def __getitem__(self, key):
-        return self.values[key]
+        try:
+            return self.values[key]
+        except:
+            raise IndexError("Parameter %s does not exists for %s"%(key+1,self.location()))
 
     @staticmethod
     def from_lines(lines):
