@@ -4616,6 +4616,13 @@ class Cases(object):
         else:
             sim_id = new_sim_id
 
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
+
         if fh_lst is None:
             # FIXME: wb has overlap with dlc_config.xlsx, and shape_k doesn't
             # seemed to be used by DLCHighLevel
@@ -4635,7 +4642,12 @@ class Cases(object):
             # the statistics analysis
             # TODO: could be faster if working with df directly, but how to
             # assure you're res_dir is always ending with path separator?
-            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            # only take the values from 1 channel, not all of them!!
+            # FIXME: breaks when not all channels are present for all cases !
+            # solution: set channel "Time" as a minimum required channel!
+            val = dfs[chan_col_name].values[0]
+            sel = dfs[dfs[chan_col_name]==val]
+            p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
             files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=years, files=files)
 
@@ -4658,12 +4670,6 @@ class Cases(object):
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
-        # FIXME: for backward compatibility, the column name of the unique
-        # channel name has been changed in the past....
-        if 'unique_ch_name' in dfs.columns:
-            chan_col_name  = 'unique_ch_name'
-        else:
-            chan_col_name  = 'channel'
         # available material constants
         ms, cols = [], []
         for key in dfs:
@@ -4791,6 +4797,13 @@ class Cases(object):
         else:
             sim_id = new_sim_id
 
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
+
         if fh_lst is None:
             wb = WeibullParameters()
             if 'Weibull' in self.config:
@@ -4805,7 +4818,11 @@ class Cases(object):
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
             # TODO: could be faster if working with df directly, but how to
             # assure you're res_dir is always ending with path separator?
-            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            # FIXME: breaks when not all channels are present for all cases !
+            # solution: set channel "Time" as a minimum required channel!
+            val = dfs[chan_col_name].values[0]
+            sel = dfs[dfs[chan_col_name]==val]
+            p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
             files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=1.0, files=files)
 
@@ -4830,7 +4847,7 @@ class Cases(object):
                                 complib=self.complib)
 
         # and select only the power channels
-        dfs_powe = dfs[dfs.channel==ch_powe]
+        dfs_powe = dfs[dfs[chan_col_name]==ch_powe]
 
         # by default we have AEP as a column
         cols = ['AEP']
