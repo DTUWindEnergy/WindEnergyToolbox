@@ -37,7 +37,7 @@ from wetb.prepost.Simulations import Cases
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           nr_procs_series=9, queue='workq', pyenv='wetb_py3',
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          compress=False):
+                          compress=False, wine_64bit=False):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -147,7 +147,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
 """
 
-    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False):
+    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
+                        wine_64bit=False):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -158,6 +159,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         cmd_find = '/home/MET/sysalt/bin/find'
         cmd_xargs = '/home/MET/sysalt/bin/xargs'
         jobid = '%s_chnk_%05i' % (sim_id, ii)
+
+        wineparam = ('win32', '~/.wine32')
+        if wine_64bit:
+            wineparam = ('win64', '~/.wine')
 
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
         post_dir_base = post_dir.split(sim_id)[1]
@@ -287,7 +292,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
-        pbs += 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+        pbs += 'WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
         pbs += 'echo "following cases will be run from following path:"\n'
         pbs += 'echo "%s"\n' % (os.path.join(sim_id, pbs_in_base))
@@ -413,7 +418,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
-                        compress=compress)
+                        compress=compress, wine_64bit=wine_64bit)
         df_ind = df_ind.append(ind)
         print(fname)
 

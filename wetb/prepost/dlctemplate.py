@@ -348,11 +348,11 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
                               nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
-                              queue='workq')
+                              queue='workq', wine_64bit=wine_64bit)
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
                               nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-gorm', compress=compress,
-                              queue='workq')
+                              queue='workq', wine_64bit=wine_64bit)
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
