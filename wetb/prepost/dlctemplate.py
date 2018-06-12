@@ -266,7 +266,7 @@ def variable_tag_func_mod1(master, case_id_short=False):
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False,
-                      dlcs_dir='htc/DLCs', compress=False):
+                      dlcs_dir='htc/DLCs', compress=False, wine_64bit=False):
     """
     Launch load cases defined in Excel files
     """
@@ -328,7 +328,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                copyback_turb=True, update_cases=False, msg='',
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
-                               silent=silent, verbose=verbose, pyenv=pyenv)
+                               silent=silent, verbose=verbose, pyenv=pyenv,
+                               wine_64bit=wine_64bit)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -657,6 +658,9 @@ if __name__ == '__main__':
                         action='store', dest='dlcfolder', help='Optionally '
                         'define an other destination folder location for the '
                         'generated DLC exchange files, default: htc/DLCs/')
+    parser.add_argument('--wine_64bit', default=False, action='store_true',
+                        dest='wine_64bit', help='Run wine in 64-bit mode. '
+                        'Only works on Jess.')
     opt = parser.parse_args()
 
     # -------------------------------------------------------------------------
@@ -700,7 +704,7 @@ if __name__ == '__main__':
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime,
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
-                          compress=opt.compress)
+                          compress=opt.compress, wine_64bit=opt.wine_64bit)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:

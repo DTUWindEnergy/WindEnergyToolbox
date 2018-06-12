@@ -557,8 +557,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
-                run_only_new=False, windows_nr_cpus=2, qsub='',
-                pbs_fname_appendix=True, short_job_names=True,
+                run_only_new=False, windows_nr_cpus=2, wine_64bit=False,
+                pbs_fname_appendix=True, short_job_names=True, qsub='',
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
@@ -799,7 +799,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
-           pyenv=pyenv)
+           pyenv=pyenv, wine_64bit=wine_64bit)
 
     return cases
 
@@ -1000,7 +1000,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3'):
+           maxcpu=1, pyenv='wetb_py3', wine_64bit=False):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1041,7 +1041,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent)
+                  verbose=verbose, silent=silent, wine_64bit=wine_64bit)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
@@ -1930,7 +1930,8 @@ class PBS(object):
     """
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
+                 wine_64bit=False):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1963,7 +1964,14 @@ class PBS(object):
         self.silent = silent
         self.pyenv = pyenv
         self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
-        self.winebase = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 '
+
+        # run in 32-bit or 64-bit mode. Note this uses the same assumptions
+        # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
+        wineparam = ('win32', '~/.wine32')
+        if wine_64bit:
+            wineparam = ('win64', '~/.wine')
+        self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
+
         self.wine = self.winebase + 'wine'
         self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
@@ -1974,7 +1982,7 @@ class PBS(object):
         # determine at runtime if winefix has to be ran
         self.winefix = '  _HOSTNAME_=`hostname`\n'
         self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then\n'
-        self.winefix += '    WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+        self.winefix += '    WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
         self.winefix += '  fi\n'
 
         # the output channels comes with a price tag. Each time step
