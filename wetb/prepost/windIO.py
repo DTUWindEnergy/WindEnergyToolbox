@@ -795,8 +795,8 @@ class LoadResults(ReadHawc2):
         # some channel ID's are unique, use them
         ch_unique = set(['Omega', 'Ae rot. torque', 'Ae rot. power',
                          'Ae rot. thrust', 'Time', 'Azi  1'])
-        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa', 'Lift',
-                       'Drag'])
+        ch_aero = set(['Cl', 'Cd', 'Cm', 'Alfa', 'Vrel', 'Tors_e', 'Alfa',
+                       'Lift', 'Drag'])
         ch_aerogrid = set(['a_grid', 'am_grid', 'CT', 'CQ'])
 
         # also safe as df
