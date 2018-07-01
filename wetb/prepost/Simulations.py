@@ -559,7 +559,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_cases=False, ignore_non_unique=False, wine_appendix='',
                 run_only_new=False, windows_nr_cpus=2, wine_64bit=False,
                 pbs_fname_appendix=True, short_job_names=True, qsub='',
-                update_model_data=True, maxcpu=1, pyenv='wetb_py3'):
+                update_model_data=True, maxcpu=1, pyenv='wetb_py3',
+                m=[3,4,6,8,9,10,12]):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -799,7 +800,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
-           pyenv=pyenv, wine_64bit=wine_64bit)
+           pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12])
 
     return cases
 
@@ -1000,7 +1001,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3', wine_64bit=False):
+           maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12]):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1041,7 +1042,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent, wine_64bit=wine_64bit)
+                  verbose=verbose, silent=silent, wine_64bit=wine_64bit,
+                  m=m)
         pbs.wine_appendix = wine_appendix
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
@@ -1931,7 +1933,7 @@ class PBS(object):
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 wine_64bit=False):
+                 wine_64bit=False, m=[3,4,6,8,9,10,12]):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1964,6 +1966,8 @@ class PBS(object):
         self.silent = silent
         self.pyenv = pyenv
         self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
+
+        self.m = m
 
         # run in 32-bit or 64-bit mode. Note this uses the same assumptions
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
@@ -2335,7 +2339,7 @@ class PBS(object):
             param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
                      self.wine_appendix)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
-            self.pbs += "  %s %s ./%s %s\n" % param
+            self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
             self.pbs += '  echo "POST-PROCESSING"\n'
             self.pbs += "  "
             self.checklogs()
@@ -2695,8 +2699,9 @@ class PBS(object):
         """
         self.pbs += 'python -c "from wetb.prepost import statsdel; '
         fsrc = os.path.join(self.results_dir, self.case)
-        rpl = (fsrc, str(self.case_duration), '.csv')
-        self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[3, 4, 6, 8, 10, 12], '
+        mstr = ','.join([str(k) for k in self.m])
+        rpl = (fsrc, mstr, str(self.case_duration), '.csv')
+        self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[%s], '
                      'neq=%s, i0=0, i1=None, ftype=\'%s\')"\n' % rpl)
 
     def check_results(self, cases):

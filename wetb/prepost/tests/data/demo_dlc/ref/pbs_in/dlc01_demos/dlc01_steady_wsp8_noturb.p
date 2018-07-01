@@ -68,10 +68,10 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo "execute HAWC2, do not fork and wait"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc 
+  time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc
   echo "POST-PROCESSING"
   python -c "from wetb.prepost import statsdel; statsdel.logcheck('logfiles/dlc01_demos/dlc01_steady_wsp8_noturb.log')"
-  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp8_noturb', no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=20.0, i0=0, i1=None, ftype='.csv')"
+  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp8_noturb', no_bins=46, m=[3,4,6,8,9,10,12], neq=20.0, i0=0, i1=None, ftype='.csv')"
 fi
 # ------------------------------------------------------------------------------
 

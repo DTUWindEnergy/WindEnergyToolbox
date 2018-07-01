@@ -265,8 +265,9 @@ def variable_tag_func_mod1(master, case_id_short=False):
 
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
-                      walltime='04:00:00', postpro_node=False,
-                      dlcs_dir='htc/DLCs', compress=False, wine_64bit=False):
+                      walltime='04:00:00', postpro_node=False, compress=False,
+                      dlcs_dir='htc/DLCs', wine_64bit=False,
+                      m=[3,4,6,8,9,10,12]):
     """
     Launch load cases defined in Excel files
     """
@@ -329,7 +330,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
                                silent=silent, verbose=verbose, pyenv=pyenv,
-                               wine_64bit=wine_64bit)
+                               wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12])
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -360,7 +361,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[1, 3, 4, 5, 6, 8, 10, 12, 14], neq=1e7, no_bins=46,
+                m=[3, 4, 6, 8, 9, 10, 12], neq=1e7, no_bins=46,
                 years=20.0, fatigue=True, A=None, AEP=False,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, pbs_failed_path=False):
@@ -468,7 +469,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     return df_stats, df_AEP, df_Leq
 
 
-def postpro_node_merge(tqdm=False, zipchunks=False):
+def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     """With postpro_node each individual case has a .csv file for the log file
     analysis and a .csv file for the statistics tables. Merge all these single
     files into one table/DataFrame.
@@ -521,8 +522,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     store = pd.HDFStore(fdf, mode='w', format='table', complevel=9,
                         complib='zlib')
     colnames = ['channel', 'max', 'min', 'mean', 'std', 'range',
-                'absmax', 'rms', 'int', 'm=3', 'm=4', 'm=6', 'm=8', 'm=10',
-                'm=12', 'intabs', '[case_id]']
+                'absmax', 'rms', 'int', 'intabs', '[case_id]']
+    colnames.extend(['m=%1.0f' % k for k in m])
     dtypes = {col:np.float64 for col in colnames}
     dtypes['channel'] = str
     dtypes['[case_id]'] = str
@@ -663,6 +664,9 @@ if __name__ == '__main__':
                         'Only works on Jess.')
     opt = parser.parse_args()
 
+    # Wholer coefficients to be considered for the fatigue analysis
+    m = [3, 4, 6, 8, 9, 10, 12]
+
     # -------------------------------------------------------------------------
 #    # manually configure paths, HAWC2 model root path is then constructed as
 #    # p_root_remote/PROJECT/sim_id, and p_root_local/PROJECT/sim_id
@@ -717,7 +721,7 @@ if __name__ == '__main__':
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
     if opt.postpro_node_merge:
-        postpro_node_merge(zipchunks=opt.zipchunks)
+        postpro_node_merge(zipchunks=opt.zipchunks, m=m)
     if opt.dlcplot:
         plot_chans = {}
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
