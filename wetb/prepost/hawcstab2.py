@@ -68,7 +68,7 @@ class InductionResults(object):
     """Column width can vary between versions and with/withouth gradient in
     output. Use get_col_width() for automatic detection.
     """
-    def __init__(self, colwidth=14):
+    def __init__(self, colwidth=None):
         """with gradients currently ind has columns width of 28 instead of 14!
         """
         self.cw = colwidth
@@ -76,22 +76,36 @@ class InductionResults(object):
     def get_col_width(self, fname):
         # figure out column width
         with open(fname) as fid:
-            fid.readline()
+            line1 = fid.readline()
             line2 = fid.readline()
-        cols = misc.remove_items(line2.split(' '), '')
-        if len(cols[0]) > 15:
-            self.cw = 28
+        # it is very annoying that various files can have various column widths
+        # also, the first column is one character wider than the rest
+        i0 = re.search(r'\S',line2).start()
+        self.i1_col1 = line2[i0:].find(' ') + i0
+        # number of columns can also be different (gradients or not, node displ)
+        nr_cols = int(round(len(line2)/self.i1_col1, 0))
+        self.colwidths = [self.i1_col1+1] + [self.i1_col1]*(nr_cols-1)
+
+        # because sometimes there are no spaces between the header of each column
+        # sanitize the headers
+        ci = np.array([0] + self.colwidths).cumsum()
+        # remember zero based indexing
+        ci[1:] = ci[1:] - 1
+        self.columns = []
+        for i in range(len(ci)-1):
+            # also lose the index in the header
+            colname = line1[ci[i]:ci[i+1]][:-2].replace('#', '').strip()
+            self.columns.append(colname)
 
     def read(self, fname):
-        self.data = np.loadtxt(fname)
+        if self.cw is None:
+            self.get_col_width(fname)
         self.wsp = int(fname.split('_u')[-1][:-4]) / 1000.0
-        try:
-            self.df_data = pd.read_fwf(fname, header=0, widths=[self.cw]*38)
-        except:
-            self.df_data = pd.read_fwf(fname, header=0, widths=[self.cw]*34)
-        # sanitize the headers
-        cols = self.df_data.columns
-        self.df_data.columns = [k[:-2].replace('#', '').strip() for k in cols]
+        # self.df_data = pd.read_fwf(fname, header=0, widths=self.colwidths)
+        self.df_data = pd.read_fwf(fname, skiprows=0, widths=self.colwidths)
+        # we can not rely on read_fwf for the column names since for some
+        # columns there is no space between one column and the next one.
+        self.df_data.columns = self.columns
 
 
 class results(object):
@@ -178,10 +192,9 @@ class results(object):
         """for results withouth gradients, colwidth=14, otherwise 28. Set to
         None to derive automatically.
         """
-        self.ind = InductionResults(colwidth=colwidth)
-        if colwidth is None:
-            self.ind.get_col_width(fname)
-        self.ind.read(fname)
+        ind = InductionResults(colwidth=colwidth)
+        ind.read(fname)
+        return ind.df_data
 
     def load_amp(self, fname):
 

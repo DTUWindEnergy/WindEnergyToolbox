@@ -553,7 +553,7 @@ class MappingsH2HS2(object):
     def blade_distribution(self, fname_h2, fname_hs2, h2_df_stats=None,
                            fname_h2_tors=None):
 
-        self.hs2_res.load_ind(fname_hs2)
+        self.hs2_res.df_ind = self.hs2_res.load_ind(fname_hs2)
         self.h2_res = sim.windIO.ReadOutputAtTime(fname_h2)
         self._distribution_hs2()
         self._distribution_h2()
@@ -601,7 +601,7 @@ class MappingsH2HS2(object):
             hs2_cols = list(mapping_hs2)
             # select only the HS channels that will be used for the mapping
             std_cols = list(mapping_hs2.values())
-            self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
+            self.hs_aero = self.hs2_res.df_ind[hs2_cols].copy()
         except KeyError:
             # some results have been created with older HAWCStab2 that did not
             # include CT and CP columns
@@ -610,7 +610,7 @@ class MappingsH2HS2(object):
             hs2_cols = list(mapping_hs2)
             std_cols = list(mapping_hs2.values())
             # select only the HS channels that will be used for the mapping
-            self.hs_aero = self.hs2_res.ind.df_data[hs2_cols].copy()
+            self.hs_aero = self.hs2_res.df_ind[hs2_cols].copy()
 
         # change column names to the standard form that is shared with H2
         self.hs_aero.columns = std_cols
@@ -808,7 +808,7 @@ class Plots(object):
     def load_hs(self, fname_hs):
 
         res = MappingsH2HS2(self.config)
-        res.hs2_res.load_ind(fname_hs)
+        res.df_ind = res.hs2_res.load_ind(fname_hs)
         self.units = res.units
         res._distribution_hs2()
 
