@@ -104,8 +104,7 @@ class Tests(unittest.TestCase):
                   ]
 
         for fname in fnames:
-            # fname = pjoin(pdirname(__file__), 'data', fname)
-            fname = pjoin('data', fname)
+            fname = pjoin(pdirname(__file__), 'data', fname)
             res = results()
             df_data = res.load_ind(fname)
             data = np.loadtxt(fname)
