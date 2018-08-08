@@ -109,7 +109,18 @@ class Tests(unittest.TestCase):
             df_data = res.load_ind(fname)
             data = np.loadtxt(fname)
             np.testing.assert_almost_equal(data, df_data.values)
-            print(df_data.columns)
+
+    def test_pwr_file(self):
+        fnames = ['dtu10mw_nofull.pwr',
+                  'dtu10mw_nogradient.pwr',
+                  'dtu10mw_nogradient_v2.pwr',
+                  'dtu10mw_v1.pwr',]
+        for fname in fnames:
+            fname = pjoin(pdirname(__file__), 'data', fname)
+            res = results()
+            df_data, units = res.load_pwr_df(fname)
+            data = np.loadtxt(fname)
+            np.testing.assert_almost_equal(data, df_data.values)
 
 
 if __name__ == "__main__":
