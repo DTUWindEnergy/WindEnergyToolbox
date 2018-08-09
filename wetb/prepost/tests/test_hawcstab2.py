@@ -120,7 +120,8 @@ class Tests(unittest.TestCase):
             res = results()
             df_data, units = res.load_pwr_df(fname)
             data = np.loadtxt(fname)
-            np.testing.assert_almost_equal(data, df_data.values, decimal=4)
+            self.assertEqual(data.shape, df_data.shape)
+            np.testing.assert_almost_equal(data, df_data.values, decimal=2)
 
 
 if __name__ == "__main__":
