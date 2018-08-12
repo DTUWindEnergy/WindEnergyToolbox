@@ -169,13 +169,19 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         if post_dir_base[0] == os.path.sep:
             post_dir_base = post_dir_base[1:]
 
-        pbs_in_base = os.path.commonpath(df['[pbs_in_dir]'].unique().tolist())
+        # FIXME: commonpath was only added in Python 3.5, but CI runner is old
+        try:
+            compath = os.path.commonpath
+        except AttributeError:
+            compath = os.path.commonprefix
+
+        pbs_in_base = compath(df['[pbs_in_dir]'].unique().tolist())
         pbs_in_base = os.path.join(pbs_in_base, '')
-        htc_base = os.path.commonpath(df['[htc_dir]'].unique().tolist())
+        htc_base = compath(df['[htc_dir]'].unique().tolist())
         htc_base = os.path.join(htc_base, '')
-        res_base = os.path.commonpath(df['[res_dir]'].unique().tolist())
+        res_base = compath(df['[res_dir]'].unique().tolist())
         res_base = os.path.join(res_base, '')
-        log_base = os.path.commonpath(df['[log_dir]'].unique().tolist())
+        log_base = compath(df['[log_dir]'].unique().tolist())
         log_base = os.path.join(log_base, '')
 
         # =====================================================================
@@ -275,7 +281,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
 
         # create hard links for all the turbulence files
-        turb_dir_base = os.path.join(os.path.commonpath(list(turb_dirs)), '')
+        turb_dir_base = os.path.join(compath(list(turb_dirs)), '')
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
@@ -396,7 +402,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     cc = Cases(cases)
     df = cc.cases2df()
     # sort on the specified values in the given columns
-    # sort_valures was only added in Pandas 0.17
+    # FIXME: sort_values was only added in Pandas 0.17, but CI runner is old
     try:
         df.sort_values(by=sort_by_values, inplace=True)
     except AttributeError:
