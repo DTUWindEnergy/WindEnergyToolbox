@@ -193,18 +193,19 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         # =====================================================================
         # activate the python environment
-        pbs += 'echo "activate python environment %s"\n' % pyenv
-        pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
-        # sometimes activating an environment fails due to a FileExistsError
-        # is this because it is activated at the same time on another node?
-        # check twice if the environment got activated for real
-        pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
-        pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
-        pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
-        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
-        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+        if pyenv is not None:
+            pbs += 'echo "activate python environment %s"\n' % pyenv
+            pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
+            # sometimes activating an environment fails due to a FileExistsError
+            # is this because it is activated at the same time on another node?
+            # check twice if the environment got activated for real
+            pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
+            pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
+            pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
+            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
 
         # =====================================================================
         # create all necessary directories at CPU_NR dirs, turb db dirs, sim_id
@@ -370,7 +371,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += '    --exclude *.htc \n'
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
-        pbs += 'source deactivate\n'
+        if pyenv is not None:
+            pbs += 'source deactivate\n'
         pbs += 'echo "DONE !!"\n'
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += '# in case wine has crashed, kill any remaining wine servers\n'

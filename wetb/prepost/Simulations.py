@@ -2340,11 +2340,12 @@ class PBS(object):
                      self.wine_appendix)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
             self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
-            self.pbs += '  echo "POST-PROCESSING"\n'
-            self.pbs += "  "
-            self.checklogs()
-            self.pbs += "  "
-            self.postprocessing()
+            if self.pyenv is not None:
+                self.pbs += '  echo "POST-PROCESSING"\n'
+                self.pbs += "  "
+                self.checklogs()
+                self.pbs += "  "
+                self.postprocessing()
             self.pbs += "fi\n"
             # mark end of find+xargs mode
             self.pbs += '# ' + '-'*78 + '\n'

@@ -14,18 +14,27 @@ import unittest
 import os
 import filecmp
 import shutil
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 
 from wetb.prepost import dlctemplate as tmpl
 from wetb.prepost import Simulations as sim
-from wetb.fatigue_tools.fatigue import eq_load
+from wetb.prepost.misc import DictDiff
 
 
 class Template(unittest.TestCase):
     def setUp(self):
         self.basepath = os.path.dirname(__file__)
+
+
+class TestErrorLogs(Template):
+
+    def test_loganalysis(self):
+        # select a few log cases and do the analysis, save to csv and convert
+        # saved result to DataFrame
+        pass
 
 
 class TestGenerateInputs(Template):
@@ -55,18 +64,37 @@ class TestGenerateInputs(Template):
 
         tmpl.force_dir = tmpl.P_RUN
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm',
-                               pbs_turb=True)
+                               pbs_turb=True, zipchunks=True)
 
         # we can not check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here
         for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
-                       'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos']:
+                       'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos',
+                       'zip-chunks-gorm', 'zip-chunks-jess']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)
-            cmp = filecmp.dircmp(remote, ref)
+            # the zipfiles are taken care of separately
+            ignore = ['remote_chnk_00000.zip']
+            cmp = filecmp.dircmp(remote, ref, ignore=ignore)
             self.assertEqual(len(cmp.diff_files), 0, cmp.diff_files)
             self.assertEqual(len(cmp.right_only), 0, cmp.right_only)
             self.assertEqual(len(cmp.left_only), 0, cmp.left_only)
+
+        # compare the zip files
+        for fname in ['demo_dlc_remote.zip',
+                      'zip-chunks-gorm/remote_chnk_00000.zip',
+                      'zip-chunks-jess/remote_chnk_00000.zip']:
+            remote = os.path.join(p_root, tmpl.PROJECT, 'remote', fname)
+            ref = os.path.join(p_root, tmpl.PROJECT, 'ref', fname)
+
+            with ZipFile(remote) as zrem, ZipFile(ref) as zref:
+                self.assertEqual(len(zrem.infolist()), len(zref.infolist()))
+                frem = {f.filename:f.file_size for f in zrem.infolist()}
+                fref = {f.filename:f.file_size for f in zref.infolist()}
+                dd = DictDiff(frem, fref)
+                self.assertEqual(len(dd.added()), 0)
+                self.assertEqual(len(dd.removed()), 0)
+                self.assertEqual(len(dd.changed()), 0)
 
         # for the pickled file we can just read it
         remote = os.path.join(p_root, tmpl.PROJECT, 'remote', 'prepost')
