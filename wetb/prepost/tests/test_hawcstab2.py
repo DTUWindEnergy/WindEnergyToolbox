@@ -118,8 +118,8 @@ class Tests(unittest.TestCase):
         for fname in fnames:
             fname = pjoin(pdirname(__file__), 'data', fname)
             res = results()
-            df_data, units = res.load_pwr_df(fname, dtype=np.float32)
-            data = np.loadtxt(fname, dtype=np.float32)
+            df_data, units = res.load_pwr_df(fname)
+            data = np.loadtxt(fname)
             self.assertEqual(data.shape, df_data.shape)
             print(data.dtype)
             print(data.values.dtype)
