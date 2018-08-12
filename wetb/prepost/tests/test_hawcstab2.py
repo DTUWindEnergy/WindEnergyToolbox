@@ -118,10 +118,10 @@ class Tests(unittest.TestCase):
         for fname in fnames:
             fname = pjoin(pdirname(__file__), 'data', fname)
             res = results()
-            df_data, units = res.load_pwr_df(fname)
-            data = np.loadtxt(fname)
+            df_data, units = res.load_pwr_df(fname, dtype=np.float32)
+            data = np.loadtxt(fname, dtype=np.float32)
             self.assertEqual(data.shape, df_data.shape)
-            np.testing.assert_almost_equal(data, df_data.values, decimal=2)
+            np.testing.assert_almost_equal(data, df_data.values, decimal=6)
 
 
 if __name__ == "__main__":
