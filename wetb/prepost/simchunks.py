@@ -396,7 +396,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     cc = Cases(cases)
     df = cc.cases2df()
     # sort on the specified values in the given columns
-    df.sort_values(by=sort_by_values, inplace=True)
+    # sort_valures was only added in Pandas 0.17
+    try:
+        df.sort_values(by=sort_by_values, inplace=True)
+    except AttributeError:
+        df.sort(columns=sort_by_values, inplace=True)
 
     # create the directory to store all zipped chunks
     try:

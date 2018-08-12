@@ -122,9 +122,13 @@ class Tests(unittest.TestCase):
             data = np.loadtxt(fname)
             self.assertEqual(data.shape, df_data.shape)
             print(data.dtype)
-            print(data.values.dtype)
-            print(data)
-            print(data.values)
+            print(df_data.values.dtype)
+            for i in range(data.shape[0]):
+                a = data[i,:]
+                b = df_data.values[i,:]
+                if not np.allclose(a,b):
+                    print(a-b)
+                np.testing.assert_almost_equal(a, b)
             np.testing.assert_almost_equal(data, df_data.values, decimal=6)
 
 
