@@ -260,7 +260,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         for db, base_name in zip(db_dir_tags, base_name_tags):
             turb_db_dirs = df[db] + df[base_name]
             # When set to None, the DataFrame will have text as None
-            turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
+            # FIXME: CI runner has and old pandas version
+            try:
+                turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
+            except AttributeError:
+                turb_db_src = turb_db_dirs[turb_db_dirs.str.findall('None')==-1]
             pbs += '\n'
             pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
             for k in turb_db_src.unique():
