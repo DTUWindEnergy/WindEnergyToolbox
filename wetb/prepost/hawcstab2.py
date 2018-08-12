@@ -31,7 +31,7 @@ class dummy(object):
 regex_units = re.compile('(\\[.*?\\])')
 
 
-def ReadFileHAWCStab2Header(fname, dtype=None):
+def ReadFileHAWCStab2Header(fname):
     """
     Read a file with a weird HAWCStab2 header that starts with a #, and
     includes the column number and units between square brackets.
@@ -79,7 +79,7 @@ def ReadFileHAWCStab2Header(fname, dtype=None):
     # and another with frozen wake assumption
     columns = get_col_names(line_header, colwidths)
     df = pd.read_fwf(fname, widths=colwidths, comment='#', header=None,
-                     names=columns, dtype=dtype)
+                     names=columns)
     units = regex_units.findall(''.join(columns))
 
     return df, units
@@ -155,8 +155,8 @@ class results(object):
 
         return res
 
-    def load_pwr_df(self, fname, dtype=None):
-        return ReadFileHAWCStab2Header(fname, dtype=dtype)
+    def load_pwr_df(self, fname):
+        return ReadFileHAWCStab2Header(fname)
 
     def load_cmb(self, fname):
         # aero-(servo)-elastic results for HS2>=2.14 have real_eig as 3th set

@@ -121,6 +121,10 @@ class Tests(unittest.TestCase):
             df_data, units = res.load_pwr_df(fname, dtype=np.float32)
             data = np.loadtxt(fname, dtype=np.float32)
             self.assertEqual(data.shape, df_data.shape)
+            print(data.dtype)
+            print(data.values.dtype)
+            print(data)
+            print(data.values)
             np.testing.assert_almost_equal(data, df_data.values, decimal=6)
 
 
