@@ -64,7 +64,9 @@ class TestGenerateInputs(Template):
 
         tmpl.force_dir = tmpl.P_RUN
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm',
-                               pbs_turb=True, zipchunks=True)
+                               pbs_turb=True, zipchunks=True,
+                               postpro_node_zipchunks=False,
+                               postpro_node=False)
 
         # we can not check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here

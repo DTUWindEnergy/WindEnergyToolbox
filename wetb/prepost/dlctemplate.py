@@ -267,7 +267,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', wine_64bit=False,
-                      m=[3,4,6,8,9,10,12]):
+                      m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True):
     """
     Launch load cases defined in Excel files
     """
@@ -275,7 +275,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     iter_dict = dict()
     iter_dict['[empty]'] = [False]
 
-    if postpro_node:
+    if postpro_node or postpro_node_zipchunks:
         pyenv = 'wetb_py3'
     else:
         pyenv = None
@@ -330,7 +330,9 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
                                silent=silent, verbose=verbose, pyenv=pyenv,
-                               wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12])
+                               wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
+                               postpro_node_zipchunks=postpro_node_zipchunks,
+                               postpro_node=postpro_node)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -638,7 +640,13 @@ if __name__ == '__main__':
     parser.add_argument('--postpro_node', default=False, action='store_true',
                         dest='postpro_node', help='Perform the log analysis '
                         'and stats calculation on the node right after the '
-                        'simulation has finished.')
+                        'simulation has finished in single pbs mode.')
+    parser.add_argument('--no_postpro_node_zipchunks', default=True,
+                        action='store_true', dest='postpro_node',
+                        help='Do NOT perform the log analysis '
+                        'and stats calculation on the node right after the '
+                        'simulation has finished in zipchunks mode. '
+                        'The default is True, use this flag to deactivate.')
     parser.add_argument('--postpro_node_merge', default=False,
                         action='store_true', dest='postpro_node_merge',
                         help='Merge all individual statistics and log file '
@@ -708,7 +716,8 @@ if __name__ == '__main__':
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime,
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
-                          compress=opt.compress, wine_64bit=opt.wine_64bit)
+                          compress=opt.compress, wine_64bit=opt.wine_64bit,
+                          postpro_node_zipchunks=opt.postpro_node_zipchunks)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:
