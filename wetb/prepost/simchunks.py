@@ -334,7 +334,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                 db_dir, turb_dir = symlink.split('_*_')
                 db_dir_s = db_dir.replace('.', '').replace('/', '').lower()
                 turb_dir_s = turb_dir.replace('.', '').replace('/', '').lower()
-                print(db_dir_s, turb_dir_s)
                 if db_dir_s in nogo or turb_dir_s in nogo:
                     continue
                 db_dir_abs = os.path.join(pbase, db_dir, '')
