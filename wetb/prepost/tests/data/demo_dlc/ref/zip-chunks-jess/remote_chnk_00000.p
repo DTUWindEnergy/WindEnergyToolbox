@@ -51,27 +51,11 @@ mkdir -p /scratch/$USER/$PBS_JOBID/18/
 mkdir -p /scratch/$USER/$PBS_JOBID/19/
 
 echo "----------------------------------------------------------------------"
-cd /scratch/$USER/$PBS_JOBID/remote/
-echo 'current working directory:'
-pwd
-echo "create turb_db directories"
-mkdir -p ../turb/
-
-echo "----------------------------------------------------------------------"
 cd $PBS_O_WORKDIR
 echo 'current working directory:'
 pwd
 echo "get the zip-chunk file from the PBS_O_WORKDIR"
 cp ./zip-chunks-jess/remote_chnk_00000.zip /scratch/$USER/$PBS_JOBID/
-
-# copy to scratch db directory for [turb_db_dir], [turb_base_name]
-cp ../turb/none* /scratch/$USER/$PBS_JOBID/remote/../turb/.
-cp ../turb/turb_s100_10ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
-cp ../turb/turb_s101_11ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
-
-# copy to scratch db directory for [meand_db_dir], [meand_base_name]
-
-# copy to scratch db directory for [wake_db_dir], [wake_base_name]
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
@@ -101,30 +85,77 @@ echo "unzip chunk, create dirs in cpu and sim_id folders"
 /usr/bin/unzip remote_chnk_00000.zip -d remote/. >> /dev/null
 
 echo "----------------------------------------------------------------------"
-cd /scratch/$USER/$PBS_JOBID/
+cd /scratch/$USER/$PBS_JOBID/remote/
 echo 'current working directory:'
 pwd
-echo "copy all turb files into CPU dirs"
-find turb -iname *.bin -exec cp {} 0/{} \;
-find turb -iname *.bin -exec cp {} 1/{} \;
-find turb -iname *.bin -exec cp {} 2/{} \;
-find turb -iname *.bin -exec cp {} 3/{} \;
-find turb -iname *.bin -exec cp {} 4/{} \;
-find turb -iname *.bin -exec cp {} 5/{} \;
-find turb -iname *.bin -exec cp {} 6/{} \;
-find turb -iname *.bin -exec cp {} 7/{} \;
-find turb -iname *.bin -exec cp {} 8/{} \;
-find turb -iname *.bin -exec cp {} 9/{} \;
-find turb -iname *.bin -exec cp {} 10/{} \;
-find turb -iname *.bin -exec cp {} 11/{} \;
-find turb -iname *.bin -exec cp {} 12/{} \;
-find turb -iname *.bin -exec cp {} 13/{} \;
-find turb -iname *.bin -exec cp {} 14/{} \;
-find turb -iname *.bin -exec cp {} 15/{} \;
-find turb -iname *.bin -exec cp {} 16/{} \;
-find turb -iname *.bin -exec cp {} 17/{} \;
-find turb -iname *.bin -exec cp {} 18/{} \;
-find turb -iname *.bin -exec cp {} 19/{} \;
+echo "create turb_db directories"
+mkdir -p ../turb/
+
+echo "----------------------------------------------------------------------"
+cd $PBS_O_WORKDIR
+echo 'current working directory:'
+pwd
+
+# copy to scratch db directory for [turb_db_dir], [turb_base_name]
+cp ../turb/none* /scratch/$USER/$PBS_JOBID/remote/../turb/.
+cp ../turb/turb_s100_10ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
+cp ../turb/turb_s101_11ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
+
+# copy to scratch db directory for [meand_db_dir], [meand_base_name]
+
+# copy to scratch db directory for [wake_db_dir], [wake_base_name]
+
+echo "----------------------------------------------------------------------"
+cd /scratch/$USER/$PBS_JOBID/remote/
+echo 'current working directory:'
+pwd
+echo "create turb directories in CPU dirs"
+mkdir -p 0/turb/
+mkdir -p 1/turb/
+mkdir -p 2/turb/
+mkdir -p 3/turb/
+mkdir -p 4/turb/
+mkdir -p 5/turb/
+mkdir -p 6/turb/
+mkdir -p 7/turb/
+mkdir -p 8/turb/
+mkdir -p 9/turb/
+mkdir -p 10/turb/
+mkdir -p 11/turb/
+mkdir -p 12/turb/
+mkdir -p 13/turb/
+mkdir -p 14/turb/
+mkdir -p 15/turb/
+mkdir -p 16/turb/
+mkdir -p 17/turb/
+mkdir -p 18/turb/
+mkdir -p 19/turb/
+
+echo "----------------------------------------------------------------------"
+cd /scratch/$USER/$PBS_JOBID/remote/
+echo 'current working directory:'
+pwd
+echo "Link all turb files into CPU dirs"
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/0/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/1/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/2/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/3/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/4/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/5/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/6/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/7/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/8/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/9/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/10/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/11/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/12/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/13/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/14/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/15/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/16/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/17/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/18/turb/ \;
+find /scratch/$USER/$PBS_JOBID/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/19/turb/ \;
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
