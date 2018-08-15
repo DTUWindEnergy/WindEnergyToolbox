@@ -75,9 +75,18 @@ def ReadFileHAWCStab2Header(fname):
 
     line_header, line_data = get_lines(fname)
     colwidths = get_col_widths(line_data)
-    # FIXME: gradients have duplicate columns: set for with wake updated
-    # and another with frozen wake assumption
     columns = get_col_names(line_header, colwidths)
+    # gradients have duplicate columns: set for with wake updated
+    # and another with frozen wake assumption, append _fw to the columns
+    # used to indicate frozen wake gradients
+    if 'dQ/dt [kNm/deg]' in columns:
+        i1 = columns.index('dQ/dt [kNm/deg]')
+        if i1 > -1:
+            i2 = columns.index('dQ/dt [kNm/deg]', i1+1)
+        if i2 > i1:
+            for i in range(i2, len(columns)):
+                columns[i] = columns[i].replace(' [', '_fw [')
+
     df = pd.read_fwf(fname, widths=colwidths, comment='#', header=None,
                      names=columns)
     units = regex_units.findall(''.join(columns))
