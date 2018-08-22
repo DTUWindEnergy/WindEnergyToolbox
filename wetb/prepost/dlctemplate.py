@@ -643,7 +643,7 @@ if __name__ == '__main__':
                         'and stats calculation on the node right after the '
                         'simulation has finished in single pbs mode.')
     parser.add_argument('--no_postpro_node_zipchunks', default=True,
-                        action='store_false', dest='postpro_node',
+                        action='store_false', dest='no_postpro_node_zipchunks',
                         help='Do NOT perform the log analysis '
                         'and stats calculation on the node right after the '
                         'simulation has finished in zipchunks mode. '
