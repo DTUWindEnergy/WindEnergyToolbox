@@ -132,20 +132,35 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         return fname, df_index
 
-    pbs_tmplate ="""
-### Standard Output
-#PBS -N [job_name]
-#PBS -o [std_out]
-### Standard Error
-#PBS -e [std_err]
-#PBS -W umask=[umask]
-### Maximum wallclock time format HOURS:MINUTES:SECONDS
-#PBS -l walltime=[walltime]
-#PBS -l nodes=[nodes]:ppn=[ppn]
-### Queue name
-#PBS -q [queue]
+    pbs_tmplate = "\n"
+    pbs_tmplate += "### Standard Output\n"
+    pbs_tmplate += "#PBS -N [job_name]\n"
+    pbs_tmplate += "#PBS -o [std_out]\n"
+    pbs_tmplate += "### Standard Error\n"
+    pbs_tmplate += "#PBS -e [std_err]\n"
+    pbs_tmplate += "#PBS -W umask=[umask]\n"
+    pbs_tmplate += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
+    pbs_tmplate += "#PBS -l walltime=[walltime]\n"
+    pbs_tmplate += "#PBS -l nodes=[nodes]:ppn=[ppn]\n"
+    pbs_tmplate += "### Queue name\n"
+    pbs_tmplate += "#PBS -q [queue]\n"
+    pbs_tmplate += "\n"
 
-"""
+    # this causes troubles on CI runner for the tests (line endings?)
+#     pbs_tmplate = """
+# ### Standard Output
+# #PBS -N [job_name]
+# #PBS -o [std_out]
+# ### Standard Error
+# #PBS -e [std_err]
+# #PBS -W umask=[umask]
+# ### Maximum wallclock time format HOURS:MINUTES:SECONDS
+# #PBS -l walltime=[walltime]
+# #PBS -l nodes=[nodes]:ppn=[ppn]
+# ### Queue name
+# #PBS -q [queue]
+
+# """
 
     def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
                         wine_64bit=False):
