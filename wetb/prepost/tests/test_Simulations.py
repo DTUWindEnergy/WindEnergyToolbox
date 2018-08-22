@@ -78,9 +78,12 @@ class TestGenerateInputs(Template):
             # the zipfiles are taken care of separately
             ignore = ['remote_chnk_00000.zip']
             cmp = filecmp.dircmp(remote, ref, ignore=ignore)
-            self.assertEqual(len(cmp.diff_files), 0, cmp.diff_files)
-            self.assertEqual(len(cmp.right_only), 0, cmp.right_only)
-            self.assertEqual(len(cmp.left_only), 0, cmp.left_only)
+            self.assertEqual(len(cmp.diff_files), 0,
+                             "{} {}".format(subdir, cmp.diff_files))
+            self.assertEqual(len(cmp.right_only), 0,
+                             "{} {}".format(subdir, cmp.right_only))
+            self.assertEqual(len(cmp.left_only), 0,
+                             "{} {}".format(subdir, cmp.left_only))
 
         # compare the zip files
         for fname in ['demo_dlc_remote.zip',
