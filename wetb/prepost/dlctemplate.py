@@ -643,7 +643,7 @@ if __name__ == '__main__':
                         'and stats calculation on the node right after the '
                         'simulation has finished in single pbs mode.')
     parser.add_argument('--no_postpro_node_zipchunks', default=True,
-                        action='store_true', dest='postpro_node',
+                        action='store_false', dest='postpro_node',
                         help='Do NOT perform the log analysis '
                         'and stats calculation on the node right after the '
                         'simulation has finished in zipchunks mode. '
@@ -718,7 +718,7 @@ if __name__ == '__main__':
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
                           compress=opt.compress, wine_64bit=opt.wine_64bit,
-                          postpro_node_zipchunks=opt.postpro_node_zipchunks)
+                          postpro_node_zipchunks=opt.no_postpro_node_zipchunks)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:
