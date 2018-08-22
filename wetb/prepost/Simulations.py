@@ -1999,7 +1999,7 @@ class PBS(object):
         self.exechunks = exechunks
         if exechunks is None:
             self.exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
-            self.exechunks += "2>&1 tee {fname_pbs_out:}"
+            self.exechunks += "2>&1 | tee {fname_pbs_out:}"
 
         # TODO: based on a certain host/architecture you can change these
         self.maxcpu = 1
