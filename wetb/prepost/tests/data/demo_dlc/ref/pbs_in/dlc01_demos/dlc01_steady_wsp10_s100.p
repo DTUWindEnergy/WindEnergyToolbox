@@ -60,7 +60,7 @@ echo ""
 # evaluates to true if LAUNCH_PBS_MODE is NOT set
 if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   echo "execute HAWC2, fork to background"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc  &
+  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc &
   wait
 # ==============================================================================
 
@@ -68,7 +68,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo "execute HAWC2, do not fork and wait"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc
+  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc) |& tee pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err.out 
 fi
 # ------------------------------------------------------------------------------
 
@@ -112,6 +112,7 @@ else
   cd /scratch/$USER/$PBS_JOBID/$CPU_NR/
   rsync -a --remove-source-files res/dlc01_demos/. ../remote/res/dlc01_demos/.
   rsync -a --remove-source-files logfiles/dlc01_demos/. ../remote/logfiles/dlc01_demos/.
+  rsync -a --remove-source-files pbs_out/dlc01_demos/. ../remote/pbs_out/dlc01_demos/.
   rsync -a --remove-source-files animation/. ../remote/animation/.
 
   echo ""

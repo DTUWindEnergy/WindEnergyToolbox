@@ -556,12 +556,12 @@ def run_local(cases, silent=False, check_log=True):
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
-                update_cases=False, ignore_non_unique=False, wine_appendix='',
+                update_cases=False, ignore_non_unique=False,
                 run_only_new=False, windows_nr_cpus=2, wine_64bit=False,
                 pbs_fname_appendix=True, short_job_names=True, qsub='',
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
-                postpro_node=False):
+                postpro_node=False, exesingle=None, exechunks=None):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -798,12 +798,12 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
         cases = cases_to_run
 
     launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
-           copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
+           copyback_turb=copyback_turb, qsub=qsub,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
            pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=postpro_node_zipchunks,
-           postpro_node=postpro_node)
+           postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks)
 
     return cases
 
@@ -1003,9 +1003,10 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
-           wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
+           pbs_fname_appendix=True, short_job_names=True,
            maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12],
-           postpro_node_zipchunks=True, postpro_node=False):
+           postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
+           exechunks=None):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1048,8 +1049,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
                   verbose=verbose, silent=silent, wine_64bit=wine_64bit,
                   m=m, postpro_node_zipchunks=postpro_node_zipchunks,
-                  postpro_node=postpro_node)
-        pbs.wine_appendix = wine_appendix
+                  postpro_node=postpro_node, exesingle=exesingle,
+                  exechunks=exechunks)
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
         pbs.maxcpu = maxcpu
@@ -1938,8 +1939,9 @@ class PBS(object):
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 wine_64bit=False, m=[3,4,6,8,9,10,12],
-                 postpro_node_zipchunks=True, postpro_node=False):
+                 wine_64bit=False, m=[3,4,6,8,9,10,12], exesingle=None,
+                 postpro_node_zipchunks=True, postpro_node=False,
+                 exechunks=None):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1987,6 +1989,18 @@ class PBS(object):
         self.wine = self.winebase + 'wine'
         self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
+        # in case you want to redirect stdout to /dev/nul, append as follows:
+        # '> /dev/null 2>&1'
+        self.exesingle = exesingle
+        if exesingle is None:
+            self.exesingle = "{wine:} {hawc2_exe:} {fname_htc:}"
+        # in zipchunks mode we will output std out and err to a separate
+        # pbs_out file, and that in addition to the pbs_out_zipchunks file
+        self.exechunks = exechunks
+        if exechunks is None:
+            self.exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
+            self.exechunks += "|& tee {fname_pbs_out:}"
+
         # TODO: based on a certain host/architecture you can change these
         self.maxcpu = 1
         self.secperiter = 0.012
@@ -2013,9 +2027,6 @@ class PBS(object):
         # the actual script starts empty
         self.pbs = ''
 
-        # in case you want to redirect stdout to /dev/nul
-#        self.wine_appendix = '> /dev/null 2>&1'
-        self.wine_appendix = ''
         # /dev/shm should be the RAM of the cluster
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
@@ -2320,10 +2331,28 @@ class PBS(object):
             self.pbs += '# single PBS mode: one case per PBS job\n'
             self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
-            # the hawc2 execution commands via wine, in PBS mode fork and wait
-            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+
             self.pbs += '  echo "execute HAWC2, fork to background"\n'
-            self.pbs += "  %s %s ./%s %s &\n" % param
+            # the hawc2 execution commands via wine, in PBS mode fork and wait
+            # METHOD MORE GENERAL
+            # case contains the htc file name extension, self.case doesn't
+            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            fname_log = os.path.join(self.logs_dir, self.case)
+            ext = '.err.out'
+            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            execstr = self.exesingle.format(wine=self.wine, case=case,
+                                            fname_htc=fname_htc,
+                                            hawc2_exe=hawc2_exe,
+                                            pbs_out_dir=self.pbs_out_dir,
+                                            logs_dir=self.logs_dir,
+                                            fname_log=fname_log,
+                                            fname_pbs_out=fname_pbs_out,
+                                            winenumactl=self.winenumactl)
+            self.pbs += "  %s &\n" % execstr
+            # # OLD METHOD
+            # param = (self.wine, hawc2_exe, self.htc_dir+case)
+            # self.pbs += "  %s %s ./%s &\n" % param
+
             # FIXME: running post-processing will only work when 1 HAWC2 job
             # per PBS file, otherwise you have to wait for each job to finish
             # first and then run the post-processing for all those cases
@@ -2344,10 +2373,26 @@ class PBS(object):
             self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
             self.pbs += "else\n"
             # numactl --physcpubind=$CPU_NR
-            param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
-                     self.wine_appendix)
+
+            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            fname_log = os.path.join(self.logs_dir, self.case)
+            ext = '.err.out'
+            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            execstr = self.exechunks.format(wine=self.wine, case=case,
+                                            fname_htc=fname_htc,
+                                            hawc2_exe=hawc2_exe,
+                                            pbs_out_dir=self.pbs_out_dir,
+                                            logs_dir=self.logs_dir,
+                                            fname_log=fname_log,
+                                            fname_pbs_out=fname_pbs_out,
+                                            winenumactl=self.winenumactl)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
-            self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
+            self.pbs += "  %s \n" % execstr
+
+            # param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
+            #          self.wine_appendix)
+            # self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
+            # self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
             if self.pyenv is not None and self.postpro_node_zipchunks:
                 self.pbs += '  echo "POST-PROCESSING"\n'
                 self.pbs += "  "
@@ -2609,6 +2654,12 @@ class PBS(object):
         self.pbs += "  %s %s. %s\n" % (foper, self.results_dir, res_dst)
         log_dst = os.path.join(dst, self.logs_dir, ".")
         self.pbs += "  %s %s. %s\n" % (foper, self.logs_dir, log_dst)
+        # in zipchunks mode by default we also copy the time+std out/err to
+        # an additional file that is in pbs_out for consistancy with the
+        # pbs_mode approach
+        if not pbs_mode:
+            pbs_dst = os.path.join(dst, self.pbs_out_dir, ".")
+            self.pbs += "  %s %s. %s\n" % (foper, self.pbs_out_dir, pbs_dst)
         if self.animation_dir:
             ani_dst = os.path.join(dst, self.animation_dir, ".")
             self.pbs += "  %s %s. %s\n" % (foper, self.animation_dir, ani_dst)

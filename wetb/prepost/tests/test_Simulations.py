@@ -94,9 +94,12 @@ class TestGenerateInputs(Template):
                 frem = {f.filename:f.file_size for f in zrem.infolist()}
                 fref = {f.filename:f.file_size for f in zref.infolist()}
                 dd = DictDiff(frem, fref)
-                self.assertEqual(len(dd.added()), 0)
-                self.assertEqual(len(dd.removed()), 0)
-                self.assertEqual(len(dd.changed()), 0)
+                self.assertEqual(len(dd.added()), 0,
+                                 "{} {}".format(fname, dd.added()))
+                self.assertEqual(len(dd.removed()), 0,
+                                 "{} {}".format(fname, dd.removed()))
+                self.assertEqual(len(dd.changed()), 0,
+                                 "{} {}".format(fname, dd.changed()))
 
         # for the pickled file we can just read it
         remote = os.path.join(p_root, tmpl.PROJECT, 'remote', 'prepost')
