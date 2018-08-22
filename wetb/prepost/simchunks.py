@@ -311,7 +311,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # =====================================================================
         # to be safe, create all turb dirs in the cpu dirs
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += 'cd %s\n' % os.path.join(pbase, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "create turb directories in CPU dirs"\n'
@@ -351,7 +351,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                 turb_dir_s = turb_dir.replace('.', '').replace('/', '').lower()
                 if db_dir_s in nogo or turb_dir_s in nogo:
                     continue
-                db_dir_abs = os.path.join(pbase, db_dir, '')
+                db_dir_abs = os.path.join(pbase, sim_id, db_dir, '')
                 for k in list(range(ppn)):
                     turb_dir_abs = os.path.join(pbase, sim_id, str(k),
                                                 turb_dir, '')

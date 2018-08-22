@@ -2610,7 +2610,8 @@ class PBS(object):
         if mode=="find+xargs":
             foper = "rsync -a --remove-source-files" # move files instead of copy
             dst = os.path.join('..', self.sim_id, '')
-            dst_db = '../'
+            # copy back to DB dir, and not the scratch dir root
+            dst_db = "$PBS_O_WORKDIR/"
             cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
                                                   '$PBS_JOBID', '$CPU_NR', '')
             pbs_mode = False

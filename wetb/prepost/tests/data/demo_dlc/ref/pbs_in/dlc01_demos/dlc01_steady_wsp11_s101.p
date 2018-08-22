@@ -118,7 +118,7 @@ else
   echo ""
   echo "COPY BACK TURB IF APPLICABLE"
   cd turb/
-  for i in `ls *.bin`; do  if [ -e ../../turb/$i ]; then echo "$i exists no copyback"; else echo "$i copyback"; cp $i ../../turb/; fi; done
+  for i in `ls *.bin`; do  if [ -e $PBS_O_WORKDIR/../turb/$i ]; then echo "$i exists no copyback"; else echo "$i copyback"; cp $i $PBS_O_WORKDIR/../turb/; fi; done
   cd /scratch/$USER/$PBS_JOBID/$CPU_NR/
   echo "END COPY BACK TURB"
   echo ""
