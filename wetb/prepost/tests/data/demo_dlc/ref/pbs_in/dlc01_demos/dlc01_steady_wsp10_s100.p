@@ -68,7 +68,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo "execute HAWC2, do not fork and wait"
-  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc) 2>&1 tee pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err.out
+  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp10_s100.htc) 2>&1 tee pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err.out 
 fi
 # ------------------------------------------------------------------------------
 
