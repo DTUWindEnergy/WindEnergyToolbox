@@ -334,7 +334,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
                                postpro_node_zipchunks=postpro_node_zipchunks,
                                postpro_node=postpro_node, exesingle=None,
-                               exechunks=None)
+                               exechunks=None, wine_arch=wine_arch,
+                               wine_prefix=wine_prefix)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
