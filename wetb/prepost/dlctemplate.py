@@ -267,7 +267,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', wine_64bit=False,
-                      m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True):
+                      m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
+                      wine_arch='win32', wine_prefix='~/.wine32'):
     """
     Launch load cases defined in Excel files
     """
@@ -352,11 +353,13 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
                               nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
-                              queue='workq', wine_64bit=wine_64bit)
+                              queue='workq', wine_64bit=wine_64bit,
+                              wine_arch=wine_arch, wine_prefix=wine_prefix)
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
                               nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-gorm', compress=compress,
-                              queue='workq', wine_64bit=wine_64bit)
+                              queue='workq', wine_64bit=wine_64bit,
+                              wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
@@ -671,6 +674,13 @@ if __name__ == '__main__':
     parser.add_argument('--wine_64bit', default=False, action='store_true',
                         dest='wine_64bit', help='Run wine in 64-bit mode. '
                         'Only works on Jess.')
+    parser.add_argument('--wine_arch', action='store', default='win32', type=str,
+                        dest='wine_arch', help='Set to win32 for 32-bit, and '
+                        'win64 for 64-bit. 64-bit only works on Jess. '
+                        'Defaults to win32.')
+    parser.add_argument('--wine_prefix', action='store', default='~/.wine32',
+                        type=str, dest='wine_prefix', help='WINEPREFIX: '
+                        'Directory used by wineserver. Default ~/.wine32')
     opt = parser.parse_args()
 
     # Wholer coefficients to be considered for the fatigue analysis
@@ -718,7 +728,8 @@ if __name__ == '__main__':
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
                           compress=opt.compress, wine_64bit=opt.wine_64bit,
-                          postpro_node_zipchunks=opt.no_postpro_node_zipchunks)
+                          postpro_node_zipchunks=opt.no_postpro_node_zipchunks,
+                          wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:

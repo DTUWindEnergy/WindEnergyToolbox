@@ -561,7 +561,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 pbs_fname_appendix=True, short_job_names=True, qsub='',
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
-                postpro_node=False, exesingle=None, exechunks=None):
+                postpro_node=False, exesingle=None, exechunks=None,
+                wine_arch='win32', wine_prefix='~/.wine32'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -803,7 +804,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
            pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=postpro_node_zipchunks,
-           postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks)
+           postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
+           wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     return cases
 
@@ -1006,7 +1008,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            pbs_fname_appendix=True, short_job_names=True,
            maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
-           exechunks=None):
+           exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1050,7 +1052,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
                   verbose=verbose, silent=silent, wine_64bit=wine_64bit,
                   m=m, postpro_node_zipchunks=postpro_node_zipchunks,
                   postpro_node=postpro_node, exesingle=exesingle,
-                  exechunks=exechunks)
+                  exechunks=exechunks, wine_arch=wine_arch,
+                  wine_prefix=wine_prefix)
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
         pbs.maxcpu = maxcpu
@@ -1941,7 +1944,7 @@ class PBS(object):
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
                  wine_64bit=False, m=[3,4,6,8,9,10,12], exesingle=None,
                  postpro_node_zipchunks=True, postpro_node=False,
-                 exechunks=None):
+                 exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1981,7 +1984,7 @@ class PBS(object):
 
         # run in 32-bit or 64-bit mode. Note this uses the same assumptions
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
-        wineparam = ('win32', '~/.wine32')
+        wineparam = (wine_arch, wine_prefix)
         if wine_64bit:
             wineparam = ('win64', '~/.wine')
         self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam

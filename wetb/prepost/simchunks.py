@@ -37,7 +37,8 @@ from wetb.prepost.Simulations import Cases
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           nr_procs_series=9, queue='workq', pyenv='wetb_py3',
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          compress=False, wine_64bit=False):
+                          compress=False, wine_64bit=False, wine_arch='win32',
+                          wine_prefix='~/.wine32'):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -163,7 +164,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 # """
 
     def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
-                        wine_64bit=False):
+                        wine_64bit=False, wine_arch='win32',
+                        wine_prefix='~/.wine32'):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -175,7 +177,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         cmd_xargs = '/home/MET/sysalt/bin/xargs'
         jobid = '%s_chnk_%05i' % (sim_id, ii)
 
-        wineparam = ('win32', '~/.wine32')
+        wineparam = (wine_arch, wine_prefix)
         if wine_64bit:
             wineparam = ('win64', '~/.wine')
 
@@ -508,7 +510,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
-                        compress=compress, wine_64bit=wine_64bit)
+                        compress=compress, wine_64bit=wine_64bit,
+                        wine_arch=wine_arch, wine_prefix=wine_prefix)
         df_ind = df_ind.append(ind)
         print(fname)
 
