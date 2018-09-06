@@ -3,7 +3,6 @@
 Author:
     Bjarne S. Kallesoee
 
-
 Description:
     Reads all HAWC2 output data formats, HAWC2 ascii, HAWC2 binary and FLEX
 
@@ -55,8 +54,8 @@ from wetb import gtsdf
 class ReadHawc2(object):
     """
     """
-################################################################################
-# read *.sel file
+    ################################################################################
+    # read *.sel file
     def _ReadSelFile(self):
         """
         Some title
@@ -107,8 +106,8 @@ class ReadHawc2(object):
                 self.ScaleFactor[i] = float(Lines[i + 12 + self.NrCh + 2])
         else:
             self.FileFormat = 'HAWC2_ASCII'
-################################################################################
-# read sensor file for FLEX format
+    ################################################################################
+    # read sensor file for FLEX format
     def _ReadSensorFile(self):
         # read sensor file used if results are saved in FLEX format
         DirName = os.path.dirname(self.FileName + ".int")
@@ -135,7 +134,7 @@ class ReadHawc2(object):
         fid = open(self.FileName + ".int", 'rb')
         fid.seek(4 * 19)
         if not np.fromfile(fid, 'int32', 1) == self.NrCh:
-            print ("number of sensors in sensor file and data file are not consisten")
+            print ("number of sensors in sensor file and data file are not consistent")
         fid.seek(4 * (self.NrCh) + 8, 1)
         temp = np.fromfile(fid, 'f', 2)
         self.Freq = 1 / temp[1];
@@ -145,25 +144,35 @@ class ReadHawc2(object):
         self.Time = self.NrSc * temp[1]
         self.t = np.arange(0, self.Time, temp[1])
         fid.close()
-################################################################################
-# init function, load channel and other general result file info
+    ################################################################################
+    # init function, load channel and other general result file info
     def __init__(self, FileName, ReadOnly=0):
         self.FileName = FileName
         self.ReadOnly = ReadOnly
         self.Iknown = []  # to keep track of what has been read all ready
         self.Data = np.zeros(0)
+<<<<<<< HEAD
         if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
              self._ReadSelFile()
         elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
              self.FileFormat = 'FLEX'
              self._ReadSensorFile()
         elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
+=======
+        self.alias = {}
+        if os.path.isfile(FileName + ".sel"):
+            self._ReadSelFile()
+        elif os.path.isfile(self.FileName + ".int"):
+            self.FileFormat = 'FLEX'
+            self._ReadSensorFile()
+        elif os.path.isfile(self.FileName + ".hdf5"):
+>>>>>>> 9623f2b... Updated the HAWC2 files to make a cleaner interface
             self.FileFormat = 'GTSDF'
             self.ReadGtsdf()
         else:
             print ("unknown file: " + FileName)
-################################################################################
-# Read results in binary format
+    ################################################################################
+    # Read results in binary format
     def ReadBinary(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
@@ -174,15 +183,15 @@ class ReadHawc2(object):
                 data[:, j] = np.fromfile(fid, 'int16', self.NrSc) * self.ScaleFactor[i]
                 j += 1
         return data
-################################################################################
-# Read results in ASCII format
+    ################################################################################
+    # Read results in ASCII format
     def ReadAscii(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
         temp = np.loadtxt(self.FileName + '.dat', usecols=ChVec)
         return temp.reshape((self.NrSc, len(ChVec)))
-################################################################################
-# Read results in FLEX format
+    ################################################################################
+    # Read results in FLEX format
     def ReadFLEX(self, ChVec=[]):
         if not ChVec:
             ChVec = range(1, self.NrCh)
@@ -192,8 +201,8 @@ class ReadHawc2(object):
         temp = temp.reshape(self.NrSc, self.NrCh)
         fid.close()
         return np.dot(temp[:, ChVec], np.diag(self.ScaleFactor[ChVec]))
-################################################################################
-# Read results in GTSD format
+    ################################################################################
+    # Read results in GTSD format
     def ReadGtsdf(self):
         self.t, data, info = gtsdf.load(self.FileName + '.hdf5')
         self.Time = self.t
@@ -207,8 +216,8 @@ class ReadHawc2(object):
         self.gtsdf_description = info['description']
         data = np.hstack([self.Time[:,np.newaxis], data])
         return data
-################################################################################
-# One stop call for reading all data formats
+    ################################################################################
+    # One stop call for reading all data formats
     def ReadAll(self, ChVec=[]):
         if not ChVec and not self.FileFormat == 'GTSDF':
             ChVec = range(0, self.NrCh)
@@ -220,8 +229,8 @@ class ReadHawc2(object):
             return self.ReadGtsdf()
         else:
             return self.ReadFLEX(ChVec)
-################################################################################
-# Main read data call, read, save and sort data
+    ################################################################################
+    # Main read data call, read, save and sort data
     def __call__(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
@@ -253,6 +262,54 @@ class ReadHawc2(object):
                 else:
                     self.Data = temp
             return self.Data[:, tuple(I1)]
+    ############################################################################
+    # Load the data
+    def load_data(self):
+        self.Data = self.ReadAll()
+    ############################################################################
+    # Get the signal
+    def get_signal(self, chid):
+        if self.Data.size == 0:
+            raise Exception('The data is not set')
+        if chid>=self.NrCh:
+            raise KeyError('The index is too large')
+        return self.data[:,chid]
+    ############################################################################
+    # this will get the keys
+    def keys(self):
+        retval=list(range(0, self.NrCh)))
+        retval.extend(list(self.alias.keys()))
+        return retval
+    ############################################################################
+    # this will set an alias for keys
+    def set_keys(self, new_key, key_index=None):
+        if key_index is None:
+            if isinstance(new_key, list):
+                for I, key in enumerate(new_key):
+                    self.alias[key] = I
+            if isinstance(new_key, str):
+                nr = len(self.alias)
+                self.alias[new_key] = nr
+        else:
+            if isinstance(new_key, list):
+                if not isinstance(key_index, list):
+                    raise Exception('The key index must be a list')
+                for I in range(0, len(key_index)):
+                    self.alias[new_key[I]] = key_index[I]
+            if isinstance(new_key, str):
+                if not isinstance(key_index, int):
+                    raise Exception('The key index must be a int')
+                self.alias[new_key] = key_index
+    ############################################################################
+    # get items
+    def __getitem__(self, key):
+        old_key = []
+        while key in alias.keys() and not key in old_key:
+            old_key.append(key)
+            key = alias[key]
+        if key in old_key:
+            raise Exception('Circular alias')
+        return self.get_signal(key)
 
 
 ################################################################################
@@ -265,3 +322,4 @@ if __name__ == '__main__':
     res_file = ReadHawc2('structure_wind')
     results = res_file.ReadAscii()
     channelinfo = res_file.ChInfo
+

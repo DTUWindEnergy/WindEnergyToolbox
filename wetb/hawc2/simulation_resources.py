@@ -134,10 +134,10 @@ class LocalSimulationHost(SimulationHost):
         self.logFile.update_status()
 
     def stop(self):
-            self.simulationThread.stop()
-            if self.simulationThread.is_alive():
-                self.simulationThread.join()
-            print ("simulatino_resources.stop joined")
+        self.simulationThread.stop()
+        if self.simulationThread.is_alive():
+            self.simulationThread.join()
+        print ("simulatino_resources.stop joined")
 
 
 

@@ -23,9 +23,124 @@ from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
 import os
 from copy import copy
 
+class Input_File_Data(object):
 
-def fmt_path(path):
-    return path.lower().replace("\\","/")
+    def __init__(self, key_in=None, original_file_in=None, file_object_in=None, written_file_in=None):
+
+        self.key=key_in
+        self.original_file=original_file_in
+        self.file_object=file_object_in
+        self.written_file=written_file_in
+
+    def __getitem__(self, item_key):
+
+        if isinstance(item_key, str):
+            if item_key.isdigit() or (item_key[0] in ('-', '+') and item_key[1:].isdigit()):
+                item_key = int(item_key)
+
+        if not isinstance(item_key, int):
+            if item_key == 'key':
+                item_key = 0
+            elif item_key == 'original_file':
+                item_key = 1
+            elif item_key == 'file_object':
+                item_key = 2
+            elif item_key == 'written_file':
+                item_key = 3
+
+        if item_key == 0:
+            return self.key
+        elif item_key == 1:
+            return self.original_file
+        elif item_key == 2:
+            return self.file_object
+        elif item_key == 3:
+            return self.written_file
+        else:
+            raise KeyError('That key does not exist')
+
+    def __setitem__(self, item_key, item_val):
+
+        if isinstance(item_key, str):
+            if item_key.isdigit() or (item_key[0] in ('-', '+') and item_key[1:].isdigit()):
+                item_key = int(item_key)
+
+        if not isinstance(item_key, int):
+            if item_key == 'key':
+                item_key = 0
+            elif item_key == 'original_file':
+                item_key = 1
+            elif item_key == 'file_object':
+                item_key = 2
+            elif item_key == 'written_file':
+                item_key = 3
+
+        if item_key == 0:
+            self.key = item_val
+        elif item_key == 1:
+            self.original_file = item_val
+        elif item_key == 2:
+            self.file_object = item_val
+        elif item_key == 3:
+            self.written_file = item_val
+        else:
+            raise KeyError('That key does not exist')
+
+    def __str__(self):
+        if self.key is None and self.original_file is None and self.file_object is None and self.written_file is None:
+            return 'Input_File_Data()'
+        retval = 'Input_File_Data('
+        has_arg = False
+        if not self.key is None:
+            retval += 'key_in = '+str(self.key)
+            has_arg = True
+        if not self.original_file is None:
+            if has_arg:
+                retval += ', '
+            retval += 'original_file_in = '+str(self.original_file)
+            has_arg = True
+        if not self.file_object is None:
+            if has_arg:
+                retval += ', '
+            retval += 'file_object_in = '+str(self.file_object)
+            has_arg = True
+        if not self.written_file is None:
+            if has_arg:
+                retval += ', '
+            retval += 'written_file_in = '+str(self.written_file)
+            has_arg = True
+        retval += ')'
+
+        return retval
+
+class HAWC2_Input_Files(dict):
+
+    def __init__(self):
+        super(HAWC2_Input_Files, self).__init__()
+
+    def _get_leaves(self, container):
+
+        retval = []
+        if isinstance(container,Input_File_Data):
+            return [container]
+        elif isinstance(container, list):
+            for obj in container:
+                retval.extend(self._get_leaves(obj))
+        elif isinstance(container, dict):
+            for obj in container.values():
+                retval.extend(self._get_leaves(obj))
+        else:
+            raise Exception('That container type has not been implemented')
+
+        return retval
+
+    def get_all_extra_inputs(self):
+
+        retval = []
+        for key, container in self.items():
+            if key != 'htc':
+                retval.extend(self._get_leaves(container))
+        return retval
 
 class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     """Wrapper for HTC files
@@ -77,6 +192,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     modelpath = "../"
     initial_comments = None
     _contents = None
+
     def __init__(self, filename=None, modelpath=None):
         """        
         Parameters
@@ -137,6 +253,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                     break
                 self._add_contents(line)
 
+    def __delitem__(self, item):
+        HTCContents.__delitem__(self, item)
 
     def reset(self):
         self._contents = None
@@ -182,6 +300,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
 
     def __setitem__(self, key, value):
+		self.contents # load if not loaded
         self.contents[key] = value
 
     def __str__(self):
@@ -228,6 +347,87 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             self.output.time = start, stop
             if "wind" in self:# and self.wind.turb_format[0] > 0:
                 self.wind.scale_time_start = start
+
+    def get_input_files_and_keys(self):
+
+        retval = HAWC2_Input_Files()
+
+        # Add the htc files
+        retval['htc'] = []
+        for htc in self.htc_inputfiles:
+            retval['htc'].append(Input_File_Data(key_in = None, original_file_in = os.path.abspath(os.path.realpath(htc)), file_object_in = self, written_file_in = None))
+
+        # now lets collect all the st files
+        if 'new_htc_structure' in self:
+            for mb_key in self.new_htc_structure.keys():
+                full_mb_key = 'new_htc_structure.'+mb_key
+                if mb_key.startswith('main_body'):
+                    if 'timoschenko_input' in self[full_mb_key].keys():
+                        if not 'st' in retval:
+                            retval['st'] = {}
+                        st_key = 'new_htc_structure.'+mb_key+'.timoschenko_input.filename.0'
+                        retval['st'][mb_key]=Input_File_Data(key_in=st_key, original_file_in=os.path.abspath(os.path.realpath(self[st_key])), file_object_in = None, written_file_in = None)
+                    if 'external_bladedata_dll' in self[full_mb_key].keys():
+                        if not 'st_external_bladedata_dll' in retval:
+                            retval['st_external_bladedata_dll'] = {}
+                        stdll_key = 'new_htc_structure.'+mb_key+'.external_bladedata_dll.2'
+                        retval['st_external_bladedata_dll'][mb_key]=Input_File_Data(key_in=stdll_key, original_file_in=os.path.abspath(os.path.realpath(self[stdll_key])), file_object_in = None, written_file_in = None)
+        if 'aero' in self:
+            ae_key = 'aero.ae_filename.0'
+            pc_key = 'aero.pc_filename.0'
+            retval['ae']=Input_File_Data(key_in=ae_key, original_file_in=os.path.abspath(os.path.realpath(self[ae_key])), file_object_in = None, written_file_in = None)
+            retval['pc']=Input_File_Data(key_in=pc_key, original_file_in=os.path.abspath(os.path.realpath(self[pc_key])), file_object_in = None, written_file_in = None)
+            if 'external_bladedata_dll' in self['aero'].keys():
+                file_key = 'aero.external_bladedata_dll.2'
+                retval['ae_pc_external_bladedata_dll']=Input_File_Data(key_in=file_key, original_file_in=os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'output_profile_coef_filename' in self['aero'].keys():
+                file_key = 'aero.output_profile_coef_filename.0'
+                retval['output_profile_coef_filename']=Input_File_Data(key_in=file_key, original_file_in=os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'dynstall_ateflap' in self.aero:
+                file_key = 'aero.dynstall_ateflap.flap.2'
+                retval['dynstall_ateflap']=Input_File_Data(key_in=file_key, original_file_in=os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'bemwake_method' in self.aero:
+                file_key = 'aero.bemwake_method.a-ct-filename.0'
+                retval['a-ct-filename']=Input_File_Data(key_in=file_key, original_file_in=os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+        if 'dll' in self:
+            for dll_key in self['dll'].keys():
+                if dll_key != '__on__':
+                    if 'dll' not in retval:
+                        retval['dll']={}
+                    dll_file_key = 'dll.'+dll_key+'.filename.0'
+                    retval['dll'][dll_key]=Input_File_Data(key_in = dll_file_key, original_file_in = os.path.abspath(os.path.realpath(self[dll_file_key])), file_object_in = None, written_file_in = None)
+        if 'wind' in self:
+            if 'user_defined_shear' in self['wind']:
+                file_key = 'wind.user_defined_shear.0'
+                retval['user_defined_shear']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'user_defined_shear_turbulence' in self['wind']:
+                file_key = 'wind.user_defined_shear_turbulence.0'
+                retval['user_defined_shear_turbulence']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+        if 'wakes' in self:
+            if 'use_specific_deficit_file' in self['wakes']:
+                file_key = 'wakes.use_specific_deficit_file.0'
+                retval['use_specific_deficit_file']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'write_ct_cq_file' in self['wakes']:
+                file_key = 'wakes.write_ct_cq_file.0'
+                retval['write_ct_cq_file']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+            if 'write_final_deficits' in self['wakes']:
+                file_key = 'wakes.write_final_deficits.0'
+                retval['write_final_deficits']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+        if 'hydro' in self:
+            if 'water_properties' in self['hydro'].keys():
+                file_key = 'hydro.water_properties.0'
+                retval['water_properties']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+        if 'soil' in self:
+            if 'soil_element' in self['soil'].keys():
+                file_key = 'soil.soil_element.datafile.0'
+                retval['soil_element_datafile']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+        if 'force' in self:
+            if 'dll' in self['force'].keys():
+                if 'dll' in self['force.dll'].keys():
+                    file_key = 'force.dll.dll.0'
+                    retval['soil_element_datafile']=Input_File_Data(key_in = file_key, original_file_in = os.path.abspath(os.path.realpath(self[file_key])), file_object_in = None, written_file_in = None)
+
+        return retval
 
     def input_files(self):
         self.contents # load if not loaded

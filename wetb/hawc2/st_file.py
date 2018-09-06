@@ -15,6 +15,325 @@ standard_library.install_aliases()
 
 import numpy as np
 
+def is_int(v):
+    try:
+        int(v)
+        return True
+    except ValueError:
+        return False
+
+class StBaseData(object):
+
+    def __init__(self, filename=None):
+        self.main_data_sets = {}
+        if not filename is None:
+            self.read_file(filename)
+    
+    def _get_column_number(self):
+        '''This is suppose to return the number of columns in a data set'''
+        raise NotImplementedError('The _get_column_number must be implemented by the derived class')
+
+    def _get_column_labels(self):
+        '''This is suppose to be the labels that are added to the st file to help make sense of the data'''
+        raise NotImplementedError('The _get_column_labels must be implemented by the derived class')
+
+    def _get_column_keys(self):
+        '''These are the keys that identify the columns'''
+        raise NotImplementedError('The _get_column_keys must be implemented by the derived class')
+
+    def __getitem__(self, key):
+        key_str = self._get_column_keys()
+        keys=key.split('.')
+        set_id=0
+        sub_set_id=0
+        data_id=key_str[0]
+        sub_set_data = None
+        if len(keys)==1:
+            if len(self.main_data_sets)==0:
+                raise IndexError('No data exists')
+            elif len(self.main_data_sets)>1:
+                raise IndexError('must give the main-set id in the key when there is more than 1 main set')
+            set_id = self.main_data_sets.keys()[0]
+            set_data = self.main_data_sets[set_id]
+            if len(set_data)==0:
+                raise IndexError('No data exists')
+            elif len(set_data)>1:
+                raise IndexError('Must give the sub-set id when there is more than one sub-set')
+            sub_set_id = set_data.keys()[0]
+            sub_set_data = set_data[sub_set_id]
+            data_id=keys[0]
+        elif len(keys)==2:
+            if len(self.main_data_sets)==0:
+                raise IndexError('No data exists')
+            elif len(self.main_data_sets)==1:
+                set_id = self.main_data_sets.keys()[0]
+                set_data = self.main_data_sets[set_id]
+                if len(set_data)==0:
+                    raise IndexError('No data exists')
+                elif len(set_data)>1:
+                    sub_set_id = int(keys[0])
+                    if not sub_set_id in set_data.keys():
+                        raise IndexError('Sub-set does not exist')
+                    sub_set_data = set_data[sub_set_id]
+                else:
+                    sub_set_id = set_data.keys()[0]
+                    sub_set_data = set_data[sub_set_id]
+                    test_id = int(keys[0])
+                    if test_id!=set_id and test_id!=sub_set_id:
+                        raise IndexError('That data does not exist')
+            else:
+                set_id = int(keys[0])
+                if not set_id in self.main_data_sets.keys():
+                    raise IndexError('Data set does not exist')
+                set_data = self.main_data_sets[set_id]
+                if len(set_data)==0:
+                    raise IndexError('No data exists')
+                elif len(set_data)>1:
+                    raise IndexError('Must give the sub-set id when there is more than one sub-set')
+                sub_set_id = set_data.keys()[0]
+                sub_set_data = set_data[sub_set_id]
+            data_id=keys[1]
+        elif len(keys)==3:
+            set_id = int(keys[0])
+            if not set_id in self.main_data_sets.keys():
+                raise IndexError('Data set does not exist')
+            set_data = self.main_data_sets[set_id]
+            sub_set_id = int(keys[1])
+            if not sub_set_id in set_data.keys():
+                raise IndexError('Sub-set does not exist')
+            sub_set_data = set_data[sub_set_id]
+            data_id=keys[2]
+        else:
+            raise IndexError('The keys cannot have more than 3 terms')
+        if data_id in key_str:
+            col_id = key_str.index(data_id)
+            return sub_set_data[:,col_id]
+        else:
+            raise IndexError('That key does not exist')
+
+    def __setitem__(self, key, val):
+        key_str = self._get_column_keys()
+        keys=key.split('.')
+        set_id=0
+        sub_set_id=0
+        data_id=key_str[0]
+        sub_set_data = None
+        if len(keys)==1:
+            if len(self.main_data_sets)==0:
+                raise IndexError('No data exists')
+            elif len(self.main_data_sets)>1:
+                raise IndexError('must give the main-set id in the key when there is more than 1 main set')
+            set_id = self.main_data_sets.keys()[0]
+            set_data = self.main_data_sets[set_id]
+            if len(set_data)==0:
+                raise IndexError('No data exists')
+            elif len(set_data)>1:
+                raise IndexError('Must give the sub-set id when there is more than one sub-set')
+            sub_set_id = set_data.keys()[0]
+            sub_set_data = set_data[sub_set_id]
+            data_id=keys[0]
+        elif len(keys)==2:
+            if len(self.main_data_sets)==0:
+                raise IndexError('No data exists')
+            elif len(self.main_data_sets)==1:
+                set_id = self.main_data_sets.keys()[0]
+                set_data = self.main_data_sets[set_id]
+                if len(set_data)==0:
+                    raise IndexError('No data exists')
+                elif len(set_data)>1:
+                    sub_set_id = int(keys[0])
+                    if not sub_set_id in set_data.keys():
+                        raise IndexError('Sub-set does not exist')
+                    sub_set_data = set_data[sub_set_id]
+                else:
+                    sub_set_id = set_data.keys()[0]
+                    sub_set_data = set_data[sub_set_id]
+                    test_id = int(keys[0])
+                    if test_id!=set_id and test_id!=sub_set_id:
+                        raise IndexError('That data does not exist')
+            else:
+                set_id = int(keys[0])
+                if not set_id in self.main_data_sets.keys():
+                    raise IndexError('Data set does not exist')
+                set_data = self.main_data_sets[set_id]
+                if len(set_data)==0:
+                    raise IndexError('No data exists')
+                elif len(set_data)>1:
+                    raise IndexError('Must give the sub-set id when there is more than one sub-set')
+                sub_set_id = set_data.keys()[0]
+                sub_set_data = set_data[sub_set_id]
+            data_id=keys[1]
+        elif len(keys)==3:
+            set_id = int(keys[0])
+            if not set_id in self.main_data_sets.keys():
+                raise IndexError('Data set does not exist')
+            set_data = self.main_data_sets[set_id]
+            sub_set_id = int(keys[1])
+            if not sub_set_id in set_data.keys():
+                raise IndexError('Sub-set does not exist')
+            sub_set_data = set_data[sub_set_id]
+            data_id=keys[2]
+        else:
+            raise IndexError('The keys cannot have more than 3 terms')
+        if len(sub_set_data)!=len(val):
+            raise IndexError('The value is not the same size as the data')
+        if data_id in key_str:
+            col_id = key_str.index(data_id)
+            sub_set_data[:,col_id]=val
+        else:
+            raise IndexError('That key does not exist')
+
+    def keys(self):
+        retval = []
+        key_str = self._get_column_keys()
+        for set_id, set_data in self.main_data_sets.items():
+            for sub_set_id, sub_set_data in set_data.items():
+                for key in key_str:
+                    retval.append('%d.%d.%s'%(set_id,sub_set_id,key))
+        return retval
+
+    def get_data_size(self, set_id, sub_set_id):
+        '''Retrieves the size of a specific data set'''
+        if not set_id in self.main_data_sets.keys():
+            raise IndexError('Data set does not exist')
+        set_data = self.main_data_sets[set_id]
+        if not sub_set_id in set_data.keys():
+            raise IndexError('Sub-set does not exist')
+        return len(set_data[sub_set_id])
+
+    def resize_data(self, set_id, sub_set_id, row_nr):
+        col_nr = self._get_column_number()
+        if not set_id in self.main_data_sets.keys():
+            raise IndexError('Data set does not exist')
+        set_data = self.main_data_sets[set_id]
+        if not sub_set_id in set_data.keys():
+            raise IndexError('Sub-set does not exist')
+        old_data = set_data[sub_set_id]
+        old_rows = len(old_data)
+        # do nothing if there is nothing to do
+        if old_rows==row_nr:
+            return
+        new_data = np.zeros((row_nr,col_nr))
+        asg_rows = old_rows
+        if row_nr<asg_rows:
+            asg_rows=row_nr
+        new_data[:asg_rows,:]=old_data[:asg_rows,:]
+        self.main_data_sets[set_id][sub_set_id]=new_data
+
+    def get_sub_set_count(self, set_id):
+        if not set_id in self.main_data_sets.keys():
+            raise IndexError('Data set does not exist')
+        return len(self.main_data_sets[set_id])
+
+    def add_sub_set(self, set_id, row_nr=0):
+        col_nr = self._get_column_number()
+        if not set_id in self.main_data_sets.keys():
+            raise IndexError('Data set does not exist')
+        set_data = self.main_data_sets[set_id]
+        sub_set_id=1
+        while sub_set_id in set_data.keys():
+            sub_set_id+=1
+        set_data[sub_set_id]=np.zeros((row_nr,col_nr))
+
+    def get_set_count(self):
+        return len(self.main_data_sets)
+
+    def add_set(self, sub_set_cnt=0, row_nr=0):
+        col_nr = self._get_column_number()
+        set_id = 1
+        while set_id in self.main_data_sets.keys():
+            set_id+=1
+        self.main_data_sets[set_id]={}
+        for sub_set_id in range(1,sub_set_cnt+1):
+            self.main_data_sets[set_id][sub_set_id]=np.zeros((row_nr,col_nr))
+
+    def get_data_str(self):
+        labels = self._get_column_labels()
+        retval = str(len(self.main_data_sets.keys()))+'\n'
+        for set_id, set_data in self.main_data_sets.items():
+            retval+='#'+str(set_id)+'\n'
+            for sub_set_id, sub_set_data in set_data.items():
+                for line in labels:
+                    for term in line:
+                        retval+='%25s'%term
+                    retval+='\n'
+                retval+='$%d %d\n'%(sub_set_id, len(sub_set_data))
+                for line in sub_set_data:
+                    for term in line:
+                        retval+='%25.17e'%term
+                    retval+='\n'
+        return retval
+
+    def __str__(self):
+        return self.get_data_str()
+
+    def read_file(self, filename):
+
+        with open (filename) as fid:
+            txt = fid.read()
+        main_sets = txt.split("#")
+        header_words = main_sets[0].split()
+        if len(header_words)>0:
+            if not is_int(header_words[0]):
+                raise Exception('First term in the header of an ST file must be the number of main sets')
+            no_maindata_sets = int(header_words[0])
+            assert no_maindata_sets == txt.count("#")
+        self.main_data_sets = {}
+        for mset in main_sets[1:]:
+            mset_nr = int(mset.strip().split()[0])
+            set_data_dict = {}
+
+            for set_txt in mset.split("$")[1:]:
+                set_lines = set_txt.split("\n")
+                set_nr, no_rows = map(int, set_lines[0].split()[:2])
+                assert set_nr not in set_data_dict
+                set_data_dict[set_nr] = np.array([set_lines[i].split() for i in range(1, no_rows + 1)], dtype=np.float)
+            self.main_data_sets[mset_nr] = set_data_dict
+
+class StOrigData(StBaseData):
+
+    _col_labels = [['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'I_p', 'k_x', 'k_y', 'A', 'pitch', 'x_e', 'y_e'],
+                ['[m]', '[kg/m]', '[m]', '[m]', '[m]', '[m]', '[m]', '[m]', '[N/m^2]', '[N/m^2]', '[N/m^4]', '[N/m^4]', '[N/m^4]', '[-]', '[-]', '[m^2]', '[deg]', '[m]', '[m]']]
+
+    _col_keys = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'I_p', 'k_x', 'k_y', 'A', 'pitch', 'x_e', 'y_e']
+
+    def __init__(self, filename=None):
+        super(StOrigData, self).__init__(filename)
+
+    def _get_column_number(self):
+        '''This is suppose to return the number of columns in a data set'''
+        return 19
+
+    def _get_column_labels(self):
+        '''This is suppose to be the labels that are added to the st file to help make sense of the data'''
+        return StOrigData._col_labels
+    
+    def _get_column_keys(self):
+        '''These are the keys that identify the columns'''
+        return StOrigData._col_keys
+
+class StFPMData(StBaseData):
+
+    _col_labels = [['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'pitch', 'x_e', 'y_e', 'K11', 'K12', 'K13', 'K14', 'K15', 'K16', 'K22', 'K23', 'K24', 'K25', 'K26', 'K33', 'K34', 'K35', 'K36', 'K44', 'K45', 'K46', 'K55', 'K56', 'K66'],
+                ['[m]', '[kg/m]', '[m]', '[m]', '[m]', '[m]', '[deg]', '[m]', '[m]', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2', 'Nm2']]
+
+    _col_keys = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'pitch', 'x_e', 'y_e', 'K11', 'K12', 'K13', 'K14', 'K15', 'K16', 'K22', 'K23', 'K24', 'K25', 'K26', 'K33', 'K34', 'K35', 'K36', 'K44', 'K45', 'K46', 'K55', 'K56', 'K66']
+
+    def __init__(self, filename=None):
+        super(StFPMData, self).__init__(filename)
+
+    def _get_column_number(self):
+        '''This is suppose to return the number of columns in a data set'''
+        return 30
+
+    def _get_column_labels(self):
+        '''This is suppose to be the labels that are added to the st file to help make sense of the data'''
+        return StFPMData._col_labels
+
+    def _get_column_keys(self):
+        '''These are the keys that identify the columns'''
+        return StFPMData._col_keys
+
 class StFile(object):
     """Read HAWC2 St (beam element structural data) file
 
