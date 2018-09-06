@@ -300,12 +300,20 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
 
     def __setitem__(self, key, value):
-		self.contents # load if not loaded
-        self.contents[key] = value
+        self.contents # load if not loaded
+        HTCContents.__setitem__(self, key, value)
+        #self.contents[key] = value
 
     def __str__(self):
         self.contents #load
-        return "".join(self.initial_comments + [c.__str__(1) for c in self]+ ["exit;"])
+        retval = ""
+        for comment in self.initial_comments:
+            retval+=comment
+        #import pdb; pdb.set_trace()
+        for c in self:
+            retval+=c.__str__(0)
+        retval+="exit;"
+        return retval
 
     def save(self, filename=None):
         self.contents #load if not loaded

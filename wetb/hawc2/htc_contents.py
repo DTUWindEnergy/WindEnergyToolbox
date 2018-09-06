@@ -351,7 +351,7 @@ class HTCTimoschenkoInputSection(HTCSection):
         if not self.st_object is None:
             if not 'set' in self:
                 raise Exception('Object is not complete')
-            set_key = '%d.%d'%(self['set.0'], self['set.1'])
+            set_key = '%d.%d.'%(self['set.0'], self['set.1'])
             st_object_keys = self.st_object.keys()
             for st_key in st_object_keys:
                 if st_key.startswith(set_key):
@@ -477,7 +477,7 @@ class HTCAeroInputSection(HTCSection):
                     blade_key = 'blade%d'%(blade_num)
                     # loop over the keys in ae object
                     for ae_object_key in ae_object_keys:
-                        if ae_object_keys.startswith(ae_set_str):
+                        if ae_object_key.startswith(ae_set_str):
                             ae_object_sub_key = ae_object_key[len(ae_set_str):]
                             retval.append('ae_object.'+blade_key+'_'+ae_object_sub_key)
                     blade_num+=1
