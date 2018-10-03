@@ -28,6 +28,7 @@ import math
 from time import time
 import codecs
 from itertools import chain
+import re as re
 
 import numpy as np
 import scipy as sp
@@ -1023,17 +1024,18 @@ class LoadResults(ReadHawc2):
                 dscr_list = misc.remove_items(dscr_list, '')
                 sensortype = self.ch_details[ch, 0].split(',')[0]
 
-                # is this always valid?
-                blade_nr = self.ch_details[ch, 2].split('blade  ')[1][0]
+                # Blade number is identified as the first integer in the string
+                blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
+                blade_nr = int(blade_nr)
                 # sometimes the units for aero sensors are wrong!
                 units = self.ch_details[ch, 1]
                 # there is no label option
 
                 # radius what you get
-#                 radius = dscr_list[-1]
-                # radius what you asked for
-                tmp = self.ch_details[ch, 0].split('R=')
-                radius = misc.remove_items(tmp, '')[-1].strip()
+                # radius = dscr_list[-1]
+                # radius what you asked for, identified as the last float in the string
+                s=self.ch_details[ch, 0]
+                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
 
                 # and tag it
                 tag = '%s-%s-%s' % (sensortype, blade_nr, radius)
@@ -1041,7 +1043,7 @@ class LoadResults(ReadHawc2):
                 channelinfo = {}
                 channelinfo['sensortype'] = sensortype
                 channelinfo['radius'] = float(radius)
-                channelinfo['blade_nr'] = int(blade_nr)
+                channelinfo['blade_nr'] = blade_nr
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
 
@@ -1087,10 +1089,10 @@ class LoadResults(ReadHawc2):
                 blade_nr = int(items[5])
 
                 # radius what you get
-#                 radius = float(items[8].replace(',', ''))
-                # radius what you asked for
-                tmp = self.ch_details[ch, 0].split(' ')
-                radius = float(misc.remove_items(tmp, '')[-1])
+                #  radius = float(items[8].replace(',', ''))
+                # radius what you asked for, identified as the last float in the string
+                s=self.ch_details[ch, 0]
+                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
 
                 items = self.ch_details[ch, 0].split(',')
                 component = items[0][-2:]
@@ -1122,17 +1124,16 @@ class LoadResults(ReadHawc2):
 
                 items = self.ch_details[ch, 2].split(' ')
                 items = misc.remove_items(items, '')
-                # find blade number
-                tmp = self.ch_details[ch, 2].split('blade ')[1].strip()
-                blade_nr = int(tmp.split(' ')[0])
-                tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
-                tmp = tmp.split(',')
-
+                # Blade number is identified as the first integer in the string
+                blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
+                blade_nr = int(blade_nr)
                 # radius what you get
-#                 radius = float(tmp[0])
-                # radius what you asked for
-                tmp = self.ch_details[ch, 0].split(' ')
-                radius = float(misc.remove_items(tmp, '')[-1])
+                # tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
+                # tmp = tmp.split(',')
+                # radius = float(tmp[0])
+                # radius what you asked for, identified as the last float in the string
+                s=self.ch_details[ch, 0]
+                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
 
                 if len(tmp) > 1:
                     coord = tmp[1].strip()
@@ -1218,16 +1219,17 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1].strip()
                 tmp = self.ch_details[ch, 0].split(' ')[1].strip()
                 direction = tmp.replace(',', '')
-                blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()[:2]
                 coord = self.ch_details[ch, 2].split(',')[1].strip()
-                blade_nr = blade_nr.strip()
+                # Blade number is identified as the first integer in the string
+                blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
+                blade_nr = int(blade_nr)
 
                 # radius what you get
-#                 radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
-#                 radius = radius.strip()
-                # radius what you asked for
-                tmp = self.ch_details[ch, 0].split(' ')
-                radius = misc.remove_items(tmp, '')[-1].strip()
+                # radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
+                # radius = radius.strip()
+                # radius what you asked for, identified as the last float in the string
+                s=self.ch_details[ch, 0]
+                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
 
                 # and tag it
                 rpl = (direction, blade_nr, radius, coord)
@@ -1237,7 +1239,7 @@ class LoadResults(ReadHawc2):
                 channelinfo['coord'] = coord
                 # FIXME: direction is the same as component, right?
                 channelinfo['direction'] = direction
-                channelinfo['blade_nr'] = int(blade_nr)
+                channelinfo['blade_nr'] = blade_nr
                 channelinfo['radius'] = float(radius)
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
@@ -1247,18 +1249,17 @@ class LoadResults(ReadHawc2):
             # 2: Flap angle for blade  3 flap number  1
             elif self.ch_details[ch, 0][:7] == 'setbeta':
                 units = self.ch_details[ch, 1].strip()
-                blade_nr = self.ch_details[ch, 2].split('blade')[1].strip()
-                blade_nr = blade_nr.split(' ')[0].strip()
+                # Blade number is identified as the first integer in the string
+                blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
+                blade_nr = blade_nr
                 flap_nr = self.ch_details[ch, 2].split(' ')[-1].strip()
-
-                blade_nr = blade_nr.strip()
 
                 # and tag it
                 tag = 'setbeta-bladenr-%s-flapnr-%s' % (blade_nr, flap_nr)
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['flap_nr'] = int(flap_nr)
-                channelinfo['blade_nr'] = int(blade_nr)
+                channelinfo['blade_nr'] = blade_nr
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
 
