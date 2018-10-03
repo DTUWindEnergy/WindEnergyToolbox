@@ -11,6 +11,7 @@ test-3.4:
   image: mmpe/wetb
   script:
   #- python3 setup.py test
-  - python -m pytest --cov=wetb
+  - pip3 install pytest
+  - python3 -m pytest --cov=wetb
   tags:
   - python
