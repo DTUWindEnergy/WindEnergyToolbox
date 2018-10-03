@@ -14,6 +14,7 @@ from builtins import zip
 from builtins import int
 from builtins import str
 from future import standard_library
+from math import sqrt
 import os
 standard_library.install_aliases()
 from collections import OrderedDict
@@ -85,7 +86,8 @@ class HTCContents(object):
             if isinstance(key, str):
                 key = int(key)
             self.values[key] = value
-        value.parent=self
+        if isinstance(value, HTCContents):
+            value.parent=self
 
     def __getitem__(self, key):
         if key == '__on__':
@@ -186,8 +188,13 @@ class HTCContents(object):
         else:
             # If this is a duplicate, replace the original as an enumerated key
             if key_for_object in self:
-                self[key_for_object+'__1'] = self[key_for_object]
-                del self[key_for_object]
+                tmp_dict = OrderedDict()
+                for k, v in self.contents.items():
+                    if k == key_for_object:
+                        tmp_dict[key_for_object+'__1'] = v
+                    else:
+                        tmp_dict[k] = v
+                self.contents=tmp_dict
             ending = "__2"
             while key_for_object + ending in self:
                 ending = "__%d" % (1 + float("0%s" % ending.replace("__", "")))
@@ -509,7 +516,7 @@ class HTCLine(HTCContents):
                                   ("", "\t" + self.comments)[bool(self.comments.strip())])
 
     def str_values(self):
-        return " ".join([str(v).lower() for v in self.values])
+        return " ".join([str(v) for v in self.values])
 
     def __getitem__(self, key):
         if key == "__on__":
@@ -607,7 +614,10 @@ class HTCC2DefSection(HTCSection):
             self.on = bool(value)
             return
 
-        if key == 'nsec':
+        elif key == 'grid':
+            raise KeyError('The grid property is read-only')
+
+        elif key == 'nsec':
 
             # do nothing if there is nothing to do
             if self.nsec == int(value):
@@ -641,20 +651,24 @@ class HTCC2DefSection(HTCSection):
                 self.theta[:asgn] = old_val[:asgn]
             return
 
-        if value.size != self.nsec:
-            ValueError('The value size is not consistent with the object size')
+        else:
+            if value.size != self.nsec:
+                raise ValueError('The value size is not consistent with the object size')
 
-        if key == 'x':
-            self.x = value
+            if key == 'x':
+                self.x = value
 
-        if key == 'y':
-            self.y = value
+            elif key == 'y':
+                self.y = value
 
-        if key == 'z':
-            self.z = value
+            elif key == 'z':
+                self.z = value
 
-        if key == 'theta':
-            self.theta = value
+            elif key == 'theta':
+                self.theta = value
+
+            else:
+                raise KeyError('That key does not exist')
 
     def __getitem__(self, key):
         if key == '__on__':
@@ -669,6 +683,14 @@ class HTCC2DefSection(HTCSection):
             return self.z
         if key == 'theta':
             return self.theta
+        if key == 'grid':
+            retval = np.zeros(self.nsec)
+            at_s = 0.0
+            for I in range(0, self.nsec):
+                retval[I]=at_s
+                if (I+1)<self.nsec:
+                    at_s+=sqrt( (self.x[I+1]-self.x[I])**2.0 + (self.y[I+1]-self.y[I])**2.0 + (self.z[I+1]-self.z[I])**2.0 )
+            return retval
 
     def __iter__(self):
         return iter([self.nsec, self.x, self.y, self.z, self.theta])
@@ -683,14 +705,14 @@ class HTCC2DefSection(HTCSection):
         if not self.on:
             return ""
         s = "%sbegin %s;%s\n"%("  "*level, self.name_, ("", "\t" + self.begin_comments)[bool(self.begin_comments.strip())])
-        s += "%s  nsec %d\n"%("  "*level, self.nsec)
+        s += "%s  nsec %d;\n"%("  "*level, self.nsec)
         for I in range(0,self.nsec):
             s += "%s  sec %d %0.17e %0.17e %0.17e %0.17e;\n"%("  "*level, I+1, self.x[I], self.y[I], self.z[I], self.theta[I])
         s += "%send %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.end_comments)[self.end_comments.strip() != ""])
         return s
 
     def keys(self):
-        return ['__on__', 'nsec', 'x', 'y', 'z', 'theta']
+        return ['__on__', 'nsec', 'x', 'y', 'z', 'theta', 'grid']
 
     def all_keys(self):
         return self.keys()
@@ -864,6 +886,8 @@ def get_sensor_scale_parameter(sensor_type, sensor):
             return 4
     return None
 
+
+
 class HTCSensor(HTCLine):
     sns_type = ""
     sensor = ""
@@ -877,6 +901,285 @@ class HTCSensor(HTCLine):
         self.values = values
         self.comments = comments.strip(" \t")
         self.is_normalized = False
+    
+    def parameter_count(self):
+        if self.sns_type == 'mbdy':
+            if self.sensor in ('forcevec', 'momentvec'):
+                return 4
+            elif self.sensor in ('state', 'state_rot'):
+                return 5
+            elif self.sensor in ('state_at', 'state_at2'):
+                return 7
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'constraint':
+            if self.sensor in ('bearing1', 'bearing2', 'bearing3', 'bearing4'):
+                return 2
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'body':
+            if self.sensor in ('pitchangle', 'pitchspeed'):
+                return 2
+            elif self.sensor in ('forcevec', 'momentvec', 'node_defl', 'node_rot'):
+                return 4
+            elif self.sensor in ('node_state',):
+                return 5
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'aero':
+            #0 'time'
+            #0 'omega'
+            #0 'torque'
+            #0 'thrust'
+            #0 'power'
+            #0 'induc_a_norm'
+            #0 'lambda'
+            #1 'azimuth'
+            #1 'induc_am_norm'
+            #1 'grid_radius_nd'
+            #2 'vrel'
+            #2 'alfa'
+            #2 'alfadot'
+            #2 'sideslip'
+            #2 'beta'
+            #2 'cl'
+            #2 'cd'
+            #2 'cm'
+            #2 'lift'
+            #2 'drag'
+            #2 'moment'
+            #2 'tors_e'
+            #2 'induc_sector_ct'
+            #2 'induc_sector_cq'
+            #2 'induc_sector_a'
+            #2 'induc_sector_am'
+            #2 'inflow_angle'
+            #2 'dcldalfa'
+            #2 'dcddalfa'
+            #2 'gamma'
+            #2 'actuatordiskload'
+            #2 'vawt_induc_x'
+            #2 'vawt_induc_y'
+            #3 'secforce'
+            #3 'secmoment'
+            #4 'int_force'
+            #4 'int_moment'
+            #4 'position'
+            #4 'rotation'
+            #4 'velocity'
+            #4 'acceleration'
+            #4 'windspeed'
+            #4 'induc'
+            #4 'windspeed_boom'
+            #9 'spinner_lidar'
+            if self.sensor in ('time', 'omega', 'torque', 'thrust', 'power', 'induc_a_norm', 'lambda'):
+                return 0
+            elif self.sensor in ('azimuth', 'induc_am_norm', 'grid_radius_nd'):
+                return 1
+            elif self.sensor in ('vrel', 'alfa', 'alfadot', 'sideslip', 'beta', 'cl', 'cd', 'cm', 'lift', 'drag', 'moment', 'tors_e', 'induc_sector_ct', 'induc_sector_cq', 'induc_sector_a', 'induc_sector_am', 'inflow_angle', 'dcldalfa', 'dcddalfa', 'gamma', 'actuatordiskload', 'vawt_induc_x', 'vawt_induc_y'):
+                return 2
+            elif self.sensor in ('secforce', 'secmoment'):
+                return 3
+            elif self.sensor in ('int_force', 'int_moment', 'position', 'rotation', 'velocity', 'acceleration', 'windspeed', 'induc', 'windspeed_boom'):
+                return 4
+            elif self.sensor in ('spinner_lidar',):
+                return 9
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind':
+            if self.sensor in ('free_wind_hor', 'free_wind', 'free_wind_shadow'):
+                return 4
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind_wake':
+            if self.sensor in ('wake_pos',):
+                return 1
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'dll':
+            if self.sensor in ('inpvec', 'outvec'):
+                return 2
+            if self.sensor in ('hawc_dll', 'type2_dll'):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'hydro':
+            if self.sensor in ('water_surface',):
+                return 2
+            elif self.sensor in ('fm', 'fd', 'water_vel_acc'):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        elif self.sns_type == 'general':
+            if self.sensor in ('time', 'deltat', 'status'):
+                return 0
+            elif self.sensor in ('constant',):
+                return 1
+            elif self.sensor in ('step', 'harmonic', 'random', 'impulse'):
+                return 3
+            elif self.sensor in ('step2', 'step3'):
+                return 4
+            elif self.sensor in ('harmonic2', 'stairs'):
+                return 5
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the parameter count function'
+                raise Exception(msg)
+        else:
+            msg='Sensor "'+str(self.sns_type)+' ..." has not been defined in the parameter count function'
+            raise Exception(msg)
+
+    def has_only_option(self):
+        if self.sns_type == 'mbdy':
+            if self.sensor in ('forcevec', 'momentvec', 'state', 'state_at', 'state_at2', 'state_rot'):
+                return True
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'constraint':
+            if self.sensor in ('bearing1', 'bearing2', 'bearing3', 'bearing4'):
+                return True
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'body':
+            if self.sensor in ('pitchangle', 'pitchspeed', 'forcevec', 'momentvec', 'node_defl', 'node_rot', 'node_state'):
+                return False
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'aero':
+            if self.sensor in ('time', 'azimuth', 'omega', 'vrel', 'alfa', 'alfadot', 'sideslip', 'beta', 'cl', 'cd', 'cm', 'lift', 'drag', 'moment', 'secforce', 'secmoment', 'int_force', 'int_moment', 'torque', 'thrust', 'position', 'power', 'rotation', 'velocity', 'acceleration', 'tors_e', 'windspeed', 'induc', 'induc_sector_ct', 'induc_sector_cq', 'induc_sector_a', 'induc_sector_am', 'induc_a_norm', 'induc_am_norm', 'inflow_angle', 'dcldalfa', 'dcddalfa', 'gamma', 'lambda', 'windspeed_boom', 'actuatordiskload', 'grid_radius_nd', 'vawt_induc_x', 'vawt_induc_y', 'spinner_lidar'):
+                return False
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind':
+            if self.sensor in ('free_wind_hor', 'free_wind', 'free_wind_shadow'):
+                return True
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind_wake':
+            if self.sensor in ('wake_pos',):
+                return True
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'dll':
+            if self.sensor in ('inpvec', 'outvec', 'hawc_dll', 'type2_dll'):
+                return False
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'hydro':
+            if self.sensor in ('water_surface',):
+                return False
+            elif self.sensor in ('fm', 'fd', 'water_vel_acc'):
+                return True
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        elif self.sns_type == 'general':
+            if self.sensor in ('constant', 'step', 'step2', 'step3', 'time', 'deltat', 'harmonic', 'harmonic2', 'stairs', 'status', 'random', 'impulse'):
+                return False
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the has only option function'
+                raise Exception(msg)
+        else:
+            msg='Sensor "'+str(self.sns_type)+' ..." has not been defined in the has only option function'
+            raise Exception(msg)
+
+    def get_full_sensor_size(self):
+        if self.sns_type == 'mbdy':
+            if self.sensor in ('forcevec', 'momentvec', 'state', 'state_at', 'state_at2'):
+                return 3
+            elif self.sensor == 'state_rot':
+                if self.values[0] in ('eulerang_xyz', 'omega', 'omegadot', 'proj_ang'):
+                    return 3
+                elif self.values[0] in ('axisangle', 'eulerp'):
+                    return 4
+                else:
+                    msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' '+str(self.values[0])+' ..." has not been defined in the sensor size function'
+                    raise Exception(msg)
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'constraint':
+            if self.sensor in ('bearing1', 'bearing2', 'bearing3', 'bearing4'):
+                return 2
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'body':
+            if self.sensor in ('pitchangle', 'pitchspeed'):
+                return 1
+            elif self.sensor in ('forcevec', 'momentvec', 'node_defl', 'node_rot', 'node_state'):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'aero':
+            if self.sensor in ('time', 'azimuth', 'omega', 'vrel', 'alfa', 'alfadot', 'sideslip', 'beta', 'cl', 'cd', 'cm', 'lift', 'drag', 'moment', 'secforce', 'secmoment', 'int_force', 'int_moment', 'torque', 'thrust', 'position', 'power', 'rotation', 'velocity', 'acceleration', 'tors_e', 'windspeed', 'induc', 'induc_sector_ct', 'induc_sector_cq', 'induc_sector_a', 'induc_sector_am', 'induc_a_norm', 'induc_am_norm', 'inflow_angle', 'dcldalfa', 'dcddalfa', 'gamma', 'lambda', 'windspeed_boom', 'actuatordiskload', 'grid_radius_nd', 'vawt_induc_x', 'vawt_induc_y'):
+                return 1
+            if self.sensor in ('spinner_lidar',):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind':
+            if self.sensor in ('free_wind_hor',):
+                return 2
+            elif self.sensor in ('free_wind', 'free_wind_shadow'):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'wind_wake':
+            if self.sensor in ('wake_pos',):
+                return 3
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'dll':
+            if self.sensor in ('inpvec', 'outvec', 'hawc_dll', 'type2_dll'):
+                return 1
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'hydro':
+            if self.sensor in ('water_surface',):
+                return 1
+            elif self.sensor in ('fm', 'fd'):
+                return 3
+            elif self.sensor in ('water_vel_acc',):
+                return 6
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        elif self.sns_type == 'general':
+            if self.sensor in ('constant', 'step', 'step2', 'step3', 'time', 'deltat', 'harmonic', 'harmonic2', 'stairs', 'status', 'random', 'impulse'):
+                return 1
+            else:
+                msg='Sensor "'+str(self.sns_type)+' '+str(self.sensor)+' ..." has not been defined in the sensor size function'
+                raise Exception(msg)
+        else:
+            msg='Sensor "'+str(self.sns_type)+' ..." has not been defined in the sensor size function'
+            raise Exception(msg)
+
+    def get_sensor_size(self):
+        if self.has_only_option():
+            param_cnt = self.parameter_count()
+            if len(self.values)>param_cnt and self.values[param_cnt]=='only':
+                return 1
+        return self.get_full_sensor_size()
 
     # This will take the radius an normalize it
     def normalize_sensor(self, scale=None):

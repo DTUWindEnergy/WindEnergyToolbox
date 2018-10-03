@@ -357,6 +357,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 self.wind.scale_time_start = start
 
     def get_input_files_and_keys(self):
+        self.contents # load if not loaded
 
         retval = HAWC2_Input_Files()
 
@@ -457,8 +458,11 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 files.append(self.aero.dynstall_ateflap.get('flap', [None] * 3)[2])
             if 'bemwake_method' in self.aero:
                 files.append(self.aero.bemwake_method.get('a-ct-filename', [None] * 3)[0])
-        for dll in [self.dll[dll] for dll in self.get('dll', {}).keys() if 'filename' in self.dll[dll]]:
-            files.append(dll.filename[0])
+        for dll_object in self['dll']:
+            if isinstance(dll_object, HTCContents) and 'filename' in dll_object.keys():
+                files.append(dll_object['filename.0'])
+        #for dll in [self.dll[dll] for dll in self.get('dll', {}).keys() if 'filename' in self.dll[dll]]:
+        #    files.append(dll.filename[0])
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
             files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])

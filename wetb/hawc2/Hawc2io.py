@@ -273,11 +273,11 @@ class ReadHawc2(object):
             raise Exception('The data is not set')
         if chid>=self.NrCh:
             raise KeyError('The index is too large')
-        return self.data[:,chid]
+        return self.Data[:,chid]
     ############################################################################
     # this will get the keys
     def keys(self):
-        retval=list(range(0, self.NrCh)))
+        retval=list(range(0, self.NrCh))
         retval.extend(list(self.alias.keys()))
         return retval
     ############################################################################
@@ -304,9 +304,9 @@ class ReadHawc2(object):
     # get items
     def __getitem__(self, key):
         old_key = []
-        while key in alias.keys() and not key in old_key:
+        while key in self.alias.keys() and not key in old_key:
             old_key.append(key)
-            key = alias[key]
+            key = self.alias[key]
         if key in old_key:
             raise Exception('Circular alias')
         return self.get_signal(key)
