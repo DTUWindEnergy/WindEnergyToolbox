@@ -52,7 +52,7 @@ plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
 
 
-def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
+def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
     """
     """
 
@@ -73,7 +73,9 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
             else:
                 post_dir = post_dirs
             cc = sim.Cases(post_dir, sim_id, rem_failed=True)
-            df_stats, _, _ = cc.load_stats(columns=None, leq=False)
+            df_stats, _, _ = cc.load_stats(leq=False)
+            if columns is not None:
+                df_stats = df_stats[columns]
 
             # stats has only a few columns identifying the different cases
             # add some more for selecting them
@@ -137,7 +139,9 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False):
         if isinstance(post_dirs, list):
             post_dir = post_dirs[0]
         cc = sim.Cases(post_dir, sim_id, rem_failed=True)
-        df_stats, _, _ = cc.load_stats(leq=False)
+        df_stats, _, _ = cc.load_stats(columns=columns, leq=False)
+        if columns is not None:
+            df_stats = df_stats[columns]
         run_dirs = [df_stats['[run_dir]'].unique()[0]]
 
         # stats has only a few columns identifying the different cases
