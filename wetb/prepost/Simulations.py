@@ -568,7 +568,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
                 postpro_node=False, exesingle=None, exechunks=None,
-                wine_arch='win32', wine_prefix='~/.wine32'):
+                wine_arch='win32', wine_prefix='~/.wine32',
+                pyenv_cmd='source /home/python/miniconda3/bin/activate'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -811,7 +812,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=postpro_node_zipchunks,
            postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
-           wine_arch=wine_arch, wine_prefix=wine_prefix)
+           wine_arch=wine_arch, wine_prefix=wine_prefix, pyenv_cmd=pyenv_cmd)
 
     return cases
 
@@ -1014,7 +1015,8 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            pbs_fname_appendix=True, short_job_names=True,
            maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
-           exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
+           exechunks=None, wine_arch='win32', wine_prefix='~/.wine32',
+           pyenv_cmd='source /home/python/miniconda3/bin/activate'):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1060,6 +1062,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
                   postpro_node=postpro_node, exesingle=exesingle,
                   exechunks=exechunks, wine_arch=wine_arch,
                   wine_prefix=wine_prefix)
+        pbs.pyenv_cmd = pyenv_cmd
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
         pbs.maxcpu = maxcpu
