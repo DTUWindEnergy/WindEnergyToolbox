@@ -57,6 +57,7 @@ from wetb.dlc import high_level as dlc
 from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
 
+
 def load_pickled_file(source):
     FILE = open(source, 'rb')
     result = pickle.load(FILE)
@@ -398,7 +399,6 @@ def run_local_ram(cases, check_log=True):
 
     return cases
 
-
 def run_local(cases, silent=False, check_log=True):
     """
     Run all HAWC2 simulations locally from cases
@@ -551,7 +551,6 @@ def run_local(cases, silent=False, check_log=True):
         print('')
 
     return cases
-
 
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 write_htc=True, runmethod='none', verbose=False,
@@ -810,200 +809,6 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     return cases
 
-def prepare_relaunch(cases, runmethod='gorm', verbose=False, write_htc=True,
-                     copyback_turb=True, silent=False, check_log=True):
-    """
-    Instead of redoing everything, we know recreate the HTC file for those
-    in the given cases dict. Nothing else changes. The data and zip files
-    are not updated, the convience tagfile is not recreated. However, the
-    saved (pickled) cases dict corresponding to the sim_id is updated!
-
-    This method is usefull to correct mistakes made for some cases.
-
-    It is adviced to not change the case_id, sim_id, from the cases.
-    """
-
-    # initiate the HtcMaster object, load the master file
-    master = HtcMaster()
-    # for invariant tags, load random case. Necessary before we can load
-    # the master file, otherwise we don't know which master to load
-    master.tags = cases[list(cases.keys())[0]]
-    master.loadmaster()
-
-    # load the original cases dict
-    post_dir = master.tags['[post_dir]']
-    FILE = open(post_dir + master.tags['[sim_id]'] + '.pkl', 'rb')
-    cases_orig = pickle.load(FILE)
-    FILE.close()
-
-    sim_nr = 0
-    sim_total = len(cases)
-    for case, casedict in cases.items():
-        sim_nr += 1
-
-        # set all the tags in the HtcMaster file
-        master.tags = casedict
-        # returns a dictionary with all the tags used for this
-        # specific case
-        htc = master.createcase(write_htc=write_htc)
-        #htc=master.createcase_check(cases_repo,write_htc=write_htc)
-
-        if not silent:
-            print('htc progress: ' + format(sim_nr, '3.0f') + '/' + \
-                   format(sim_total, '3.0f'))
-
-        if verbose:
-            print('===master.tags===\n', master.tags)
-
-        # make sure the current cases already exists, otherwise we are not
-        # relaunching!
-        if case not in cases_orig:
-            msg = 'relaunch only works for existing cases: %s' % case
-            raise KeyError(msg)
-
-        # save in the big cases. Note that values() gives a copy!
-        # remark, what about the copying done at the end of master.createcase?
-        # is that redundant then?
-        cases[list(htc.keys())[0]] = list(htc.values())[0]
-
-        if verbose:
-            print('created cases for: %s.htc\n' % master.tags['[case_id]'])
-
-    launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
-           copyback_turb=copyback_turb, silent=silent)
-
-    # update the original file: overwrite the newly set cases
-    FILE = open(post_dir + master.tags['[sim_id]'] + '.pkl', 'wb')
-    cases_orig.update(cases)
-    pickle.dump(cases_orig, FILE, protocol=2)
-    FILE.close()
-
-def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
-                         copyback_turb=True, silent=False, check_log=True,
-                         variable_tag_func=None, sim_id_new=None):
-    """
-    Same as prepare_launch, but now the input is just a cases object (cao).
-    If relaunching some earlier defined simulations, make sure to at least
-    rename the sim_id, otherwise it could become messy: things end up in the
-    same folder, sim_id post file get overwritten, ...
-
-    In case you do not use a variable_tag_fuc, make sure all your tags are
-    defined in cases. First and foremost, this means that the case_id does not
-    get updated to have a new sim_id, the path's are not updated, etc
-
-    When given a variable_tag_func, make sure it is properly
-    defined: do not base a variable tag's value on itself to avoid value chains
-
-    The master htc file will be loaded and alls tags defined in the cases dict
-    will be applied to it as is.
-    """
-
-    # initiate the HtcMaster object, load the master file
-    master = HtcMaster()
-    # for invariant tags, load random case. Necessary before we can load
-    # the master file, otherwise we don't know which master to load
-    master.tags = cases[list(cases.keys())[0]]
-    # load the master htc file as a string under the master.tags
-    master.loadmaster()
-    # create the execution folder structure and copy all data to it
-    # but reset to the correct launch dirs first
-    sim_id = master.tags['[sim_id]']
-    if runmethod in ['local', 'local-script', 'none']:
-        path = '/home/dave/PhD_data/HAWC2_results/ojf_post/%s/' % sim_id
-        master.tags['[run_dir]'] = path
-    elif runmethod == 'jess':
-        master.tags['[run_dir]'] = '/mnt/jess/HAWC2/ojf_post/%s/' % sim_id
-    elif runmethod == 'gorm':
-        master.tags['[run_dir]'] = '/mnt/gorm/HAWC2/ojf_post/%s/' % sim_id
-    else:
-        msg='unsupported runmethod, options: none, local, thyra, gorm, opt'
-        raise ValueError(msg)
-
-    master.create_run_dir()
-    master.copy_model_data()
-    # create the zip file
-    master.create_model_zip()
-
-    sim_nr = 0
-    sim_total = len(cases)
-
-    # for safety, create a new cases dict. At the end of the ride both cases
-    # and cases_new should be identical!
-    cases_new = {}
-
-    # cycle thourgh all the combinations
-    for case, casedict in cases.items():
-        sim_nr += 1
-
-        sim_id = casedict['[sim_id]']
-        # reset the launch dirs
-        if runmethod in ['local', 'local-script', 'none']:
-            path = '/home/dave/PhD_data/HAWC2_results/ojf_post/%s/' % sim_id
-            casedict['[run_dir]'] = path
-        elif runmethod == 'thyra':
-            casedict['[run_dir]'] = '/mnt/thyra/HAWC2/ojf_post/%s/' % sim_id
-        elif runmethod == 'gorm':
-            casedict['[run_dir]'] = '/mnt/gorm/HAWC2/ojf_post/%s/' % sim_id
-        else:
-            msg='unsupported runmethod, options: none, local, thyra, gorm, opt'
-            raise ValueError(msg)
-
-        # -----------------------------------------------------------
-        # set all the tags in the HtcMaster file
-        master.tags = casedict
-        # apply the variable tags if applicable
-        if variable_tag_func:
-            master = variable_tag_func(master)
-        elif sim_id_new:
-            # TODO: finish this
-            # replace all the sim_id occurences with the updated one
-            # this means also the case_id tag changes!
-            pass
-        # -----------------------------------------------------------
-
-        # returns a dictionary with all the tags used for this specific case
-        htc = master.createcase(write_htc=write_htc)
-
-        if not silent:
-            print('htc progress: ' + format(sim_nr, '3.0f') + '/' + \
-                   format(sim_total, '3.0f'))
-
-        if verbose:
-            print('===master.tags===\n', master.tags)
-
-        # make sure the current cases is unique!
-        if list(htc.keys())[0] in cases_new:
-            msg = 'non unique case in cases: %s' % list(htc.keys())[0]
-            raise KeyError(msg)
-        # save in the big cases. Note that values() gives a copy!
-        # remark, what about the copying done at the end of master.createcase?
-        # is that redundant then?
-        cases_new[list(htc.keys())[0]] = list(htc.values())[0]
-
-        if verbose:
-            print('created cases for: %s.htc\n' % master.tags['[case_id]'])
-
-    post_dir = master.tags['[post_dir]']
-
-    # create directory if post_dir does not exists
-    try:
-        os.makedirs(post_dir)
-    except OSError:
-        pass
-    FILE = open(post_dir + master.tags['[sim_id]'] + '.pkl', 'wb')
-    pickle.dump(cases_new, FILE, protocol=2)
-    FILE.close()
-
-    if not silent:
-        print('\ncases saved at:')
-        print(post_dir + master.tags['[sim_id]'] + '.pkl')
-
-    launch(cases_new, runmethod=runmethod, verbose=verbose,
-           copyback_turb=copyback_turb, check_log=check_log)
-
-    return cases_new
-
-
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            pbs_fname_appendix=True, short_job_names=True,
@@ -1071,7 +876,6 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         msg = 'unsupported runmethod, valid options: local, linux-script, ' \
               'windows-script, local-ram, none, pbs'
         raise ValueError(msg)
-
 
 def post_launch(cases, save_iter=False, silent=False, suffix=None,
                 path_errorlog=None):
@@ -1209,7 +1013,6 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
 
     return cases_fail
 
-
 def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
     """
     Copy all the pbs_in files from failed cases to a new directory so it
@@ -1232,7 +1035,6 @@ def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
         if not os.path.exists(os.path.dirname(dst)):
             os.makedirs(os.path.dirname(dst))
         shutil.copy2(src, dst)
-
 
 def logcheck_case(errorlogs, cases, case, silent=False):
     """
@@ -1322,6 +1124,7 @@ class Log(object):
     def printscreen(self):
         for k in self.log:
             print(k)
+
 
 class HtcMaster(object):
     """
@@ -5312,83 +5115,6 @@ class EnvelopeClass(object):
         Fz = tbl.Float32Col()
 
 
-# TODO: implement this
-class Results(object):
-    """
-    Move all Hawc2io to here? NO: this should be the wrapper, to interface
-    the htc_dict with the io functions
-
-    There should be a bare metal module/class for those who only want basic
-    python support for HAWC2 result files and/or launching simulations.
-
-    How to properly design this module? Change each class into a module? Or
-    leave like this?
-    """
-
-    # OK, for now use this to do operations on HAWC2 results files
-
-    def __init___(self):
-        """
-        """
-        pass
-
-    def m_equiv(self, st_arr, load, pos):
-        r"""Centrifugal corrected equivalent moment
-
-        Convert beam loading into a single equivalent bending moment. Note that
-        this is dependent on the location in the cross section. Due to the
-        way we measure the strain on the blade and how we did the calibration
-        of those sensors.
-
-        .. math::
-
-            \epsilon = \frac{M_{x_{equiv}}y}{EI_{xx}} = \frac{M_x y}{EI_{xx}}
-            + \frac{M_y x}{EI_{yy}} + \frac{F_z}{EA}
-
-            M_{x_{equiv}} = M_x + \frac{I_{xx}}{I_{yy}} M_y \frac{x}{y}
-            + \frac{I_{xx}}{Ay} F_z
-
-        Parameters
-        ----------
-
-        st_arr : np.ndarray(19)
-            Only one line of the st_arr is allowed and it should correspond
-            to the correct radial position of the strain gauge.
-
-        load : list(6)
-            list containing the load time series of following components
-            .. math:: load = F_x, F_y, F_z, M_x, M_y, M_z
-            and where each component is an ndarray(m)
-
-        pos : np.ndarray(2)
-            x,y position wrt neutral axis in the cross section for which the
-            equivalent load should be calculated
-
-        Returns
-        -------
-
-        m_eq : ndarray(m)
-            Equivalent load, see main title
-
-        """
-
-        F_z = load[2]
-        M_x = load[3]
-        M_y = load[4]
-
-        x, y = pos[0], pos[1]
-
-        A = st_arr[ModelData.st_headers.A]
-        I_xx = st_arr[ModelData.st_headers.Ixx]
-        I_yy = st_arr[ModelData.st_headers.Iyy]
-
-        M_x_equiv = M_x + ( (I_xx/I_yy)*M_y*(x/y) ) + ( F_z*I_xx/(A*y) )
-        # or ignore edgewise moment
-        #M_x_equiv = M_x + ( F_z*I_xx/(A*y) )
-
-        return M_x_equiv
-
-
 class MannTurb64(prepost.PBSScript):
     """
     alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
@@ -5535,6 +5261,7 @@ def eigenbody(cases, debug=False):
         cases[case]['[eigen_body_results2]'] = results2
 
     return cases
+
 
 def eigenstructure(cases, debug=False):
     """
