@@ -563,7 +563,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
                 update_cases=False, ignore_non_unique=False,
-                run_only_new=False, windows_nr_cpus=2, wine_64bit=False,
+                run_only_new=False, windows_nr_cpus=2,
                 pbs_fname_appendix=True, short_job_names=True, qsub='',
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
@@ -809,7 +809,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            copyback_turb=copyback_turb, qsub=qsub,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
-           pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
+           pyenv=pyenv, m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=postpro_node_zipchunks,
            postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
            wine_arch=wine_arch, wine_prefix=wine_prefix, pyenv_cmd=pyenv_cmd)
@@ -1013,7 +1013,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12],
+           maxcpu=1, pyenv='wetb_py3', m=[3,4,6,8,9,10,12],
            postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
            exechunks=None, wine_arch='win32', wine_prefix='~/.wine32',
            pyenv_cmd='source /home/python/miniconda3/bin/activate'):
@@ -1057,7 +1057,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent, wine_64bit=wine_64bit,
+                  verbose=verbose, silent=silent,
                   m=m, postpro_node_zipchunks=postpro_node_zipchunks,
                   postpro_node=postpro_node, exesingle=exesingle,
                   exechunks=exechunks, wine_arch=wine_arch,
@@ -1951,7 +1951,7 @@ class PBS(object):
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 wine_64bit=False, m=[3,4,6,8,9,10,12], exesingle=None,
+                 m=[3,4,6,8,9,10,12], exesingle=None,
                  postpro_node_zipchunks=True, postpro_node=False,
                  exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
@@ -1994,8 +1994,6 @@ class PBS(object):
         # run in 32-bit or 64-bit mode. Note this uses the same assumptions
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
         wineparam = (wine_arch, wine_prefix)
-        if wine_64bit:
-            wineparam = ('win64', '~/.wine')
         self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
 
         self.wine = self.winebase + 'wine'

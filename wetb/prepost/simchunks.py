@@ -35,10 +35,11 @@ from wetb.prepost.Simulations import Cases
 
 
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
-                          nr_procs_series=9, queue='workq', pyenv='wetb_py3',
+                          nr_procs_series=9, queue='workq', compress=False,
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          compress=False, wine_64bit=False, wine_arch='win32',
-                          wine_prefix='~/.wine32'):
+                          wine_arch='win32', wine_prefix='~/.wine32',
+                          pyenv_cmd='source /home/python/miniconda3/bin/activate',
+                          pyenv='wetb_py3'):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -164,8 +165,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 # """
 
     def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
-                        wine_64bit=False, wine_arch='win32',
-                        wine_prefix='~/.wine32'):
+                        wine_arch='win32', wine_prefix='~/.wine32'):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -178,8 +178,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         jobid = '%s_chnk_%05i' % (sim_id, ii)
 
         wineparam = (wine_arch, wine_prefix)
-        if wine_64bit:
-            wineparam = ('win64', '~/.wine')
 
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
         post_dir_base = post_dir.split(sim_id)[1]
@@ -218,7 +216,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # activate the python environment
         if pyenv is not None:
             pbs += 'echo "activate python environment %s"\n' % pyenv
-            pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
+            rpl = (pyenv_cmd, pyenv)
+            pbs += '%s %s\n' % rpl
             # sometimes activating an environment fails due to a FileExistsError
             # is this because it is activated at the same time on another node?
             # check twice if the environment got activated for real
@@ -226,9 +225,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
             pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
             pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then %s %s;fi\n' % rpl
             pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then %s %s;fi\n' % rpl
 
         # =====================================================================
         # create all necessary directories at CPU_NR dirs
@@ -516,8 +515,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
-                        compress=compress, wine_64bit=wine_64bit,
-                        wine_arch=wine_arch, wine_prefix=wine_prefix)
+                        wine_arch=wine_arch, wine_prefix=wine_prefix,
+                        compress=compress)
         df_ind = df_ind.append(ind)
         print(fname)
 
