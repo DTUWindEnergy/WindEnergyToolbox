@@ -23,6 +23,9 @@ from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
 import os
 from copy import copy
 
+def fmt_path(path):
+    return path.lower().replace("\\","/")
+
 class Input_File_Data(object):
 
     def __init__(self, key_in=None, original_file_in=None, file_object_in=None, written_file_in=None):

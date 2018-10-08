@@ -151,22 +151,13 @@ class ReadHawc2(object):
         self.ReadOnly = ReadOnly
         self.Iknown = []  # to keep track of what has been read all ready
         self.Data = np.zeros(0)
-<<<<<<< HEAD
+
         if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
              self._ReadSelFile()
         elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
              self.FileFormat = 'FLEX'
              self._ReadSensorFile()
         elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
-=======
-        self.alias = {}
-        if os.path.isfile(FileName + ".sel"):
-            self._ReadSelFile()
-        elif os.path.isfile(self.FileName + ".int"):
-            self.FileFormat = 'FLEX'
-            self._ReadSensorFile()
-        elif os.path.isfile(self.FileName + ".hdf5"):
->>>>>>> 9623f2b... Updated the HAWC2 files to make a cleaner interface
             self.FileFormat = 'GTSDF'
             self.ReadGtsdf()
         else:
