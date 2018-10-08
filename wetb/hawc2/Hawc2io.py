@@ -159,7 +159,7 @@ class ReadHawc2(object):
              self._ReadSensorFile()
         elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
             self.FileFormat = 'GTSDF'
-            self.ReadAll()
+            self.ReadGtsdf()
         else:
             print ("unknown file: " + FileName)
 ################################################################################
@@ -197,14 +197,15 @@ class ReadHawc2(object):
     def ReadGtsdf(self):
         self.t, data, info = gtsdf.load(self.FileName + '.hdf5')
         self.Time = self.t
-        self.ChInfo = [info['attribute_names'],
-                       info['attribute_units'],
-                       info['attribute_descriptions']]
-        self.NrCh = data.shape[1]
+        self.ChInfo = [['Time'] + info['attribute_names'],
+                       ['s'] + info['attribute_units'],
+                       ['Time'] + info['attribute_descriptions']]
+        self.NrCh = data.shape[1] + 1
         self.NrSc = data.shape[0]
         self.Freq = self.NrSc / self.Time
         self.FileFormat = 'GTSDF'
         self.gtsdf_description = info['description']
+        data = np.hstack([self.Time[:,np.newaxis], data])
         return data
 ################################################################################
 # One stop call for reading all data formats

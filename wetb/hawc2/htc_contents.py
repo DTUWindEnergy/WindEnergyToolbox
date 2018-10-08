@@ -131,7 +131,12 @@ class HTCContents(object):
     def add_section(self, name, allow_duplicate=False):
         if name in self and allow_duplicate is False:
             return self[name]
-        section = HTCSection(name)
+        if name == "output":
+            section = HTCOutputSection(name)
+        elif name.startswith("output_at_time"):
+            section = HTCOutputAtTimeSection(name)
+        else:
+            section = HTCSection(name)
         self._add_contents(section)
         return section
 
