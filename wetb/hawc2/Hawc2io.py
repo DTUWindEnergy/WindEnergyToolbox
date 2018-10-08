@@ -78,6 +78,8 @@ class ReadHawc2(object):
         """
 
         # read *.sel hawc2 output file for result info
+        if self.FileName.lower().endswith('.sel'):
+            self.FileName = self.FileName[:-4]
         fid = opent(self.FileName + '.sel', 'r')
         Lines = fid.readlines()
         fid.close()
@@ -139,7 +141,7 @@ class ReadHawc2(object):
         self.Freq = 1 / temp[1];
         self.ScaleFactor = np.fromfile(fid, 'f', self.NrCh)
         fid.seek(2 * 4 * self.NrCh + 48 * 2)
-        self.NrSc = len(np.fromfile(fid, 'int16')) / self.NrCh
+        self.NrSc = int(len(np.fromfile(fid, 'int16')) / self.NrCh)
         self.Time = self.NrSc * temp[1]
         self.t = np.arange(0, self.Time, temp[1])
         fid.close()
@@ -150,13 +152,14 @@ class ReadHawc2(object):
         self.ReadOnly = ReadOnly
         self.Iknown = []  # to keep track of what has been read all ready
         self.Data = np.zeros(0)
-        if os.path.isfile(FileName + ".sel"):
+        if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
              self._ReadSelFile()
-        elif os.path.isfile(self.FileName + ".int"):
+        elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
              self.FileFormat = 'FLEX'
              self._ReadSensorFile()
-        elif os.path.isfile(self.FileName + ".hdf5"):
+        elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
             self.FileFormat = 'GTSDF'
+            self.ReadAll()
         else:
             print ("unknown file: " + FileName)
 ################################################################################
@@ -193,7 +196,7 @@ class ReadHawc2(object):
 # Read results in GTSD format
     def ReadGtsdf(self):
         self.t, data, info = gtsdf.load(self.FileName + '.hdf5')
-        self.Time = self.t[-1]
+        self.Time = self.t
         self.ChInfo = [info['attribute_names'],
                        info['attribute_units'],
                        info['attribute_descriptions']]

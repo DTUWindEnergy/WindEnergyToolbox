@@ -281,8 +281,8 @@ def compute_envelope(cloud, int_env=False, Nx=300):
     vertices, ivertices = closed_contour(cloud)
 
     # interpolate to a fixed location of equally spaced vertices
-    vert_int = np.ndarray(vertices.shape)
     if int_env:
+        vert_int = np.ndarray((Nx+1, cloud.shape[1]))
         _,_,_,vert_int[:,0:2] = int_envelope(vertices[:,0], vertices[:,1], Nx)
         for i in range(2, cloud.shape[1]):
             _,_,_,extra = int_envelope(vertices[:,0], vertices[:,i], Nx)

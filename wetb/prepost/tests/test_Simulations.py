@@ -14,18 +14,27 @@ import unittest
 import os
 import filecmp
 import shutil
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
 
 from wetb.prepost import dlctemplate as tmpl
 from wetb.prepost import Simulations as sim
-from wetb.fatigue_tools.fatigue import eq_load
+from wetb.prepost.misc import DictDiff
 
 
 class Template(unittest.TestCase):
     def setUp(self):
         self.basepath = os.path.dirname(__file__)
+
+
+class TestErrorLogs(Template):
+
+    def test_loganalysis(self):
+        # select a few log cases and do the analysis, save to csv and convert
+        # saved result to DataFrame
+        pass
 
 
 class TestGenerateInputs(Template):
@@ -55,18 +64,77 @@ class TestGenerateInputs(Template):
 
         tmpl.force_dir = tmpl.P_RUN
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm',
-                               pbs_turb=True)
+                               pbs_turb=True, zipchunks=True,
+                               postpro_node_zipchunks=False,
+                               postpro_node=False)
 
-        # we can not check-in empty dirs so we can not compare the complete
+        def cmp_dir(dir1, dir2):
+            lst1, lst2 = map(os.listdir, (dir1, dir2))
+            self.assertEqual(";".join(lst1), ";".join(lst2))
+            for f1, f2 in zip(lst1, lst2):
+                if f1.endswith(".zip") or f1.endswith(".xlsx"):
+                    continue
+                if os.path.isdir(os.path.join(dir1, f1)):
+                    cmp_dir(os.path.join(dir1, f1), os.path.join(dir2, f2))
+                else:
+                    try:
+                        with open(os.path.join(dir1, f1)) as fid1:
+                            l1 = fid1.readlines()
+                        with open(os.path.join(dir2, f2)) as fid2:
+                            l2 = fid2.readlines()
+
+                        self.assertEqual(len(l1), len(l2))
+                        self.assertTrue(all([l1_ == l2_ for l1_, l2_ in zip(l1, l2)]))
+                    except:
+                        print("=" * 30)
+                        print(os.path.join(dir1, f1))
+                        print(os.path.join(dir2, f2))
+                        print(dir1[[d1 != d2 for d1, d2 in zip(dir1, dir2)].index(True):])
+                        print(f1)
+                        for i in range(len(l1)):
+                            if l1[i] != l2[i]:
+                                print("%03d, rem: %s" % (i, l1[i].strip()))
+                                print("%03d, ref: %s" % (i, l2[i].strip()))
+                                print()
+                        raise
+
+
+        # we can not git check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here
         for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
-                       'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos']:
+                       'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos',
+                       'zip-chunks-gorm', 'zip-chunks-jess']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)
-            cmp = filecmp.dircmp(remote, ref)
-            self.assertEqual(len(cmp.diff_files), 0, cmp.diff_files)
-            self.assertEqual(len(cmp.right_only), 0, cmp.right_only)
-            self.assertEqual(len(cmp.left_only), 0, cmp.left_only)
+            # the zipfiles are taken care of separately
+            ignore = ['remote_chnk_00000.zip']
+            cmp = filecmp.dircmp(remote, ref, ignore=ignore)
+            cmp_dir(remote, ref)
+            self.assertEqual(len(cmp.diff_files), 0,
+                             "{} {}".format(subdir, cmp.diff_files))
+            self.assertEqual(len(cmp.right_only), 0,
+                             "{} {}".format(subdir, cmp.right_only))
+            self.assertEqual(len(cmp.left_only), 0,
+                             "{} {}".format(subdir, cmp.left_only))
+
+        # compare the zip files
+        for fname in ['demo_dlc_remote.zip',
+                      'zip-chunks-gorm/remote_chnk_00000.zip',
+                      'zip-chunks-jess/remote_chnk_00000.zip']:
+            remote = os.path.join(p_root, tmpl.PROJECT, 'remote', fname)
+            ref = os.path.join(p_root, tmpl.PROJECT, 'ref', fname)
+
+            with ZipFile(remote) as zrem, ZipFile(ref) as zref:
+                self.assertEqual(len(zrem.infolist()), len(zref.infolist()))
+                frem = {f.filename:f.file_size for f in zrem.infolist()}
+                fref = {f.filename:f.file_size for f in zref.infolist()}
+                dd = DictDiff(frem, fref)
+                self.assertEqual(len(dd.added()), 0,
+                                 "{} {}".format(fname, dd.added()))
+                self.assertEqual(len(dd.removed()), 0,
+                                 "{} {}".format(fname, dd.removed()))
+                self.assertEqual(len(dd.changed()), 0,
+                                 "{} {}".format(fname, dd.changed()))
 
         # for the pickled file we can just read it
         remote = os.path.join(p_root, tmpl.PROJECT, 'remote', 'prepost')

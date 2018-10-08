@@ -60,7 +60,7 @@ echo ""
 # evaluates to true if LAUNCH_PBS_MODE is NOT set
 if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   echo "execute HAWC2, fork to background"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc  &
+  time WINEARCH=win32 WINEPREFIX=~/.wine32 wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc &
   wait
 # ==============================================================================
 
@@ -68,10 +68,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo "execute HAWC2, do not fork and wait"
-  time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc 
-  echo "POST-PROCESSING"
-  python -c "from wetb.prepost import statsdel; statsdel.logcheck('logfiles/dlc01_demos/dlc01_steady_wsp9_noturb.log')"
-  python -c "from wetb.prepost import statsdel; statsdel.calc('res/dlc01_demos/dlc01_steady_wsp9_noturb', no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=20.0, i0=0, i1=None, ftype='.csv')"
+  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp9_noturb.htc) 2>&1 | tee pbs_out/dlc01_demos/dlc01_steady_wsp9_noturb.err.out 
 fi
 # ------------------------------------------------------------------------------
 
@@ -115,12 +112,13 @@ else
   cd /scratch/$USER/$PBS_JOBID/$CPU_NR/
   rsync -a --remove-source-files res/dlc01_demos/. ../remote/res/dlc01_demos/.
   rsync -a --remove-source-files logfiles/dlc01_demos/. ../remote/logfiles/dlc01_demos/.
+  rsync -a --remove-source-files pbs_out/dlc01_demos/. ../remote/pbs_out/dlc01_demos/.
   rsync -a --remove-source-files animation/. ../remote/animation/.
 
   echo ""
   echo "COPY BACK TURB IF APPLICABLE"
   cd turb/
-  for i in `ls *.bin`; do  if [ -e ../../turb/$i ]; then echo "$i exists no copyback"; else echo "$i copyback"; cp $i ../../turb/; fi; done
+  for i in `ls *.bin`; do  if [ -e $PBS_O_WORKDIR/../turb/$i ]; then echo "$i exists no copyback"; else echo "$i copyback"; cp $i $PBS_O_WORKDIR/../turb/; fi; done
   cd /scratch/$USER/$PBS_JOBID/$CPU_NR/
   echo "END COPY BACK TURB"
   echo ""

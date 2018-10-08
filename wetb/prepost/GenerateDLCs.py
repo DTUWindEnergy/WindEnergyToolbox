@@ -182,7 +182,13 @@ class GeneralDLC(object):
                 formula = formula.replace(',', '.')
                 formula = formula.replace(';', ',')
                 formula = formula.replace('\n', ' ')
-                flist.append(eval(formula))
+                try:
+                    flist.append(eval(formula))
+                except Exception as exc:
+                    print('following formula failed to execute:')
+                    print(formula)
+                    print('and raised the following exception:')
+                    raise exc
 
             dlc[fkey] = flist
 

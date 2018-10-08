@@ -41,7 +41,7 @@ from wetb.prepost import misc
 # wind energy python toolbox, available on the dtu wind redmine server:
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 from wetb.hawc2.Hawc2io import ReadHawc2
-from wetb.fatigue_tools.fatigue import eq_load
+from wetb.fatigue_tools.fatigue import (eq_load, cycle_matrix2)
 
 
 class LogFile(object):
@@ -348,6 +348,10 @@ class LogFile(object):
             tempLog.append('')
             tempLog.append('')
 
+        # FIXME: we the sim crashes at generating the turbulence box
+        # there is one element too much at the end
+        tempLog = tempLog[:len(self._header().split(';'))]
+
         # save the iterations in the results folder
         if save_iter:
             fiter = os.path.basename(fname).replace('.log', '.iter')
@@ -385,7 +389,7 @@ class LogFile(object):
         """Read a csv log file analysis and convert to a pandas.DataFrame
         """
         colnames, min_itemsize, dtypes = self.headers4df()
-        df = pd.read_csv(fname, header=header, names=colnames, sep=';', )
+        df = pd.read_csv(fname, header=header, names=colnames, sep=';')
         for col, dtype in dtypes.items():
             df[col] = df[col].astype(dtype)
             # replace nan with empty for str columns
@@ -792,8 +796,8 @@ class LoadResults(ReadHawc2):
         # some channel ID's are unique, use them
         ch_unique = set(['Omega', 'Ae rot. torque', 'Ae rot. power',
                          'Ae rot. thrust', 'Time', 'Azi  1'])
-        ch_aero = set(['Cl', 'Cd', 'Alfa', 'Vrel', 'Tors_e', 'Alfa', 'Lift',
-                       'Drag'])
+        ch_aero = set(['Cl', 'Cd', 'Cm', 'Alfa', 'Vrel', 'Tors_e', 'Alfa',
+                       'Lift', 'Drag'])
         ch_aerogrid = set(['a_grid', 'am_grid', 'CT', 'CQ'])
 
         # also safe as df
@@ -1023,7 +1027,6 @@ class LoadResults(ReadHawc2):
                 dscr_list = self.ch_details[ch, 2].split(' ')
                 dscr_list = misc.remove_items(dscr_list, '')
                 sensortype = self.ch_details[ch, 0].split(',')[0]
-
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
                 blade_nr = int(blade_nr)
@@ -1526,6 +1529,37 @@ class LoadResults(ReadHawc2):
         """
 
         return eq_load(signal, no_bins=no_bins, m=m, neq=neq)[0]
+
+    def cycle_matrix(self, signal, no_bins=46):
+        """Cycle/Markov matrix.
+
+        Convenience function for wetb.fatigue_tools.fatigue.cycle_matrix2
+
+        Parameters
+        ----------
+
+        signal: 1D array
+            One dimentional array containing the signal.
+
+        no_bins: int
+            Number of bins for the binning of the amplitudes.
+
+        Returns
+        -------
+
+        cycles : ndarray, shape(ampl_bins, mean_bins)
+            A bi-dimensional histogram of load cycles(full cycles). Amplitudes
+            are histogrammed along the first dimension and mean values are
+            histogrammed along the second dimension.
+
+        ampl_edges : ndarray, shape(no_bins+1,n)
+            The amplitude bin edges
+
+        mean_edges : ndarray, shape(no_bins+1,n)
+            The mean bin edges
+
+        """
+        return cycle_matrix2(signal, no_bins)
 
     def blade_deflection(self):
         """

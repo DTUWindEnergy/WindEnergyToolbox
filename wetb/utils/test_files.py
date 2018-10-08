@@ -6,7 +6,11 @@ Created on 20. jul. 2017
 import os
 import wetb
 import inspect
-wetb_rep_path = os.path.join(os.path.dirname(wetb.__file__), "../")                                   
+from urllib.request import urlretrieve
+
+wetb_rep_path = os.path.abspath(os.path.dirname(wetb.__file__) + "/../") + "/"
+local_TestFiles_path = wetb_rep_path + "TestFiles/"                                   
+remote_TestFiles_url = "https://gitlab.windenergy.dtu.dk/toolbox/TestFiles/raw/master/"
 
 
 def _absolute_filename(filename):
@@ -19,10 +23,13 @@ def _absolute_filename(filename):
 
 def get_test_file(filename):
     filename = _absolute_filename(filename) 
-    if os.path.exists(filename):
-        return filename
-    else:
-        return os.path.join(wetb_rep_path, 'TestFiles', os.path.relpath(filename, wetb_rep_path))
+    if not os.path.exists(filename):
+        rel_path = os.path.relpath(filename, wetb_rep_path).replace("\\","/")
+        filename = local_TestFiles_path + rel_path
+        if not os.path.exists(filename):
+            urlretrieve(remote_TestFiles_url + rel_path, filename)
+    return filename
+        
         
 
 

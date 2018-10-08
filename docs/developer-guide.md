@@ -126,7 +126,8 @@ use ```deactivate``` to deactivate the environment.
         - Python 2.7: [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
         or the [direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
         - Python 3.4: MS Visual Studio 2010
-        - Python 3.5: MS Visual Studio 2015 or [Visual C++ Build Tools](http://landinghub.visualstudio.com/visual-cpp-build-tools)
+        - Python 3.5: MS Visual Studio 2015 or [Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017)
+        - Python 3.5+: MS Visual Studio 2017 or [Visual C++ 2017 Redistributable](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017)
         - Only one MS Visual Studio version can be installed, but you can for
         example install MS Visual Studio 2010 alongside the Visual C++ Build Tools.
 - [numpy](http://www.numpy.org/)
@@ -157,8 +158,8 @@ Install the necessary Python dependencies using the conda package manager:
 
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
->> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc
->> conda install -c conda-forge pyscaffold sshtunnel twine pypandoc --no-deps
+>> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc
+>> conda install -c conda-forge pyscaffold sshtunnel --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel

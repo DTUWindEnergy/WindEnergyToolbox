@@ -37,7 +37,8 @@ from wetb.prepost.Simulations import Cases
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           nr_procs_series=9, queue='workq', pyenv='wetb_py3',
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          compress=False):
+                          compress=False, wine_64bit=False, wine_arch='win32',
+                          wine_prefix='~/.wine32'):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -132,22 +133,39 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         return fname, df_index
 
-    pbs_tmplate ="""
-### Standard Output
-#PBS -N [job_name]
-#PBS -o [std_out]
-### Standard Error
-#PBS -e [std_err]
-#PBS -W umask=[umask]
-### Maximum wallclock time format HOURS:MINUTES:SECONDS
-#PBS -l walltime=[walltime]
-#PBS -l nodes=[nodes]:ppn=[ppn]
-### Queue name
-#PBS -q [queue]
+    pbs_tmplate = "\n"
+    pbs_tmplate += "### Standard Output\n"
+    pbs_tmplate += "#PBS -N [job_name]\n"
+    pbs_tmplate += "#PBS -o [std_out]\n"
+    pbs_tmplate += "### Standard Error\n"
+    pbs_tmplate += "#PBS -e [std_err]\n"
+    pbs_tmplate += "#PBS -W umask=[umask]\n"
+    pbs_tmplate += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
+    pbs_tmplate += "#PBS -l walltime=[walltime]\n"
+    pbs_tmplate += "#PBS -l nodes=[nodes]:ppn=[ppn]\n"
+    pbs_tmplate += "### Queue name\n"
+    pbs_tmplate += "#PBS -q [queue]\n"
+    pbs_tmplate += "\n"
 
-"""
+    # FIXME: this causes troubles on CI runner for the tests (line endings?)
+#     pbs_tmplate = """
+# ### Standard Output
+# #PBS -N [job_name]
+# #PBS -o [std_out]
+# ### Standard Error
+# #PBS -e [std_err]
+# #PBS -W umask=[umask]
+# ### Maximum wallclock time format HOURS:MINUTES:SECONDS
+# #PBS -l walltime=[walltime]
+# #PBS -l nodes=[nodes]:ppn=[ppn]
+# ### Queue name
+# #PBS -q [queue]
 
-    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False):
+# """
+
+    def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
+                        wine_64bit=False, wine_arch='win32',
+                        wine_prefix='~/.wine32'):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -159,18 +177,28 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         cmd_xargs = '/home/MET/sysalt/bin/xargs'
         jobid = '%s_chnk_%05i' % (sim_id, ii)
 
+        wineparam = (wine_arch, wine_prefix)
+        if wine_64bit:
+            wineparam = ('win64', '~/.wine')
+
         pbase = os.path.join('/scratch','$USER', '$PBS_JOBID', '')
         post_dir_base = post_dir.split(sim_id)[1]
         if post_dir_base[0] == os.path.sep:
             post_dir_base = post_dir_base[1:]
 
-        pbs_in_base = os.path.commonpath(df['[pbs_in_dir]'].unique().tolist())
+        # FIXME: commonpath was only added in Python 3.5, but CI runner is old
+        try:
+            compath = os.path.commonpath
+        except AttributeError:
+            compath = os.path.commonprefix
+
+        pbs_in_base = compath(df['[pbs_in_dir]'].unique().tolist())
         pbs_in_base = os.path.join(pbs_in_base, '')
-        htc_base = os.path.commonpath(df['[htc_dir]'].unique().tolist())
+        htc_base = compath(df['[htc_dir]'].unique().tolist())
         htc_base = os.path.join(htc_base, '')
-        res_base = os.path.commonpath(df['[res_dir]'].unique().tolist())
+        res_base = compath(df['[res_dir]'].unique().tolist())
         res_base = os.path.join(res_base, '')
-        log_base = os.path.commonpath(df['[log_dir]'].unique().tolist())
+        log_base = compath(df['[log_dir]'].unique().tolist())
         log_base = os.path.join(log_base, '')
 
         # =====================================================================
@@ -188,21 +216,22 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         # =====================================================================
         # activate the python environment
-        pbs += 'echo "activate python environment %s"\n' % pyenv
-        pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
-        # sometimes activating an environment fails due to a FileExistsError
-        # is this because it is activated at the same time on another node?
-        # check twice if the environment got activated for real
-        pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
-        pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
-        pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
-        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
-        pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-        pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+        if pyenv is not None:
+            pbs += 'echo "activate python environment %s"\n' % pyenv
+            pbs += 'source /home/python/miniconda3/bin/activate %s\n' % pyenv
+            # sometimes activating an environment fails due to a FileExistsError
+            # is this because it is activated at the same time on another node?
+            # check twice if the environment got activated for real
+            pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
+            pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
+            pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
+            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
+            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+            pbs += 'if [ $ACTIVATED -eq -1 ]; then source activate %s;fi\n' % pyenv
 
         # =====================================================================
-        # create all necessary directories at CPU_NR dirs, turb db dirs, sim_id
+        # create all necessary directories at CPU_NR dirs
         # browse to scratch directory
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += 'cd %s\n' % pbase
@@ -212,22 +241,6 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'mkdir -p %s\n' % os.path.join(pbase, sim_id, '')
         for k in range(ppn):
             pbs += 'mkdir -p %s\n' % os.path.join(pbase, '%i' % k, '')
-        # pretend to be on the scratch sim_id directory to maintain the same
-        # database turb structure
-        pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
-        pbs += "echo 'current working directory:'\n"
-        pbs += 'pwd\n'
-        pbs += 'echo "create turb_db directories"\n'
-        db_dir_tags = ['[turb_db_dir]', '[meand_db_dir]', '[wake_db_dir]']
-        turb_dirs = []
-        for tag in db_dir_tags:
-            for dirname in set(df[tag].unique().tolist()):
-                if not dirname or dirname.lower() not in ['false', 'none']:
-                    turb_dirs.append(dirname)
-        turb_dirs = set(turb_dirs)
-        for dirname in turb_dirs:
-            pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
 
         # =====================================================================
         # get the zip-chunk file from the PBS_O_WORKDIR
@@ -241,22 +254,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         rpl = (os.path.join('./', chunks_dir, jobid), os.path.join(pbase, ''))
         pbs += 'cp %s.zip %s\n' % rpl
 
-        # turb_db_dir might not be set, same for turb_base_name, for those
-        # cases we do not need to copy anything from the database to the node
-        base_name_tags = ['[turb_base_name]', '[meand_base_name]',
-                          '[wake_base_name]']
-        for db, base_name in zip(db_dir_tags, base_name_tags):
-            turb_db_dirs = df[db] + df[base_name]
-            # When set to None, the DataFrame will have text as None
-            turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
-            pbs += '\n'
-            pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
-            for k in turb_db_src.unique():
-                dst = os.path.dirname(os.path.join(pbase, sim_id, k))
-                pbs += 'cp %s* %s\n' % (k, os.path.join(dst, '.'))
-
         # =====================================================================
-        # browse back to the scratch directory
+        # unzip to all cpu dirs
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += 'cd %s\n' % pbase
         pbs += "echo 'current working directory:'\n"
@@ -268,16 +267,115 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             dst = os.path.join('%s' % k, '.')
             pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
 
-        # create hard links for all the turbulence files
-        turb_dir_base = os.path.join(os.path.commonpath(list(turb_dirs)), '')
+        # =====================================================================
+        # create all turb_db directories
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
+        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
-        pbs += 'echo "copy all turb files into CPU dirs"\n'
-        for k in range(ppn):
-            rpl = (os.path.relpath(os.path.join(sim_id, turb_dir_base)), k)
-            pbs += 'find %s -iname *.bin -exec cp {} %s/{} \\;\n' % rpl
+        pbs += 'echo "create turb_db directories"\n'
+        turb_db_tags = ['[turb_db_dir]', '[meand_db_dir]', '[wake_db_dir]']
+        turb_db_dirs = []
+        for tag in turb_db_tags:
+            for dirname in set(df[tag].unique().tolist()):
+                dirname_s = str(dirname).replace('.', '').replace('/', '')
+                if dirname_s.lower() not in ['false', 'none', '0']:
+                    turb_db_dirs.append(dirname)
+        turb_db_dirs = set(turb_db_dirs)
+        # create all turb dirs
+        for dirname in turb_db_dirs:
+            pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
+
+        # =====================================================================
+        # copy required turbulence from db_dir to scratch/db_dirs
+        # turb_db_dir might not be set, same for turb_base_name, for those
+        # cases we do not need to copy anything from the database to the node
+        pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd $PBS_O_WORKDIR\n'
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
+        base_name_tags = ['[turb_base_name]', '[meand_base_name]',
+                          '[wake_base_name]']
+        for db, base_name in zip(turb_db_tags, base_name_tags):
+            turb_db_dirs = df[db] + df[base_name]
+            # When set to None, the DataFrame will have text as None
+            # FIXME: CI runner has and old pandas version (v0.14.1)
+            try:
+                turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
+            except AttributeError:
+                # and findall returns list with the search str occuring as
+                # many times as found in the str...
+                # sel should be True if str does NOT occur in turb_db_dirs
+                # meaning if findall returns empty list
+                findall = turb_db_dirs.str.findall('None').tolist()
+                sel = [True if len(k)==0 else False for k in findall]
+                turb_db_src = turb_db_dirs[sel]
+            pbs += '\n'
+            pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
+            for k in turb_db_src.unique():
+                dst = os.path.dirname(os.path.join(pbase, sim_id, k))
+                pbs += 'cp %s* %s\n' % (k, os.path.join(dst, '.'))
+
+        # =====================================================================
+        # to be safe, create all turb dirs in the cpu dirs
+        pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % os.path.join(pbase, '')
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
+        pbs += 'echo "create turb directories in CPU dirs"\n'
+        turb_dir_tags = ['[turb_dir]', '[meand_dir]', '[wake_dir]']
+        turb_dirs = []
+        for tag in turb_dir_tags:
+            for dirname in set(df[tag].unique().tolist()):
+                dirname_s = str(dirname).replace('.', '').replace('/', '')
+                if dirname_s.lower() not in ['false', 'none', '0']:
+                    turb_dirs.append(dirname)
+        turb_dirs = set(turb_dirs)
+        for k in list(range(ppn)):
+            for dirname in turb_dirs:
+                pbs += 'mkdir -p %s\n' % os.path.join(str(k), dirname, '')
+
+        # =====================================================================
+        # symlink everything from the turb_db_dir to the cpu/turb_dir
+        pbs += '\necho "%s"\n' % ('-'*70)
+        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += "echo 'current working directory:'\n"
+        pbs += 'pwd\n'
+        pbs += 'echo "Link all turb files into CPU dirs"\n'
+        for db_dir, turb_dir in zip(turb_db_tags, turb_dir_tags):
+            # FIXME: this needs to be written nicer. We should be able to
+            # select from df non-defined values so we can exclude them
+            # now it seems they are either None, False or 0 in either
+            # boolean, str or int formats
+            nogo = ['false', 'none', '0']
+            try:
+                symlink_dirs = df[db_dir] + '_*_'
+                symlink_dirs = symlink_dirs + df[turb_dir]
+            except:
+                continue
+            for symlink in symlink_dirs.unique().tolist():
+                db_dir, turb_dir = symlink.split('_*_')
+                db_dir_s = db_dir.replace('.', '').replace('/', '').lower()
+                turb_dir_s = turb_dir.replace('.', '').replace('/', '').lower()
+                if db_dir_s in nogo or turb_dir_s in nogo:
+                    continue
+                db_dir_abs = os.path.join(pbase, sim_id, db_dir, '')
+                for k in list(range(ppn)):
+                    turb_dir_abs = os.path.join(pbase, sim_id, str(k),
+                                                turb_dir, '')
+                    rpl = (db_dir_abs, turb_dir_abs)
+                    pbs += 'find %s -iname "*.bin" -exec ln -s {} %s \\;\n' % rpl
+
+        # copy all from scratch/turb_db to cpu/turb
+        # turb_dir_base = os.path.join(compath(list(turb_dirs)), '')
+        # pbs += '\necho "%s"\n' % ('-'*70)
+        # pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        # pbs += "echo 'current working directory:'\n"
+        # pbs += 'pwd\n'
+        # pbs += 'echo "Link all turb files into CPU dirs"\n'
+        # for k in range(ppn):
+        #     rpl = (os.path.relpath(os.path.join(sim_id, turb_dir_base)), k)
+        #     pbs += 'find %s -iname "*.bin" -exec cp {} %s/{} \\;\n' % rpl
 
         # =====================================================================
         # finally we can run find+xargs!!!
@@ -287,7 +385,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
-        pbs += 'WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+        pbs += 'WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
         pbs += 'echo "following cases will be run from following path:"\n'
         pbs += 'echo "%s"\n' % (os.path.join(sim_id, pbs_in_base))
@@ -365,7 +463,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += '    --exclude *.htc \n'
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
-        pbs += 'source deactivate\n'
+        if pyenv is not None:
+            pbs += 'source deactivate\n'
         pbs += 'echo "DONE !!"\n'
         pbs += '\necho "%s"\n' % ('-'*70)
         pbs += '# in case wine has crashed, kill any remaining wine servers\n'
@@ -389,7 +488,11 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     cc = Cases(cases)
     df = cc.cases2df()
     # sort on the specified values in the given columns
-    df.sort_values(by=sort_by_values, inplace=True)
+    # FIXME: sort_values was only added in Pandas 0.17, but CI runner is old
+    try:
+        df.sort_values(by=sort_by_values, inplace=True)
+    except AttributeError:
+        df.sort(columns=sort_by_values, inplace=True)
 
     # create the directory to store all zipped chunks
     try:
@@ -413,7 +516,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     for ii, dfi in enumerate(df_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
-                        compress=compress)
+                        compress=compress, wine_64bit=wine_64bit,
+                        wine_arch=wine_arch, wine_prefix=wine_prefix)
         df_ind = df_ind.append(ind)
         print(fname)
 

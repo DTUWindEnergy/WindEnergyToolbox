@@ -11,7 +11,8 @@ from future import standard_library
 standard_library.install_aliases()
 
 import unittest
-import os
+from os.path import join as pjoin
+from os.path import dirname as pdirname
 
 import numpy as np
 
@@ -23,14 +24,13 @@ class Tests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.fpath_linear = os.path.join(os.path.dirname(__file__),
-                                         'data/controller_input_linear.txt')
-        self.fpath_quad = os.path.join(os.path.dirname(__file__),
-                                       'data/controller_input_quadratic.txt')
+        self.fpath_linear = pjoin(pdirname(__file__),
+                                  'data/controller_input_linear.txt')
+        self.fpath_quad = pjoin(pdirname(__file__),
+                                'data/controller_input_quadratic.txt')
 
     def test_cmb_df(self):
-        fname1 = os.path.join(os.path.dirname(__file__),
-                              'data/campbell_diagram.cmb')
+        fname1 = pjoin(pdirname(__file__), 'data/campbell_diagram.cmb')
         speed, freq, damp, real_eig = results().load_cmb(fname1)
 
         self.assertIsNone(real_eig)
@@ -90,6 +90,50 @@ class Tests(unittest.TestCase):
         self.assertEqual(hs2.aero_damp.Kp2, 0.240394E-01)
         self.assertEqual(hs2.aero_damp.Ko1, -1.69769)
         self.assertEqual(hs2.aero_damp.Ko2, -15.02688)
+
+    def test_ind_file(self):
+        fnames = ['dtu10mw_nofull_defl_u10000.ind',
+                  'dtu10mw_nofull_fext_u10000.ind',
+                  'dtu10mw_nofull_u10000.ind',
+                  'dtu10mw_nogradient_defl_u10000.ind',
+                  'dtu10mw_nogradient_fext_u10000.ind',
+                  'dtu10mw_nogradient_u10000.ind',
+                  'dtu10mw_v1_defl_u10000.ind',
+                  'dtu10mw_v1_fext_u10000.ind',
+                  'dtu10mw_v1_u10000.ind',
+                  ]
+
+        for fname in fnames:
+            fname = pjoin(pdirname(__file__), 'data', fname)
+            res = results()
+            df_data = res.load_ind(fname)
+            data = np.loadtxt(fname)
+            np.testing.assert_almost_equal(data, df_data.values)
+
+    def test_pwr_file(self):
+        fnames = ['dtu10mw_nofull.pwr',
+                  'dtu10mw_nogradient.pwr',
+                  'dtu10mw_nogradient_v2.pwr',
+                  'dtu10mw_v1.pwr',]
+        for fname in fnames:
+            fname = pjoin(pdirname(__file__), 'data', fname)
+            res = results()
+            df_data, units = res.load_pwr_df(fname)
+            data = np.loadtxt(fname)
+            self.assertEqual(data.shape, df_data.shape)
+            print(fname)
+            print(data.dtype)
+            print(df_data.values.dtype)
+            for i in range(data.shape[0]):
+                a = data[i,:]
+                b = df_data.values[i,:]
+                if not np.allclose(a,b):
+                    print(i)
+                    print(a-b)
+                    print(a)
+                    print(b)
+                np.testing.assert_almost_equal(a, b)
+            np.testing.assert_almost_equal(data, df_data.values, decimal=6)
 
 
 if __name__ == "__main__":

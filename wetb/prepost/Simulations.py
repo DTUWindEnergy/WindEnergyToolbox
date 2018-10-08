@@ -56,6 +56,12 @@ from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
 from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
+from os.path import join as os_path_join
+
+def join_path(*args):
+    return os_path_join(*args).replace("\\","/")
+os.path.join = join_path
+
 
 def load_pickled_file(source):
     FILE = open(source, 'rb')
@@ -556,10 +562,13 @@ def run_local(cases, silent=False, check_log=True):
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 write_htc=True, runmethod='none', verbose=False,
                 copyback_turb=True, msg='', silent=False, check_log=True,
-                update_cases=False, ignore_non_unique=False, wine_appendix='',
-                run_only_new=False, windows_nr_cpus=2, qsub='',
-                pbs_fname_appendix=True, short_job_names=True,
-                update_model_data=True, maxcpu=1, pyenv='wetb_py3'):
+                update_cases=False, ignore_non_unique=False,
+                run_only_new=False, windows_nr_cpus=2, wine_64bit=False,
+                pbs_fname_appendix=True, short_job_names=True, qsub='',
+                update_model_data=True, maxcpu=1, pyenv='wetb_py3',
+                m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
+                postpro_node=False, exesingle=None, exechunks=None,
+                wine_arch='win32', wine_prefix='~/.wine32'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -796,10 +805,13 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
         cases = cases_to_run
 
     launch(cases, runmethod=runmethod, verbose=verbose, check_log=check_log,
-           copyback_turb=copyback_turb, qsub=qsub, wine_appendix=wine_appendix,
+           copyback_turb=copyback_turb, qsub=qsub,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
-           pyenv=pyenv)
+           pyenv=pyenv, wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
+           postpro_node_zipchunks=postpro_node_zipchunks,
+           postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
+           wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     return cases
 
@@ -999,8 +1011,10 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
 
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
-           wine_appendix='', pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3'):
+           pbs_fname_appendix=True, short_job_names=True,
+           maxcpu=1, pyenv='wetb_py3', wine_64bit=False, m=[3,4,6,8,9,10,12],
+           postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
+           exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
     """
     The actual launching of all cases in the Cases dictionary. Note that here
     only the PBS files are written and not the actuall htc files.
@@ -1041,8 +1055,11 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent)
-        pbs.wine_appendix = wine_appendix
+                  verbose=verbose, silent=silent, wine_64bit=wine_64bit,
+                  m=m, postpro_node_zipchunks=postpro_node_zipchunks,
+                  postpro_node=postpro_node, exesingle=exesingle,
+                  exechunks=exechunks, wine_arch=wine_arch,
+                  wine_prefix=wine_prefix)
         pbs.copyback_turb = copyback_turb
         pbs.pbs_out_dir = pbs_out_dir
         pbs.maxcpu = maxcpu
@@ -1930,7 +1947,10 @@ class PBS(object):
     """
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
-                 pbs_fname_appendix=True, short_job_names=True, verbose=False):
+                 pbs_fname_appendix=True, short_job_names=True, verbose=False,
+                 wine_64bit=False, m=[3,4,6,8,9,10,12], exesingle=None,
+                 postpro_node_zipchunks=True, postpro_node=False,
+                 exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1963,9 +1983,32 @@ class PBS(object):
         self.silent = silent
         self.pyenv = pyenv
         self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
-        self.winebase = 'time WINEARCH=win32 WINEPREFIX=~/.wine32 '
+        self.postpro_node_zipchunks = postpro_node_zipchunks
+        self.postpro_node = postpro_node
+
+        self.m = m
+
+        # run in 32-bit or 64-bit mode. Note this uses the same assumptions
+        # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
+        wineparam = (wine_arch, wine_prefix)
+        if wine_64bit:
+            wineparam = ('win64', '~/.wine')
+        self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
+
         self.wine = self.winebase + 'wine'
         self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
+
+        # in case you want to redirect stdout to /dev/nul, append as follows:
+        # '> /dev/null 2>&1'
+        self.exesingle = exesingle
+        if exesingle is None:
+            self.exesingle = "{wine:} {hawc2_exe:} {fname_htc:}"
+        # in zipchunks mode we will output std out and err to a separate
+        # pbs_out file, and that in addition to the pbs_out_zipchunks file
+        self.exechunks = exechunks
+        if exechunks is None:
+            self.exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
+            self.exechunks += "2>&1 | tee {fname_pbs_out:}"
 
         # TODO: based on a certain host/architecture you can change these
         self.maxcpu = 1
@@ -1974,7 +2017,7 @@ class PBS(object):
         # determine at runtime if winefix has to be ran
         self.winefix = '  _HOSTNAME_=`hostname`\n'
         self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then\n'
-        self.winefix += '    WINEARCH=win32 WINEPREFIX=~/.wine32 winefix\n'
+        self.winefix += '    WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
         self.winefix += '  fi\n'
 
         # the output channels comes with a price tag. Each time step
@@ -1993,9 +2036,6 @@ class PBS(object):
         # the actual script starts empty
         self.pbs = ''
 
-        # in case you want to redirect stdout to /dev/nul
-#        self.wine_appendix = '> /dev/null 2>&1'
-        self.wine_appendix = ''
         # /dev/shm should be the RAM of the cluster
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
@@ -2300,16 +2340,34 @@ class PBS(object):
             self.pbs += '# single PBS mode: one case per PBS job\n'
             self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
-            # the hawc2 execution commands via wine, in PBS mode fork and wait
-            param = (self.wine, hawc2_exe, self.htc_dir+case, self.wine_appendix)
+
             self.pbs += '  echo "execute HAWC2, fork to background"\n'
-            self.pbs += "  %s %s ./%s %s &\n" % param
+            # the hawc2 execution commands via wine, in PBS mode fork and wait
+            # METHOD MORE GENERAL
+            # case contains the htc file name extension, self.case doesn't
+            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            fname_log = os.path.join(self.logs_dir, self.case)
+            ext = '.err.out'
+            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            execstr = self.exesingle.format(wine=self.wine, case=case,
+                                            fname_htc=fname_htc,
+                                            hawc2_exe=hawc2_exe,
+                                            pbs_out_dir=self.pbs_out_dir,
+                                            logs_dir=self.logs_dir,
+                                            fname_log=fname_log,
+                                            fname_pbs_out=fname_pbs_out,
+                                            winenumactl=self.winenumactl)
+            self.pbs += "  %s &\n" % execstr
+            # # OLD METHOD
+            # param = (self.wine, hawc2_exe, self.htc_dir+case)
+            # self.pbs += "  %s %s ./%s &\n" % param
+
             # FIXME: running post-processing will only work when 1 HAWC2 job
             # per PBS file, otherwise you have to wait for each job to finish
             # first and then run the post-processing for all those cases
             if self.maxcpu == 1:
                 self.pbs += '  wait\n'
-                if self.pyenv is not None:
+                if self.pyenv is not None and self.postpro_node:
                     self.pbs += '  echo "POST-PROCESSING"\n'
                     self.pbs += '  %s %s\n' % (self.pyenv_cmd, self.pyenv)
                     self.pbs += "  "
@@ -2324,15 +2382,32 @@ class PBS(object):
             self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
             self.pbs += "else\n"
             # numactl --physcpubind=$CPU_NR
-            param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
-                     self.wine_appendix)
+
+            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            fname_log = os.path.join(self.logs_dir, self.case)
+            ext = '.err.out'
+            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            execstr = self.exechunks.format(wine=self.wine, case=case,
+                                            fname_htc=fname_htc,
+                                            hawc2_exe=hawc2_exe,
+                                            pbs_out_dir=self.pbs_out_dir,
+                                            logs_dir=self.logs_dir,
+                                            fname_log=fname_log,
+                                            fname_pbs_out=fname_pbs_out,
+                                            winenumactl=self.winenumactl)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
-            self.pbs += "  %s %s ./%s %s\n" % param
-            self.pbs += '  echo "POST-PROCESSING"\n'
-            self.pbs += "  "
-            self.checklogs()
-            self.pbs += "  "
-            self.postprocessing()
+            self.pbs += "  %s \n" % execstr
+
+            # param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
+            #          self.wine_appendix)
+            # self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
+            # self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
+            if self.pyenv is not None and self.postpro_node_zipchunks:
+                self.pbs += '  echo "POST-PROCESSING"\n'
+                self.pbs += "  "
+                self.checklogs()
+                self.pbs += "  "
+                self.postprocessing()
             self.pbs += "fi\n"
             # mark end of find+xargs mode
             self.pbs += '# ' + '-'*78 + '\n'
@@ -2544,7 +2619,8 @@ class PBS(object):
         if mode=="find+xargs":
             foper = "rsync -a --remove-source-files" # move files instead of copy
             dst = os.path.join('..', self.sim_id, '')
-            dst_db = '../'
+            # copy back to DB dir, and not the scratch dir root
+            dst_db = "$PBS_O_WORKDIR/"
             cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
                                                   '$PBS_JOBID', '$CPU_NR', '')
             pbs_mode = False
@@ -2588,6 +2664,12 @@ class PBS(object):
         self.pbs += "  %s %s. %s\n" % (foper, self.results_dir, res_dst)
         log_dst = os.path.join(dst, self.logs_dir, ".")
         self.pbs += "  %s %s. %s\n" % (foper, self.logs_dir, log_dst)
+        # in zipchunks mode by default we also copy the time+std out/err to
+        # an additional file that is in pbs_out for consistancy with the
+        # pbs_mode approach
+        if not pbs_mode:
+            pbs_dst = os.path.join(dst, self.pbs_out_dir, ".")
+            self.pbs += "  %s %s. %s\n" % (foper, self.pbs_out_dir, pbs_dst)
         if self.animation_dir:
             ani_dst = os.path.join(dst, self.animation_dir, ".")
             self.pbs += "  %s %s. %s\n" % (foper, self.animation_dir, ani_dst)
@@ -2687,8 +2769,9 @@ class PBS(object):
         """
         self.pbs += 'python -c "from wetb.prepost import statsdel; '
         fsrc = os.path.join(self.results_dir, self.case)
-        rpl = (fsrc, str(self.case_duration), '.csv')
-        self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[3, 4, 6, 8, 10, 12], '
+        mstr = ','.join([str(k) for k in self.m])
+        rpl = (fsrc, mstr, str(self.case_duration), '.csv')
+        self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[%s], '
                      'neq=%s, i0=0, i1=None, ftype=\'%s\')"\n' % rpl)
 
     def check_results(self, cases):
@@ -4616,6 +4699,13 @@ class Cases(object):
         else:
             sim_id = new_sim_id
 
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
+
         if fh_lst is None:
             # FIXME: wb has overlap with dlc_config.xlsx, and shape_k doesn't
             # seemed to be used by DLCHighLevel
@@ -4635,7 +4725,12 @@ class Cases(object):
             # the statistics analysis
             # TODO: could be faster if working with df directly, but how to
             # assure you're res_dir is always ending with path separator?
-            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            # only take the values from 1 channel, not all of them!!
+            # FIXME: breaks when not all channels are present for all cases !
+            # solution: set channel "Time" as a minimum required channel!
+            val = dfs[chan_col_name].values[0]
+            sel = dfs[dfs[chan_col_name]==val]
+            p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
             files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=years, files=files)
 
@@ -4658,12 +4753,6 @@ class Cases(object):
         # ---------------------------------------------------------------------
         # column definitions
         # ---------------------------------------------------------------------
-        # FIXME: for backward compatibility, the column name of the unique
-        # channel name has been changed in the past....
-        if 'unique_ch_name' in dfs.columns:
-            chan_col_name  = 'unique_ch_name'
-        else:
-            chan_col_name  = 'channel'
         # available material constants
         ms, cols = [], []
         for key in dfs:
@@ -4791,6 +4880,13 @@ class Cases(object):
         else:
             sim_id = new_sim_id
 
+        # FIXME: for backward compatibility, the column name of the unique
+        # channel name has been changed in the past....
+        if 'unique_ch_name' in dfs.columns:
+            chan_col_name  = 'unique_ch_name'
+        else:
+            chan_col_name  = 'channel'
+
         if fh_lst is None:
             wb = WeibullParameters()
             if 'Weibull' in self.config:
@@ -4805,7 +4901,11 @@ class Cases(object):
             dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
             # TODO: could be faster if working with df directly, but how to
             # assure you're res_dir is always ending with path separator?
-            p1, p2 = dfs['[res_dir]'].values, dfs['[case_id]'].values
+            # FIXME: breaks when not all channels are present for all cases !
+            # solution: set channel "Time" as a minimum required channel!
+            val = dfs[chan_col_name].values[0]
+            sel = dfs[dfs[chan_col_name]==val]
+            p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
             files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=1.0, files=files)
 
@@ -4830,7 +4930,7 @@ class Cases(object):
                                 complib=self.complib)
 
         # and select only the power channels
-        dfs_powe = dfs[dfs.channel==ch_powe]
+        dfs_powe = dfs[dfs[chan_col_name]==ch_powe]
 
         # by default we have AEP as a column
         cols = ['AEP']
