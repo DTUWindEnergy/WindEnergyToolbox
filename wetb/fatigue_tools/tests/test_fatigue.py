@@ -14,8 +14,8 @@ standard_library.install_aliases()
 import unittest
 
 import numpy as np
-from wetb.fatigue_tools.fatigue import (eq_load, rainflow_astm,
-                                        rainflow_windap, cycle_matrix)
+from wetb.fatigue_tools.fatigue import eq_load, rainflow_astm, rainflow_windap, \
+    cycle_matrix
 from wetb.hawc2 import Hawc2io
 import os
 
@@ -31,50 +31,28 @@ class TestFatigueTools(unittest.TestCase):
         m = 1
         point_per_deg = 100
 
-        for amplitude in [1,2,3]:
-            peak2peak = amplitude * 2
-            # sine signal with 10 periods (20 peaks)
-            nr_periods = 10
-            time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
-            neq = time[-1]
-            # mean value of the signal shouldn't matter
-            signal = amplitude * np.sin(time) + 5
-            r_eq_1hz = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
-            r_eq_1hz_expected = ((2*nr_periods*amplitude**m)/neq)**(1/m)
-            np.testing.assert_allclose(r_eq_1hz, r_eq_1hz_expected)
-
-            # sine signal with 20 periods (40 peaks)
-            nr_periods = 20
-            time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
-            neq = time[-1]
-            # mean value of the signal shouldn't matter
-            signal = amplitude * np.sin(time) + 9
-            r_eq_1hz2 = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
-            r_eq_1hz_expected2 = ((2*nr_periods*amplitude**m)/neq)**(1/m)
-            np.testing.assert_allclose(r_eq_1hz2, r_eq_1hz_expected2)
-
-            # 1hz equivalent should be independent of the length of the signal
-            np.testing.assert_allclose(r_eq_1hz, r_eq_1hz2)
-
-    def test_rainflow_combi(self):
-        """Signal with two frequencies and amplitudes
-        """
-
-        amplitude = 1
-        # peak2peak = amplitude * 2
-        m = 1
-        point_per_deg = 100
-
+        # sine signal with 10 periods (20 peaks)
         nr_periods = 10
         time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
+        neq = time[-1]
+        # mean value of the signal shouldn't matter
+        signal = amplitude * np.sin(time) + 5
+        r_eq_1hz = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
+        r_eq_1hz_expected = ((2*nr_periods*amplitude**m)/neq)**(1/m)
+        np.testing.assert_allclose(r_eq_1hz, r_eq_1hz_expected)
 
-        signal = (amplitude*np.sin(time)) + 5 + (amplitude*0.2*np.cos(5*time))
-        cycles, ampl_bin_mean, ampl_edges, mean_bin_mean, mean_edges = \
-            cycle_matrix(signal, ampl_bins=10, mean_bins=5)
+        # sine signal with 20 periods (40 peaks)
+        nr_periods = 20
+        time = np.linspace(0, nr_periods*2*np.pi, point_per_deg*180)
+        neq = time[-1]
+        # mean value of the signal shouldn't matter
+        signal = amplitude * np.sin(time) + 9
+        r_eq_1hz2 = eq_load(signal, no_bins=1, m=m, neq=neq)[0]
+        r_eq_1hz_expected2 = ((2*nr_periods*amplitude**m)/neq)**(1/m)
+        np.testing.assert_allclose(r_eq_1hz2, r_eq_1hz_expected2)
 
-        cycles.sum()
-
-
+        # 1hz equivalent load should be independent of the length of the signal
+        np.testing.assert_allclose(r_eq_1hz, r_eq_1hz2)
 
     def test_astm1(self):
 

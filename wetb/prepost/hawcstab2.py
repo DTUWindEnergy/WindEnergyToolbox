@@ -410,13 +410,9 @@ class ReadControlTuning(object):
     def __init__(self):
         """
         """
-        self._aerogains = False
+        pass
 
     def parse_line(self, line, controller):
-
-        if line.startswith('Aerodynamic gains'):
-            self._aerogains = True
-            return
 
         split1 = line.split('=')
         var1 = split1[0].strip()
@@ -453,17 +449,8 @@ class ReadControlTuning(object):
                 elif i == 10:
                     controller = 'aero_damp'
                     setattr(self, controller, dummy())
-                elif not self._aerogains:
+                else:
                     self.parse_line(line, controller)
-                elif self._aerogains:
-                    break
-
-        arr = np.loadtxt(fpath, skiprows=17)
-        columns = ['theta', 'dq/dtheta', 'dq/dtheta_fit', 'dq/domega',
-                   'dq/domega_fit']
-        self.aero_gains_units = ['[deg]', '[kNm/deg]', '[kNm/deg]',
-                                 '[kNm/(rad/s)]', '[kNm/(rad/s)]']
-        self.aero_gains = pd.DataFrame(arr, columns=columns)
 
         # set some parameters to zero for the linear case, or when aerodynamic
         # gain scheduling is not used

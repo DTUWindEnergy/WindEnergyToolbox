@@ -266,9 +266,9 @@ def variable_tag_func_mod1(master, case_id_short=False):
 def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
-                      dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
-                      wine_arch='win32', wine_prefix='~/.wine32',
-                      m=[3,4,6,8,9,10,12]):
+                      dlcs_dir='htc/DLCs', wine_64bit=False,
+                      m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
+                      wine_arch='win32', wine_prefix='~/.wine32'):
     """
     Launch load cases defined in Excel files
     """
@@ -331,10 +331,11 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                ignore_non_unique=False, run_only_new=False,
                                pbs_fname_appendix=False, short_job_names=False,
                                silent=silent, verbose=verbose, pyenv=pyenv,
-                               m=[3,4,6,8,9,10,12], postpro_node=postpro_node,
-                               exechunks=None, exesingle=None,
+                               wine_64bit=wine_64bit, m=[3,4,6,8,9,10,12],
                                postpro_node_zipchunks=postpro_node_zipchunks,
-                               wine_arch=wine_arch, wine_prefix=wine_prefix)
+                               postpro_node=postpro_node, exesingle=None,
+                               exechunks=None, wine_arch=wine_arch,
+                               wine_prefix=wine_prefix)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -350,13 +351,15 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # note that walltime here is for running all cases assigned to the
         # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
-        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
-                              ppn=20, nr_procs_series=3, walltime='20:00:00',
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=20,
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
+                              queue='workq', wine_64bit=wine_64bit,
                               wine_arch=wine_arch, wine_prefix=wine_prefix)
-        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
-                              ppn=12, nr_procs_series=3, walltime='20:00:00',
+        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, ppn=12,
+                              nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-gorm', compress=compress,
+                              queue='workq', wine_64bit=wine_64bit,
                               wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     df = sim.Cases(cases).cases2df()
@@ -671,8 +674,7 @@ if __name__ == '__main__':
                         'generated DLC exchange files, default: htc/DLCs/')
     parser.add_argument('--wine_64bit', default=False, action='store_true',
                         dest='wine_64bit', help='Run wine in 64-bit mode. '
-                        'Only works on Jess. Sets --wine_arch and '
-                        '--wine_prefix to win64 and ~/.wine respectively.')
+                        'Only works on Jess.')
     parser.add_argument('--wine_arch', action='store', default='win32', type=str,
                         dest='wine_arch', help='Set to win32 for 32-bit, and '
                         'win64 for 64-bit. 64-bit only works on Jess. '
@@ -714,9 +716,6 @@ if __name__ == '__main__':
     P_RUN, P_SOURCE, PROJECT, sim_id, P_MASTERFILE, MASTERFILE, POST_DIR \
         = dlcdefs.configure_dirs(verbose=True)
 
-    if opt.wine_64bit:
-        opt.wine_arch, opt.wine_prefix = ('win64', '~/.wine')
-
     if opt.gendlcs:
         DLB = GenerateDLCCases()
         DLB.execute(filename=os.path.join(P_SOURCE, opt.dlcmaster),
@@ -729,9 +728,9 @@ if __name__ == '__main__':
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime,
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
+                          compress=opt.compress, wine_64bit=opt.wine_64bit,
                           postpro_node_zipchunks=opt.no_postpro_node_zipchunks,
-                          wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix,
-                          compress=opt.compress)
+                          wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:

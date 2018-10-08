@@ -18,9 +18,9 @@ source /home/python/miniconda3/bin/activate wetb_py3
 echo "CHECK 2x IF wetb_py3 IS ACTIVE, IF NOT TRY AGAIN"
 CMD="from distutils.sysconfig import get_python_lib;print (get_python_lib().find('wetb_py3'))"
 ACTIVATED=`python -c "$CMD"`
-if [ $ACTIVATED -eq -1 ]; then source /home/python/miniconda3/bin/activate wetb_py3;fi
+if [ $ACTIVATED -eq -1 ]; then source activate wetb_py3;fi
 ACTIVATED=`python -c "$CMD"`
-if [ $ACTIVATED -eq -1 ]; then source /home/python/miniconda3/bin/activate wetb_py3;fi
+if [ $ACTIVATED -eq -1 ]; then source activate wetb_py3;fi
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
