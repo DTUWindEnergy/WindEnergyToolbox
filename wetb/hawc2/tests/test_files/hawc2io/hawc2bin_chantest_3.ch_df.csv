@@ -1,0 +1,295 @@
+chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr,io,io_nr,output_type,pos,radius,sensortag,sensortype,unique_ch_name,units
+0,,,,,,,,,,,,,,,Time,,Time,s
+1,,shaft_rot,,,,,,,,,,angle,,,,,bearing-shaft_rot-angle-deg,deg
+2,,shaft_rot,,,,,,,,,,angle_speed,,,,,bearing-shaft_rot-angle_speed-rpm,rpm
+3,,pitch1,,,,,,,,,,angle,,,,,bearing-pitch1-angle-deg,deg
+4,,pitch1,,,,,,,,,,angle_speed,,,,,bearing-pitch1-angle_speed-deg/s,deg/s
+5,,pitch2,,,,,,,,,,angle,,,,,bearing-pitch2-angle-deg,deg
+6,,pitch2,,,,,,,,,,angle_speed,,,,,bearing-pitch2-angle_speed-deg/s,deg/s
+7,,pitch3,,,,,,,,,,angle,,,,,bearing-pitch3-angle-deg,deg
+8,,pitch3,,,,,,,,,,angle_speed,,,,,bearing-pitch3-angle_speed-deg/s,deg/s
+9,,,,,,,,,,,,,,,Rotor speed,,Omega,rad/s
+10,,,,,,,,,,,,,,,Aero rotor torque,,Ae rot. torque,kNm
+11,,,,,,,,,,,,,,,Aero rotor power,,Ae rot. power,kW
+12,,,,,,,,,,,,,,,Aero rotor thrust,,Ae rot. thrust,kN
+13,,,,,,global,Vx,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vx-0.00-0.00--119.00,m/s
+14,,,,,,global,Vy,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vy-0.00-0.00--119.00,m/s
+15,,,,,,global,Vz,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vz-0.00-0.00--119.00,m/s
+16,,,,shaft,x,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-x,kNm
+17,,,,shaft,y,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-y,kNm
+18,,,,shaft,z,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-z,kNm
+19,,,,shaft,x,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,forcevec,shaft_nonrotate-shaft-node-004-forcevec-x,kN
+20,,,,shaft,y,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,forcevec,shaft_nonrotate-shaft-node-004-forcevec-y,kN
+21,,,,shaft,z,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,forcevec,shaft_nonrotate-shaft-node-004-forcevec-z,kN
+22,,,,tower,x,tower,,,,,,,node-001,,tower base,momentvec,tower-tower-node-001-momentvec-x,kNm
+23,,,,tower,y,tower,,,,,,,node-001,,tower base,momentvec,tower-tower-node-001-momentvec-y,kNm
+24,,,,tower,z,tower,,,,,,,node-001,,tower base,momentvec,tower-tower-node-001-momentvec-z,kNm
+25,,,,tower,x,tower,,,,,,,node-020,,tower yaw bearing,momentvec,tower-tower-node-020-momentvec-x,kNm
+26,,,,tower,y,tower,,,,,,,node-020,,tower yaw bearing,momentvec,tower-tower-node-020-momentvec-y,kNm
+27,,,,tower,z,tower,,,,,,,node-020,,tower yaw bearing,momentvec,tower-tower-node-020-momentvec-z,kNm
+28,,,,shaft,x,shaft,,,,,,,node-004,,main bearing,momentvec,shaft-shaft-node-004-momentvec-x,kNm
+29,,,,shaft,y,shaft,,,,,,,node-004,,main bearing,momentvec,shaft-shaft-node-004-momentvec-y,kNm
+30,,,,shaft,z,shaft,,,,,,,node-004,,main bearing,momentvec,shaft-shaft-node-004-momentvec-z,kNm
+31,,,,blade1,x,blade1,,,,,,,node-001,,blade 1 root,momentvec,blade1-blade1-node-001-momentvec-x,kNm
+32,,,,blade1,y,blade1,,,,,,,node-001,,blade 1 root,momentvec,blade1-blade1-node-001-momentvec-y,kNm
+33,,,,blade1,z,blade1,,,,,,,node-001,,blade 1 root,momentvec,blade1-blade1-node-001-momentvec-z,kNm
+34,,,,blade2,x,blade2,,,,,,,node-001,,blade 2 root,momentvec,blade2-blade2-node-001-momentvec-x,kNm
+35,,,,blade2,y,blade2,,,,,,,node-001,,blade 2 root,momentvec,blade2-blade2-node-001-momentvec-y,kNm
+36,,,,blade2,z,blade2,,,,,,,node-001,,blade 2 root,momentvec,blade2-blade2-node-001-momentvec-z,kNm
+37,,,,blade3,x,blade3,,,,,,,node-001,,blade 3 root,momentvec,blade3-blade3-node-001-momentvec-x,kNm
+38,,,,blade3,y,blade3,,,,,,,node-001,,blade 3 root,momentvec,blade3-blade3-node-001-momentvec-y,kNm
+39,,,,blade3,z,blade3,,,,,,,node-001,,blade 3 root,momentvec,blade3-blade3-node-001-momentvec-z,kNm
+40,,,,blade1,x,local,,,,,,,node-003,,,momentvec,local-blade1-node-003-momentvec-x,kNm
+41,,,,blade1,y,local,,,,,,,node-003,,,momentvec,local-blade1-node-003-momentvec-y,kNm
+42,,,,blade1,z,local,,,,,,,node-003,,,momentvec,local-blade1-node-003-momentvec-z,kNm
+43,,,,blade1,x,local,,,,,,,node-004,,,momentvec,local-blade1-node-004-momentvec-x,kNm
+44,,,,blade1,y,local,,,,,,,node-004,,,momentvec,local-blade1-node-004-momentvec-y,kNm
+45,,,,blade1,z,local,,,,,,,node-004,,,momentvec,local-blade1-node-004-momentvec-z,kNm
+46,,,,blade1,x,local,,,,,,,node-005,,,momentvec,local-blade1-node-005-momentvec-x,kNm
+47,,,,blade1,y,local,,,,,,,node-005,,,momentvec,local-blade1-node-005-momentvec-y,kNm
+48,,,,blade1,z,local,,,,,,,node-005,,,momentvec,local-blade1-node-005-momentvec-z,kNm
+49,,,,blade1,x,local,,,,,,,node-006,,,momentvec,local-blade1-node-006-momentvec-x,kNm
+50,,,,blade1,y,local,,,,,,,node-006,,,momentvec,local-blade1-node-006-momentvec-y,kNm
+51,,,,blade1,z,local,,,,,,,node-006,,,momentvec,local-blade1-node-006-momentvec-z,kNm
+52,,,,blade1,x,local,,,,,,,node-007,,,momentvec,local-blade1-node-007-momentvec-x,kNm
+53,,,,blade1,y,local,,,,,,,node-007,,,momentvec,local-blade1-node-007-momentvec-y,kNm
+54,,,,blade1,z,local,,,,,,,node-007,,,momentvec,local-blade1-node-007-momentvec-z,kNm
+55,,,,blade1,x,local,,,,,,,node-008,,,momentvec,local-blade1-node-008-momentvec-x,kNm
+56,,,,blade1,y,local,,,,,,,node-008,,,momentvec,local-blade1-node-008-momentvec-y,kNm
+57,,,,blade1,z,local,,,,,,,node-008,,,momentvec,local-blade1-node-008-momentvec-z,kNm
+58,,,,blade1,x,local,,,,,,,node-009,,,momentvec,local-blade1-node-009-momentvec-x,kNm
+59,,,,blade1,y,local,,,,,,,node-009,,,momentvec,local-blade1-node-009-momentvec-y,kNm
+60,,,,blade1,z,local,,,,,,,node-009,,,momentvec,local-blade1-node-009-momentvec-z,kNm
+61,,,,blade1,x,local,,,,,,,node-010,,,momentvec,local-blade1-node-010-momentvec-x,kNm
+62,,,,blade1,y,local,,,,,,,node-010,,,momentvec,local-blade1-node-010-momentvec-y,kNm
+63,,,,blade1,z,local,,,,,,,node-010,,,momentvec,local-blade1-node-010-momentvec-z,kNm
+64,,,,blade1,x,local,,,,,,,node-011,,,momentvec,local-blade1-node-011-momentvec-x,kNm
+65,,,,blade1,y,local,,,,,,,node-011,,,momentvec,local-blade1-node-011-momentvec-y,kNm
+66,,,,blade1,z,local,,,,,,,node-011,,,momentvec,local-blade1-node-011-momentvec-z,kNm
+67,,,,blade1,x,local,,,,,,,node-012,,,momentvec,local-blade1-node-012-momentvec-x,kNm
+68,,,,blade1,y,local,,,,,,,node-012,,,momentvec,local-blade1-node-012-momentvec-y,kNm
+69,,,,blade1,z,local,,,,,,,node-012,,,momentvec,local-blade1-node-012-momentvec-z,kNm
+70,,,,blade1,x,local,,,,,,,node-013,,,momentvec,local-blade1-node-013-momentvec-x,kNm
+71,,,,blade1,y,local,,,,,,,node-013,,,momentvec,local-blade1-node-013-momentvec-y,kNm
+72,,,,blade1,z,local,,,,,,,node-013,,,momentvec,local-blade1-node-013-momentvec-z,kNm
+73,,,,blade1,x,local,,,,,,,node-014,,,momentvec,local-blade1-node-014-momentvec-x,kNm
+74,,,,blade1,y,local,,,,,,,node-014,,,momentvec,local-blade1-node-014-momentvec-y,kNm
+75,,,,blade1,z,local,,,,,,,node-014,,,momentvec,local-blade1-node-014-momentvec-z,kNm
+76,,,,blade1,x,local,,,,,,,node-015,,,momentvec,local-blade1-node-015-momentvec-x,kNm
+77,,,,blade1,y,local,,,,,,,node-015,,,momentvec,local-blade1-node-015-momentvec-y,kNm
+78,,,,blade1,z,local,,,,,,,node-015,,,momentvec,local-blade1-node-015-momentvec-z,kNm
+79,,,,blade1,x,local,,,,,,,node-016,,,momentvec,local-blade1-node-016-momentvec-x,kNm
+80,,,,blade1,y,local,,,,,,,node-016,,,momentvec,local-blade1-node-016-momentvec-y,kNm
+81,,,,blade1,z,local,,,,,,,node-016,,,momentvec,local-blade1-node-016-momentvec-z,kNm
+82,,,,blade1,x,local,,,,,,,node-017,,,momentvec,local-blade1-node-017-momentvec-x,kNm
+83,,,,blade1,y,local,,,,,,,node-017,,,momentvec,local-blade1-node-017-momentvec-y,kNm
+84,,,,blade1,z,local,,,,,,,node-017,,,momentvec,local-blade1-node-017-momentvec-z,kNm
+85,,,,blade1,x,local,,,,,,,node-018,,,momentvec,local-blade1-node-018-momentvec-x,kNm
+86,,,,blade1,y,local,,,,,,,node-018,,,momentvec,local-blade1-node-018-momentvec-y,kNm
+87,,,,blade1,z,local,,,,,,,node-018,,,momentvec,local-blade1-node-018-momentvec-z,kNm
+88,,,,blade1,x,local,,,,,,,node-019,,,momentvec,local-blade1-node-019-momentvec-x,kNm
+89,,,,blade1,y,local,,,,,,,node-019,,,momentvec,local-blade1-node-019-momentvec-y,kNm
+90,,,,blade1,z,local,,,,,,,node-019,,,momentvec,local-blade1-node-019-momentvec-z,kNm
+91,,,,blade1,x,local,,,,,,,node-020,,,momentvec,local-blade1-node-020-momentvec-x,kNm
+92,,,,blade1,y,local,,,,,,,node-020,,,momentvec,local-blade1-node-020-momentvec-y,kNm
+93,,,,blade1,z,local,,,,,,,node-020,,,momentvec,local-blade1-node-020-momentvec-z,kNm
+94,,,,blade1,x,local,,,,,,,node-021,,,momentvec,local-blade1-node-021-momentvec-x,kNm
+95,,,,blade1,y,local,,,,,,,node-021,,,momentvec,local-blade1-node-021-momentvec-y,kNm
+96,,,,blade1,z,local,,,,,,,node-021,,,momentvec,local-blade1-node-021-momentvec-z,kNm
+97,,,,blade1,x,local,,,,,,,node-022,,,momentvec,local-blade1-node-022-momentvec-x,kNm
+98,,,,blade1,y,local,,,,,,,node-022,,,momentvec,local-blade1-node-022-momentvec-y,kNm
+99,,,,blade1,z,local,,,,,,,node-022,,,momentvec,local-blade1-node-022-momentvec-z,kNm
+100,,,,blade1,x,local,,,,,,,node-023,,,momentvec,local-blade1-node-023-momentvec-x,kNm
+101,,,,blade1,y,local,,,,,,,node-023,,,momentvec,local-blade1-node-023-momentvec-y,kNm
+102,,,,blade1,z,local,,,,,,,node-023,,,momentvec,local-blade1-node-023-momentvec-z,kNm
+103,,,,blade1,x,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-x,kNm
+104,,,,blade1,y,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-y,kNm
+105,,,,blade1,z,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-z,kNm
+106,,,,blade1,x,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-x,kNm
+107,,,,blade1,y,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-y,kNm
+108,,,,blade1,z,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-z,kNm
+109,,,,blade1,x,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-x,kNm
+110,,,,blade1,y,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-y,kNm
+111,,,,blade1,z,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-z,kNm
+112,,,,blade1,x,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-x,kNm
+113,,,,blade1,y,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-y,kNm
+114,,,,blade1,z,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-z,kNm
+115,,,,tower,x,global,,,,,,,elem-019-zrel-1.00,,tower top fa displ,State pos,global-tower-elem-019-zrel-1.00-State pos-x,m
+116,,,,tower,y,global,,,,,,,elem-019-zrel-1.00,,tower top ss displ,State pos,global-tower-elem-019-zrel-1.00-State pos-y,m
+117,,,,tower,x,global,,,,,,,elem-019-zrel-1.00,,tower top fa acc,State acc,global-tower-elem-019-zrel-1.00-State acc-x,m/s^2
+118,,,,tower,y,global,,,,,,,elem-019-zrel-1.00,,tower top ss acc,State acc,global-tower-elem-019-zrel-1.00-State acc-y,m/s^2
+119,,,,blade1,x,global,,,,,,,elem-026-zrel-1.00,,gl blade 1 tip pos,State pos,global-blade1-elem-026-zrel-1.00-State pos-x,m
+120,,,,blade1,y,global,,,,,,,elem-026-zrel-1.00,,gl blade 1 tip pos,State pos,global-blade1-elem-026-zrel-1.00-State pos-y,m
+121,,,,blade1,z,global,,,,,,,elem-026-zrel-1.00,,gl blade 1 tip pos,State pos,global-blade1-elem-026-zrel-1.00-State pos-z,m
+122,,,,blade2,x,global,,,,,,,elem-026-zrel-1.00,,gl blade 2 tip pos,State pos,global-blade2-elem-026-zrel-1.00-State pos-x,m
+123,,,,blade2,y,global,,,,,,,elem-026-zrel-1.00,,gl blade 2 tip pos,State pos,global-blade2-elem-026-zrel-1.00-State pos-y,m
+124,,,,blade2,z,global,,,,,,,elem-026-zrel-1.00,,gl blade 2 tip pos,State pos,global-blade2-elem-026-zrel-1.00-State pos-z,m
+125,,,,blade3,x,global,,,,,,,elem-026-zrel-1.00,,gl blade 3 tip pos,State pos,global-blade3-elem-026-zrel-1.00-State pos-x,m
+126,,,,blade3,y,global,,,,,,,elem-026-zrel-1.00,,gl blade 3 tip pos,State pos,global-blade3-elem-026-zrel-1.00-State pos-y,m
+127,,,,blade3,z,global,,,,,,,elem-026-zrel-1.00,,gl blade 3 tip pos,State pos,global-blade3-elem-026-zrel-1.00-State pos-z,m
+128,,,,blade1,x,blade1,,,,,,,elem-026-zrel-1.00,,blade 1 tip pos,State pos,blade1-blade1-elem-026-zrel-1.00-State pos-x,m
+129,,,,blade1,y,blade1,,,,,,,elem-026-zrel-1.00,,blade 1 tip pos,State pos,blade1-blade1-elem-026-zrel-1.00-State pos-y,m
+130,,,,blade1,z,blade1,,,,,,,elem-026-zrel-1.00,,blade 1 tip pos,State pos,blade1-blade1-elem-026-zrel-1.00-State pos-z,m
+131,,,,blade2,x,blade2,,,,,,,elem-026-zrel-1.00,,blade 2 tip pos,State pos,blade2-blade2-elem-026-zrel-1.00-State pos-x,m
+132,,,,blade2,y,blade2,,,,,,,elem-026-zrel-1.00,,blade 2 tip pos,State pos,blade2-blade2-elem-026-zrel-1.00-State pos-y,m
+133,,,,blade2,z,blade2,,,,,,,elem-026-zrel-1.00,,blade 2 tip pos,State pos,blade2-blade2-elem-026-zrel-1.00-State pos-z,m
+134,,,,blade3,x,blade3,,,,,,,elem-026-zrel-1.00,,blade 3 tip pos,State pos,blade3-blade3-elem-026-zrel-1.00-State pos-x,m
+135,,,,blade3,y,blade3,,,,,,,elem-026-zrel-1.00,,blade 3 tip pos,State pos,blade3-blade3-elem-026-zrel-1.00-State pos-y,m
+136,,,,blade3,z,blade3,,,,,,,elem-026-zrel-1.00,,blade 3 tip pos,State pos,blade3-blade3-elem-026-zrel-1.00-State pos-z,m
+137,,,,tower,x,global,,,,,,,elem-005-zrel-0.00,,,State pos,global-tower-elem-005-zrel-0.00-State pos-x,m
+138,,,,tower,y,global,,,,,,,elem-005-zrel-0.00,,,State pos,global-tower-elem-005-zrel-0.00-State pos-y,m
+139,,,,tower,z,global,,,,,,,elem-005-zrel-0.00,,,State pos,global-tower-elem-005-zrel-0.00-State pos-z,m
+140,,,1,,,,,,,,,,,45.25,,Tors_e,Tors_e-1-45.25,deg
+141,,,1,,,,,,,,,,,58.04,,Tors_e,Tors_e-1-58.04,deg
+142,,,1,,,,,,,,,,,70.32,,Tors_e,Tors_e-1-70.32,deg
+143,,,1,,,,,,,,,,,81.26,,Tors_e,Tors_e-1-81.26,deg
+144,,,1,,,,,,,,,,,83.71,,Tors_e,Tors_e-1-83.71,deg
+145,,,1,,,,,,,,,,,88.17,,Tors_e,Tors_e-1-88.17,deg
+146,,,1,,,,,,,,,,,92.01,,Tors_e,Tors_e-1-92.01,deg
+147,,,1,,,,,,,,,,,96.45,,Tors_e,Tors_e-1-96.45,deg
+148,,,1,,,,,,,,,,,98.47,,Tors_e,Tors_e-1-98.47,deg
+149,,,1,,,,,,,,,,,100.11,,Tors_e,Tors_e-1-100.11,deg
+150,,,1,,,global coo.,Vx,,,,,,,73.21,,wsp-blade,wsp-blade-Vx-1-73.21-global coo.,m/s
+151,,,1,,,global coo.,Vy,,,,,,,73.21,,wsp-blade,wsp-blade-Vy-1-73.21-global coo.,m/s
+152,,,1,,,global coo.,Vz,,,,,,,73.21,,wsp-blade,wsp-blade-Vz-1-73.21-global coo.,m/s
+153,,,1,,,,,,,,,,,73.21,,Alfa,Alfa-1-73.21,deg
+154,,,2,,,,,,,,,,,73.21,,Alfa,Alfa-2-73.21,deg
+155,,,3,,,,,,,,,,,73.21,,Alfa,Alfa-3-73.21,deg
+156,,,1,,,,,,,,,,,73.21,,Cl,Cl-1-73.21,deg
+157,,,2,,,,,,,,,,,73.21,,Cl,Cl-2-73.21,deg
+158,,,3,,,,,,,,,,,73.21,,Cl,Cl-3-73.21,deg
+159,,,1,,,,,,,,,,,73.21,,Cd,Cd-1-73.21,deg
+160,,,2,,,,,,,,,,,73.21,,Cd,Cd-2-73.21,deg
+161,,,3,,,,,,,,,,,73.21,,Cd,Cd-3-73.21,deg
+162,,,,,,,,1,,inpvec,1,,,,generator torque reference [nm],dll-io,DLL-1-inpvec-1,-
+163,,,,,,,,1,,inpvec,2,,,,pitch angle reference of blade 1 [rad],dll-io,DLL-1-inpvec-2,-
+164,,,,,,,,1,,inpvec,3,,,,pitch angle reference of blade 2 [rad],dll-io,DLL-1-inpvec-3,-
+165,,,,,,,,1,,inpvec,4,,,,pitch angle reference of blade 3 [rad],dll-io,DLL-1-inpvec-4,-
+166,,,,,,,,1,,inpvec,14,,,,torque limit switch based on pitch [-],dll-io,DLL-1-inpvec-14,-
+167,,,,,,,,2,,inpvec,1,,,,mgen lss [nm],dll-io,DLL-2-inpvec-1,-
+168,,,,,,,,2,,inpvec,2,,,,pelec w,dll-io,DLL-2-inpvec-2,-
+169,,,,,,,,2,,inpvec,3,,,,mframe,dll-io,DLL-2-inpvec-3,-
+170,,,,,,,,2,,inpvec,4,,,,mgen hss,dll-io,DLL-2-inpvec-4,-
+171,,,,,,,,2,,inpvec,5,,,,generator pmech kw,dll-io,DLL-2-inpvec-5,-
+172,,,,,,,,2,,inpvec,6,,,,filtered gen speed,dll-io,DLL-2-inpvec-6,-
+173,,,,,,,,2,,inpvec,7,,,,resulting eff,dll-io,DLL-2-inpvec-7,-
+174,,,,,,,,2,,inpvec,8,,,,grid flag,dll-io,DLL-2-inpvec-8,-
+175,,,,,,,,5,,inpvec,1,,,,bltip tow min d [m],dll-io,DLL-5-inpvec-1,-
+176,,,1,,,global coo.,Vx,,,,,,,64.3,,wsp-blade,wsp-blade-Vx-1-64.3-global coo.,m/s
+177,,,1,,,global coo.,Vy,,,,,,,64.3,,wsp-blade,wsp-blade-Vy-1-64.3-global coo.,m/s
+178,,,1,,,global coo.,Vz,,,,,,,64.3,,wsp-blade,wsp-blade-Vz-1-64.3-global coo.,m/s
+179,,,1,,Fx,RP coo.,,,,,,,,0.0,,intfrc,aero-RP coo.-blade-1-intfrc-Fx-r-0.0,kN
+180,,,1,,Fy,RP coo.,,,,,,,,0.0,,intfrc,aero-RP coo.-blade-1-intfrc-Fy-r-0.0,kN
+181,,,1,,Mx,RP coo.,,,,,,,,0.0,,intmom,aero-RP coo.-blade-1-intmom-Mx-r-0.0,kNm
+182,,,1,,My,RP coo.,,,,,,,,0.0,,intmom,aero-RP coo.-blade-1-intmom-My-r-0.0,kNm
+183,,,1,,Fy,aero,,,,,,,,24.11,,secfrc,aero-aero-blade-1-secfrc-Fy-r-24.1,kN/m
+184,,,1,,,,,,,,,,,81.26,,Alfa,Alfa-1-81.26,deg
+185,,,1,,,,,,,,,,,67.34,,Alfa,Alfa-1-67.34,deg
+186,,,1,,,,,,,,,,,32.77,,Alfa,Alfa-1-32.77,deg
+187,,,1,,,,,,,,,,,24.11,,Alfa,Alfa-1-24.11,deg
+188,,,1,,,,,,,,,,,81.26,,Cl,Cl-1-81.26,deg
+189,,,1,,,,,,,,,,,81.26,,Cd,Cd-1-81.26,deg
+190,,,1,,,,,,,,,,,67.34,,Cl,Cl-1-67.34,deg
+191,,,1,,,,,,,,,,,67.34,,Cd,Cd-1-67.34,deg
+192,,,1,,,,,,,,,,,32.77,,Cl,Cl-1-32.77,deg
+193,,,1,,,,,,,,,,,32.77,,Cd,Cd-1-32.77,deg
+194,,,1,,,,,,,,,,,24.11,,Cl,Cl-1-24.11,deg
+195,,,1,,,,,,,,,,,24.11,,Cd,Cd-1-24.11,deg
+196,,,1,,Fx,aero,,,,,,,,88.17,,secfrc,aero-aero-blade-1-secfrc-Fx-r-88.2,kN/m
+197,,,1,,Fy,aero,,,,,,,,88.17,,secfrc,aero-aero-blade-1-secfrc-Fy-r-88.2,kN/m
+198,,,1,,Fx,aero,,,,,,,,64.3,,secfrc,aero-aero-blade-1-secfrc-Fx-r-64.3,kN/m
+199,,,1,,Fy,aero,,,,,,,,64.3,,secfrc,aero-aero-blade-1-secfrc-Fy-r-64.3,kN/m
+200,,,1,,Fx,aero,,,,,,,,42.07,,secfrc,aero-aero-blade-1-secfrc-Fx-r-42.1,kN/m
+201,,,1,,Fy,aero,,,,,,,,42.07,,secfrc,aero-aero-blade-1-secfrc-Fy-r-42.1,kN/m
+202,,,1,,Fx,aero,,,,,,,,29.79,,secfrc,aero-aero-blade-1-secfrc-Fx-r-29.8,kN/m
+203,,,1,,Fy,aero,,,,,,,,29.79,,secfrc,aero-aero-blade-1-secfrc-Fy-r-29.8,kN/m
+204,,,1,,Vx,RP. coo.,,,,,,,,88.17,,induction,induc-RP. coo.-blade-1-Vx-r-88.2,m/s
+205,,,1,,Vy,RP. coo.,,,,,,,,88.17,,induction,induc-RP. coo.-blade-1-Vy-r-88.2,m/s
+206,,,1,,Vx,RP. coo.,,,,,,,,64.3,,induction,induc-RP. coo.-blade-1-Vx-r-64.3,m/s
+207,,,1,,Vy,RP. coo.,,,,,,,,64.3,,induction,induc-RP. coo.-blade-1-Vy-r-64.3,m/s
+208,,,1,,Vx,RP. coo.,,,,,,,,42.07,,induction,induc-RP. coo.-blade-1-Vx-r-42.1,m/s
+209,,,1,,Vy,RP. coo.,,,,,,,,42.07,,induction,induc-RP. coo.-blade-1-Vy-r-42.1,m/s
+210,,,1,,Vx,RP. coo.,,,,,,,,29.79,,induction,induc-RP. coo.-blade-1-Vx-r-29.8,m/s
+211,,,1,,Vy,RP. coo.,,,,,,,,29.79,,induction,induc-RP. coo.-blade-1-Vy-r-29.8,m/s
+212,,,1,,,RP coo.,Vy,,,,,,,88.17,,wsp-blade,wsp-blade-Vy-1-88.17-RP coo.,m/s
+213,,,1,,,RP coo.,Vy,,,,,,,64.3,,wsp-blade,wsp-blade-Vy-1-64.3-RP coo.,m/s
+214,,,1,,,RP coo.,Vy,,,,,,,42.07,,wsp-blade,wsp-blade-Vy-1-42.07-RP coo.,m/s
+215,,,1,,,RP coo.,Vy,,,,,,,29.79,,wsp-blade,wsp-blade-Vy-1-29.79-RP coo.,m/s
+216,,,1,,,RP coo.,Vy,,,,,,,0.92,,wsp-blade,wsp-blade-Vy-1-0.92-RP coo.,m/s
+217,,,1,,,RP coo.,Vy,,,,,,,0.1,,wsp-blade,wsp-blade-Vy-1-0.1-RP coo.,m/s
+218,,,1,,x,global coo.,,,,,,,,88.17,,pos,aero-global coo.-blade-1-pos-x-r-88.2,m
+219,,,1,,y,global coo.,,,,,,,,88.17,,pos,aero-global coo.-blade-1-pos-y-r-88.2,m
+220,,,1,,z,global coo.,,,,,,,,88.17,,pos,aero-global coo.-blade-1-pos-z-r-88.2,m
+221,,,1,,x,global coo.,,,,,,,,0.1,,pos,aero-global coo.-blade-1-pos-x-r-0.1,m
+222,,,1,,y,global coo.,,,,,,,,0.1,,pos,aero-global coo.-blade-1-pos-y-r-0.1,m
+223,,,1,,z,global coo.,,,,,,,,0.1,,pos,aero-global coo.-blade-1-pos-z-r-0.1,m
+224,,,1,,,,,,,,,,,54.86,,Lift,Lift-1-54.86,kN/m
+225,,,1,,,,,,,,,,,35.81,,Lift,Lift-1-35.81,kN/m
+226,,,1,,x,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-1-pos-x-r-64.3,m
+227,,,1,,y,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-1-pos-y-r-64.3,m
+228,,,1,,z,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-1-pos-z-r-64.3,m
+229,,,2,,x,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-2-pos-x-r-64.3,m
+230,,,2,,y,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-2-pos-y-r-64.3,m
+231,,,2,,z,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-2-pos-z-r-64.3,m
+232,,,3,,x,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-3-pos-x-r-64.3,m
+233,,,3,,y,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-3-pos-y-r-64.3,m
+234,,,3,,z,RP coo.,,,,,,,,64.3,,pos,aero-RP coo.-blade-3-pos-z-r-64.3,m
+235,,,1,,Vx,RP coo.,,,,,,,,64.3,,vel,aero-RP coo.-blade-1-vel-Vx-r-64.3,m/s
+236,,,1,,Vy,RP coo.,,,,,,,,64.3,,vel,aero-RP coo.-blade-1-vel-Vy-r-64.3,m/s
+237,,,1,,Vz,RP coo.,,,,,,,,64.3,,vel,aero-RP coo.-blade-1-vel-Vz-r-64.3,m/s
+238,,,1,,x,global coo.,,,,,,,,64.3,,pos,aero-global coo.-blade-1-pos-x-r-64.3,m
+239,,,1,,y,global coo.,,,,,,,,64.3,,pos,aero-global coo.-blade-1-pos-y-r-64.3,m
+240,,,1,,z,global coo.,,,,,,,,64.3,,pos,aero-global coo.-blade-1-pos-z-r-64.3,m
+241,,,1,,Vx,global coo.,,,,,,,,64.3,,vel,aero-global coo.-blade-1-vel-Vx-r-64.3,m/s
+242,,,1,,Vy,global coo.,,,,,,,,64.3,,vel,aero-global coo.-blade-1-vel-Vy-r-64.3,m/s
+243,,,1,,Vz,global coo.,,,,,,,,64.3,,vel,aero-global coo.-blade-1-vel-Vz-r-64.3,m/s
+244,,,1,,tx,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-tx-r-64.3,deg
+245,,,1,,ty,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-ty-r-64.3,deg
+246,,,1,,tz,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-tz-r-64.3,deg
+247,,,,,,global,Vx,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vx-0.00-0.00--90.00,m/s
+248,,,,,,global,Vy,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vy-0.00-0.00--90.00,m/s
+249,,,,,,global,Vz,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vz-0.00-0.00--90.00,m/s
+250,,,,,,global,Vx,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vx-44.54-0.00--134.54,m/s
+251,,,,,,global,Vy,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vy-44.54-0.00--134.54,m/s
+252,,,,,,global,Vz,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vz-44.54-0.00--134.54,m/s
+253,,,,,,global,Vx,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vx-22.27-0.00--112.27,m/s
+254,,,,,,global,Vy,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vy-22.27-0.00--112.27,m/s
+255,,,,,,global,Vz,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vz-22.27-0.00--112.27,m/s
+256,0.0,,,,,,,,,,,,,44.9,,CT,CT-azi-0.00-r-44.90,-
+257,22.5,,,,,,,,,,,,,44.9,,CT,CT-azi-22.50-r-44.90,-
+258,45.0,,,,,,,,,,,,,44.9,,CT,CT-azi-45.00-r-44.90,-
+259,90.0,,,,,,,,,,,,,44.9,,CT,CT-azi-90.00-r-44.90,-
+260,0.0,,,,,,,,,,,,,44.9,,CQ,CQ-azi-0.00-r-44.90,-
+261,22.5,,,,,,,,,,,,,44.9,,CQ,CQ-azi-22.50-r-44.90,-
+262,45.0,,,,,,,,,,,,,44.9,,CQ,CQ-azi-45.00-r-44.90,-
+263,90.0,,,,,,,,,,,,,44.9,,CQ,CQ-azi-90.00-r-44.90,-
+264,0.0,,,,,,,,,,,,,44.9,,a_grid,a_grid-azi-0.00-r-44.90,-
+265,22.5,,,,,,,,,,,,,44.9,,a_grid,a_grid-azi-22.50-r-44.90,-
+266,45.0,,,,,,,,,,,,,44.9,,a_grid,a_grid-azi-45.00-r-44.90,-
+267,90.0,,,,,,,,,,,,,44.9,,a_grid,a_grid-azi-90.00-r-44.90,-
+268,0.0,,,,,,,,,,,,,44.9,,am_grid,am_grid-azi-0.00-r-44.90,-
+269,22.5,,,,,,,,,,,,,44.9,,am_grid,am_grid-azi-22.50-r-44.90,-
+270,45.0,,,,,,,,,,,,,44.9,,am_grid,am_grid-azi-45.00-r-44.90,-
+271,90.0,,,,,,,,,,,,,44.9,,am_grid,am_grid-azi-90.00-r-44.90,-
+272,0.0,,,,,,,,,,,,,24.32,,CT,CT-azi-0.00-r-24.32,-
+273,22.5,,,,,,,,,,,,,24.32,,CT,CT-azi-22.50-r-24.32,-
+274,45.0,,,,,,,,,,,,,24.32,,CT,CT-azi-45.00-r-24.32,-
+275,90.0,,,,,,,,,,,,,24.32,,CT,CT-azi-90.00-r-24.32,-
+276,0.0,,,,,,,,,,,,,24.32,,CQ,CQ-azi-0.00-r-24.32,-
+277,22.5,,,,,,,,,,,,,24.32,,CQ,CQ-azi-22.50-r-24.32,-
+278,45.0,,,,,,,,,,,,,24.32,,CQ,CQ-azi-45.00-r-24.32,-
+279,90.0,,,,,,,,,,,,,24.32,,CQ,CQ-azi-90.00-r-24.32,-
+280,0.0,,,,,,,,,,,,,24.32,,a_grid,a_grid-azi-0.00-r-24.32,-
+281,22.5,,,,,,,,,,,,,24.32,,a_grid,a_grid-azi-22.50-r-24.32,-
+282,45.0,,,,,,,,,,,,,24.32,,a_grid,a_grid-azi-45.00-r-24.32,-
+283,90.0,,,,,,,,,,,,,24.32,,a_grid,a_grid-azi-90.00-r-24.32,-
+284,0.0,,,,,,,,,,,,,24.32,,am_grid,am_grid-azi-0.00-r-24.32,-
+285,22.5,,,,,,,,,,,,,24.32,,am_grid,am_grid-azi-22.50-r-24.32,-
+286,45.0,,,,,,,,,,,,,24.32,,am_grid,am_grid-azi-45.00-r-24.32,-
+287,90.0,,,,,,,,,,,,,24.32,,am_grid,am_grid-azi-90.00-r-24.32,-
+288,,,1,,,RP coo.,Vy,,,,,,,24.11,,wsp-blade,wsp-blade-Vy-1-24.11-RP coo.,m/s
+289,,,,,,,,,,,,,,,,aero,aero-induc_a_norm,m/s
+290,,,1,,tz,RP.co,,,,,,,,90.17,,rot,aero-RP.co-blade-1-rot-tz-r-90.2,deg
+291,,,2,,tz,RP.co,,,,,,,,90.17,,rot,aero-RP.co-blade-2-rot-tz-r-90.2,deg
+292,,,1,,tz,Bl.co,,,,,,,,90.17,,rot,aero-Bl.co-blade-1-rot-tz-r-90.2,deg
+293,,,2,,tz,Bl.co,,,,,,,,90.17,,rot,aero-Bl.co-blade-2-rot-tz-r-90.2,deg

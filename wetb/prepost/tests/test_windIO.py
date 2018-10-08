@@ -16,6 +16,7 @@ import os
 import tempfile
 
 import numpy as np
+import pandas as pd
 
 from wetb.prepost import windIO
 
@@ -207,7 +208,7 @@ class TestsLoadResults(unittest.TestCase):
         exp = [[38, 'global-blade2-elem-019-zrel-1.00-State pos-z', 'm'],
                [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
                [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
-               [415, 'Cl-1-55.7', 'deg'],
+               [415, 'Cl-1-54.82', 'deg'],
                [421, 'qwerty-is-azerty', 'is']
               ]
         for k in exp:
@@ -229,11 +230,49 @@ class TestsLoadResults(unittest.TestCase):
         res = windIO.LoadResults(self.respath, self.f3_chant, readdata=False)
         self.assertFalse(hasattr(res, 'sig'))
         np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,294))
-        df = res.ch_df
-        self.assertEqual(8, len(df[df['sensortype']=='CT']))
-        self.assertEqual(8, len(df[df['sensortype']=='CQ']))
-        self.assertEqual(8, len(df[df['sensortype']=='a_grid']))
-        self.assertEqual(84, len(df[df['blade_nr']==1]))
+        df1 = res.ch_df
+        self.assertEqual(8, len(df1[df1['sensortype']=='CT']))
+        self.assertEqual(8, len(df1[df1['sensortype']=='CQ']))
+        self.assertEqual(8, len(df1[df1['sensortype']=='a_grid']))
+        self.assertEqual(84, len(df1[df1['blade_nr']==1]))
+
+        fname = os.path.join(self.respath, self.f3_chant.replace('.sel',
+                                                                 '.ch_df.csv'))
+        # FIXME: read_csv for older pandas versions fails on reading the
+        # mixed str/tuple column. Ignore the pos column for now
+        colref = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',
+                  'component', 'coord', 'direction', 'dll', 'flap_nr', 'io',
+                  'io_nr', 'output_type', 'radius', 'sensortag',
+                  'sensortype', 'unique_ch_name', 'units'] # 'pos',
+        # keep_default_na: leave empyt strings as empty strings and not nan's
+        # you can't have nice things: usecols in combination with index_col
+        # doesn't work
+        df2 = pd.read_csv(fname, usecols=['chi']+colref, keep_default_na=False)
+        df2.index = df2['chi']
+        df2.drop(labels='chi', inplace=True, axis=1)
+
+        # for the comparison we need to have the columns with empty/number
+        # mixed data types in a consistent data type
+        for col in ['azimuth', 'radius', 'blade_nr', 'io_nr', 'flap_nr', 'dll']:
+            df1.loc[df1[col]=='', col] = np.nan
+            df1[col] = df1[col].astype(np.float32)
+            df2.loc[df2[col]=='', col] = np.nan
+            df2[col] = df2[col].astype(np.float32)
+
+        # print(df1.pos[14], df2.pos[14])
+        # the pos columns contains also tuples, read from csv doesn't get that
+        # df1['pos'] = df1['pos'].astype(np.str)
+        # df1['pos'] = df1['pos'].str.replace("'", "")
+        # print(df1.pos[14], df2.pos[14])
+
+        # sort columns in the same way so we can assert the df are equal
+        # df1 = df1[colref].copy()
+        # df2 = df2[colref].copy()
+        # FIXME: when pandas is more recent we can use assert_frame_equal
+        # pd.testing.assert_frame_equal(df1, df2)
+        # ...but there is no testing.assert_frame_equal in pandas 0.14
+        for col in colref:
+            np.testing.assert_array_equal(df1[col].values, df2[col].values)
 
 
 class TestUserWind(unittest.TestCase):

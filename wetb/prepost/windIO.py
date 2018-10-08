@@ -1037,7 +1037,7 @@ class LoadResults(ReadHawc2):
                 # radius what you get
                 # radius = dscr_list[-1]
                 # radius what you asked for, identified as the last float in the string
-                s = self.ch_details[ch, 0]
+                s = self.ch_details[ch, 2]
                 radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 # and tag it
@@ -1094,7 +1094,7 @@ class LoadResults(ReadHawc2):
                 # radius what you get
                 #  radius = float(items[8].replace(',', ''))
                 # radius what you asked for, identified as the last float in the string
-                s = self.ch_details[ch, 0]
+                s = self.ch_details[ch, 2]
                 radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 items = self.ch_details[ch, 0].split(',')
@@ -1135,7 +1135,7 @@ class LoadResults(ReadHawc2):
                 tmp = tmp.split(',')
                 # radius = float(tmp[0])
                 # radius what you asked for, identified as the last float in the string
-                s = self.ch_details[ch, 0]
+                s = self.ch_details[ch, 2]
                 radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 if len(tmp) > 1:
@@ -1231,7 +1231,7 @@ class LoadResults(ReadHawc2):
                 # radius = self.ch_details[ch, 2].split('radius')[1].split(',')[0]
                 # radius = radius.strip()
                 # radius what you asked for, identified as the last float in the string
-                s=self.ch_details[ch, 0]
+                s=self.ch_details[ch, 2]
                 radius=float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 # and tag it
