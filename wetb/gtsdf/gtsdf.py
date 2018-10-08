@@ -3,7 +3,6 @@ from builtins import zip
 from builtins import range
 from builtins import str
 from future import standard_library
-from wetb.fatigue_tools.fatigue import eq_load
 standard_library.install_aliases()
 import warnings
 from wetb.gtsdf.unix_time import from_unix
@@ -430,6 +429,7 @@ def _get_statistic(time, data, statistics=['min','mean','max','std','eq3','eq4',
         if hasattr(np, stat):
             return getattr(np,stat)(data,0)
         elif (stat.startswith("eq") and stat[2:].isdigit()):
+            from wetb.fatigue_tools.fatigue import eq_load
             m = float(stat[2:])
             return [eq_load(sensor, 46, m, time[-1]-time[0]+time[1]-time[0])[0][0] for sensor in data.T]
     return np.array([get_stat(stat) for stat in statistics]).T
