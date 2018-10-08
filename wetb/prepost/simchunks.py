@@ -147,7 +147,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     pbs_tmplate += "#PBS -q [queue]\n"
     pbs_tmplate += "\n"
 
-    # this causes troubles on CI runner for the tests (line endings?)
+    # FIXME: this causes troubles on CI runner for the tests (line endings?)
 #     pbs_tmplate = """
 # ### Standard Output
 # #PBS -N [job_name]
@@ -299,11 +299,17 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         for db, base_name in zip(turb_db_tags, base_name_tags):
             turb_db_dirs = df[db] + df[base_name]
             # When set to None, the DataFrame will have text as None
-            # FIXME: CI runner has and old pandas version
+            # FIXME: CI runner has and old pandas version (v0.14.1)
             try:
                 turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
             except AttributeError:
-                turb_db_src = turb_db_dirs[turb_db_dirs.str.findall('None')==-1]
+                # and findall returns list with the search str occuring as
+                # many times as found in the str...
+                # sel should be True if str does NOT occur in turb_db_dirs
+                # meaning if findall returns empty list
+                findall = turb_db_dirs.str.findall('None').tolist()
+                sel = [True if len(k)==0 else False for k in findall]
+                turb_db_src = turb_db_dirs[sel]
             pbs += '\n'
             pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
             for k in turb_db_src.unique():

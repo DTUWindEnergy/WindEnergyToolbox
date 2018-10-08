@@ -68,7 +68,38 @@ class TestGenerateInputs(Template):
                                postpro_node_zipchunks=False,
                                postpro_node=False)
 
-        # we can not check-in empty dirs so we can not compare the complete
+        def cmp_dir(dir1, dir2):
+            lst1, lst2 = map(os.listdir, (dir1, dir2))
+            self.assertEqual(";".join(lst1), ";".join(lst2))
+            for f1, f2 in zip(lst1, lst2):
+                if f1.endswith(".zip") or f1.endswith(".xlsx"):
+                    continue
+                if os.path.isdir(os.path.join(dir1, f1)):
+                    cmp_dir(os.path.join(dir1, f1), os.path.join(dir2, f2))
+                else:
+                    try:
+                        with open(os.path.join(dir1, f1)) as fid1:
+                            l1 = fid1.readlines()
+                        with open(os.path.join(dir2, f2)) as fid2:
+                            l2 = fid2.readlines()
+
+                        self.assertEqual(len(l1), len(l2))
+                        self.assertTrue(all([l1_ == l2_ for l1_, l2_ in zip(l1, l2)]))
+                    except:
+                        print("=" * 30)
+                        print(os.path.join(dir1, f1))
+                        print(os.path.join(dir2, f2))
+                        print(dir1[[d1 != d2 for d1, d2 in zip(dir1, dir2)].index(True):])
+                        print(f1)
+                        for i in range(len(l1)):
+                            if l1[i] != l2[i]:
+                                print("%03d, rem: %s" % (i, l1[i].strip()))
+                                print("%03d, ref: %s" % (i, l2[i].strip()))
+                                print()
+                        raise
+
+
+        # we can not git check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here
         for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
                        'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos',
@@ -78,6 +109,7 @@ class TestGenerateInputs(Template):
             # the zipfiles are taken care of separately
             ignore = ['remote_chnk_00000.zip']
             cmp = filecmp.dircmp(remote, ref, ignore=ignore)
+            cmp_dir(remote, ref)
             self.assertEqual(len(cmp.diff_files), 0,
                              "{} {}".format(subdir, cmp.diff_files))
             self.assertEqual(len(cmp.right_only), 0,

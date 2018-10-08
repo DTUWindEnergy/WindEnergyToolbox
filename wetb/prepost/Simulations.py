@@ -56,6 +56,12 @@ from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
 from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
+from os.path import join as os_path_join
+
+def join_path(*args):
+    return os_path_join(*args).replace("\\","/")
+os.path.join = join_path
+
 
 def load_pickled_file(source):
     FILE = open(source, 'rb')

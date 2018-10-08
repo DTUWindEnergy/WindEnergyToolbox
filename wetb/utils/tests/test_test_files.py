@@ -4,7 +4,8 @@ Created on 20. jul. 2017
 @author: mmpe
 '''
 import unittest
-from wetb.utils.test_files import move2test_files, get_test_file
+from wetb.utils.test_files import move2test_files, get_test_file,\
+    local_TestFiles_path
 import os
 from wetb.utils import test_files
 import wetb
@@ -24,6 +25,9 @@ class Test_test_files(unittest.TestCase):
         self.assertTrue(os.path.isfile(dst))
 
     def test_test_files(self):
+        fn = local_TestFiles_path + "wetb/utils/tests/test_files/test_file.txt"
+        if os.path.isfile(fn):
+            os.remove(fn)
         fn1 = get_test_file(tfp+'test_file.txt')
         self.assertTrue(os.path.isfile(fn1))
         fn2 = get_test_file('test_file.txt')
