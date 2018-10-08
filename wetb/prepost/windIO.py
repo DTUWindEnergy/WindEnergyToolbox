@@ -1037,8 +1037,8 @@ class LoadResults(ReadHawc2):
                 # radius what you get
                 # radius = dscr_list[-1]
                 # radius what you asked for, identified as the last float in the string
-                s=self.ch_details[ch, 0]
-                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
+                s = self.ch_details[ch, 0]
+                radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 # and tag it
                 tag = '%s-%s-%s' % (sensortype, blade_nr, radius)
@@ -1094,8 +1094,8 @@ class LoadResults(ReadHawc2):
                 # radius what you get
                 #  radius = float(items[8].replace(',', ''))
                 # radius what you asked for, identified as the last float in the string
-                s=self.ch_details[ch, 0]
-                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
+                s = self.ch_details[ch, 0]
+                radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 items = self.ch_details[ch, 0].split(',')
                 component = items[0][-2:]
@@ -1131,12 +1131,12 @@ class LoadResults(ReadHawc2):
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
                 blade_nr = int(blade_nr)
                 # radius what you get
-                # tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
-                # tmp = tmp.split(',')
+                tmp = self.ch_details[ch, 2].split('radius ')[1].strip()
+                tmp = tmp.split(',')
                 # radius = float(tmp[0])
                 # radius what you asked for, identified as the last float in the string
-                s=self.ch_details[ch, 0]
-                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
+                s = self.ch_details[ch, 0]
+                radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 if len(tmp) > 1:
                     coord = tmp[1].strip()
@@ -1232,7 +1232,7 @@ class LoadResults(ReadHawc2):
                 # radius = radius.strip()
                 # radius what you asked for, identified as the last float in the string
                 s=self.ch_details[ch, 0]
-                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+",s)[-1])
+                radius=float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 # and tag it
                 rpl = (direction, blade_nr, radius, coord)
@@ -1254,7 +1254,7 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1].strip()
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
-                blade_nr = blade_nr
+                blade_nr = int(blade_nr)
                 flap_nr = self.ch_details[ch, 2].split(' ')[-1].strip()
 
                 # and tag it
@@ -1283,6 +1283,13 @@ class LoadResults(ReadHawc2):
                 if tag in self.ch_dict:
                     tag_nr = int(tag.split('_')[-1]) + 1
                     tag = base + '_%i' % tag_nr
+
+            elif self.ch_details[ch, 0][:6] == 'a_norm':
+                channelinfo = {}
+                channelinfo['chi'] = ch
+                channelinfo['units'] = self.ch_details[ch, 1].strip()
+                channelinfo['sensortype'] = 'aero'
+                tag = 'aero-induc_a_norm'
 
             # -----------------------------------------------------------------
             # If all this fails, just combine channel name and description
