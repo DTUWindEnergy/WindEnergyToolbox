@@ -369,6 +369,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         if errorcode or 'Elapsed time' not in log:
             raise Exception (str(stdout) + str(stderr))
+        return str(stdout) + str(stderr), log
         
     def deltat(self):
         return self.simulation.newmark.deltat[0]
