@@ -71,6 +71,8 @@ class Tests(unittest.TestCase):
         self.assertEqual(hs2.aero_damp.Ko1, -4.21472)
         self.assertEqual(hs2.aero_damp.Ko2, 0.0)
 
+        self.assertEqual(hs2.aero_gains.shape, (0, 0))
+
     def test_quadratic_file(self):
 
         hs2 = ReadControlTuning()
@@ -91,6 +93,38 @@ class Tests(unittest.TestCase):
         self.assertEqual(hs2.aero_damp.Ko1, -1.69769)
         self.assertEqual(hs2.aero_damp.Ko2, -15.02688)
 
+        self.assertEqual(hs2.aero_gains.shape, (15, 5))
+        cols = ['theta', 'dq/dtheta', 'dq/dtheta_fit', 'dq/domega',
+                'dq/domega_fit']
+        self.assertEqual(hs2.aero_gains.columns.tolist(), cols)
+
+        tmp = np.array([0, 4.1, 6.69, 8.62, 10.26, 11.74, 13.1, 14.38, 15.59,
+                        16.76, 17.88, 18.97, 20.03, 21.05, 22.05])
+        np.testing.assert_allclose(hs2.aero_gains['theta'].values, tmp)
+
+        tmp = [-1165.0486, -1665.72575, -2012.86015, -2290.61883,
+                     -2535.50152, -2757.11114, -2991.31463, -3213.58048,
+                     -3428.46978, -3642.914, -3858.46084, -4075.53879,
+                     -4295.293, -4524.66782, -4758.6268]
+        np.testing.assert_allclose(hs2.aero_gains['dq/dtheta'].values, tmp)
+
+        tmp = [-1182.80164, -1655.44826, -1998.12171, -2275.67536, -2526.42508,
+               -2764.46364, -2993.03195, -3216.75546, -3435.9122, -3654.91116,
+               -3871.07886, -4087.58722, -4303.93692, -4517.52214, -4732.06052]
+        np.testing.assert_allclose(hs2.aero_gains['dq/dtheta_fit'].values, tmp)
+
+        tmp = [-393.03157, -6919.03943, -13119.30826, -18911.31597,
+               -24632.87239, -30186.31522, -36257.79933, -42410.9345,
+               -48626.47812, -55070.40445, -61702.38984, -68581.71761,
+               -75700.65394, -83045.36607, -90639.34883]
+        np.testing.assert_allclose(hs2.aero_gains['dq/domega'].values, tmp)
+
+        tmp = [-950.85937, -6544.84749, -12659.67192, -18515.75425,
+               -24364.04365, -30329.6103, -36386.82912, -42591.10977,
+               -48904.89826, -55424.76312, -62048.0563, -68852.77188,
+               -75809.68369, -82820.10608, -89993.97031]
+        np.testing.assert_allclose(hs2.aero_gains['dq/domega_fit'].values, tmp)
+
     def test_ind_file(self):
         fnames = ['dtu10mw_nofull_defl_u10000.ind',
                   'dtu10mw_nofull_fext_u10000.ind',
@@ -108,7 +142,7 @@ class Tests(unittest.TestCase):
             res = results()
             df_data = res.load_ind(fname)
             data = np.loadtxt(fname)
-            np.testing.assert_almost_equal(data, df_data.values)
+            np.testing.assert_allclose(data, df_data.values)
 
     def test_pwr_file(self):
         fnames = ['dtu10mw_nofull.pwr',
@@ -121,19 +155,7 @@ class Tests(unittest.TestCase):
             df_data, units = res.load_pwr_df(fname)
             data = np.loadtxt(fname)
             self.assertEqual(data.shape, df_data.shape)
-            print(fname)
-            print(data.dtype)
-            print(df_data.values.dtype)
-            for i in range(data.shape[0]):
-                a = data[i,:]
-                b = df_data.values[i,:]
-                if not np.allclose(a,b):
-                    print(i)
-                    print(a-b)
-                    print(a)
-                    print(b)
-                np.testing.assert_almost_equal(a, b)
-            np.testing.assert_almost_equal(data, df_data.values, decimal=6)
+            np.testing.assert_allclose(data, df_data.values)
 
 
 if __name__ == "__main__":
