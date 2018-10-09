@@ -220,14 +220,15 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             pbs += '%s %s\n' % rpl
             # sometimes activating an environment fails due to a FileExistsError
             # is this because it is activated at the same time on another node?
-            # check twice if the environment got activated for real
+            # check twice if the environment got activated for real,
+            # but only do so for /home/python/miniconda
             pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
             pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
-            pbs += 'print (get_python_lib().find(\'%s\'))"\n' % pyenv
+            pbs += 'print (get_python_lib().find(\'/usr/lib/python\'))"\n'
             pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq -1 ]; then %s %s;fi\n' % rpl
+            pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
             pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq -1 ]; then %s %s;fi\n' % rpl
+            pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
 
         # =====================================================================
         # create all necessary directories at CPU_NR dirs
