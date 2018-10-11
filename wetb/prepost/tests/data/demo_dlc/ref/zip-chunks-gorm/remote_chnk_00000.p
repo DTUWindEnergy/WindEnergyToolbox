@@ -112,18 +112,18 @@ cd /scratch/$USER/$PBS_JOBID/remote/
 echo 'current working directory:'
 pwd
 echo "Link all turb files into CPU dirs"
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/0/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/1/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/2/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/3/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/4/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/5/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/6/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/7/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/8/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/9/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/10/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/remote/11/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/0/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/1/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/2/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/3/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/4/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/5/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/6/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/7/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/8/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/9/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/10/turb/ \;
+find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/11/turb/ \;
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
@@ -149,7 +149,7 @@ cd /scratch/$USER/$PBS_JOBID/remote
 echo 'current working directory:'
 pwd
 echo "Results saved at sim_id directory:"
-find 
+find .
 
 echo "move statsdel into compressed archive"
 find res/dlc01_demos/ -name "*.csv" -print0 | xargs -0 tar --remove-files -rf prepost/statsdel_chnk_00000.tar
@@ -168,7 +168,7 @@ echo "move results back from node scratch/sim_id to origin, but ignore htc, and 
 echo "copy from remote/* to $PBS_O_WORKDIR/"
 time rsync -au --remove-source-files remote/* $PBS_O_WORKDIR/ \
     --exclude pbs_in/dlc01_demos/* \
-    --exclude *.htc 
+    --exclude *.htc
 source deactivate
 echo "DONE !!"
 

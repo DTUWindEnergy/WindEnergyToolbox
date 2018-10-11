@@ -361,8 +361,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                     continue
                 db_dir_abs = os.path.join(pbase, sim_id, db_dir, '')
                 for k in list(range(ppn)):
-                    turb_dir_abs = os.path.join(pbase, sim_id, str(k),
-                                                turb_dir, '')
+                    turb_dir_abs = os.path.join(pbase, str(k), turb_dir, '')
                     rpl = (db_dir_abs, turb_dir_abs)
                     pbs += 'find %s -iname "*.bin" -exec ln -s {} %s \\;\n' % rpl
 
@@ -412,7 +411,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'pwd\n'
         pbs += 'echo "Results saved at sim_id directory:"\n'
         rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
-        pbs += 'find \n'
+        pbs += 'find .\n'
 
         if compress:
             # compress all result files into an archive, first *.sel files
@@ -460,7 +459,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'echo "copy from %s to $PBS_O_WORKDIR/"\n' % tmp
         pbs += 'time rsync -au --remove-source-files %s $PBS_O_WORKDIR/ \\\n' % tmp
         pbs += '    --exclude %s \\\n' % os.path.join(pbs_in_base, '*')
-        pbs += '    --exclude *.htc \n'
+        pbs += '    --exclude *.htc\n'
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
         if pyenv is not None:
