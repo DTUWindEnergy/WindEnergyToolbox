@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Tue Jan 14 14:12:58 2014
 
@@ -261,19 +260,19 @@ class results(object):
         # when the array is empty, set operation to an empty DataFrame
         if len(operation) == 0:
             cols = ['windspeed', 'pitch_deg', 'rotorspeed_rpm']
-            self.operation = pd.DataFrame(columns=cols)
-            return
+            return pd.DataFrame(columns=cols)
         # when there is only one data point, the array is 1D, we allways need
         # a 2D array otherwise the columns become rows in the DataFrame
         elif len(operation.shape) == 1:
             operation = operation.reshape((1, operation.shape[0]))
         try:
             cols = ['windspeed', 'pitch_deg', 'rotorspeed_rpm']
-            self.operation = pd.DataFrame(operation, columns=cols)
+            operation = pd.DataFrame(operation, columns=cols)
         except ValueError:
             cols = ['windspeed', 'pitch_deg', 'rotorspeed_rpm', 'P_aero',
                     'T_aero']
-            self.operation = pd.DataFrame(operation, columns=cols)
+            operation = pd.DataFrame(operation, columns=cols)
+        return operation
 
     def load_matrices(self, fpath, basename, operating_point=1,
                       control_mat=False, local_wind_mat=False):

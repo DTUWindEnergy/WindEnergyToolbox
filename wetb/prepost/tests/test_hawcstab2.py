@@ -157,6 +157,33 @@ class Tests(unittest.TestCase):
             self.assertEqual(data.shape, df_data.shape)
             np.testing.assert_allclose(data, df_data.values)
 
+    def test_opt_file(self):
+
+        res = results()
+
+        fname = pjoin(pdirname(__file__), 'data', 'dtu10mw.opt')
+        df = res.load_operation(fname)
+        tmp = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                21, 22, 23, 24, 25]
+        np.testing.assert_allclose(tmp, df['windspeed'].values)
+        self.assertEqual(df.values.shape, (21, 3))
+
+        fname = pjoin(pdirname(__file__), 'data', 'kb6.opt')
+        df = res.load_operation(fname)
+        tmp = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                21, 22, 23, 24, 25]
+        np.testing.assert_allclose(tmp, df['windspeed'].values)
+        tmp = [7.20147212792062, 14.1560777401151, 24.5923689569214,
+               39.2304595043255, 58.7985344647829, 83.2307972895692,
+               106.401798353616, 106.400099017382, 106.403429471703,
+               106.3986284106, 106.39861469995, 106.393720086642,
+               106.404364646693, 106.401389916882, 106.4047949236,
+               106.398523413816, 106.403149136568, 106.399813867904,
+               106.424042832599, 106.400584861663, 106.43349513828,
+               106.469433544515]
+        np.testing.assert_allclose(tmp, df['P_aero'].values)
+        self.assertEqual(df.values.shape, (22, 5))
+
 
 if __name__ == "__main__":
     unittest.main()
