@@ -526,8 +526,9 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     store = pd.HDFStore(fdf, mode='w', format='table', complevel=9,
                         complib='zlib')
     colnames = ['channel', 'max', 'min', 'mean', 'std', 'range',
-                'absmax', 'rms', 'int', 'intabs', '[case_id]']
+                'absmax', 'rms', 'int', 'intabs']
     colnames.extend(['m=%1.0f' % k for k in m])
+    colnames.extend(['[case_id]'])
     dtypes = {col:np.float64 for col in colnames}
     dtypes['channel'] = str
     dtypes['[case_id]'] = str
