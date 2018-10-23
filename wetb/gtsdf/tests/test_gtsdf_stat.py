@@ -36,7 +36,6 @@ class Test_gsdf(unittest.TestCase):
     
     def test_gtsdf_stat(self):
         time, data, info = gtsdf.load(tfp+'test.hdf5')
-        print (data.shape)
         fn = tmp_path + "test_stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
         gtsdf.add_statistic(fn)

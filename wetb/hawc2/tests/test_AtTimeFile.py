@@ -62,7 +62,6 @@ class TestAtTimeFile(unittest.TestCase):
 
     def test_rotor_name_null(self):
         atfile = AtTimeFile(self.testfilepath + "at_time/test_rotor_name_null.dat", bladetip_radius=20.501)  # load file
-        print (atfile.radius_s())
 
 
 if __name__ == "__main__":
