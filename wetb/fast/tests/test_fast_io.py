@@ -41,6 +41,10 @@ class TestFastIO(unittest.TestCase):
         self.assertEqual(info['attribute_names'][1], "RotPwr")
         self.assertEqual(info['attribute_units'][1], "kW")
 
+    def test_load_output3(self):
+        # This file has an extra comment at the end
+        data, info = load_output(testfilepath + 'FastOut_Hydro.out')
+        self.assertAlmostEqual(data[3, 1], -1.0E+01)
 
 
 if __name__ == "__main__":
