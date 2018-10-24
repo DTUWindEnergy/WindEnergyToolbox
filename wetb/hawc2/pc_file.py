@@ -13,7 +13,6 @@ from builtins import int
 from future import standard_library
 standard_library.install_aliases()
 
-from wetb.hawc2.ae_file import AEFile
 import numpy as np
 
 class PCFile(object):
@@ -126,8 +125,6 @@ class PCFile(object):
 
 if __name__ == "__main__":
     pcfile = PCFile("tests/test_files/NREL_5MW_pc.txt")
-    aefile = AEFile("tests/test_files/NREL_5MW_ae.txt")
-    print (aefile.thickness(36))
     
     print (pcfile.CL(21,10)) # CL for thickness 21% and AOA=10deg
     #1.358
