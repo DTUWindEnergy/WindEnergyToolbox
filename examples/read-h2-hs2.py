@@ -10,59 +10,61 @@ from wetb.prepost import windIO
 from wetb.hawc2 import Hawc2io
 from wetb.prepost import hawcstab2
 
-# =============================================================================
-# READ HAWC2 RESULT FILE
-# =============================================================================
+if __name__ == '__main__':
 
-# METHOD A
-fname = '../wetb/hawc2/tests/test_files/hawc2io/Hawc2ascii.sel'
-res = Hawc2io.ReadHawc2(fname)
-sig = res.ReadAll()
+    # =============================================================================
+    # READ HAWC2 RESULT FILE
+    # =============================================================================
 
-# METHOD B
-path, file = os.path.dirname(fname), os.path.basename(fname)
-res = windIO.LoadResults(path, file)
-sig = res.sig
-sel = res.ch_details
-# result in dataframe with unique channel names (instead of indices)
-sig_df = res.sig2df()
-ch_df = res.ch_df
+    # METHOD A
+    fname = '../wetb/hawc2/tests/test_files/hawc2io/Hawc2ascii.sel'
+    res = Hawc2io.ReadHawc2(fname)
+    sig = res.ReadAll()
 
-# =============================================================================
-# READ HAWCStab2 files
-# =============================================================================
+    # METHOD B
+    path, file = os.path.dirname(fname), os.path.basename(fname)
+    res = windIO.LoadResults(path, file)
+    sig = res.sig
+    sel = res.ch_details
+    # result in dataframe with unique channel names (instead of indices)
+    sig_df = res.sig2df()
+    ch_df = res.ch_df
 
-res = hawcstab2.results()
+    # =============================================================================
+    # READ HAWCStab2 files
+    # =============================================================================
 
-fname = '../wetb/prepost/tests/data/campbell_diagram.cmb'
-df_cmb = res.load_cmb_df(fname)
+    res = hawcstab2.results()
 
-fname = '../wetb/prepost/tests/data/dtu10mw_v1_defl_u10000.ind'
-df_ind = res.load_ind(fname)
+    fname = '../wetb/prepost/tests/data/campbell_diagram.cmb'
+    df_cmb = res.load_cmb_df(fname)
 
-fname = '../wetb/prepost/tests/data/dtu10mw.opt'
-df_opt = res.load_operation(fname)
+    fname = '../wetb/prepost/tests/data/dtu10mw_v1_defl_u10000.ind'
+    df_ind = res.load_ind(fname)
 
-fname = '../wetb/prepost/tests/data/dtu10mw_v1.pwr'
-df_pwr, units = res.load_pwr_df(fname)
+    fname = '../wetb/prepost/tests/data/dtu10mw.opt'
+    df_opt = res.load_operation(fname)
 
-fname = '../wetb/prepost/tests/data/controller_input_quadratic.txt'
-tuning = hawcstab2.ReadControlTuning()
-tuning.read_parameters(fname)
-# tuning parameters are saved as attributes
-tuning.pi_gen_reg1.K
-tuning.pi_gen_reg2.I
-tuning.pi_gen_reg2.Kp
-tuning.pi_gen_reg2.Ki
-tuning.pi_gen_reg2.Kd
-tuning.pi_pitch_reg3.Kp
-tuning.pi_pitch_reg3.Ki
-tuning.pi_pitch_reg3.Kd
-tuning.pi_pitch_reg3.K1
-tuning.pi_pitch_reg3.K2
-tuning.aero_damp.Kp2
-tuning.aero_damp.Ko1
-tuning.aero_damp.Ko2
+    fname = '../wetb/prepost/tests/data/dtu10mw_v1.pwr'
+    df_pwr, units = res.load_pwr_df(fname)
 
-# or you can get them as a dictionary
-tune_tags = tuning.parameters2tags()
+    fname = '../wetb/prepost/tests/data/controller_input_quadratic.txt'
+    tuning = hawcstab2.ReadControlTuning()
+    tuning.read_parameters(fname)
+    # tuning parameters are saved as attributes
+    tuning.pi_gen_reg1.K
+    tuning.pi_gen_reg2.I
+    tuning.pi_gen_reg2.Kp
+    tuning.pi_gen_reg2.Ki
+    tuning.pi_gen_reg2.Kd
+    tuning.pi_pitch_reg3.Kp
+    tuning.pi_pitch_reg3.Ki
+    tuning.pi_pitch_reg3.Kd
+    tuning.pi_pitch_reg3.K1
+    tuning.pi_pitch_reg3.K2
+    tuning.aero_damp.Kp2
+    tuning.aero_damp.Ko1
+    tuning.aero_damp.Ko2
+
+    # or you can get them as a dictionary
+    tune_tags = tuning.parameters2tags()
