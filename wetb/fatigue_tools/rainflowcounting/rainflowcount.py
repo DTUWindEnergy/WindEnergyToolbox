@@ -4,10 +4,15 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import str
 from future import standard_library
+import wetb.fatigue_tools
+from wetb.fatigue_tools.rainflowcounting.rainflowcount_IEA import peak_trough,\
+    pair_range_amplitude_mean
+from wetb.fatigue_tools.rainflowcounting import rainflowcount_IEA, compile_ext
+import sys
+import os
 standard_library.install_aliases()
 import numpy as np
-from wetb.fatigue_tools.rainflowcounting import peak_trough
-from wetb.fatigue_tools.rainflowcounting import pair_range
+non_compile_warning_shown = False
 
 
 def check_signal(signal):
@@ -26,6 +31,7 @@ def check_signal(signal):
 
 
 def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
+    global non_compile_warning_shown
     """Windap equivalent rainflow counting
 
 
@@ -62,33 +68,33 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
     >>> ampl, mean = rainflow_windap(signal)
     """
     check_signal(signal)
-    #type <double> is required by <find_extreme> and <rainflow>
+    # type <double> is required by <find_extreme> and <rainflow>
     signal = signal.astype(np.double)
     if np.all(np.isnan(signal)):
         return None
     offset = np.nanmin(signal)
     signal -= offset
+
+    if rainflowcount_IEA.__file__.endswith('.py') and non_compile_warning_shown is False:
+        non_compiled_warning()
+
     if np.nanmax(signal) > 0:
         gain = np.nanmax(signal) / levels
         signal = signal / gain
         signal = np.round(signal).astype(np.int)
 
-
         # If possible the module is compiled using cython otherwise the python implementation is used
 
+        # Convert to list of local minima/maxima where difference > thresshold
+        sig_ext = peak_trough(signal, thresshold)
 
-        #Convert to list of local minima/maxima where difference > thresshold
-        sig_ext = peak_trough.peak_trough(signal, thresshold)
-
-
-        #rainflow count
-        ampl_mean = pair_range.pair_range_amplitude_mean(sig_ext)
+        # rainflow count
+        ampl_mean = pair_range_amplitude_mean(sig_ext)
 
         ampl_mean = np.array(ampl_mean)
         ampl_mean = np.round(ampl_mean / thresshold) * gain * thresshold
         ampl_mean[:, 1] += offset
         return ampl_mean.T
-
 
 
 def rainflow_astm(signal):
@@ -126,9 +132,10 @@ def rainflow_astm(signal):
 
     # Import find extremes and rainflow.
     # If possible the module is compiled using cython otherwise the python implementation is used
-    
+    from wetb.fatigue_tools.rainflowcounting import rainflowcount_astm
     from wetb.fatigue_tools.rainflowcounting.rainflowcount_astm import find_extremes, rainflowcount
-
+    if rainflowcount_astm.__file__.endswith('.py') and non_compile_warning_shown is False:
+        non_compiled_warning()
     # Remove points which is not local minimum/maximum
     sig_ext = find_extremes(signal)
 
@@ -136,3 +143,14 @@ def rainflow_astm(signal):
     ampl_mean = np.array(rainflowcount(sig_ext))
 
     return np.array(ampl_mean).T
+
+
+def non_compiled_warning():
+    global non_compile_warning_shown
+    compiler = ""
+    import platform
+    if platform.architecture()[0] == "32bit" and os.name == 'nt' and "mingw" in os.environ['path'].lower():
+        compiler = " --compiler=mingw32"
+    sys.stderr.write("To speed up rainflowcounting run: '%s %s build_ext --inplace%s'\n" %
+                     (sys.executable, compile_ext.__file__, compiler))
+    non_compile_warning_shown = True
