@@ -84,6 +84,10 @@ class TestAEFile(unittest.TestCase):
         ae2 = AEFile(fn)
         assert str(ae) == str(ae2)
 
+    def test_multiple_sets(self):
+        ae = AEFile(testfilepath + 'ae_files/HAWC2_ae.dat')
+        self.assertEqual(len(ae.ae_sets), 2)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

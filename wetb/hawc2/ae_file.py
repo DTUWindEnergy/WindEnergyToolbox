@@ -112,12 +112,11 @@ class AEFile(object):
         lptr = 1
         self.ae_sets = {}
         for _ in range(1, nsets + 1):
-            for _ in range(nsets):
-                set_nr, n_rows = [int(v) for v in lines[lptr].split()[:2]]
-                lptr += 1
-                data = np.array([[float(v) for v in l.split()[:4]] for l in lines[lptr:lptr + n_rows]])
-                self.ae_sets[set_nr] = data
-                lptr += n_rows
+            set_nr, n_rows = [int(v) for v in lines[lptr].split()[:2]]
+            lptr += 1
+            data = np.array([[float(v) for v in l.split()[:4]] for l in lines[lptr:lptr + n_rows]])
+            self.ae_sets[set_nr] = data
+            lptr += n_rows
 
 
 def main():
