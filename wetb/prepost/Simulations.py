@@ -56,12 +56,10 @@ from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
 from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
-from os.path import join as os_path_join
 
-def join_path(*args):
-    return os_path_join(*args).replace("\\","/")
-os.path.join = join_path
 
+def pjoin(*args):
+    return os.path.join(*args).replace("\\", "/")
 
 
 def load_pickled_file(source):
@@ -70,10 +68,12 @@ def load_pickled_file(source):
     FILE.close()
     return result
 
+
 def save_pickle(source, variable):
     FILE = open(source, 'wb')
     pickle.dump(variable, FILE, protocol=2)
     FILE.close()
+
 
 def write_file(file_path, file_contents, mode):
     """
@@ -86,6 +86,7 @@ def write_file(file_path, file_contents, mode):
     FILE = open(file_path, mode)
     FILE.write(file_contents)
     FILE.close()
+
 
 def create_multiloop_list(iter_dict, debug=False):
     """
@@ -146,7 +147,7 @@ def create_multiloop_list(iter_dict, debug=False):
     # fix the order of the keys
     key_order = list(iter_dict.keys())
     nr_keys = len(key_order)
-    nr_values,indices = [],[]
+    nr_values, indices = [], []
     # determine how many items on each key
     for key in key_order:
         # each value needs to be an iterable! len() will fail if it isn't
@@ -158,14 +159,16 @@ def create_multiloop_list(iter_dict, debug=False):
         # create an initial indices list
         indices.append(0)
 
-    if debug: print(nr_values, indices)
+    if debug:
+        print(nr_values, indices)
 
     go_on = True
     # keep track on which index you are counting, start at the back
-    loopkey = nr_keys -1
+    loopkey = nr_keys - 1
     cc = 0
     while go_on:
-        if debug: print(indices)
+        if debug:
+            print(indices)
 
         # Each entry on the list is a dictionary with the parameter combination
         iter_list.append(dict())
@@ -181,44 +184,46 @@ def create_multiloop_list(iter_dict, debug=False):
 
         # cycle backwards thourgh all dimensions and propagate the +1 if the
         # current dimension is full. Hence overflow.
-        for k in range(loopkey,-1,-1):
+        for k in range(loopkey, -1, -1):
             # if the current dimension is over its max, set to zero and change
             # the dimension of the next. Remember we are going backwards
             if not indices[k] < nr_values[k] and k > 0:
                 # +1 on the index of the previous dimension
-                indices[k-1] += 1
+                indices[k - 1] += 1
                 # set current loopkey index back to zero
                 indices[k] = 0
                 # if the previous dimension is not on max, break out
-                if indices[k-1] < nr_values[k-1]:
+                if indices[k - 1] < nr_values[k - 1]:
                     break
             # if we are on the last dimension, break out if that is also on max
             elif k == 0 and not indices[k] < nr_values[k]:
-                if debug: print(cc)
+                if debug:
+                    print(cc)
                 go_on = False
 
         # fail safe exit mechanism...
         if cc > 20000:
-            raise UserWarning('multiloop_list has already '+str(cc)+' items..')
+            raise UserWarning('multiloop_list has already ' + str(cc) + ' items..')
             go_on = False
 
         cc += 1
 
     return iter_list
 
+
 def local_shell_script(htc_dict, sim_id):
     """
     """
     shellscript = ''
-    breakline = '"' + '*'*80 + '"'
+    breakline = '"' + '*' * 80 + '"'
     nr_cases = len(htc_dict)
     nr = 1
     for case in htc_dict:
         shellscript += 'echo ""' + '\n'
         shellscript += 'echo ' + breakline + '\n' + 'echo '
-        shellscript += '" ===> Progress:'+str(nr)+'/'+str(nr_cases)+'"\n'
+        shellscript += '" ===> Progress:' + str(nr) + '/' + str(nr_cases) + '"\n'
         # get a shorter version for the current cases tag_dict:
-        scriptpath = os.path.join(htc_dict[case]['[run_dir]'], 'runall.sh')
+        scriptpath = pjoin(htc_dict[case]['[run_dir]'], 'runall.sh')
         try:
             hawc2_exe = htc_dict[case]['[hawc2_exe]']
         except KeyError:
@@ -226,14 +231,15 @@ def local_shell_script(htc_dict, sim_id):
         htc_dir = htc_dict[case]['[htc_dir]']
         # log all warning messages: WINEDEBUG=-all!
         wine = 'WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
-        htc_target = os.path.join(htc_dir, case)
+        htc_target = pjoin(htc_dir, case)
         shellscript += '%s %s %s \n' % (wine, hawc2_exe, htc_target)
         shellscript += 'echo ' + breakline + '\n'
-        nr+=1
+        nr += 1
 
     write_file(scriptpath, shellscript, 'w')
     print('\nrun local shell script written to:')
     print(scriptpath)
+
 
 def local_windows_script(cases, sim_id, nr_cpus=2):
     """
@@ -242,7 +248,7 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
     tot_cases = len(cases)
     i_script = 1
     i_case_script = 1
-    cases_per_script = int(math.ceil(float(tot_cases)/float(nr_cpus)))
+    cases_per_script = int(math.ceil(float(tot_cases) / float(nr_cpus)))
     # header of the new script, each process has its own copy
     header = ''
     header += 'rem\nrem\n'
@@ -268,22 +274,22 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
     stop = False
 
     for i_case, (cname, case) in enumerate(cases.items()):
-#    for i_case, case in enumerate(sorted(cases.keys())):
+        #    for i_case, case in enumerate(sorted(cases.keys())):
 
         shellscript += 'rem\nrem\n'
-        shellscript += 'rem ===> Progress: %3i / %3i\n' % (i_case+1, tot_cases)
+        shellscript += 'rem ===> Progress: %3i / %3i\n' % (i_case + 1, tot_cases)
         # copy turbulence from data base, if applicable
         if case['[turb_db_dir]'] is not None:
             # we are one dir up in cpu exe dir
             turb = case['[turb_base_name]'] + '*.bin'
-            dbdir = os.path.join('./../', case['[turb_db_dir]'], turb)
+            dbdir = pjoin('./../', case['[turb_db_dir]'], turb)
             dbdir = dbdir.replace('/', '\\')
             rpl = (dbdir, case['[turb_dir]'].replace('/', '\\'))
             shellscript += 'copy %s %s\n' % rpl
 
         # get a shorter version for the current cases tag_dict:
         scriptpath = '%srunall-%i.bat' % (case['[run_dir]'], i_script)
-        htcpath = case['[htc_dir]'][:-1].replace('/', '\\') # ditch the /
+        htcpath = case['[htc_dir]'][:-1].replace('/', '\\')  # ditch the /
         try:
             hawc2_exe = case['[hawc2_exe]']
         except KeyError:
@@ -298,14 +304,14 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
             turbu = case['[turb_base_name]'] + 'u.bin'
             turbv = case['[turb_base_name]'] + 'v.bin'
             turbw = case['[turb_base_name]'] + 'w.bin'
-            dbdir = os.path.join('./../', case['[turb_db_dir]'])
+            dbdir = pjoin('./../', case['[turb_db_dir]'])
             for tu in (turbu, turbv, turbw):
-                tu_db = os.path.join(dbdir, tu).replace('/', '\\')
-                tu_run = os.path.join(case['[turb_dir]'], tu).replace('/', '\\')
+                tu_db = pjoin(dbdir, tu).replace('/', '\\')
+                tu_run = pjoin(case['[turb_dir]'], tu).replace('/', '\\')
                 rpl = (tu_db, tu_run, dbdir.replace('/', '\\'))
                 shellscript += 'IF NOT EXIST "%s" move /y "%s" "%s"\n' % rpl
             # remove turbulence from run dir
-            allturb = os.path.join(case['[turb_dir]'], '*.*')
+            allturb = pjoin(case['[turb_dir]'], '*.*')
             allturb = allturb.replace('/', '\\')
             # do not prompt for delete confirmation: /Q
             shellscript += 'del /Q "%s"\n' % allturb
@@ -320,7 +326,7 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
 
             # header of the new script, each process has its own copy
             # but only if there are actually jobs left
-            if i_case+1 < tot_cases:
+            if i_case + 1 < tot_cases:
                 i_script += 1
                 i_case_script = 1
                 shellscript = header % (i_script, i_script, i_script, i_script)
@@ -334,6 +340,7 @@ def local_windows_script(cases, sim_id, nr_cpus=2):
         write_file(scriptpath, shellscript, 'w')
         print('\nrun local shell script written to:')
         print(scriptpath)
+
 
 def run_local_ram(cases, check_log=True):
 
@@ -357,12 +364,12 @@ def run_local_ram(cases, check_log=True):
         for root, dirs, files in os.walk(run_dir):
             run_dir_base = os.path.commonprefix([root, run_dir])
             cdir = root.replace(run_dir_base, '')
-            dstbase = os.path.join(run_dir_ram, cdir)
+            dstbase = pjoin(run_dir_ram, cdir)
             if not os.path.exists(dstbase):
                 os.makedirs(dstbase)
             for fname in files:
-                src = os.path.join(root, fname)
-                dst = os.path.join(dstbase, fname)
+                src = pjoin(root, fname)
+                dst = pjoin(dstbase, fname)
                 shutil.copy2(src, dst)
 
     print('done')
@@ -386,10 +393,10 @@ def run_local_ram(cases, check_log=True):
             pass
         # join doesn't work if cdir has a leading / ?? so drop it
         elif cdir[0] == '/':
-            dstbase = os.path.join(run_dir, cdir[1:])
+            dstbase = pjoin(run_dir, cdir[1:])
         for fname in files:
-            src = os.path.join(root, fname)
-            dst = os.path.join(dstbase, fname)
+            src = pjoin(root, fname)
+            dst = pjoin(dstbase, fname)
             if not os.path.exists(dstbase):
                 os.makedirs(dstbase)
             try:
@@ -404,6 +411,7 @@ def run_local_ram(cases, check_log=True):
     print('...done')
 
     return cases
+
 
 def run_local(cases, silent=False, check_log=True):
     """
@@ -442,7 +450,7 @@ def run_local(cases, silent=False, check_log=True):
     nr = len(cases)
     if not silent:
         print('')
-        print('='*79)
+        print('=' * 79)
         print('Be advised, launching %i HAWC2 simulation(s) sequentially' % nr)
         print('run dir: %s' % cases[list(cases.keys())[0]]['[run_dir]'])
         print('')
@@ -461,10 +469,10 @@ def run_local(cases, silent=False, check_log=True):
         # TODO: if a turbulence data base is set, copy the files from there
 
         # the launch command
-        cmd  = 'WINEDEBUG=-all WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
+        cmd = 'WINEDEBUG=-all WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         cmd += " %s %s%s" % (hawc2_exe, tags['[htc_dir]'], case)
         # remove any escaping in tags and case for security reasons
-        cmd = cmd.replace('\\','')
+        cmd = cmd.replace('\\', '')
         # browse to the correct launch path for the HAWC2 simulation
         os.chdir(tags['[run_dir]'])
         # create the required directories
@@ -479,12 +487,12 @@ def run_local(cases, silent=False, check_log=True):
 
         if not silent:
             start = time()
-            progress = '%4i/%i  : %s%s' % (ii+1, nr, tags['[htc_dir]'], case)
-            print('*'*75)
+            progress = '%4i/%i  : %s%s' % (ii + 1, nr, tags['[htc_dir]'], case)
+            print('*' * 75)
             print(progress)
 
         # and launch the HAWC2 simulation
-        p = sproc.Popen(cmd,stdout=sproc.PIPE,stderr=sproc.STDOUT,shell=True)
+        p = sproc.Popen(cmd, stdout=sproc.PIPE, stderr=sproc.STDOUT, shell=True)
 
         # p.wait() will lock the current shell until p is done
         # p.stdout.readlines() checks if there is any output, but also locks
@@ -497,20 +505,20 @@ def run_local(cases, silent=False, check_log=True):
 
         if not silent:
             # print(the simulation command line output
-            print(' ' + '-'*75)
+            print(' ' + '-' * 75)
             print(''.join(cases[case]['sim_STDOUT']))
-            print(' ' + '-'*75)
+            print(' ' + '-' * 75)
             # caclulation time
             stp = time() - start
-            stpmin = stp/60.
-            print('HAWC2 execution time: %8.2f sec (%8.2f min)' % (stp,stpmin))
+            stpmin = stp / 60.
+            print('HAWC2 execution time: %8.2f sec (%8.2f min)' % (stp, stpmin))
 
         # where there any errors in the output? If yes, abort
         for k in cases[case]['sim_STDOUT']:
             kstart = k[:14]
             if kstart in [' *** ERROR ***', 'forrtl: severe']:
                 cases[case]['[hawc2_sim_ok]'] = False
-                #raise UserWarning, 'Found error in HAWC2 STDOUT'
+                # raise UserWarning, 'Found error in HAWC2 STDOUT'
             else:
                 cases[case]['[hawc2_sim_ok]'] = True
 
@@ -529,7 +537,7 @@ def run_local(cases, silent=False, check_log=True):
                 print('log checks took %5.2f sec' % stop)
                 print('    found error: ', errors)
                 print(' exit correctly: ', exitok)
-                print('*'*75)
+                print('*' * 75)
                 print()
             # also save in cases
             if not errors and exitok:
@@ -546,29 +554,30 @@ def run_local(cases, silent=False, check_log=True):
         # but put in one level up, so in the logfiles folder directly
         errorlogs.ResultFile = sim_id + '_ErrorLog.csv'
         # use the model path of the last encoutered case in cases
-        errorlogs.PathToLogs = os.path.join(run_dir, log_dir)
+        errorlogs.PathToLogs = pjoin(run_dir, log_dir)
         errorlogs.save()
 
     # just in case, browse back the working path relevant for the python magic
     os.chdir(cwd)
     if not silent:
         print('\nHAWC2 has done all of its sequential magic!')
-        print('='*79)
+        print('=' * 79)
         print('')
 
     return cases
 
+
 def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
-                write_htc=True, runmethod='none', verbose=False,
-                copyback_turb=True, msg='', silent=False, check_log=True,
-                update_cases=False, ignore_non_unique=False,
-                run_only_new=False, windows_nr_cpus=2,
-                pbs_fname_appendix=True, short_job_names=True, qsub='',
-                update_model_data=True, maxcpu=1, pyenv='wetb_py3',
-                m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
-                postpro_node=False, exesingle=None, exechunks=None,
-                wine_arch='win32', wine_prefix='~/.wine32',
-                pyenv_cmd='source /home/python/miniconda3/bin/activate'):
+                   write_htc=True, runmethod='none', verbose=False,
+                   copyback_turb=True, msg='', silent=False, check_log=True,
+                   update_cases=False, ignore_non_unique=False,
+                   run_only_new=False, windows_nr_cpus=2,
+                   pbs_fname_appendix=True, short_job_names=True, qsub='',
+                   update_model_data=True, maxcpu=1, pyenv='wetb_py3',
+                   m=[3, 4, 6, 8, 9, 10, 12], postpro_node_zipchunks=True,
+                   postpro_node=False, exesingle=None, exechunks=None,
+                   wine_arch='win32', wine_prefix='~/.wine32',
+                   pyenv_cmd='source /home/python/miniconda3/bin/activate'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
     =====================================================================
@@ -655,7 +664,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     """
 
     post_dir = master.tags['[post_dir]']
-    fpath_post_base = os.path.join(post_dir, master.tags['[sim_id]'])
+    fpath_post_base = pjoin(post_dir, master.tags['[sim_id]'])
     # either take a currently existing cases dictionary, or create a new one
     if update_cases:
         try:
@@ -664,10 +673,10 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             FILE.close()
             print('updating cases for %s' % master.tags['[sim_id]'])
         except IOError:
-            print(79*'=')
+            print(79 * '=')
             print("failed to load cases dict for updating simd_id at:")
             print(fpath_post_base + '.pkl')
-            print(79*'=')
+            print(79 * '=')
             cases = {}
         # but only run the new cases
         cases_to_run = {}
@@ -686,11 +695,11 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 
     # ignore if the opt_tags is empty, will result in zero
     if len(opt_tags) > 0:
-        sim_total = len(combi_list)*len(opt_tags)
+        sim_total = len(combi_list) * len(opt_tags)
     else:
         sim_total = len(combi_list)
         # if no opt_tags specified, create an empty dummy tag
-        opt_tags = [dict({'__DUMMY_TAG__' : 0})]
+        opt_tags = [dict({'__DUMMY_TAG__': 0})]
     sim_nr = 0
 
     # make sure all the required directories are in place at run_dir
@@ -719,8 +728,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             # end variable tags
             # -----------------------------------------------------------
             if not silent:
-                print('htc progress: ' + format(sim_nr, '3.0f') + '/' + \
-                       format(sim_total, '3.0f'))
+                print('htc progress: ' + format(sim_nr, '3.0f') + '/' +
+                      format(sim_total, '3.0f'))
 
             if verbose:
                 print('===master.tags===\n', master.tags)
@@ -729,7 +738,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             # specific case
             htc = master.createcase(write_htc=write_htc)
             master.create_run_dir()
-            #htc=master.createcase_check(cases_repo,write_htc=write_htc)
+            # htc=master.createcase_check(cases_repo,write_htc=write_htc)
 
             # make sure the current cases is unique!
             if not ignore_non_unique:
@@ -776,25 +785,25 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
     # or quick checks on what each sim_id actually contains
     # sort the taglist for convienent reading/comparing
     tagfile = msg + '\n\n'
-    tagfile += '='*79 + '\n'
+    tagfile += '=' * 79 + '\n'
     tagfile += 'iter_dict\n'.rjust(30)
-    tagfile += '='*79 + '\n'
+    tagfile += '=' * 79 + '\n'
     iter_dict_list = sorted(iter(iter_dict.items()), key=itemgetter(0))
     for k in iter_dict_list:
         tagfile += str(k[0]).rjust(30) + ' : ' + str(k[1]).ljust(20) + '\n'
 
     tagfile += '\n'
-    tagfile += '='*79 + '\n'
+    tagfile += '=' * 79 + '\n'
     tagfile += 'opt_tags\n'.rjust(30)
-    tagfile += '='*79 + '\n'
+    tagfile += '=' * 79 + '\n'
     for k in opt_tags:
         tagfile += '\n'
-        tagfile += '-'*79 + '\n'
+        tagfile += '-' * 79 + '\n'
         tagfile += 'opt_tags set\n'.rjust(30)
-        tagfile += '-'*79 + '\n'
+        tagfile += '-' * 79 + '\n'
         opt_dict = sorted(iter(k.items()), key=itemgetter(0), reverse=False)
         for kk in opt_dict:
-            tagfile += str(kk[0]).rjust(30)+' : '+str(kk[1]).ljust(20) + '\n'
+            tagfile += str(kk[0]).rjust(30) + ' : ' + str(kk[1]).ljust(20) + '\n'
     if update_cases:
         mode = 'a'
     else:
@@ -808,17 +817,18 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            copyback_turb=copyback_turb, qsub=qsub,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
-           pyenv=pyenv, m=[3,4,6,8,9,10,12],
+           pyenv=pyenv, m=[3, 4, 6, 8, 9, 10, 12],
            postpro_node_zipchunks=postpro_node_zipchunks,
            postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
            wine_arch=wine_arch, wine_prefix=wine_prefix, pyenv_cmd=pyenv_cmd)
 
     return cases
 
+
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3', m=[3,4,6,8,9,10,12],
+           maxcpu=1, pyenv='wetb_py3', m=[3, 4, 6, 8, 9, 10, 12],
            postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
            exechunks=None, wine_arch='win32', wine_prefix='~/.wine32',
            pyenv_cmd='source /home/python/miniconda3/bin/activate'):
@@ -858,7 +868,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         local_shell_script(cases, sim_id)
     elif runmethod == 'windows-script':
         local_windows_script(cases, sim_id, nr_cpus=windows_nr_cpus)
-    elif runmethod in ['pbs','jess','gorm']:
+    elif runmethod in ['pbs', 'jess', 'gorm']:
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
@@ -874,7 +884,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         pbs.create()
     elif runmethod == 'local':
         cases = run_local(cases, silent=silent, check_log=check_log)
-    elif runmethod =='local-ram':
+    elif runmethod == 'local-ram':
         cases = run_local_ram(cases, check_log=check_log)
     elif runmethod == 'none':
         pass
@@ -882,6 +892,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         msg = 'unsupported runmethod, valid options: local, linux-script, ' \
               'windows-script, local-ram, none, pbs'
         raise ValueError(msg)
+
 
 def post_launch(cases, save_iter=False, silent=False, suffix=None,
                 path_errorlog=None):
@@ -954,7 +965,7 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
     tmp = list(cases.keys())[0]
     if not silent:
         print('checking logs, path (from a random item in cases):')
-        print(os.path.join(run_dir, log_dir))
+        print(pjoin(run_dir, log_dir))
 
     for k in sorted(cases.keys()):
         # a case could not have a result, but a log file might still exist
@@ -966,7 +977,7 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
         # file. If it is a directory, it will check all that is in the dir
         run_dir = cases[k]['[run_dir]']
         log_dir = cases[k]['[log_dir]']
-        errorlogs.PathToLogs = os.path.join(run_dir, log_dir, kk)
+        errorlogs.PathToLogs = pjoin(run_dir, log_dir, kk)
         try:
             errorlogs.check(save_iter=save_iter)
             if not silent:
@@ -994,30 +1005,31 @@ def post_launch(cases, save_iter=False, silent=False, suffix=None,
     except Exception as e:
         print('nr of OK cases: %i' % (len(cases) - len(cases_fail)))
         raise(e)
-    LOG.add(['display log check'.ljust(spacing) + 'found_error?'.ljust(15) + \
-            'exit_correctly?'])
+    LOG.add(['display log check'.ljust(spacing) + 'found_error?'.ljust(15) +
+             'exit_correctly?'])
     for k in errorlogs.MsgListLog2:
-        LOG.add([k.ljust(spacing)+str(errorlogs.MsgListLog2[k][0]).ljust(15)+\
-            str(errorlogs.MsgListLog2[k][1]) ])
+        LOG.add([k.ljust(spacing) + str(errorlogs.MsgListLog2[k][0]).ljust(15) +
+                 str(errorlogs.MsgListLog2[k][1])])
     # save the extended (.csv format) errorlog list?
     # but put in one level up, so in the logfiles folder directly
     errorlogs.ResultFile = sim_id + '_ErrorLog.csv'
     # save the log file analysis in the run_dir instead of the log_dir
     if path_errorlog is None:
-        errorlogs.PathToLogs = run_dir# + log_dir
+        errorlogs.PathToLogs = run_dir  # + log_dir
     else:
         errorlogs.PathToLogs = path_errorlog
     errorlogs.save(suffix=suffix)
 
     # save the error LOG list, this is redundant, since it already exists in
     # the general LOG file (but only as a print, not the python variable)
-    tmp = os.path.join(post_dir, sim_id + '_MsgListLog2')
+    tmp = pjoin(post_dir, sim_id + '_MsgListLog2')
     save_pickle(tmp, errorlogs.MsgListLog2)
 
     # save the list of failed cases
-    save_pickle(os.path.join(post_dir, sim_id + '_fail.pkl'), cases_fail)
+    save_pickle(pjoin(post_dir, sim_id + '_fail.pkl'), cases_fail)
 
     return cases_fail
+
 
 def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
     """
@@ -1031,16 +1043,17 @@ def copy_pbs_in_failedcases(cases_fail, path='pbs_in_fail', silent=True):
         pbs_in_fname = '%s.p' % (case['[case_id]'])
         run_dir = case['[run_dir]']
 
-        src = os.path.join(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
+        src = pjoin(run_dir, case['[pbs_in_dir]'], pbs_in_fname)
 
         pbs_in_dir_fail = case['[pbs_in_dir]'].replace('pbs_in', path)
-        dst = os.path.join(run_dir, pbs_in_dir_fail, pbs_in_fname)
+        dst = pjoin(run_dir, pbs_in_dir_fail, pbs_in_fname)
 
         if not silent:
             print(dst)
         if not os.path.exists(os.path.dirname(dst)):
             os.makedirs(os.path.dirname(dst))
         shutil.copy2(src, dst)
+
 
 def logcheck_case(errorlogs, cases, case, silent=False):
     """
@@ -1060,7 +1073,7 @@ def logcheck_case(errorlogs, cases, case, silent=False):
         caselog = case[:-4] + '.log'
     else:
         caselog = case + '.log'
-    errorlogs.PathToLogs = os.path.join(run_dir, log_dir, caselog)
+    errorlogs.PathToLogs = pjoin(run_dir, log_dir, caselog)
     errorlogs.check()
 
     # in case we find an error, abort or not?
@@ -1068,31 +1081,31 @@ def logcheck_case(errorlogs, cases, case, silent=False):
     exitcorrect = errorlogs.MsgListLog2[caselog][1]
     if errors:
         # print all error messages
-        #logs.MsgListLog : [ [case, line nr, error1, line nr, error2, ....], ]
+        # logs.MsgListLog : [ [case, line nr, error1, line nr, error2, ....], ]
         # difficult: MsgListLog is not a dict!!
-        #raise UserWarning, 'HAWC2 simulation has errors in logfile, abort!'
+        # raise UserWarning, 'HAWC2 simulation has errors in logfile, abort!'
         #warnings.warn('HAWC2 simulation has errors in logfile!')
         logging.warn('HAWC2 simulation has errors in logfile!')
     elif not exitcorrect:
-        #raise UserWarning, 'HAWC2 simulation did not ended correctly, abort!'
+        # raise UserWarning, 'HAWC2 simulation did not ended correctly, abort!'
         #warnings.warn('HAWC2 simulation did not ended correctly!')
         logging.warn('HAWC2 simulation did not ended correctly!')
 
     # no need to do that, aborts on failure anyway and OK log check will be
     # printed in run_local when also printing how long it took to check
-    #if not silent:
-        #print 'log checks ok'
-        #print '   found error: %s' % errorlogs.MsgListLog2[caselog][0]
-        #print 'exit correctly: %s' % errorlogs.MsgListLog2[caselog][1]
+    # if not silent:
+        # print 'log checks ok'
+        # print '   found error: %s' % errorlogs.MsgListLog2[caselog][0]
+        # print 'exit correctly: %s' % errorlogs.MsgListLog2[caselog][1]
 
     return errorlogs
 
-    ## save the extended (.csv format) errorlog list?
-    ## but put in one level up, so in the logfiles folder directly
+    # save the extended (.csv format) errorlog list?
+    # but put in one level up, so in the logfiles folder directly
     #errorlogs.ResultFile = sim_id + '_ErrorLog.csv'
-    ## use the model path of the last encoutered case in cases
+    # use the model path of the last encoutered case in cases
     #errorlogs.PathToLogs = run_dir + log_dir
-    #errorlogs.save()
+    # errorlogs.save()
 
 
 class Log(object):
@@ -1105,6 +1118,7 @@ class Log(object):
     Create the instance, add with .add('lines') (lines=list), save with
     .save(target), print(current log to screen with .printLog()
     """
+
     def __init__(self):
         self.log = []
         # option, should the lines added to the log be printed as well?
@@ -1231,7 +1245,7 @@ class HtcMaster(object):
         # create all the necessary directories
         for dirkey in dirkeys:
             if isinstance(self.tags[dirkey], str):
-                path = os.path.join(self.tags['[run_dir]'], self.tags[dirkey])
+                path = pjoin(self.tags['[run_dir]'], self.tags[dirkey])
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -1245,9 +1259,9 @@ class HtcMaster(object):
 
         # in case we are running local and the model dir is the server dir
         # we do not need to copy the data files, they are already on location
-        data_local = os.path.join(self.tags['[model_dir_local]'],
-                                  self.tags['[data_dir]'])
-        data_run = os.path.join(self.tags['[run_dir]'], self.tags['[data_dir]'])
+        data_local = pjoin(self.tags['[model_dir_local]'],
+                           self.tags['[data_dir]'])
+        data_run = pjoin(self.tags['[run_dir]'], self.tags['[data_dir]'])
         if data_local == data_run:
             return
 
@@ -1266,10 +1280,10 @@ class HtcMaster(object):
                              run_root + fname_target)
 
         # copy the master file into the htc/_master dir
-        src = os.path.join(self.tags['[master_htc_dir]'],
-                           self.tags['[master_htc_file]'])
+        src = pjoin(self.tags['[master_htc_dir]'],
+                    self.tags['[master_htc_file]'])
         # FIXME: htc_dir can contain the DLC folder name
-        dst = os.path.join(self.tags['[run_dir]'], 'htc', '_master')
+        dst = pjoin(self.tags['[run_dir]'], 'htc', '_master')
         if not os.path.exists(dst):
             os.makedirs(dst)
         shutil.copy2(src, dst)
@@ -1285,16 +1299,16 @@ class HtcMaster(object):
         for path in dirs:
             if not path:
                 continue
-            elif not os.path.exists(os.path.join(plocal, path)):
+            elif not os.path.exists(pjoin(plocal, path)):
                 continue
-            for root, dirs, files in os.walk(os.path.join(plocal, path)):
+            for root, dirs, files in os.walk(pjoin(plocal, path)):
                 for file_name in files:
-                    src = os.path.join(root, file_name)
+                    src = pjoin(root, file_name)
                     dst = os.path.abspath(root).replace(os.path.abspath(plocal),
-                                       os.path.abspath(prun))
+                                                        os.path.abspath(prun))
                     if not os.path.exists(dst):
                         os.makedirs(dst)
-                    dst = os.path.join(dst, file_name)
+                    dst = pjoin(dst, file_name)
                     shutil.copy2(src, dst)
 
         # and last copies: the files with generic input names
@@ -1308,8 +1322,8 @@ class HtcMaster(object):
             raise ValueError('[fname_source] and [fname_default_target] '
                              'need to have the same number of items')
         for i in range(len1):
-            src = os.path.join(plocal, self.tags['[fname_source]'][i])
-            dst = os.path.join(prun, self.tags['[fname_default_target]'][i])
+            src = pjoin(plocal, self.tags['[fname_source]'][i])
+            dst = pjoin(prun, self.tags['[fname_default_target]'][i])
             if not os.path.exists(os.path.dirname(dst)):
                 os.makedirs(os.path.dirname(dst))
             shutil.copy2(src, dst)
@@ -1336,7 +1350,7 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # create the zipfile object locally
-        fname = os.path.join(model_dir_local, self.tags['[model_zip]'])
+        fname = pjoin(model_dir_local, self.tags['[model_zip]'])
         zf = zipfile.ZipFile(fname, 'w')
 
         # empty folders, the'll hold the outputs
@@ -1366,12 +1380,12 @@ class HtcMaster(object):
                 meander_dir, mooring_dir, hydro_dir]
         for zipdir in dirs:
             if zipdir:
-                zf.write('.', os.path.join(zipdir, '.'), zipfile.ZIP_DEFLATED)
+                zf.write('.', pjoin(zipdir, '.'), zipfile.ZIP_DEFLATED)
         zf.write('.', 'htc/_master/.', zipfile.ZIP_DEFLATED)
 
         # if any, add files that should be added to the root of the zip file
         for file_name in self.tags['[zip_root_files]']:
-            src = os.path.join(model_dir_local, file_name)
+            src = pjoin(model_dir_local, file_name)
             zf.write(src, file_name, zipfile.ZIP_DEFLATED)
 
         if '[ESYSMooring_init_fname]' in self.tags:
@@ -1382,8 +1396,8 @@ class HtcMaster(object):
                          zipfile.ZIP_DEFLATED)
 
         # the master file
-        src = os.path.join(htcmaster_dir, htcmaster)
-        dst = os.path.join('htc', '_master', htcmaster)
+        src = pjoin(htcmaster_dir, htcmaster)
+        dst = pjoin('htc', '_master', htcmaster)
         zf.write(src, dst, zipfile.ZIP_DEFLATED)
 
         # manually add all that resides in control, mooring and hydro
@@ -1391,16 +1405,16 @@ class HtcMaster(object):
         for target_path in paths:
             if not target_path:
                 continue
-            path_src = os.path.join(model_dir_local, target_path)
+            path_src = pjoin(model_dir_local, target_path)
             for root, dirs, files in os.walk(path_src):
                 for file_name in files:
-                    #print 'adding', file_name
-                    src = os.path.join(root, file_name)
+                    # print 'adding', file_name
+                    src = pjoin(root, file_name)
                     # the zip file only contains the relative paths
                     rel_dst = root.replace(os.path.abspath(model_dir_local), '')
                     if os.path.isabs(rel_dst):
                         rel_dst = rel_dst[1:]
-                    rel_dst = os.path.join(rel_dst, file_name)
+                    rel_dst = pjoin(rel_dst, file_name)
                     zf.write(src, rel_dst, zipfile.ZIP_DEFLATED)
 
         # and last copies: the files with generic input names
@@ -1414,7 +1428,7 @@ class HtcMaster(object):
             raise ValueError('[fname_source] and [fname_default_target] '
                              'need to have the same number of items')
         for i in range(len1):
-            src = os.path.join(model_dir_local, self.tags['[fname_source]'][i])
+            src = pjoin(model_dir_local, self.tags['[fname_source]'][i])
             # the zip file only contains the relative paths
             rel_dst = self.tags['[fname_default_target]'][i]
             # we can not have an absolute path here, make sure it isn't
@@ -1427,16 +1441,16 @@ class HtcMaster(object):
 
         # ---------------------------------------------------------------------
         # copy zip file to the server, this will be used on the nodes
-        src = os.path.join(model_dir_local, self.tags['[model_zip]'])
-        dst = os.path.join(model_dir_server, self.tags['[model_zip]'])
+        src = pjoin(model_dir_local, self.tags['[model_zip]'])
+        dst = pjoin(model_dir_server, self.tags['[model_zip]'])
 
         # in case we are running local and the model dir is the server dir
         # we do not need to copy the zip file, it is already on location
         if not src == dst:
             shutil.copy2(src, dst)
 
-        ## copy to zip data file to sim_id htc folder on the server dir
-        ## so we now have exactly all data to relaunch any htc file later
+        # copy to zip data file to sim_id htc folder on the server dir
+        # so we now have exactly all data to relaunch any htc file later
         #dst  = model_dir_server + self.tags['[htc_dir]']
         #dst += self.tags['[model_zip]']
         #shutil.copy2(src, dst)
@@ -1454,15 +1468,15 @@ class HtcMaster(object):
         # format for the x values in the htc file
         ff = ' 1.03f'
         for zz in range(nr):
-            it_nosweep = '[x'+str(zz+1)+'-nosweep]'
-            item = '[x'+str(zz+1)+']'
-            z = self.tags['[z'+str(zz+1)+']']
+            it_nosweep = '[x' + str(zz + 1) + '-nosweep]'
+            item = '[x' + str(zz + 1) + ']'
+            z = self.tags['[z' + str(zz + 1) + ']']
             if z >= z0:
                 curve = eval(self.tags['[sweep_curve_def]'])
                 # new swept position = original + sweep curve
-                self.tags[item]=format(self.tags[it_nosweep]+curve,ff)
+                self.tags[item] = format(self.tags[it_nosweep] + curve, ff)
             else:
-                self.tags[item]=format(self.tags[it_nosweep], ff)
+                self.tags[item] = format(self.tags[it_nosweep], ff)
 
     def _staircase_windramp(self, nr_steps, wind_step, ramptime, septime):
         """Create a stair case wind ramp
@@ -1508,11 +1522,11 @@ class HtcMaster(object):
 
         blade = self.tags['[blade_hawtopt]']
         # in the htc file, blade root =0 and not blade hub radius
-        blade[:,0] = blade[:,0] - blade[0,0]
+        blade[:, 0] = blade[:, 0] - blade[0, 0]
 
         if type(radius_new).__name__ == 'NoneType':
             # interpolate to the specified number of nodes
-            radius_new = np.linspace(blade[0,0], blade[-1,0], nr_nodes)
+            radius_new = np.linspace(blade[0, 0], blade[-1, 0], nr_nodes)
 
         # Data checks on radius_new
         elif not type(radius_new).__name__ == 'ndarray':
@@ -1528,14 +1542,14 @@ class HtcMaster(object):
         self.tags['[blade_nodes_z_positions]'] = radius_new
 
         # make sure that radius_hr is just slightly smaller than radius low res
-        radius_new[-1] = blade[-1,0]-0.00000001
-        twist_new = interpolate.griddata(blade[:,0], blade[:,2], radius_new)
+        radius_new[-1] = blade[-1, 0] - 0.00000001
+        twist_new = interpolate.griddata(blade[:, 0], blade[:, 2], radius_new)
         # blade_new is the htc node input part:
         # sec 1   x     y     z   twist;
-        blade_new = scipy.zeros((len(radius_new),4))
-        blade_new[:,2] = radius_new*self.tags['[zaxis_fact]']
+        blade_new = scipy.zeros((len(radius_new), 4))
+        blade_new[:, 2] = radius_new * self.tags['[zaxis_fact]']
         # twist angle remains the same in either case (standard/ojf rotation)
-        blade_new[:,3] = twist_new*-1.
+        blade_new[:, 3] = twist_new * -1.
 
         # set the correct sweep cruve, these values are used
         a = self.tags['[sweep_amp]']
@@ -1545,10 +1559,10 @@ class HtcMaster(object):
         tmp = 'nsec ' + str(nr_nodes) + ';'
         for k in range(nr_nodes):
             tmp += '\n'
-            i = k+1
-            z = blade_new[k,2]
-            y = blade_new[k,1]
-            twist = blade_new[k,3]
+            i = k + 1
+            z = blade_new[k, 2]
+            y = blade_new[k, 1]
+            twist = blade_new[k, 3]
             # x position, sweeping?
             if z >= z0:
                 x = eval(self.tags['[sweep_curve_def]'])
@@ -1566,23 +1580,23 @@ class HtcMaster(object):
         self.tags['[blade_htc_node_input]'] = tmp
 
         # and create the ae file
-        #5	Blade Radius [m] 	Chord[m]  T/C[%]  Set no. of pc file
-        #1 25 some comments
-        #0.000     0.100    21.000   1
+        # 5	Blade Radius [m] 	Chord[m]  T/C[%]  Set no. of pc file
+        # 1 25 some comments
+        # 0.000     0.100    21.000   1
         nr_points = blade.shape[0]
         tmp2 = '1  Blade Radius [m] Chord [m] T/C [%] pc file set nr\n'
         tmp2 += '1  %i auto generated by _all_in_one_blade_tag()' % nr_points
 
         for k in range(nr_points):
             tmp2 += '\n'
-            tmp2 += '%9.3f %9.3f %9.3f' % (blade[k,0], blade[k,1], blade[k,3])
-            tmp2 += ' %4i' % (k+1)
+            tmp2 += '%9.3f %9.3f %9.3f' % (blade[k, 0], blade[k, 1], blade[k, 3])
+            tmp2 += ' %4i' % (k + 1)
         # end with newline
         tmp2 += '\n'
 
         # TODO: finish writing file, implement proper handling of hawtopt path
         # and save the file
-        #if self.tags['aefile']
+        # if self.tags['aefile']
         #write_file(file_path, tmp2, 'w')
 
     def loadmaster(self):
@@ -1601,8 +1615,8 @@ class HtcMaster(object):
 
         # what is faster, load the file in one string and do replace()?
         # or the check error log approach?
-        fpath  = os.path.join(self.tags['[master_htc_dir]'],
-                              self.tags['[master_htc_file]'])
+        fpath = pjoin(self.tags['[master_htc_dir]'],
+                      self.tags['[master_htc_file]'])
         # load the file:
         if not self.silent:
             print('loading master: ' + fpath)
@@ -1627,8 +1641,8 @@ class HtcMaster(object):
             # safe for later
             self.master_str += line
 
-    def createcase_check(self, htc_dict_repo, \
-                            tmp_dir='/tmp/HawcPyTmp/', write_htc=True):
+    def createcase_check(self, htc_dict_repo,
+                         tmp_dir='/tmp/HawcPyTmp/', write_htc=True):
         """
         Check if a certain case name already exists in a specified htc_dict.
         If true, return a message and do not create the case. It can be that
@@ -1684,7 +1698,7 @@ class HtcMaster(object):
         # and save the the case htc file:
         cname = self.tags['[case_id]'] + '.htc'
 
-        htc_target = os.path.join(self.tags['[run_dir]'], self.tags['[htc_dir]'])
+        htc_target = pjoin(self.tags['[run_dir]'], self.tags['[htc_dir]'])
         if not self.silent:
             print('htc will be written to: ')
             print('  ' + htc_target)
@@ -1712,7 +1726,7 @@ class HtcMaster(object):
         # return as a dictionary, to be used in htc_dict
         # return a copy of the tags, otherwise you will not catch changes
         # made to the different tags in your sim series
-        return {cname : copy.copy(self.tags)}
+        return {cname: copy.copy(self.tags)}
 
     def write_htc(self, cname, htc, htc_target):
         # create subfolder if necesarry
@@ -1737,7 +1751,7 @@ class HtcMaster(object):
 
         if not fname:
             a, b = self.tags['[master_htc_dir]'], self.tags['[master_htc_file]']
-            fname  = os.path.join(a, b).replace('.htc', '.xlsx')
+            fname = pjoin(a, b).replace('.htc', '.xlsx')
         df = pd.DataFrame([], columns=self.tags_in_master.keys())
         df.to_excel(fname)
 
@@ -1754,7 +1768,7 @@ class PBS(object):
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 m=[3,4,6,8,9,10,12], exesingle=None,
+                 m=[3, 4, 6, 8, 9, 10, 12], exesingle=None,
                  postpro_node_zipchunks=True, postpro_node=False,
                  exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
@@ -1827,10 +1841,10 @@ class PBS(object):
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels
 
-        self.iterperstep = 8.0 # average nr of iterations per time step
+        self.iterperstep = 8.0  # average nr of iterations per time step
         # lead time: account for time losses when starting a simulation,
         # copying the turbulence data, generating the turbulence
-        self.tlead = 5.0*60.0
+        self.tlead = 5.0 * 60.0
 
         # use pbs job name as prefix in the pbs file name
         self.pbs_fname_appendix = pbs_fname_appendix
@@ -1852,7 +1866,7 @@ class PBS(object):
 
         # for the start number, take hour/minute combo
         d = datetime.datetime.today()
-        tmp = int( str(d.hour)+format(d.minute, '02.0f') )*100
+        tmp = int(str(d.hour) + format(d.minute, '02.0f')) * 100
         self.pbs_start_number = tmp
         self.qsub = qsub
 
@@ -1997,7 +2011,7 @@ class PBS(object):
             # related to the dynamically setting the walltime
             duration = float(tag_dict['[time_stop]'])
             dt = float(tag_dict['[dt_sim]'])
-            self.nr_time_steps.append(duration/dt)
+            self.nr_time_steps.append(duration / dt)
             self.duration.append(float(tag_dict['[duration]']))
             self.t0.append(float(tag_dict['[t0]']))
 
@@ -2038,7 +2052,7 @@ class PBS(object):
             # browse to the current scratch directory
             self.pbs += "\n\n"
             # mark start of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n'
+            self.pbs += '# ' + '=' * 78 + '\n'
             # evaluates to true if LAUNCH_PBS_MODE is NOT set
             self.pbs += '# single PBS mode: one case per PBS job\n'
             self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
@@ -2073,45 +2087,45 @@ class PBS(object):
 
             # and copy the htc file to the node
             self.pbs += "  cp -R $PBS_O_WORKDIR/" + self.htc_dir \
-                + case +" ./" + self.htc_dir + '\n'
+                + case + " ./" + self.htc_dir + '\n'
 
             # if there is a turbulence file data base dir, copy from there
             if self.TurbDb:
-                turb_dir_src = os.path.join('$PBS_O_WORKDIR', self.TurbDb)
+                turb_dir_src = pjoin('$PBS_O_WORKDIR', self.TurbDb)
             else:
-                turb_dir_src = os.path.join('$PBS_O_WORKDIR', self.TurbDirName)
+                turb_dir_src = pjoin('$PBS_O_WORKDIR', self.TurbDirName)
 
             # the original behaviour makes assumptions on the turbulence box
             # names: turb_base_name_xxx_u.bin, turb_base_name_xxx_v.bin
             if self.turb_base_name is not None:
-                turb_src = os.path.join(turb_dir_src, self.turb_base_name)
+                turb_src = pjoin(turb_dir_src, self.turb_base_name)
                 self.pbs += "  cp -R %s*.bin %s\n" % (turb_src, self.TurbDirName)
             # more generally, literally define the names of the boxes for u,v,w
             # components
             elif '[turb_fname_u]' in tag_dict:
-                turb_u = os.path.join(turb_dir_src, tag_dict['[turb_fname_u]'])
-                turb_v = os.path.join(turb_dir_src, tag_dict['[turb_fname_v]'])
-                turb_w = os.path.join(turb_dir_src, tag_dict['[turb_fname_w]'])
+                turb_u = pjoin(turb_dir_src, tag_dict['[turb_fname_u]'])
+                turb_v = pjoin(turb_dir_src, tag_dict['[turb_fname_v]'])
+                turb_w = pjoin(turb_dir_src, tag_dict['[turb_fname_w]'])
                 self.pbs += "  cp %s %s\n" % (turb_u, self.TurbDirName)
                 self.pbs += "  cp %s %s\n" % (turb_v, self.TurbDirName)
                 self.pbs += "  cp %s %s\n" % (turb_w, self.TurbDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.wakeDb and self.WakeDirName:
-                wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.wakeDb)
+                wake_dir_src = pjoin('$PBS_O_WORKDIR', self.wakeDb)
             elif self.WakeDirName:
-                wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.WakeDirName)
+                wake_dir_src = pjoin('$PBS_O_WORKDIR', self.WakeDirName)
             if self.wake_base_name is not None:
-                wake_src = os.path.join(wake_dir_src, self.wake_base_name)
+                wake_src = pjoin(wake_dir_src, self.wake_base_name)
                 self.pbs += "  cp -R %s*.bin %s\n" % (wake_src, self.WakeDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.meandDb and self.MeanderDirName:
-                meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.meandDb)
+                meand_dir_src = pjoin('$PBS_O_WORKDIR', self.meandDb)
             elif self.MeanderDirName:
-                meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.MeanderDirName)
+                meand_dir_src = pjoin('$PBS_O_WORKDIR', self.MeanderDirName)
             if self.meand_base_name is not None:
-                meand_src = os.path.join(meand_dir_src, self.meand_base_name)
+                meand_src = pjoin(meand_dir_src, self.meand_base_name)
                 self.pbs += "  cp -R %s*.bin %s\n" % (meand_src, self.MeanderDirName)
 
             # copy and rename input files with given versioned name to the
@@ -2124,11 +2138,11 @@ class PBS(object):
             # TODO: activate python env, calculate post-processing
 #            self.pbs += 'echo `python -c "import wetb; print(wetb.__version__)"`\n'
             # mark end of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n\n'
+            self.pbs += '# ' + '=' * 78 + '\n\n'
 
             # end of the file copying in PBS mode
             # mark start of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += '# ' + '-' * 78 + '\n'
             self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
             self.pbs += "else\n"
             # when in find+xargs mode, browse to the relevant CPU
@@ -2136,11 +2150,11 @@ class PBS(object):
             self.pbs += '  cd "$CPU_NR"\n'
             self.pbs += "fi\n"
             # mark end of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n\n'
+            self.pbs += '# ' + '-' * 78 + '\n\n'
 
             self.pbs += 'echo ""\n'
             # mark start of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n'
+            self.pbs += '# ' + '=' * 78 + '\n'
             self.pbs += '# single PBS mode: one case per PBS job\n'
             self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
@@ -2149,10 +2163,10 @@ class PBS(object):
             # the hawc2 execution commands via wine, in PBS mode fork and wait
             # METHOD MORE GENERAL
             # case contains the htc file name extension, self.case doesn't
-            fname_htc = "./" + os.path.join(self.htc_dir, case)
-            fname_log = os.path.join(self.logs_dir, self.case)
+            fname_htc = "./" + pjoin(self.htc_dir, case)
+            fname_log = pjoin(self.logs_dir, self.case)
             ext = '.err.out'
-            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            fname_pbs_out = pjoin(self.pbs_out_dir, self.case + ext)
             execstr = self.exesingle.format(wine=self.wine, case=case,
                                             fname_htc=fname_htc,
                                             hawc2_exe=hawc2_exe,
@@ -2180,17 +2194,17 @@ class PBS(object):
                     self.postprocessing()
                     self.pbs += '  source deactivate\n'
             # mark end of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n\n'
+            self.pbs += '# ' + '=' * 78 + '\n\n'
             # mark start of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += '# ' + '-' * 78 + '\n'
             self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
             self.pbs += "else\n"
             # numactl --physcpubind=$CPU_NR
 
-            fname_htc = "./" + os.path.join(self.htc_dir, case)
-            fname_log = os.path.join(self.logs_dir, self.case)
+            fname_htc = "./" + pjoin(self.htc_dir, case)
+            fname_log = pjoin(self.logs_dir, self.case)
             ext = '.err.out'
-            fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
+            fname_pbs_out = pjoin(self.pbs_out_dir, self.case + ext)
             execstr = self.exechunks.format(wine=self.wine, case=case,
                                             fname_htc=fname_htc,
                                             hawc2_exe=hawc2_exe,
@@ -2214,19 +2228,19 @@ class PBS(object):
                 self.postprocessing()
             self.pbs += "fi\n"
             # mark end of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += '# ' + '-' * 78 + '\n'
 
             #self.pbs += "wine get_mac_adresses" + '\n'
             # self.pbs += "cp -R ./*.mac  $PBS_O_WORKDIR/." + '\n'
             # -----------------------------------------------------------------
 
             # and we end when the cpu's per node are full
-            if int(count1/self.maxcpu) == 1:
+            if int(count1 / self.maxcpu) == 1:
                 # write the end part of the pbs script
                 self.ending(pbs_path)
                 ended = True
                 # print progress:
-                replace = ((i/self.maxcpu), (i_tot/self.maxcpu), self.walltime)
+                replace = ((i / self.maxcpu), (i_tot / self.maxcpu), self.walltime)
                 if not self.silent:
                     print('pbs script %3i/%i walltime=%s' % replace)
 
@@ -2241,7 +2255,7 @@ class PBS(object):
             # write the end part of the pbs script
             self.ending(pbs_path)
             # progress printing
-            replace = ( (i/self.maxcpu), (i_tot/self.maxcpu), self.walltime )
+            replace = ((i / self.maxcpu), (i_tot / self.maxcpu), self.walltime)
             if not self.silent:
                 print('pbs script %3i/%i walltime=%s, partially loaded' % replace)
 #            print 'pbs progress, script '+format(i/self.maxcpu,'2.0f')\
@@ -2290,7 +2304,7 @@ class PBS(object):
         # specify the number of nodes and cpu's per node required
         if self.maxcpu > 1:
             # Number of nodes and cpus per node (ppn)
-            lnodes = int(math.ceil(len(self.cases)/float(self.maxcpu)))
+            lnodes = int(math.ceil(len(self.cases) / float(self.maxcpu)))
             lnodes = 1
             self.pbs += "#PBS -l nodes=%i:ppn=%i\n" % (lnodes, self.maxcpu)
         else:
@@ -2303,7 +2317,7 @@ class PBS(object):
         # or otherwise for longer jobs: '#PBS -q workq'
         self.pbs += self.pbs_queue_command + '\n'
         # mark start of single PBS mode
-        self.pbs += '\n' + '# ' + '='*78 + '\n'
+        self.pbs += '\n' + '# ' + '=' * 78 + '\n'
 
         # ignore all the file copying when running in xargs mode:
         # when varibale LAUNCH_PBS_MODE is set, file copying is ignored
@@ -2333,7 +2347,7 @@ class PBS(object):
             ' %s/$USER/$PBS_JOBID\n' % (self.node_run_root)
         self.pbs += "fi\n"
         # mark end of single PBS mode
-        self.pbs += '# ' + '='*78 + '\n'
+        self.pbs += '# ' + '=' * 78 + '\n'
 
     def ending(self, pbs_path):
         """
@@ -2343,7 +2357,7 @@ class PBS(object):
         self.pbs += "\n\n"
         self.pbs += "### Epilogue\n"
         # mark start of single PBS mode
-        self.pbs += '# ' + "="*78 + "\n"
+        self.pbs += '# ' + "=" * 78 + "\n"
         # evaluates to true if LAUNCH_PBS_MODE is NOT set
         self.pbs += '# single PBS mode: one case per PBS job\n'
         self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
@@ -2352,7 +2366,7 @@ class PBS(object):
         self.pbs += "  wait\n"
         self.pbs += '  echo ""\n'
         self.pbs += '  echo "Copy back from scratch directory"\n'
-        for i in range(1, self.maxcpu+1, 1):
+        for i in range(1, self.maxcpu + 1, 1):
 
             # navigate to the cpu dir on the node
             # The batch system on Gorm allows more than one job per node.
@@ -2363,7 +2377,7 @@ class PBS(object):
             # for this mode is handled elsewhere
             if self.maxcpu == 1:
                 # mark start of find+xargs mode
-                self.pbs += '# ' + "-"*78 + "\n"
+                self.pbs += '# ' + "-" * 78 + "\n"
                 self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
                 self.pbs += 'else\n'
                 self.copyback_all_files("find+xargs", None)
@@ -2389,7 +2403,7 @@ class PBS(object):
         # from t0 until t0+duration we have the output penalty.
 
         # always a predifined lead time to account for startup losses
-        tmax = int(nr_time_steps*self.secperiter*self.iterperstep + self.tlead)
+        tmax = int(nr_time_steps * self.secperiter * self.iterperstep + self.tlead)
         if self.dyn_walltime:
             dt_seconds = datetime.datetime.fromtimestamp(tmax)
             self.walltime = dt_seconds.strftime('%H:%M:%S')
@@ -2420,21 +2434,21 @@ class PBS(object):
         """Copy back all the files from either scratch to run_dir (PBS mode),
         or from CPU sub-directory back to main directory in find+xargs mode.
         """
-        if mode=="find+xargs":
-            foper = "rsync -a --remove-source-files" # move files instead of copy
-            dst = os.path.join('..', self.sim_id, '')
+        if mode == "find+xargs":
+            foper = "rsync -a --remove-source-files"  # move files instead of copy
+            dst = pjoin('..', self.sim_id, '')
             # copy back to DB dir, and not the scratch dir root
             dst_db = "$PBS_O_WORKDIR/"
-            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
-                                                  '$PBS_JOBID', '$CPU_NR', '')
+            cd2model = "  cd %s\n" % pjoin(self.node_run_root, '$USER',
+                                           '$PBS_JOBID', '$CPU_NR', '')
             pbs_mode = False
         else:
             foper = "cp -R"
             dst = "$PBS_O_WORKDIR/"
             dst_db = dst
             pbs_mode = True
-            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
-                                                  '$PBS_JOBID', '%i' % cpu_nr, '')
+            cd2model = "  cd %s\n" % pjoin(self.node_run_root, '$USER',
+                                           '$PBS_JOBID', '%i' % cpu_nr, '')
 
         # navigate to the cpu dir on the node
         # The batch system on Gorm/Jess allows more than one job per node.
@@ -2446,46 +2460,46 @@ class PBS(object):
         # for pbs_mode, they are created in advance in find+xargs
         if pbs_mode:
             mk = '  mkdir -p'
-            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.results_dir))
-            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.logs_dir))
+            self.pbs += "%s %s\n" % (mk, pjoin(dst, self.results_dir))
+            self.pbs += "%s %s\n" % (mk, pjoin(dst, self.logs_dir))
             if self.animation_dir:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.animation_dir))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.animation_dir))
             if self.copyback_turb and self.TurbDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDb))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.TurbDb))
             elif self.copyback_turb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDirName))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.TurbDirName))
             if self.copyback_turb and self.wakeDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.wakeDb))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.wakeDb))
             elif self.WakeDirName and self.WakeDirName != self.TurbDirName:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.WakeDirName))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.WakeDirName))
             if self.copyback_turb and self.meandDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.meandDb))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.meandDb))
             elif self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.MeanderDirName))
+                self.pbs += "%s %s\n" % (mk, pjoin(dst, self.MeanderDirName))
 
         # and copy the results and log files frome the scratch to dst
-        res_dst = os.path.join(dst, self.results_dir, ".")
+        res_dst = pjoin(dst, self.results_dir, ".")
         self.pbs += "  %s %s. %s\n" % (foper, self.results_dir, res_dst)
-        log_dst = os.path.join(dst, self.logs_dir, ".")
+        log_dst = pjoin(dst, self.logs_dir, ".")
         self.pbs += "  %s %s. %s\n" % (foper, self.logs_dir, log_dst)
         # in zipchunks mode by default we also copy the time+std out/err to
         # an additional file that is in pbs_out for consistancy with the
         # pbs_mode approach
         if not pbs_mode:
-            pbs_dst = os.path.join(dst, self.pbs_out_dir, ".")
+            pbs_dst = pjoin(dst, self.pbs_out_dir, ".")
             self.pbs += "  %s %s. %s\n" % (foper, self.pbs_out_dir, pbs_dst)
         if self.animation_dir:
-            ani_dst = os.path.join(dst, self.animation_dir, ".")
+            ani_dst = pjoin(dst, self.animation_dir, ".")
             self.pbs += "  %s %s. %s\n" % (foper, self.animation_dir, ani_dst)
 
         if self.eigenfreq_dir:
             # just in case the eig dir has subdirs for the results, only
             # select the base path and cp -r will take care of the rest
             p1 = self.eigenfreq_dir.split('/')[0]
-            p2 = os.path.join(dst, p1, ".")
+            p2 = pjoin(dst, p1, ".")
             self.pbs += "  cp -R %s/. %s\n" % (p1, p2)
             # for eigen analysis with floater, modes are in root
-            eig_dir_sys = os.path.join(dst, self.eigenfreq_dir, 'system/', '.')
+            eig_dir_sys = pjoin(dst, self.eigenfreq_dir, 'system/', '.')
             self.pbs += '  mkdir -p %s\n' % eig_dir_sys
             self.pbs += "  cp -R mode* %s\n" % eig_dir_sys
             self.pbs += "  %s mode* %s\n" % (foper, eig_dir_sys)
@@ -2501,39 +2515,39 @@ class PBS(object):
         self.pbs += '  echo "COPY BACK TURB IF APPLICABLE"\n'
         if self.copyback_turb and self.TurbDb:
             self.pbs += '  cd %s\n' % self.TurbDirName
-            tmp = (os.path.join(dst_db, self.TurbDb, ''),)*2
+            tmp = (pjoin(dst_db, self.TurbDb, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb:
             self.pbs += '  cd %s\n' % self.TurbDirName
-            tmp = (os.path.join(dst, self.TurbDirName, ''),)*2
+            tmp = (pjoin(dst, self.TurbDirName, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
 
         if self.copyback_turb and self.wakeDb:
             self.pbs += '  cd %s\n' % self.WakeDirName
-            tmp = (os.path.join(dst_db, self.wakeDb, ''),)*2
+            tmp = (pjoin(dst_db, self.wakeDb, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb and self.WakeDirName:
             self.pbs += '  cd %s\n' % self.WakeDirName
-            tmp = (os.path.join(dst, self.WakeDirName, ''),)*2
+            tmp = (pjoin(dst, self.WakeDirName, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
 
         if self.copyback_turb and self.meandDb:
             self.pbs += '  cd %s\n' % self.MeanderDirName
-            tmp = (os.path.join(dst_db, self.meandDb, ''),)*2
+            tmp = (pjoin(dst_db, self.meandDb, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb and self.MeanderDirName:
             self.pbs += '  cd %s\n' % self.MeanderDirName
-            tmp = (os.path.join(dst, self.MeanderDirName, ''),)*2
+            tmp = (pjoin(dst, self.MeanderDirName, ''),) * 2
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
@@ -2546,7 +2560,7 @@ class PBS(object):
         if len(self.copyback_frename) == 0:
             self.copyback_frename = self.copyback_files
         for fname, fnew in zip(self.copyback_files, self.copyback_frename):
-            dst_fnew = os.path.join(dst, fnew)
+            dst_fnew = pjoin(dst, fnew)
             self.pbs += "  %s %s %s\n" % (foper, fname, dst_fnew)
         self.pbs += '  echo "END COPYBACK"\n'
         self.pbs += '  echo ""\n'
@@ -2557,22 +2571,22 @@ class PBS(object):
             self.pbs += '  echo "following files are on '
             self.pbs += 'node/cpu %i (find .):"\n' % cpu_nr
             self.pbs += '  find .\n'
-            self.pbs += '# ' + '='*78 + '\n'
+            self.pbs += '# ' + '=' * 78 + '\n'
         else:
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += '# ' + '-' * 78 + '\n'
 
     def checklogs(self):
         """
         """
         self.pbs += 'python -c "from wetb.prepost import statsdel; '
-        rpl = (os.path.join(self.logs_dir, self.case+'.log'))
+        rpl = (pjoin(self.logs_dir, self.case + '.log'))
         self.pbs += 'statsdel.logcheck(\'%s\')"\n' % rpl
 
     def postprocessing(self):
         """Run post-processing just after HAWC2 has ran
         """
         self.pbs += 'python -c "from wetb.prepost import statsdel; '
-        fsrc = os.path.join(self.results_dir, self.case)
+        fsrc = pjoin(self.results_dir, self.case)
         mstr = ','.join([str(k) for k in self.m])
         rpl = (fsrc, mstr, str(self.case_duration), '.csv')
         self.pbs += ('statsdel.calc(\'%s\', no_bins=46, m=[%s], '
@@ -2596,8 +2610,8 @@ class PBS(object):
             log_dir = case['[log_dir]']
             # FIXME: HAWC2 outputs result and logfile always in lower cases
             cname_ = cname.replace('.htc', '').lower()
-            f_log = os.path.join(run_dir, log_dir, cname_)
-            f_res = os.path.join(run_dir, res_dir, cname_)
+            f_log = pjoin(run_dir, log_dir, cname_)
+            f_res = pjoin(run_dir, res_dir, cname_)
             if not os.path.exists(f_log + '.log'):
                 cases_fail[cname] = copy.copy(cases[cname])
                 continue
@@ -2685,10 +2699,10 @@ class ErrorLogs(windIO.LogFile):
             # simulate one entry on FileList[0][2], give it the file name
             # and save the directory on in self.PathToLogs
             NrFiles = 1
-            FileList.append([ [],[],[os.path.basename(self.PathToLogs)] ])
+            FileList.append([[], [], [os.path.basename(self.PathToLogs)]])
             self.PathToLogs = os.path.dirname(self.PathToLogs)
             single_file = True
-        i=1
+        i = 1
 
         # walk trough the files present in the folder path
         for fname in FileList[0][2]:
@@ -2698,7 +2712,7 @@ class ErrorLogs(windIO.LogFile):
                     print('progress: ' + str(i) + '/' + str(NrFiles))
 
             # open the current log file
-            f_log = os.path.join(self.PathToLogs, fname)
+            f_log = pjoin(self.PathToLogs, fname)
 
             if self.cases is not None:
                 case = self.cases[fname.replace('.log', '.htc')]
@@ -2730,9 +2744,9 @@ class ErrorLogs(windIO.LogFile):
         # write csv file to disk, append to facilitate more logfile analysis
         if isinstance(suffix, str):
             tmp = self.ResultFile.replace('.csv', '_%s.csv' % suffix)
-            fname = os.path.join(self.PathToLogs, tmp)
+            fname = pjoin(self.PathToLogs, tmp)
         else:
-            fname = os.path.join(self.PathToLogs, str(self.ResultFile))
+            fname = pjoin(self.PathToLogs, str(self.ResultFile))
         if not self.silent:
             print('Error log analysis saved at:')
             print(fname)
@@ -2753,25 +2767,25 @@ class ModelData(object):
         """
         Indices to the respective parameters in the HAWC2 st data file
         """
-        r     = 0
-        m     = 1
-        x_cg  = 2
-        y_cg  = 3
-        ri_x  = 4
-        ri_y  = 5
-        x_sh  = 6
-        y_sh  = 7
-        E     = 8
-        G     = 9
-        Ixx   = 10
-        Iyy   = 11
-        I_p   = 12
-        k_x   = 13
-        k_y   = 14
-        A     = 15
+        r = 0
+        m = 1
+        x_cg = 2
+        y_cg = 3
+        ri_x = 4
+        ri_y = 5
+        x_sh = 6
+        y_sh = 7
+        E = 8
+        G = 9
+        Ixx = 10
+        Iyy = 11
+        I_p = 12
+        k_x = 13
+        k_y = 14
+        A = 15
         pitch = 16
-        x_e   = 17
-        y_e   = 18
+        x_e = 17
+        y_e = 18
 
     def __init__(self, verbose=False, silent=False):
         self.verbose = verbose
@@ -2780,23 +2794,23 @@ class ModelData(object):
         self.col_width = 13
         # formatting and precision
         self.float_hi = 9999.9999
-        self.float_lo =  0.01
+        self.float_lo = 0.01
         self.prec_float = ' 9.05f'
-        self.prec_exp =   ' 8.04e'
+        self.prec_exp = ' 8.04e'
         self.prec_loss = 0.01
 
-        #0 1  2    3    4    5    6    7   8 9 10   11
-        #r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x  I_y
-        #12    13  14  15  16  17  18
-        #I_p/K k_x k_y A pitch x_e y_e
+        # 0 1  2    3    4    5    6    7   8 9 10   11
+        # r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x  I_y
+        # 12    13  14  15  16  17  18
+        # I_p/K k_x k_y A pitch x_e y_e
         # 19 cols
         self.st_column_header_list = ['r', 'm', 'x_cg', 'y_cg', 'ri_x',
-            'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x',
-            'k_y', 'A', 'pitch', 'x_e', 'y_e']
+                                      'ri_y', 'x_sh', 'y_sh', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x',
+                                      'k_y', 'A', 'pitch', 'x_e', 'y_e']
 
-        self.st_column_header_list_latex = ['r','m','x_{cg}','y_{cg}','ri_x',
-            'ri_y', 'x_{sh}','y_{sh}','E', 'G', 'I_x', 'I_y', 'J', 'k_x',
-            'k_y', 'A', 'pitch', 'x_e', 'y_e']
+        self.st_column_header_list_latex = ['r', 'm', 'x_{cg}', 'y_{cg}', 'ri_x',
+                                            'ri_y', 'x_{sh}', 'y_{sh}', 'E', 'G', 'I_x', 'I_y', 'J', 'k_x',
+                                            'k_y', 'A', 'pitch', 'x_e', 'y_e']
 
         self.st_fpm_cols = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'pitch',
                             'x_e', 'y_e', 'E11', 'E12', 'E13', 'E14', 'E15',
@@ -2820,13 +2834,13 @@ class ModelData(object):
         the values, not empty places
         """
         # remove all tabs, new lines, etc? (\t, \r, \n)
-        line = line.replace('\t',' ').replace('\n','').replace('\r','')
+        line = line.replace('\t', ' ').replace('\n', '').replace('\r', '')
         # trailing and ending spaces
         line = line.strip()
         line = line.split(separator)
         values = []
         for k in range(len(line)):
-            if len(line[k]) > 0: #and k == item_nr:
+            if len(line[k]) > 0:  # and k == item_nr:
                 values.append(line[k])
                 # break
 
@@ -2855,7 +2869,7 @@ class ModelData(object):
 
         # read all the lines of the file into memory
         self.st_path, self.st_file = file_path, file_name
-        FILE = open(os.path.join(file_path, file_name))
+        FILE = open(pjoin(file_path, file_name))
         lines = FILE.readlines()
         FILE.close()
 
@@ -2873,7 +2887,7 @@ class ModelData(object):
                 parts = line.split(' ')
                 try:
                     for k in range(10):
-                        parts.remove(' ') # throws error when can't find
+                        parts.remove(' ')  # throws error when can't find
                 except ValueError:
                     pass
                 # we don't care what is on the nset line, just capture if
@@ -2911,7 +2925,7 @@ class ModelData(object):
                 nr_points = int(line_list[1])
                 st_dict[setid] = line
                 # prepare read data points
-                sub_set_arr = scipy.zeros((nr_points,19), dtype=np.float64)
+                sub_set_arr = scipy.zeros((nr_points, 19), dtype=np.float64)
                 # keep track of where we are on the data array, initialize
                 # to 0 for starters
                 point = 0
@@ -2921,35 +2935,37 @@ class ModelData(object):
                 # FIXME: how are we dealing with set comments now?
                 # subset comments are coming before the actual subset
                 # so we account them to one set later than we are now
-                #if subset_nr > 0 :
-                key = '%03i-%03i-a' % (set_nr, subset_nr+1)
+                # if subset_nr > 0 :
+                key = '%03i-%03i-a' % (set_nr, subset_nr + 1)
                 # in case it is not the first comment line
-                if key in st_dict: st_dict[key] += line
-                else: st_dict[key]  = line
-                ## otherwise we have the set comments
-                #else:
-                    #key = '%03i-%03i-a' % (set_nr, subset_nr)
-                    ## in case it is not the first comment line
-                    #if st_dict.has_key(key): st_dict[key] += line
-                    #else: st_dict[key]  = line
+                if key in st_dict:
+                    st_dict[key] += line
+                else:
+                    st_dict[key] = line
+                # otherwise we have the set comments
+                # else:
+                  #key = '%03i-%03i-a' % (set_nr, subset_nr)
+                  # in case it is not the first comment line
+                  #if st_dict.has_key(key): st_dict[key] += line
+                  # else: st_dict[key]  = line
 
             # in case we have the data points, make sure there are enough
             # data poinst present, raise an error if it doesn't
-            elif len(line_list)==19 and subset:
+            elif len(line_list) == 19 and subset:
                 # we can store it in the array
-                sub_set_arr[point,:] = line_list
+                sub_set_arr[point, :] = line_list
                 # on the last entry:
-                if point == nr_points-1:
+                if point == nr_points - 1:
                     # save to the dict:
-                    st_dict['%03i-%03i-d' % (set_nr, subset_nr)]= sub_set_arr
+                    st_dict['%03i-%03i-d' % (set_nr, subset_nr)] = sub_set_arr
                     # and indicate we're done subsetting, next we can have
                     # either set or subset comments
                     subset = False
                 point += 1
 
-            #else:
-                #msg='error in st format: don't know where to put current line'
-                #raise UserWarning, msg
+            # else:
+                # msg='error in st format: don't know where to put current line'
+                # raise UserWarning, msg
 
         self.st_dict = st_dict
         self.st_comments = st_comments
@@ -2976,17 +2992,17 @@ class ModelData(object):
             numfor = format(number, self.prec_exp)
 
         try:
-            loss = 100.0*abs(1 - (float(numfor)/number))
+            loss = 100.0 * abs(1 - (float(numfor) / number))
         except ZeroDivisionError:
             if abs(float(numfor)) > 0.00000001:
                 msg = 'precision loss, from %1.10f to %s' \
-                            % (number, numfor.strip())
+                    % (number, numfor.strip())
                 raise ValueError('precesion loss for new st file')
             else:
                 loss = 0
         if loss > self.prec_loss:
             msg = 'precision loss, from %1.10f to %s (%f pc)' \
-                        % (number, numfor.strip(), loss)
+                % (number, numfor.strip(), loss)
             raise ValueError(msg)
 
         return numfor
@@ -3020,7 +3036,7 @@ class ModelData(object):
                         # TODO: check what do we lose here?
                         # we are coming from a np.float64, as set in the array
                         # but than it will not work with the format()
-                        number = float(self.st_dict[key][m,n])
+                        number = float(self.st_dict[key][m, n])
                         numfor = self._format_nr(number)
                         content += numfor.rjust(self.col_width)
                     content += '\n'
@@ -3050,7 +3066,7 @@ class ModelData(object):
                    'EA [N]', 'GJ [\\frac{Nm^2}{rad}]']
 
         cols_p2 = ['r [m]', 'x_cg [m]', 'y_cg [m]', 'x_sh [m]', 'y_sh [m]',
-                'x_e [m]', 'y_e [m]', 'k_x [-]', 'k_y [-]', 'pitch [deg]']
+                   'x_e [m]', 'y_e [m]', 'k_x [-]', 'k_y [-]', 'pitch [deg]']
 
         if len(selection) < 1:
             for key in self.st_dict:
@@ -3058,13 +3074,13 @@ class ModelData(object):
                 if key[-1] == 'd':
                     selection.append([int(key[:3]), int(key[4:7])])
 
-        for i,j, caption in selection:
+        for i, j, caption in selection:
             # get the data
             try:
                 # set comment should be the name of the body
                 set_comment = self.st_comments['%03i-000-0' % (i)]
 #                subset_comment = self.st_comments['%03i-%03i-b' % (i,j)]
-                st_arr = self.st_dict['%03i-%03i-d' % (i,j)]
+                st_arr = self.st_dict['%03i-%03i-d' % (i, j)]
             except AttributeError:
                 msg = 'ModelData object md is not loaded properly'
                 raise AttributeError(msg)
@@ -3083,7 +3099,7 @@ class ModelData(object):
             tmp = []
             for k in cols_p1:
                 k1, k2 = k.split(' ')
-                tmp.append('$%s$ $%s$' % (k1,k2) )
+                tmp.append('$%s$ $%s$' % (k1, k2))
 #            tmp = [u'$%s$' % k for k in cols_p1]
             textable_p1 += ' & '.join(tmp)
             textable_p1 += '\\\\ \n'
@@ -3100,7 +3116,7 @@ class ModelData(object):
             tmp = []
             for k in cols_p2:
                 k1, k2 = k.split(' ')
-                tmp.append('$%s$ $%s$' % (k1,k2) )
+                tmp.append('$%s$ $%s$' % (k1, k2))
 #            tmp = [u'$%s$ $%s$' % (k1, k2) for k in cols_p2]
             # hack: spread the last element over two lines
 #            tmp[-1] = '$pitch$ $[deg]$'
@@ -3109,27 +3125,27 @@ class ModelData(object):
             textable_p2 += '\hline\n'
 
             for row in range(st_arr.shape[0]):
-                r    = st_arr[row, self.st_headers.r]
-                m    = st_arr[row,self.st_headers.m]
-                x_cg = st_arr[row,self.st_headers.x_cg]
-                y_cg = st_arr[row,self.st_headers.y_cg]
-                ri_x = st_arr[row,self.st_headers.ri_x]
-                ri_y = st_arr[row,self.st_headers.ri_y]
-                x_sh = st_arr[row,self.st_headers.x_sh]
-                y_sh = st_arr[row,self.st_headers.y_sh]
-                E    = st_arr[row,self.st_headers.E]
-                G    = st_arr[row,self.st_headers.G]
-                Ixx  = st_arr[row,self.st_headers.Ixx]
-                Iyy  = st_arr[row,self.st_headers.Iyy]
-                I_p  = st_arr[row,self.st_headers.I_p]
-                k_x  = st_arr[row,self.st_headers.k_x]
-                k_y  = st_arr[row,self.st_headers.k_y]
-                A    = st_arr[row,self.st_headers.A]
-                pitch = st_arr[row,self.st_headers.pitch]
-                x_e   = st_arr[row,self.st_headers.x_e]
-                y_e   = st_arr[row,self.st_headers.y_e]
+                r = st_arr[row, self.st_headers.r]
+                m = st_arr[row, self.st_headers.m]
+                x_cg = st_arr[row, self.st_headers.x_cg]
+                y_cg = st_arr[row, self.st_headers.y_cg]
+                ri_x = st_arr[row, self.st_headers.ri_x]
+                ri_y = st_arr[row, self.st_headers.ri_y]
+                x_sh = st_arr[row, self.st_headers.x_sh]
+                y_sh = st_arr[row, self.st_headers.y_sh]
+                E = st_arr[row, self.st_headers.E]
+                G = st_arr[row, self.st_headers.G]
+                Ixx = st_arr[row, self.st_headers.Ixx]
+                Iyy = st_arr[row, self.st_headers.Iyy]
+                I_p = st_arr[row, self.st_headers.I_p]
+                k_x = st_arr[row, self.st_headers.k_x]
+                k_y = st_arr[row, self.st_headers.k_y]
+                A = st_arr[row, self.st_headers.A]
+                pitch = st_arr[row, self.st_headers.pitch]
+                x_e = st_arr[row, self.st_headers.x_e]
+                y_e = st_arr[row, self.st_headers.y_e]
                 # WARNING: same order as the labels defined in variable "cols"!
-                p1 = [r, m, m*ri_x*ri_x, m*ri_y*ri_y, E*Ixx, E*Iyy, E*A,I_p*G]
+                p1 = [r, m, m * ri_x * ri_x, m * ri_y * ri_y, E * Ixx, E * Iyy, E * A, I_p * G]
                 p2 = [r, x_cg, y_cg, x_sh, y_sh, x_e, y_e, k_x, k_y, pitch]
 
                 textable_p1 += " & ".join([self._format_nr(k) for k in p1])
@@ -3230,7 +3246,7 @@ class Cases(object):
     # TODO: add a method that can reload a certain case_dict, you change
     # some parameters for each case (or some) and than launch again
 
-    #def __init__(self, post_dir, sim_id, resdir=False):
+    # def __init__(self, post_dir, sim_id, resdir=False):
     def __init__(self, *args, **kwargs):
         """
         Either load the cases dictionary if post_dir and sim_id is given,
@@ -3300,7 +3316,7 @@ class Cases(object):
 #        except IOError:
 #            pass
 
-        #return self.cases
+        # return self.cases
 
     def select(self, search_keyval=False, search_key=False):
         """
@@ -3394,8 +3410,8 @@ class Cases(object):
 
     def load_iterations(self, case):
 
-        fp = os.path.join(case['[run_dir]'], case['[iter_dir]'],
-                          case['[case_id]'])
+        fp = pjoin(case['[run_dir]'], case['[iter_dir]'],
+                   case['[case_id]'])
         return np.loadtxt(fp + '.iter')
 
     # TODO: HAWC2 result file reading should be moved to Simulations
@@ -3420,13 +3436,13 @@ class Cases(object):
 
         """
 
-        respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
+        respath = pjoin(case['[run_dir]'], case['[res_dir]'])
         resfile = case['[case_id]']
         self.res = windIO.LoadResults(respath, resfile.lower())
         if not _slice:
             _slice = np.r_[0:len(self.res.sig)]
-        self.time = self.res.sig[_slice,0]
-        self.sig = self.res.sig[_slice,:]
+        self.time = self.res.sig[_slice, 0]
+        self.sig = self.res.sig[_slice, :]
         self.case = case
 
         return self.res
@@ -3435,7 +3451,7 @@ class Cases(object):
         """
         Load the structural analysis result files
         """
-        fpath = os.path.join(case['[run_dir]'], case['[eigenfreq_dir]'])
+        fpath = pjoin(case['[run_dir]'], case['[eigenfreq_dir]'])
 
         # BEAM OUTPUT
         fname = '%s_beam_output.txt' % case['[case_id]']
@@ -3449,7 +3465,7 @@ class Cases(object):
         fname = '%s_eigen_body.txt' % case['[case_id]']
         try:
             eigen_body, rs2 = windIO.ReadEigenBody(fpath, fname, debug=False,
-                                              nrmodes=nrmodes)
+                                                   nrmodes=nrmodes)
         except Exception as e:
             eigen_body = None
             print('failed to load eigen_body')
@@ -3475,7 +3491,7 @@ class Cases(object):
         """Load error log analysis
         """
 
-        fpath = os.path.join(self.post_dir, self.sim_id + '_ErrorLogs.h5')
+        fpath = pjoin(self.post_dir, self.sim_id + '_ErrorLogs.h5')
         try:
             df_err = pd.read_hdf(fpath, 'table')
         except FileNotFoundError:
@@ -3494,7 +3510,7 @@ class Cases(object):
             if post_dir:
                 self.cases[case]['[post_dir]'] = post_dir
 
-        #return cases
+        # return cases
 
     def _get_cases_dict(self, post_dir, sim_id):
         """
@@ -3509,7 +3525,7 @@ class Cases(object):
             self.cases_fail
 
         """
-        self.cases = load_pickled_file(os.path.join(post_dir, sim_id + '.pkl'))
+        self.cases = load_pickled_file(pjoin(post_dir, sim_id + '.pkl'))
         self.cases_fail = {}
 
         if self.rem_failed:
@@ -3537,7 +3553,7 @@ class Cases(object):
         # only unique tags
         tag_set = set(tag_set)
         # and build the df_dict with all the tags
-        df_dict = {tag:[] for tag in tag_set}
+        df_dict = {tag: [] for tag in tag_set}
 
         for cname, tags in self.cases.items():
             current_tags = set(tags.keys())
@@ -3624,9 +3640,9 @@ class Cases(object):
         adddict = dict()
         remdict = dict()
         print()
-        print('*'*80)
+        print('*' * 80)
         print('comparing %i cases' % len(cases))
-        print('*'*80)
+        print('*' * 80)
         print()
         # compare each case with the refcase and see if there are any diffs
         for case in sorted(cases.keys()):
@@ -3635,11 +3651,11 @@ class Cases(object):
             adddict[case] = dd.added()
             remdict[case] = dd.removed()
             print('')
-            print('='*80)
+            print('=' * 80)
             print(case)
-            print('='*80)
+            print('=' * 80)
             for tag in sorted(diffdict[case]):
-                print(tag.rjust(20),':', cases[case][tag])
+                print(tag.rjust(20), ':', cases[case][tag])
 
         return diffdict, adddict, remdict
 
@@ -3653,18 +3669,18 @@ class Cases(object):
         # select all the y deflection channels
         db = misc.DictDB(self.res.ch_dict)
 
-        db.search({'sensortype' : 'state pos', 'component' : 'z'})
+        db.search({'sensortype': 'state pos', 'component': 'z'})
         # sort the keys and save the mean values to an array/list
         chiz, zvals = [], []
         for key in sorted(db.dict_sel.keys()):
-            zvals.append(-self.sig[:,db.dict_sel[key]['chi']].mean())
+            zvals.append(-self.sig[:, db.dict_sel[key]['chi']].mean())
             chiz.append(db.dict_sel[key]['chi'])
 
-        db.search({'sensortype' : 'state pos', 'component' : 'y'})
+        db.search({'sensortype': 'state pos', 'component': 'y'})
         # sort the keys and save the mean values to an array/list
         chiy, yvals = [], []
         for key in sorted(db.dict_sel.keys()):
-            yvals.append(self.sig[:,db.dict_sel[key]['chi']].mean())
+            yvals.append(self.sig[:, db.dict_sel[key]['chi']].mean())
             chiy.append(db.dict_sel[key]['chi'])
 
         return np.array(zvals), np.array(yvals)
@@ -3717,7 +3733,7 @@ class Cases(object):
         # missing files: those present in df_cases but not in the error log
         # this means file_name is a nan or empty
         # logids_missing2 = set(df_cases['logid']) - set(df_err['file_name'])
-        logids_missing = df[df['file_name'].isnull() | (df['file_name']=='')]
+        logids_missing = df[df['file_name'].isnull() | (df['file_name'] == '')]
         for case_id in logids_missing['[case_id]']:
             cname = case_id + '.htc'
             self.cases_fail[cname] = copy.copy(self.cases[cname])
@@ -3726,7 +3742,7 @@ class Cases(object):
             self.remove_failed()
 
         if save:
-            save_pickle(os.path.join(self.post_dir, self.sim_id + '_fail.pkl'),
+            save_pickle(pjoin(self.post_dir, self.sim_id + '_fail.pkl'),
                         self.cases_fail)
 
     def remove_failed(self):
@@ -3749,7 +3765,7 @@ class Cases(object):
 
     def load_failed(self, sim_id):
 
-        fname = os.path.join(self.post_dir, sim_id + '_fail.pkl')
+        fname = pjoin(self.post_dir, sim_id + '_fail.pkl')
         FILE = open(fname, 'rb')
         self.cases_fail = pickle.load(FILE)
         FILE.close()
@@ -3782,7 +3798,7 @@ class Cases(object):
         """
         post_dir = kwargs.get('post_dir', self.post_dir)
         sim_id = kwargs.get('sim_id', self.sim_id)
-        fpath = os.path.join(post_dir, sim_id)
+        fpath = pjoin(post_dir, sim_id)
         Leq_df = kwargs.get('leq', False)
         columns = kwargs.get('columns', None)
 
@@ -3812,7 +3828,7 @@ class Cases(object):
         return stats_df, Leq_df, AEP_df
 
     def statistics(self, new_sim_id=False, silent=False, ch_sel=None,
-                   tags=['[seed]','[windspeed]'], calc_mech_power=False,
+                   tags=['[seed]', '[windspeed]'], calc_mech_power=False,
                    save=True, m=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46,
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=None, saveinterval=1000,
@@ -3933,7 +3949,7 @@ class Cases(object):
 
         if not silent:
             nrcases = len(self.cases)
-            print('='*79)
+            print('=' * 79)
             print('statistics for %s, nr cases: %i' % (sim_id, nrcases))
 
         df_dict = None
@@ -3946,7 +3962,7 @@ class Cases(object):
             # build the basic df_dict if not defined
             if df_dict is None:
                 # the dictionary that will be used to create a pandas dataframe
-                df_dict = { tag:[] for tag in tags }
+                df_dict = {tag: [] for tag in tags}
                 df_dict[tag_chan] = []
                 # add more columns that will help with IDing the channel
                 df_dict['channel_name'] = []
@@ -3956,7 +3972,7 @@ class Cases(object):
                 add_stats = True
 
             if not silent:
-                pc = '%6.2f' % (float(ii)*100.0/float(nrcases))
+                pc = '%6.2f' % (float(ii) * 100.0 / float(nrcases))
                 pc += ' %'
                 print('stats progress: %4i/%i %s | %s' % (ii, nrcases, pc, cname))
 
@@ -3968,11 +3984,11 @@ class Cases(object):
             ch_dict_new = {}
             # this is really messy, now we are also in parallal using the
             # channel DataFrame structure
-            ch_df_new = {col:[] for col in self.res.cols}
+            ch_df_new = {col: [] for col in self.res.cols}
             ch_df_new['ch_name'] = []
             # calculate the statistics values
 #            stats = self.res.calc_stats(self.sig, i0=i0, i1=i1)
-            i_new_chans = self.sig.shape[1] # self.Nch
+            i_new_chans = self.sig.shape[1]  # self.Nch
             sig_size = self.res.N  # len(self.sig[i0:i1,0])
             new_sigs = np.ndarray((sig_size, 0))
 
@@ -3986,13 +4002,13 @@ class Cases(object):
                     expr = expr.replace(chan, chan[1:-1])
                     expr = expr.replace(chan[1:-1], template.format(chan[1:-1]))
 
-                sig_add = np.ndarray((len(self.sig[:,0]), 1))
-                sig_add[:,0] = eval(expr)
+                sig_add = np.ndarray((len(self.sig[:, 0]), 1))
+                sig_add[:, 0] = eval(expr)
 
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                   'ch_name':name})
+                ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                     'ch_name': name})
                 i_new_chans += 1
                 new_sigs = np.append(new_sigs, sig_add, axis=1)
 
@@ -4003,13 +4019,13 @@ class Cases(object):
                 factor = add_sensor['factor']
                 operator = add_sensor['operator']
 
-                p1 = self.sig[:,chi1]
-                p2 = self.sig[:,chi2]
+                p1 = self.sig[:, chi1]
+                p2 = self.sig[:, chi2]
                 sig_add = np.ndarray((len(p1), 1))
                 if operator == '*':
-                    sig_add[:,0] = p1*p2*factor
+                    sig_add[:, 0] = p1 * p2 * factor
                 elif operator == '/':
-                    sig_add[:,0] = factor*p1/p2
+                    sig_add[:, 0] = factor * p1 / p2
                 else:
                     raise ValueError('Operator needs to be either * or /')
 #                add_stats = self.res.calc_stats(sig_add)
@@ -4017,8 +4033,8 @@ class Cases(object):
                 # add a new channel description for the mechanical power
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                   'ch_name':name})
+                ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                     'ch_name': name})
                 i_new_chans += 1
                 new_sigs = np.append(new_sigs, sig_add, axis=1)
 #                # and append to all the statistics types
@@ -4036,7 +4052,7 @@ class Cases(object):
                     # if the channel does not exist, zet to zero
                     try:
                         chi = self.res.ch_dict[ch]['chi']
-                        sig_res[:,i] = self.sig[:,chi]
+                        sig_res[:, i] = self.sig[:, chi]
                         no_channel = False
                     except KeyError:
                         no_channel = True
@@ -4049,36 +4065,36 @@ class Cases(object):
                     print('    missing channel, no resultant for: %s, %s' % rpl)
                     continue
                 inc.append(j)
-                sig_resultants[:,j] = np.sqrt(sig_res*sig_res).sum(axis=1)
+                sig_resultants[:, j] = np.sqrt(sig_res * sig_res).sum(axis=1)
 #                resultant = np.sqrt(sig_resultants[:,j].reshape(self.res.N, 1))
 #                add_stats = self.res.calc_stats(resultant)
 #                add_stats_i = stats['max'].shape[0]
                 # add a new channel description for this resultant
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                   'ch_name':name})
+                ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                     'ch_name': name})
                 i_new_chans += 1
                 # and append to all the statistics types
 #                for key, stats_arr in stats.iteritems():
 #                    stats[key] = np.append(stats_arr, add_stats[key])
             if len(chs_resultant) > 0:
                 # but only take the channels that where not missing
-                new_sigs = np.append(new_sigs, sig_resultants[:,inc], axis=1)
+                new_sigs = np.append(new_sigs, sig_resultants[:, inc], axis=1)
 
             # calculate mechanical power first before deriving statistics
             # from it
             if calc_mech_power:
                 name = 'stats-shaft-power'
                 sig_pmech = np.ndarray((sig_size, 1))
-                sig_pmech[:,0] = self.shaft_power()
+                sig_pmech[:, 0] = self.shaft_power()
 #                P_mech_stats = self.res.calc_stats(sig_pmech)
 #                mech_stats_i = stats['max'].shape[0]
                 # add a new channel description for the mechanical power
                 ch_dict_new[name] = {}
                 ch_dict_new[name]['chi'] = i_new_chans
-                ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                   'ch_name':name})
+                ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                     'ch_name': name})
                 i_new_chans += 1
                 new_sigs = np.append(new_sigs, sig_pmech, axis=1)
 
@@ -4089,14 +4105,14 @@ class Cases(object):
                         chiwind = self.res.ch_dict[self.find_windchan_hub()]['chi']
                     else:
                         chiwind = self.res.ch_dict[ch_wind]['chi']
-                    wind = self.res.sig[:,chiwind]
+                    wind = self.res.sig[:, chiwind]
                     cp = np.ndarray((sig_size, 1))
-                    cp[:,0] = self.cp(-sig_pmech[:,0], wind, A)
+                    cp[:, 0] = self.cp(-sig_pmech[:, 0], wind, A)
                     # add a new channel description for the mechanical power
                     ch_dict_new[name] = {}
                     ch_dict_new[name]['chi'] = i_new_chans
-                    ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                       'ch_name':name})
+                    ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                         'ch_name': name})
                     i_new_chans += 1
                     new_sigs = np.append(new_sigs, cp, axis=1)
 
@@ -4106,16 +4122,16 @@ class Cases(object):
                         except:
                             nn_shaft = 4
 
-                        chan_t = 'shaft_nonrotate-shaft-node-%3.3i-forcevec-z'%nn_shaft
+                        chan_t = 'shaft_nonrotate-shaft-node-%3.3i-forcevec-z' % nn_shaft
                         i = self.res.ch_dict[chan_t]['chi']
-                        thrust = self.res.sig[:,i]
+                        thrust = self.res.sig[:, i]
                         name = 'stats-ct'
                         ct = np.ndarray((sig_size, 1))
-                        ct[:,0] = self.ct(thrust, wind, A)
+                        ct[:, 0] = self.ct(thrust, wind, A)
                         ch_dict_new[name] = {}
                         ch_dict_new[name]['chi'] = i_new_chans
-                        ch_df_new = add_df_row(ch_df_new, **{'chi':i_new_chans,
-                                                           'ch_name':name})
+                        ch_df_new = add_df_row(ch_df_new, **{'chi': i_new_chans,
+                                                             'ch_name': name})
                         i_new_chans += 1
                         new_sigs = np.append(new_sigs, ct, axis=1)
                     except KeyError:
@@ -4134,9 +4150,9 @@ class Cases(object):
                 isort = np.array(chis).argsort()
                 keys = np.array(keys)[isort].tolist()
                 df_new_sigs = pd.DataFrame(new_sigs, columns=keys)
-                respath = os.path.join(case['[run_dir]'], case['[res_dir]'])
+                respath = pjoin(case['[run_dir]'], case['[res_dir]'])
                 resfile = case['[case_id]']
-                fname = os.path.join(respath, resfile + '_postres.csv')
+                fname = pjoin(respath, resfile + '_postres.csv')
                 print('    saving post-processed res: %s...' % fname, end='')
                 df_new_sigs.to_csv(fname, sep='\t')
                 print('done!')
@@ -4174,7 +4190,7 @@ class Cases(object):
 
             for ch_id in ch_fatigue:
                 chi = ch_dict[ch_id]['chi']
-                signal = self.sig[:,chi]
+                signal = self.sig[:, chi]
                 if neq is None:
                     neq_ = float(case['[duration]'])
                 else:
@@ -4236,9 +4252,9 @@ class Cases(object):
 
                 # the auxiliry columns
                 try:
-                    name = self.res.ch_details[chi,0]
-                    unit = self.res.ch_details[chi,1]
-                    desc = self.res.ch_details[chi,2]
+                    name = self.res.ch_details[chi, 0]
+                    unit = self.res.ch_details[chi, 1]
+                    desc = self.res.ch_details[chi, 2]
                 # the new channels from new_sigs are not in here
                 except (IndexError, AttributeError) as e:
                     name = ch_id
@@ -4270,19 +4286,19 @@ class Cases(object):
                         df_dict[tag].append(np.nan)
             # when dealing with a lot of cases, save the stats data at
             # intermediate points to avoid memory issues
-            if math.fmod(ii+1, saveinterval) == 0.0:
+            if math.fmod(ii + 1, saveinterval) == 0.0:
                 df_dict2 = self._df_dict_check_datatypes(df_dict)
                 # convert, save/update
                 if isinstance(suffix, str):
                     ext = suffix
                 elif suffix is True:
-                    ext = '_%06i' % (ii+1)
+                    ext = '_%06i' % (ii + 1)
                 else:
                     ext = ''
 #                dfs = self._df_dict_save(df_dict2, post_dir, sim_id, save=save,
 #                                         update=update, csv=csv, suffix=ext)
                 # TODO: test this first
-                fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
+                fname = pjoin(post_dir, sim_id + '_statistics' + ext)
                 dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
                                    csv=csv, xlsx=xlsx, check_datatypes=False,
                                    complib=self.complib)
@@ -4305,7 +4321,7 @@ class Cases(object):
 #            dfs = self._df_dict_save(df_dict2, post_dir, sim_id, save=save,
 #                                     update=update, csv=csv, suffix=ext)
             # TODO: test this first
-            fname = os.path.join(post_dir, sim_id + '_statistics' + ext)
+            fname = pjoin(post_dir, sim_id + '_statistics' + ext)
             dfs = misc.dict2df(df_dict2, fname, save=save, update=update,
                                csv=csv, xlsx=xlsx, check_datatypes=False,
                                complib=self.complib)
@@ -4328,9 +4344,9 @@ class Cases(object):
         DEPRICATED, use misc.dict2df instead
         """
         if isinstance(suffix, str):
-            fpath = os.path.join(post_dir, sim_id + '_statistics' + suffix)
+            fpath = pjoin(post_dir, sim_id + '_statistics' + suffix)
         else:
-            fpath = os.path.join(post_dir, sim_id + '_statistics')
+            fpath = pjoin(post_dir, sim_id + '_statistics')
 
         # in case converting to dataframe fails, fall back
         try:
@@ -4506,9 +4522,9 @@ class Cases(object):
         # FIXME: for backward compatibility, the column name of the unique
         # channel name has been changed in the past....
         if 'unique_ch_name' in dfs.columns:
-            chan_col_name  = 'unique_ch_name'
+            chan_col_name = 'unique_ch_name'
         else:
-            chan_col_name  = 'channel'
+            chan_col_name = 'channel'
 
         if fh_lst is None:
             # FIXME: wb has overlap with dlc_config.xlsx, and shape_k doesn't
@@ -4520,11 +4536,11 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[case]['[run_dir]']
-            fname = os.path.join(run_dir, 'dlc_config.xlsx')
+            fname = pjoin(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k,
                                        fail_on_resfile_not_found=True)
             # if you need all DLCs, make sure to have %s in the file name
-            dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
+            dlc_cfg.res_folder = pjoin(run_dir, res_dir, dlc_folder)
             # no need to build list of result files, we already have it form
             # the statistics analysis
             # TODO: could be faster if working with df directly, but how to
@@ -4533,9 +4549,9 @@ class Cases(object):
             # FIXME: breaks when not all channels are present for all cases !
             # solution: set channel "Time" as a minimum required channel!
             val = dfs[chan_col_name].values[0]
-            sel = dfs[dfs[chan_col_name]==val]
+            sel = dfs[dfs[chan_col_name] == val]
             p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
-            files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
+            files = [pjoin(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=years, files=files)
 
         # now we have a full path to the result files, but we only need the
@@ -4548,8 +4564,8 @@ class Cases(object):
         # debugging and inspection reasons.
         # FIXME: this should be somewhere in its own method or something,
         # and duplication with what is in AEP should be removed
-        fname = os.path.join(post_dir, sim_id + '_Leq_hourlist')
-        dict_Leq_h = {'case_id':case_ids, 'hours':hours}
+        fname = pjoin(post_dir, sim_id + '_Leq_hourlist')
+        dict_Leq_h = {'case_id': case_ids, 'hours': hours}
         df_Leq_h = misc.dict2df(dict_Leq_h, fname, update=update, csv=csv,
                                 save=save, check_datatypes=True, xlsx=xlsx,
                                 complib=self.complib)
@@ -4571,7 +4587,7 @@ class Cases(object):
         # ---------------------------------------------------------------------
 
         # Built the DataFrame, we do not have a unqique channel index
-        dict_Leq = {col:[] for col in cols}
+        dict_Leq = {col: [] for col in cols}
         # index on case_id on the original DataFrame so we can select accordingly
         dfs = dfs.set_index('[case_id]')
         # which rows to keep: a
@@ -4579,9 +4595,9 @@ class Cases(object):
         for grname, gr in dfs.groupby(dfs[chan_col_name]):
             # if one m has any nan's, assume none of them are good and throw
             # away
-#            if np.isnan(gr[ms[0]].values).any():
-#                sel_rows.pop(grname)
-#                continue
+            #            if np.isnan(gr[ms[0]].values).any():
+            #                sel_rows.pop(grname)
+            #                continue
             # select the cases in the same order as the corresponding hours
             try:
                 sel_sort = gr.loc[case_ids]
@@ -4617,13 +4633,13 @@ class Cases(object):
                 # we can just multiply with 3600 (instead of doing 3600/neq)
                 tmp = (R_eq_mod * np.array(hours) * 3600).sum()
                 # the effective Leq for each of the material constants
-                dict_Leq[m].append(math.pow(tmp/neq_life, 1.0/m_))
+                dict_Leq[m].append(math.pow(tmp / neq_life, 1.0 / m_))
                 # the following is twice as slow:
                 # [i*j for (i,j) in zip(sel_sort[m].values.tolist(),hours)]
 
 #        collens = misc.check_df_dict(dict_Leq)
         # make consistent data types, and convert to DataFrame
-        fname = os.path.join(post_dir, sim_id + '_Leq')
+        fname = pjoin(post_dir, sim_id + '_Leq')
         df_Leq = misc.dict2df(dict_Leq, fname, save=save, update=update,
                               csv=csv, check_datatypes=True, xlsx=xlsx,
                               complib=self.complib)
@@ -4634,7 +4650,6 @@ class Cases(object):
     def AEP(self, dfs, fh_lst=None, ch_powe='DLL-2-inpvec-2', extra_cols=[],
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
             new_sim_id=False, save=False, years=20.0, update=False, xlsx=False):
-
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.
 
@@ -4687,9 +4702,9 @@ class Cases(object):
         # FIXME: for backward compatibility, the column name of the unique
         # channel name has been changed in the past....
         if 'unique_ch_name' in dfs.columns:
-            chan_col_name  = 'unique_ch_name'
+            chan_col_name = 'unique_ch_name'
         else:
-            chan_col_name  = 'channel'
+            chan_col_name = 'channel'
 
         if fh_lst is None:
             wb = WeibullParameters()
@@ -4699,18 +4714,18 @@ class Cases(object):
 
             # we assume the run_dir (root) is the same every where
             run_dir = self.cases[list(self.cases.keys())[0]]['[run_dir]']
-            fname = os.path.join(run_dir, 'dlc_config.xlsx')
+            fname = pjoin(run_dir, 'dlc_config.xlsx')
             dlc_cfg = dlc.DLCHighLevel(fname, shape_k=wb.shape_k)
             # if you need all DLCs, make sure to have %s in the file name
-            dlc_cfg.res_folder = os.path.join(run_dir, res_dir, dlc_folder)
+            dlc_cfg.res_folder = pjoin(run_dir, res_dir, dlc_folder)
             # TODO: could be faster if working with df directly, but how to
             # assure you're res_dir is always ending with path separator?
             # FIXME: breaks when not all channels are present for all cases !
             # solution: set channel "Time" as a minimum required channel!
             val = dfs[chan_col_name].values[0]
-            sel = dfs[dfs[chan_col_name]==val]
+            sel = dfs[dfs[chan_col_name] == val]
             p1, p2 = sel['[res_dir]'].values, sel['[case_id]'].values
-            files = [os.path.join(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
+            files = [pjoin(q1, q2) + '.sel' for q1, q2 in zip(p1, p2)]
             fh_lst = dlc_cfg.file_hour_lst(years=1.0, files=files)
 
         # now we have a full path to the result files, but we only need the
@@ -4720,27 +4735,27 @@ class Cases(object):
             return os.path.basename(k[0].replace('.sel', ''))
         fh_lst_basename = [(basename(k), k[1]) for k in fh_lst]
         # only take dlc12 for power production
-        case_ids = [k[0] for k in fh_lst_basename if k[0][:5]=='dlc12']
-        hours = [k[1] for k in fh_lst_basename if k[0][:5]=='dlc12']
+        case_ids = [k[0] for k in fh_lst_basename if k[0][:5] == 'dlc12']
+        hours = [k[1] for k in fh_lst_basename if k[0][:5] == 'dlc12']
 
         # safe how many hours each case is active for AEP calculations for
         # debugging and inspection reasons.
         # FIXME: this should be somewhere in its own method or something,
         # and duplication with what is in fatigue_lifetime should be removed
-        fname = os.path.join(post_dir, sim_id + '_AEP_hourlist')
-        dict_AEP_h = {'case_id':case_ids, 'hours':hours}
+        fname = pjoin(post_dir, sim_id + '_AEP_hourlist')
+        dict_AEP_h = {'case_id': case_ids, 'hours': hours}
         df_AEP_h = misc.dict2df(dict_AEP_h, fname, update=update, csv=csv,
                                 save=save, check_datatypes=True, xlsx=xlsx,
                                 complib=self.complib)
 
         # and select only the power channels
-        dfs_powe = dfs[dfs[chan_col_name]==ch_powe]
+        dfs_powe = dfs[dfs[chan_col_name] == ch_powe]
 
         # by default we have AEP as a column
         cols = ['AEP']
         cols.extend(extra_cols)
         # Built the DataFrame, we do not have a unqique channel index
-        dict_AEP = {col:[] for col in cols}
+        dict_AEP = {col: [] for col in cols}
         # index on case_id on the original DataFrame so we can select accordingly
         dfs_powe = dfs_powe.set_index('[case_id]')
 
@@ -4768,14 +4783,14 @@ class Cases(object):
         dict_AEP['AEP'].append(AEP)
 
         # make consistent data types, and convert to DataFrame
-        fname = os.path.join(post_dir, sim_id + '_AEP')
+        fname = pjoin(post_dir, sim_id + '_AEP')
         df_AEP = misc.dict2df(dict_AEP, fname, update=update, csv=csv,
                               save=save, check_datatypes=True, xlsx=xlsx,
                               complib=self.complib)
 
         return df_AEP
 
-    def stats2dataframe(self, ch_sel=None, tags=['[seed]','[windspeed]']):
+    def stats2dataframe(self, ch_sel=None, tags=['[seed]', '[windspeed]']):
         """
         Convert the archaic statistics dictionary of a group of cases to
         a more convienent pandas dataframe format.
@@ -4820,7 +4835,7 @@ class Cases(object):
             ch_dict = self.stats_dict[cname]['ch_dict']
 
             if ch_sel is None:
-                ch_sel = { (i, i) for i in ch_dict }
+                ch_sel = {(i, i) for i in ch_dict}
 
             for ch_short, ch_name in ch_sel.items():
 
@@ -4831,24 +4846,24 @@ class Cases(object):
                 # values. Set to zero there.
                 try:
                     df_dict[ch_short]['case name'].append(cname)
-                    df_dict[ch_short]['max'].append(   sig_stats[0,0,chi])
-                    df_dict[ch_short]['min'].append(   sig_stats[0,1,chi])
-                    df_dict[ch_short]['mean'].append(  sig_stats[0,2,chi])
-                    df_dict[ch_short]['std'].append(   sig_stats[0,3,chi])
-                    df_dict[ch_short]['range'].append( sig_stats[0,4,chi])
-                    df_dict[ch_short]['absmax'].append(sig_stats[0,5,chi])
+                    df_dict[ch_short]['max'].append(sig_stats[0, 0, chi])
+                    df_dict[ch_short]['min'].append(sig_stats[0, 1, chi])
+                    df_dict[ch_short]['mean'].append(sig_stats[0, 2, chi])
+                    df_dict[ch_short]['std'].append(sig_stats[0, 3, chi])
+                    df_dict[ch_short]['range'].append(sig_stats[0, 4, chi])
+                    df_dict[ch_short]['absmax'].append(sig_stats[0, 5, chi])
                     for tag in tags:
                         df_dict[ch_short][tag].append(case[tag])
                 except KeyError:
-                    df_dict[ch_short] = {'case name' : [cname]}
-                    df_dict[ch_short]['max']    = [sig_stats[0,0,chi]]
-                    df_dict[ch_short]['min']    = [sig_stats[0,1,chi]]
-                    df_dict[ch_short]['mean']   = [sig_stats[0,2,chi]]
-                    df_dict[ch_short]['std']    = [sig_stats[0,3,chi]]
-                    df_dict[ch_short]['range']  = [sig_stats[0,4,chi]]
-                    df_dict[ch_short]['absmax'] = [sig_stats[0,5,chi]]
+                    df_dict[ch_short] = {'case name': [cname]}
+                    df_dict[ch_short]['max'] = [sig_stats[0, 0, chi]]
+                    df_dict[ch_short]['min'] = [sig_stats[0, 1, chi]]
+                    df_dict[ch_short]['mean'] = [sig_stats[0, 2, chi]]
+                    df_dict[ch_short]['std'] = [sig_stats[0, 3, chi]]
+                    df_dict[ch_short]['range'] = [sig_stats[0, 4, chi]]
+                    df_dict[ch_short]['absmax'] = [sig_stats[0, 5, chi]]
                     for tag in tags:
-                        df_dict[ch_short][tag] = [ case[tag] ]
+                        df_dict[ch_short][tag] = [case[tag]]
 
         # and create for each channel a dataframe
         dfs = {}
@@ -4891,23 +4906,23 @@ class Cases(object):
         """
         try:
             i = self.res.ch_dict['bearing-shaft_rot-angle_speed-rpm']['chi']
-            rads = self.res.sig[:,i]*np.pi/30.0
+            rads = self.res.sig[:, i] * np.pi / 30.0
         except KeyError:
             try:
                 i = self.res.ch_dict['bearing-shaft_rot-angle_speed-rads']['chi']
-                rads = self.res.sig[:,i]
+                rads = self.res.sig[:, i]
             except KeyError:
                 i = self.res.ch_dict['Omega']['chi']
-                rads = self.res.sig[:,i]
+                rads = self.res.sig[:, i]
         try:
             nn_shaft = self.config['nn_shaft']
         except:
             nn_shaft = 4
-        itorque = self.res.ch_dict['shaft-shaft-node-%3.3i-momentvec-z'%nn_shaft]['chi']
-        torque = self.res.sig[:,itorque]
+        itorque = self.res.ch_dict['shaft-shaft-node-%3.3i-momentvec-z' % nn_shaft]['chi']
+        torque = self.res.sig[:, itorque]
         # negative means power is being extracted, which is exactly what a wind
         # turbine is about, we call that positive
-        return -1.0*torque*rads
+        return -1.0 * torque * rads
 
     def calc_torque_const(self, save=False, name='ojf'):
         """
@@ -4949,10 +4964,10 @@ class Cases(object):
 #            return
 
         windspeed = self.case['[windspeed]']
-        rpm = self.res.sig[:,irpm].mean()
+        rpm = self.res.sig[:, irpm].mean()
         # and get the average rotor torque applied to maintain
         # constant rotor speed
-        K = -np.mean(self.res.sig[:,chi_q]*1000./self.res.sig[:,chi_rads])
+        K = -np.mean(self.res.sig[:, chi_q] * 1000. / self.res.sig[:, chi_rads])
 
         result = np.array([windspeed, rpm, K])
 
@@ -4972,7 +4987,7 @@ class Cases(object):
                 pass
 
 #            print('gen K saving at:', fpath+fname
-            np.savetxt(fpath+fname, result, header='windspeed, rpm, K')
+            np.savetxt(fpath + fname, result, header='windspeed, rpm, K')
 
         return result
 
@@ -5004,7 +5019,7 @@ class Cases(object):
 
         """
 
-        envelope= {}
+        envelope = {}
 
         for ch_names in ch_list:
             ichans = []
@@ -5043,10 +5058,10 @@ class Cases(object):
 
         if not silent:
             nrcases = len(self.cases)
-            print('='*79)
+            print('=' * 79)
             print('statistics for %s, nr cases: %i' % (sim_id, nrcases))
 
-        fname = os.path.join(post_dir, sim_id + '_envelope' + append + '.h5')
+        fname = pjoin(post_dir, sim_id + '_envelope' + append + '.h5')
         h5f = tbl.open_file(fname, mode="w", title=str(sim_id),
                             filters=tbl.Filters(complevel=9))
 
@@ -5058,7 +5073,7 @@ class Cases(object):
             ctab = h5f.create_group("/", groupname)
 
             if not silent:
-                pc = '%6.2f' % (float(ii)*100.0/float(nrcases))
+                pc = '%6.2f' % (float(ii) * 100.0 / float(nrcases))
                 pc += ' %'
                 print('envelope progress: %4i/%i %s' % (ii, nrcases, pc))
 
@@ -5075,9 +5090,9 @@ class Cases(object):
                 for row in envelope[ch_id[0]]:
                     tablerow['Mx'] = float(row[0])
                     tablerow['My'] = float(row[1])
-                    if len(row)>2:
+                    if len(row) > 2:
                         tablerow['Mz'] = float(row[2])
-                        if len(row)>3:
+                        if len(row) > 3:
                             tablerow['Fx'] = float(row[3])
                             tablerow['Fy'] = float(row[4])
                             tablerow['Fz'] = float(row[5])
@@ -5103,7 +5118,7 @@ class Cases(object):
 
         tmp_cases = {}
         for cname, case in self.cases.items():
-             tmp_cases[cname.lower()] = case.copy()
+            tmp_cases[cname.lower()] = case.copy()
         self.cases = tmp_cases
 
 
@@ -5166,7 +5181,7 @@ class MannTurb64(prepost.PBSScript):
 
         case0 = cases[list(cases.keys())[0]]
         # make sure the path's end with a trailing separator, why??
-        self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
+        self.pbsworkdir = pjoin(case0['[run_dir]'], '')
         if not self.silent:
             print('\nStart creating PBS files for turbulence with Mann64...')
         for cname, case in cases.items():
@@ -5182,9 +5197,9 @@ class MannTurb64(prepost.PBSScript):
             out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
             turb = case['[turb_dir]']
 
-            self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
-            self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
-            self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
+            self.path_pbs_e = pjoin(out_base, turb, base_name + '.err')
+            self.path_pbs_o = pjoin(out_base, turb, base_name + '.out')
+            self.path_pbs_i = pjoin(self.pbs_in_dir, base_name + '.p')
 
             # apply winefix
             self.prelude = self.winefix
@@ -5194,11 +5209,11 @@ class MannTurb64(prepost.PBSScript):
             self.coda = '# COPY BACK FROM SCRATCH AND RENAME, remove _ at end\n'
             # copy back to turb dir at the end
             if case['[turb_db_dir]'] is not None:
-                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_db_dir]'],
-                                   base_name)
+                dst = pjoin('$PBS_O_WORKDIR', case['[turb_db_dir]'],
+                            base_name)
             else:
-                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_dir]'],
-                                   base_name)
+                dst = pjoin('$PBS_O_WORKDIR', case['[turb_dir]'],
+                            base_name)
             # FIXME: Mann64 turb exe creator adds an underscore to output
             for comp in list('uvw'):
                 src = '{}_{}.bin'.format(base_name, comp)
@@ -5248,20 +5263,20 @@ def eigenbody(cases, debug=False):
 
     """
 
-    #Body data for body number : 3 with the name :nacelle
-    #Results:         fd [Hz]       fn [Hz]       log.decr [%]
-    #Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
+    # Body data for body number : 3 with the name :nacelle
+    # Results:         fd [Hz]       fn [Hz]       log.decr [%]
+    # Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
 
     for case in cases:
         # tags for the current case
         tags = cases[case]
-        file_path = os.path.join(tags['[run_dir]'], tags['[eigenfreq_dir]'])
+        file_path = pjoin(tags['[run_dir]'], tags['[eigenfreq_dir]'])
         # FIXME: do not assuem anything about the file name here, should be
         # fully defined in the tags/dataframe
         file_name = tags['[case_id]'] + '_body_eigen'
         # and load the eigenfrequency body results
         results, results2 = windIO.ReadEigenBody(file_path, file_name,
-                                                  nrmodes=10)
+                                                 nrmodes=10)
         # add them to the htc_dict
         cases[case]['[eigen_body_results]'] = results
         cases[case]['[eigen_body_results2]'] = results2
@@ -5298,7 +5313,7 @@ def eigenstructure(cases, debug=False):
     for case in cases:
         # tags for the current case
         tags = cases[case]
-        file_path = os.path.join(tags['[run_dir]'], tags['[eigenfreq_dir]'])
+        file_path = pjoin(tags['[run_dir]'], tags['[eigenfreq_dir]'])
         # FIXME: do not assuem anything about the file name here, should be
         # fully defined in the tags/dataframe
         file_name = tags['[case_id]'] + '_strc_eigen'
