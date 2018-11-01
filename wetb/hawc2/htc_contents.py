@@ -35,6 +35,7 @@ def parse_next_line(lines):
         comments += "\n%s" % lines.pop(0).rstrip()
     return line.strip(), comments
 
+
 def fmt_value(v):
     try:
         if int(float(v)) == float(v):
@@ -43,12 +44,15 @@ def fmt_value(v):
     except ValueError:
         return v
 
+
 c = 0
+
+
 class HTCContents(object):
     lines = []
     contents = None
     name_ = ""
-    parent=None
+    parent = None
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
@@ -57,8 +61,7 @@ class HTCContents(object):
             self.values[key] = value
         else:
             raise NotImplementedError
-        value.parent=self
-            
+        value.parent = self
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -74,13 +77,17 @@ class HTCContents(object):
             return self.values[key]
 
     def __getattr__(self, *args, **kwargs):
-        if args[0] in ['__members__','__methods__']:
-            # fix python2 related issue. In py2, dir(self) calls __getattr__(('__members__',)), and this call must fail unhandled to work
+        if args[0] in ['__members__', '__methods__']:
+            # fix python2 related issue. In py2, dir(self) calls
+            # __getattr__(('__members__',)), and this call must fail unhandled to work
             return object.__getattribute__(self, *args, **kwargs)
         try:
             return object.__getattribute__(self, *args, **kwargs)
         except:
-            return self.contents[args[0]]
+            k = args[0]
+            if k.endswith("__1"):
+                k = k[:-3]
+            return self.contents[k]
 
     def __setattr__(self, *args, **kwargs):
         _3to2list1 = list(args)
@@ -89,7 +96,7 @@ class HTCContents(object):
             return object.__setattr__(self, *args, **kwargs)
         if isinstance(v, str):
             v = [fmt_value(v) for v in v.split()]
-        if isinstance(v,HTCContents):
+        if isinstance(v, HTCContents):
             self.contents[k] = v
         else:
             if not isinstance(v, (list, tuple)):
@@ -103,7 +110,6 @@ class HTCContents(object):
 
     def __iter__(self):
         return iter(self.contents.values())
-
 
     def __contains__(self, key):
         if self.contents is None:
@@ -155,6 +161,7 @@ class HTCContents(object):
 class HTCSection(HTCContents):
     end_comments = ""
     begin_comments = ""
+
     def __init__(self, name, begin_comments="", end_comments=""):
         self.name_ = name
         self.begin_comments = begin_comments.strip(" \t")
@@ -185,24 +192,28 @@ class HTCSection(HTCContents):
         return HTCLine.from_lines(lines)
 
     def __str__(self, level=0):
-        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.begin_comments)[bool(self.begin_comments.strip())]).replace("\t\n","\n"))
+        s = "%sbegin %s;%s\n" % ("  " * level, self.name_, (("", "\t" + self.begin_comments)
+                                                            [bool(self.begin_comments.strip())]).replace("\t\n", "\n"))
         s += "".join([c.__str__(level + 1) for c in self])
-        s += "%send %s;%s\n" % ("  "*level, self.name_, (("", "\t" + self.end_comments)[self.end_comments.strip() != ""]).replace("\t\n","\n"))
+        s += "%send %s;%s\n" % ("  " * level, self.name_, (("", "\t" + self.end_comments)
+                                                           [self.end_comments.strip() != ""]).replace("\t\n", "\n"))
         return s
-    
+
     def get_subsection_by_name(self, name, field='name'):
-        lst = [s for s in self if field in s and s[field][0]==name]
-        if len(lst)==1:
+        lst = [s for s in self if field in s and s[field][0] == name]
+        if len(lst) == 1:
             return lst[0]
         else:
-            if len(lst)==0:
-                raise ValueError("subsection '%s' not found"%name)
+            if len(lst) == 0:
+                raise ValueError("subsection '%s' not found" % name)
             else:
                 raise NotImplementedError()
+
 
 class HTCLine(HTCContents):
     values = None
     comments = ""
+
     def __init__(self, name, values, comments):
         if "__" in name:
             name = name[:name.index("__")]
@@ -216,9 +227,10 @@ class HTCLine(HTCContents):
     def __str__(self, level=0):
         if self.name_ == "":
             return ""
-        return "%s%s%s;%s\n" % ("  "*(level), self.name_,
-                                  ("", "\t" + self.str_values())[bool(self.values)],
-                                  ("", "\t" + self.comments)[bool(self.comments.strip())])
+        return "%s%s%s;%s\n" % ("  " * (level), self.name_,
+                                ("", "\t" + self.str_values())[bool(self.values)],
+                                ("", "\t" + self.comments)[bool(self.comments.strip())])
+
     def str_values(self):
         return " ".join([str(v).lower() for v in self.values])
 
@@ -226,7 +238,7 @@ class HTCLine(HTCContents):
         try:
             return self.values[key]
         except:
-            raise IndexError("Parameter %s does not exists for %s"%(key+1,self.location()))
+            raise IndexError("Parameter %s does not exists for %s" % (key + 1, self.location()))
 
     @staticmethod
     def from_lines(lines):
@@ -241,7 +253,6 @@ class HTCLine(HTCContents):
         values = [fmt_value(v) for v in values]
         return HTCLine(name, values, end_comments)
 
-
     def remove(self):
         self.name_ = ""
         self.values = []
@@ -250,6 +261,7 @@ class HTCLine(HTCContents):
 
 class HTCOutputSection(HTCSection):
     sensors = None
+
     def __init__(self, name, begin_comments="", end_comments=""):
         HTCSection.__init__(self, name, begin_comments=begin_comments, end_comments=end_comments)
         self.sensors = []
@@ -257,12 +269,10 @@ class HTCOutputSection(HTCSection):
     def add_sensor(self, type, sensor, values=[], comment="", nr=None):
         self._add_sensor(HTCSensor(type, sensor, values, comment), nr)
 
-
     def _add_sensor(self, htcSensor, nr=None):
         if nr is None:
             nr = len(self.sensors)
         self.sensors.insert(nr, htcSensor)
-
 
     def line_from_line(self, lines):
         while len(lines) and lines[0].strip() == "":
@@ -279,17 +289,20 @@ class HTCOutputSection(HTCSection):
         else:
             return HTCSection._add_contents(self, contents)
 
-
     def __str__(self, level=0):
-        s = "%sbegin %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.begin_comments)[len(self.begin_comments.strip()) > 0])
+        s = "%sbegin %s;%s\n" % ("  " * level, self.name_, ("", "\t" + self.begin_comments)
+                                 [len(self.begin_comments.strip()) > 0])
         s += "".join([c.__str__(level + 1) for c in self])
         s += "".join([s.__str__(level + 1) for s in self.sensors])
-        s += "%send %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.end_comments)[self.end_comments.strip() != ""])
+        s += "%send %s;%s\n" % ("  " * level, self.name_, ("", "\t" + self.end_comments)
+                                [self.end_comments.strip() != ""])
         return s
+
 
 class HTCOutputAtTimeSection(HTCOutputSection):
     type = None
     time = None
+
     def __init__(self, name, begin_comments="", end_comments=""):
         if len(name.split()) < 3:
             raise ValueError('"keyword" and "time" arguments required for output_at_time command:\n%s' % name)
@@ -298,11 +311,14 @@ class HTCOutputAtTimeSection(HTCOutputSection):
         HTCOutputSection.__init__(self, name, begin_comments=begin_comments, end_comments=end_comments)
 
     def __str__(self, level=0):
-        s = "%sbegin %s %s %s;%s\n" % ("  "*level, self.name_, self.type, self.time, ("", "\t" + self.begin_comments)[len(self.begin_comments.strip())])
+        s = "%sbegin %s %s %s;%s\n" % ("  " * level, self.name_, self.type, self.time,
+                                       ("", "\t" + self.begin_comments)[len(self.begin_comments.strip())])
         s += "".join([c.__str__(level + 1) for c in self])
         s += "".join([s.__str__(level + 1) for s in self.sensors])
-        s += "%send %s;%s\n" % ("  "*level, self.name_, ("", "\t" + self.end_comments)[self.end_comments.strip() != ""])
+        s += "%send %s;%s\n" % ("  " * level, self.name_, ("", "\t" + self.end_comments)
+                                [self.end_comments.strip() != ""])
         return s
+
 
 class HTCSensor(HTCLine):
     type = ""
@@ -326,6 +342,7 @@ class HTCSensor(HTCLine):
             values = []
         else:
             type, sensor, values = "", "", []
+
         def fmt(v):
             try:
                 if int(float(v)) == float(v):
@@ -337,10 +354,8 @@ class HTCSensor(HTCLine):
         return HTCSensor(type, sensor, values, comments)
 
     def __str__(self, level=0):
-        return "%s%s %s%s;%s\n" % ("  "*(level),
-                                self.type,
-                                self.sensor,
-                                ("", "\t" + self.str_values())[bool(self.values)],
-                                ("", "\t" + self.comments)[bool(self.comments.strip())])
-
-
+        return "%s%s %s%s;%s\n" % ("  " * (level),
+                                   self.type,
+                                   self.sensor,
+                                   ("", "\t" + self.str_values())[bool(self.values)],
+                                   ("", "\t" + self.comments)[bool(self.comments.strip())])

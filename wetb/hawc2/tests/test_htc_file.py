@@ -19,9 +19,7 @@ from datetime import datetime
 from wetb.hawc2.htc_file import HTCFile, HTCLine
 
 
-
 import numpy as np
-
 
 
 class TestHtcFile(unittest.TestCase):
@@ -30,35 +28,35 @@ class TestHtcFile(unittest.TestCase):
         unittest.TestCase.setUp(self)
         self.testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/htcfiles/')  # test file path
 
-
     def check_htc_file(self, f):
- 
+
         with open(f) as fid:
             orglines = fid.read().strip().split("\n")
- 
-        htcfile = HTCFile(f,"../")
+
+        htcfile = HTCFile(f, "../")
         newlines = str(htcfile).split("\n")
         htcfile.save(self.testfilepath + 'tmp.htc')
-        #with open(self.testfilepath + 'tmp.htc') as fid:
+        # with open(self.testfilepath + 'tmp.htc') as fid:
         #    newlines = fid.readlines()
- 
+
         for i, (org, new) in enumerate(zip(orglines, newlines), 1):
-            fmt = lambda x : x.strip().replace("\t", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
+            def fmt(x): return x.strip().replace("\t", " ").replace(
+                "  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ")
             if fmt(org) != fmt(new):
-                print ("----------%d-------------" % i)
-                print (fmt(org))
-                print (fmt(new))
+                print("----------%d-------------" % i)
+                print(fmt(org))
+                print(fmt(new))
                 self.assertEqual(fmt(org), fmt(new))
                 break
-                print ()
+                print()
         assert len(orglines) == len(newlines)
- 
+
     def test_htc_files(self):
         for f in ['test3.htc']:
             self.check_htc_file(self.testfilepath + f)
-  
+
     def test_htc_file_get(self):
-        htcfile = HTCFile(self.testfilepath + "test3.htc",'../')
+        htcfile = HTCFile(self.testfilepath + "test3.htc", '../')
         self.assertEqual(htcfile['simulation']['time_stop'][0], 200)
         self.assertEqual(htcfile['simulation/time_stop'][0], 200)
         self.assertEqual(htcfile['simulation.time_stop'][0], 200)
@@ -67,22 +65,25 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.dll.type2_dll__2.name[0], "risoe_controller2")
         s = """begin simulation;\n  time_stop\t200;"""
         self.assertEqual(str(htcfile.simulation)[:len(s)], s)
-  
+
     def test_htc_file_get2(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
-        self.assertEqual(htcfile['simulation']['logfile'][0], './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
-        self.assertEqual(htcfile['simulation/logfile'][0], './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
-        self.assertEqual(htcfile['simulation.logfile'][0], './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+        self.assertEqual(htcfile['simulation']['logfile'][0],
+                         './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+        self.assertEqual(htcfile['simulation/logfile'][0],
+                         './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+        self.assertEqual(htcfile['simulation.logfile'][0],
+                         './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
         self.assertEqual(htcfile.simulation.logfile[0], './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
         self.assertEqual(htcfile.simulation.newmark.deltat[0], 0.02)
-  
+
     def test_htc_file_set(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         time_stop = htcfile.simulation.time_stop[0]
         htcfile.simulation.time_stop = time_stop * 2
         self.assertEqual(htcfile.simulation.time_stop[0], 2 * time_stop)
         self.assertEqual(htcfile.simulation.time_stop.__class__, HTCLine)
-  
+
         htcfile.output.time = 10, 20
         self.assertEqual(htcfile.output.time[:2], [10, 20])
         self.assertEqual(str(htcfile.output.time), "time\t10 20;\n")
@@ -90,12 +91,12 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.output.time[:2], [11, 21])
         htcfile.output.time = "12 22"
         self.assertEqual(htcfile.output.time[:2], [12, 22])
-  
+
     def test_htc_file_set_key(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.simulation.name = "value"
         self.assertEqual(htcfile.simulation.name[0], "value")
-  
+
     def test_htc_file_del_key(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         del htcfile.simulation.logfile
@@ -104,19 +105,20 @@ class TestHtcFile(unittest.TestCase):
             del htcfile.hydro.water_properties.water_kinematics_dll
         except KeyError:
             pass
-  
+
     def test_htcfile_setname(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.set_name("mytest")
-        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace("\\","/"), r'../htc/mytest.htc')
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace("\\", "/"), r'../htc/mytest.htc')
         self.assertEqual(htcfile.simulation.logfile[0], './log/mytest.log')
         self.assertEqual(htcfile.output.filename[0], './res/mytest')
-  
+
         htcfile.set_name("mytest", 'subfolder')
-        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace("\\","/"), r'../htc/subfolder/mytest.htc')
+        self.assertEqual(os.path.relpath(htcfile.filename, self.testfilepath).replace(
+            "\\", "/"), r'../htc/subfolder/mytest.htc')
         self.assertEqual(htcfile.simulation.logfile[0], './log/subfolder/mytest.log')
         self.assertEqual(htcfile.output.filename[0], './res/subfolder/mytest')
-  
+
     def test_set_time(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.set_time(10, 20, 0.2)
@@ -124,28 +126,26 @@ class TestHtcFile(unittest.TestCase):
         self.assertEqual(htcfile.simulation.newmark.deltat[0], 0.2)
         self.assertEqual(htcfile.wind.scale_time_start[0], 10)
         self.assertEqual(htcfile.output.time[:2], [10, 20])
-  
-  
-  
+
     def test_add_section(self):
         htcfile = HTCFile()
         htcfile.wind.add_section('mann')
-        htcfile.wind.mann.add_line("create_turb_parameters", [29.4, 1.0, 3.9, 1004, 1.0], "L, alfaeps, gamma, seed, highfrq compensation")
+        htcfile.wind.mann.add_line("create_turb_parameters", [
+                                   29.4, 1.0, 3.9, 1004, 1.0], "L, alfaeps, gamma, seed, highfrq compensation")
         self.assertEqual(htcfile.wind.mann.create_turb_parameters[0], 29.4)
         self.assertEqual(htcfile.wind.mann.create_turb_parameters[3], 1004)
-        self.assertEqual(htcfile.wind.mann.create_turb_parameters.comments, "L, alfaeps, gamma, seed, highfrq compensation")
-        
+        self.assertEqual(htcfile.wind.mann.create_turb_parameters.comments,
+                         "L, alfaeps, gamma, seed, highfrq compensation")
+
     def test_add_section2(self):
         htcfile = HTCFile()
         htcfile.add_section('hydro')
         #self.assertEqual(str(htcfile).strip()[-5:], "exit;")
-        
+
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.add_section('hydro')
         self.assertEqual(str(htcfile).strip()[-5:], "exit;")
-        
-          
-  
+
     def test_add_mann(self):
         htcfile = HTCFile()
         htcfile.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
@@ -161,11 +161,11 @@ class TestHtcFile(unittest.TestCase):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
         self.assertEqual(htcfile.wind.turb_format.comments, "")
-        
+
     def test_add_turb_export(self):
         htc = HTCFile()
         htc.add_mann_turbulence(30.1, 1.1, 3.3, 102, False)
-        htc.set_time(100,700,0.01)
+        htc.set_time(100, 700, 0.01)
         htc.add_turb_export()
         s = """begin turb_export;
   filename_u\texport_u.turb;
@@ -180,8 +180,6 @@ end turb_export;"""
         for a, b in zip(s.split("\n"), str(htc.wind.turb_export).split("\n")):
             self.assertEqual(a.strip(), b.strip())
 
-  
-  
     def test_sensors(self):
         htcfile = HTCFile()
         htcfile.set_name("test")
@@ -193,13 +191,11 @@ end turb_export;"""
         for a, b in zip(s.split("\n"), str(htcfile.output).split("\n")):
             self.assertEqual(a.strip(), b.strip())
         #print (htcfile)
-  
-  
+
     def test_output_at_time(self):
-        htcfile = HTCFile(self.testfilepath + "test2.htc",'../')
+        htcfile = HTCFile(self.testfilepath + "test2.htc", '../')
         self.assertTrue('begin output_at_time aero 15.0;' in str(htcfile))
-  
-  
+
     def test_output_files(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         output_files = htcfile.output_files()
@@ -223,11 +219,12 @@ end turb_export;"""
             except ValueError:
                 raise ValueError(f + " is not in list")
         self.assertFalse(output_files)
-  
+
     def test_turbulence_files(self):
-        htcfile = HTCFile(self.testfilepath + "dlc14_wsp10_wdir000_s0000.htc",'../')
-        self.assertEqual(htcfile.turbulence_files(), ['./turb/turb_wsp10_s0000u.bin', './turb/turb_wsp10_s0000v.bin', './turb/turb_wsp10_s0000w.bin'])
-  
+        htcfile = HTCFile(self.testfilepath + "dlc14_wsp10_wdir000_s0000.htc", '../')
+        self.assertEqual(htcfile.turbulence_files(), [
+                         './turb/turb_wsp10_s0000u.bin', './turb/turb_wsp10_s0000v.bin', './turb/turb_wsp10_s0000w.bin'])
+
     def test_input_files(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         input_files = htcfile.input_files()
@@ -245,75 +242,79 @@ end turb_export;"""
                   './control/servo_with_limits.dll',
                   './control/towclearsens.dll',
                   './data/user_shear.dat',
-                  self.testfilepath.replace("\\","/") + 'test.htc'
+                  self.testfilepath.replace("\\", "/") + 'test.htc'
                   ]:
             try:
                 input_files.remove(f)
             except ValueError:
                 raise ValueError(f + " is not in list")
         self.assertFalse(input_files)
-        
+
         htcfile = HTCFile(self.testfilepath + "DTU_10MW_RWT.htc")
         self.assertTrue('./control/wpdata.100' in htcfile.input_files())
-  
+
     def test_input_files2(self):
-        htcfile = HTCFile(self.testfilepath + "ansi.htc",'../')
+        htcfile = HTCFile(self.testfilepath + "ansi.htc", '../')
         input_files = htcfile.input_files()
         self.assertTrue('./htc_hydro/ireg_airy_h6_t10.inp' in input_files)
         #
-  
+
     def test_continue_in_files(self):
         htcfile = HTCFile(self.testfilepath + "continue_in_file.htc", ".")
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
-        self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
+        self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'),
+                      [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
         self.assertEqual(str(htcfile).count("exit"), 1)
         self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile))
-  
+
     def test_continue_in_files_autodetect_path(self):
         htcfile = HTCFile(self.testfilepath + "sub/continue_in_file.htc")
         self.assertIn('main_body__31', htcfile.new_htc_structure.keys())
-        self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'), [os.path.abspath(f) for f in htcfile.input_files()])
+        self.assertIn(os.path.abspath(self.testfilepath + 'orientation.dat'),
+                      [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
         self.assertEqual(str(htcfile).count("exit"), 1)
         self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile))
-  
-  
+
     def test_tjul_example(self):
         htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")
         htcfile.save("./temp.htc")
-  
+
     def test_ansi(self):
-        htcfile = HTCFile(self.testfilepath + "./ansi.htc",'../')
-  
+        htcfile = HTCFile(self.testfilepath + "./ansi.htc", '../')
+
     def test_file_with_BOM(self):
         htcfile = HTCFile(self.testfilepath + 'DLC15_wsp11_wdir000_s0000_phi000_Free_v2_visual.htc')
         self.assertEqual(str(htcfile)[0], ";")
-  
- 
+
     def test_htc_reset(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         self.assertEqual(htcfile.wind.wsp[0], 10)
- 
+
     def test_htc_model_autodetect(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
-        self.assertEqual(os.path.relpath(htcfile.modelpath,os.path.dirname(htcfile.filename)), "..")
+        self.assertEqual(os.path.relpath(htcfile.modelpath, os.path.dirname(htcfile.filename)), "..")
         htcfile = HTCFile(self.testfilepath + "sub/test.htc")
-        self.assertEqual(os.path.relpath(htcfile.modelpath,os.path.dirname(htcfile.filename)).replace("\\","/"), "../..")
+        self.assertEqual(os.path.relpath(htcfile.modelpath, os.path.dirname(
+            htcfile.filename)).replace("\\", "/"), "../..")
         self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected", HTCFile, self.testfilepath + "test2.htc")
-         
-          
+
     def test_open_eq_save(self):
-        HTCFile(self.testfilepath + "test3.htc","../").save(self.testfilepath + "tmp.htc")
-        htcfile = HTCFile(self.testfilepath + "tmp.htc","../")
+        HTCFile(self.testfilepath + "test3.htc", "../").save(self.testfilepath + "tmp.htc")
+        htcfile = HTCFile(self.testfilepath + "tmp.htc", "../")
         htcfile.save(self.testfilepath + "tmp.htc")
         self.assertEqual(str(htcfile).count("\t"), str(HTCFile(self.testfilepath + "tmp.htc", "../")).count("\t"))
         self.assertEqual(str(htcfile), str(HTCFile(self.testfilepath + "tmp.htc", "../")))
-        
+
     def test_2xoutput(self):
-        htc = HTCFile(self.testfilepath + "test_2xoutput.htc","../")
+        htc = HTCFile(self.testfilepath + "test_2xoutput.htc", "../")
         self.assertEqual(len(htc.res_file_lst()), 4)
-        
+
+    def test_access_section__1(self):
+        htc = HTCFile(self.testfilepath + "test_2xoutput.htc", "../")
+        assert htc.output__1.name_ == "output"
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
