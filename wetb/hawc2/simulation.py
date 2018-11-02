@@ -6,12 +6,9 @@ from __future__ import unicode_literals
 from builtins import str
 import glob
 from io import open
-import io
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 from threading import Thread
 import time
@@ -20,13 +17,14 @@ from future import standard_library
 from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
+import tempfile
 
 
 standard_library.install_aliases()
 
-QUEUED = "queued"  #until start
+QUEUED = "queued"  # until start
 PREPARING = "Copy to host"  # during prepare simulation
-INITIALIZING = "Initializing"  #when starting
+INITIALIZING = "Initializing"  # when starting
 SIMULATING = "Simulating"  # when logfile.status=simulating
 FINISHING = "Copy from host"  # during prepare simulation
 FINISH = "Simulation finish"  # when HAWC2 finish
@@ -71,44 +69,49 @@ class Simulation(object):
     is_simulating = False
     is_done = False
     status = QUEUED
+
     def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
         self.modelpath = os.path.abspath(modelpath) + "/"
         if os.path.isabs(htcfilename):
             htcfilename = os.path.relpath(htcfilename, modelpath)
         if htcfilename.startswith("input/"):
-            htcfilename=htcfilename[6:]
-        exists = [os.path.isfile(os.path.join(modelpath, htcfilename)), 
+            htcfilename = htcfilename[6:]
+        exists = [os.path.isfile(os.path.join(modelpath, htcfilename)),
                   os.path.isfile(os.path.join(modelpath, "input/", htcfilename))]
         if all(exists):
-            raise Exception("Both standard and input/output file structure available for %s in %s. Delete one of the options"%(htcfilename, modelpath) )
+            raise Exception(
+                "Both standard and input/output file structure available for %s in %s. Delete one of the options" % (htcfilename, modelpath))
         if not any(exists):
-            raise Exception ("%s not found in %s"%(htcfilename, modelpath))
+            raise Exception("%s not found in %s" % (htcfilename, modelpath))
         else:
-            self.ios = exists[1] #input/output file structure
-            
+            self.ios = exists[1]  # input/output file structure
+
         if self.ios:
             self.exepath = self.modelpath + "input/"
         else:
-            self.exepath = self.modelpath 
+            self.exepath = self.modelpath
+        # model_path: top level path containing all resources
+        # exepath: parent path for relative paths
+
         htcfilename = fmt_path(htcfilename)
-        
+
         self.tmp_modelpath = self.exepath
         self.folder = os.path.dirname(htcfilename)
-        
+
         self.filename = os.path.basename(htcfilename)
         self.htcFile = HTCFile(os.path.join(self.exepath, htcfilename), self.exepath)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
-        self.simulation_id = (htcfilename.replace("\\","/").replace("/", "_")[:50]+ "_%d" % id(self))
+        self.simulation_id = (htcfilename.replace("\\", "/").replace("/", "_")[:50] + "_%d" % id(self))
         if self.simulation_id.startswith("input_"):
             self.simulation_id = self.simulation_id[6:]
-        self.stdout_filename = fmt_path(os.path.join(os.path.relpath(self.exepath, self.modelpath), 
+        self.stdout_filename = fmt_path(os.path.join(os.path.relpath(self.exepath, self.modelpath),
                                                      (os.path.splitext(htcfilename)[0] + ".out").replace('htc', 'stdout', 1)))
         if self.ios:
             assert self.stdout_filename.startswith("input/")
             self.stdout_filename = self.stdout_filename.replace("input/", "../output/")
-        #self.stdout_filename = "stdout/%s.out" % self.simulation_id
+        # self.stdout_filename = "stdout/%s.out" % self.simulation_id
         if 'logfile' in self.htcFile.simulation:
             self.log_filename = self.htcFile.simulation.logfile[0]
         else:
@@ -122,7 +125,8 @@ class Simulation(object):
         self.logFile.clear()
         self.last_status = self.status
         self.errors = []
-        self.non_blocking_simulation_thread = Thread(target=self.simulate_distributed)
+        self.non_blocking_simulation_thread = Thread(
+            target=lambda: self.simulate_distributed(raise_simulation_errors=False))
         self.updateSimStatusThread = UpdateSimStatusThread(self)
         from wetb.hawc2.simulation_resources import LocalSimulationHost
         self.host = LocalSimulationHost(self)
@@ -163,55 +167,55 @@ class Simulation(object):
 #             self.update_status()
 
     def show_status(self):
-        #print ("log status:", self.logFile.status)
+        # print ("log status:", self.logFile.status)
         if self.logFile.status == log_file.SIMULATING:
             if self.last_status != log_file.SIMULATING:
-                print ("|" + ("-"*50) + "|" + ("-"*49) + "|")
+                print("|" + ("-" * 50) + "|" + ("-" * 49) + "|")
                 sys.stdout.write("|")
-            sys.stdout.write("."*(self.logFile.pct - getattr(self, 'last_pct', 0)))
+            sys.stdout.write("." * (self.logFile.pct - getattr(self, 'last_pct', 0)))
             sys.stdout.flush()
             self.last_pct = self.logFile.pct
         elif self.last_status == log_file.SIMULATING:
-            sys.stdout.write("."*(100 - self.last_pct) + "|")
+            sys.stdout.write("." * (100 - self.last_pct) + "|")
             sys.stdout.flush()
-            print ("\n")
+            print("\n")
         elif self.logFile.status == log_file.UNKNOWN:
-            print (self.status)
+            print(self.status)
         else:
-            print (self.logFile.status)
+            print(self.logFile.status)
         if self.logFile.status != log_file.SIMULATING:
             if self.logFile.errors:
-                print (self.logFile.errors)
+                print(self.logFile.errors)
         self.last_status = self.logFile.status
-
-
-
 
     def prepare_simulation(self):
         self.status = PREPARING
-        self.tmp_modelpath = os.path.join(".hawc2launcher/%s/" % self.simulation_id)
-        self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath) ) + "/"
+        # self.tmp_modelpath = os.path.join(".hawc2launcher/%s/" % self.simulation_id)
+        # self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath) ) + "/"
         self.set_id(self.simulation_id, str(self.host), self.tmp_modelpath)
 
         def fmt(src):
             if os.path.isabs(src):
                 src = os.path.relpath(os.path.abspath(src), self.exepath)
             else:
-                src = os.path.relpath (src)
-            assert not src.startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
+                src = os.path.relpath(src)
+            assert not src.startswith(
+                ".."), "%s referes to a file outside the model path\nAll input files be inside model path" % src
             return src
         if self.ios:
             input_folder_files = []
             for root, _, filenames in os.walk(os.path.join(self.modelpath, "input/")):
                 for filename in filenames:
                     input_folder_files.append(os.path.join(root, filename))
-             
-            input_patterns = [fmt(src) for src in input_folder_files + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + self.additional_files().get('input', [])]
+
+            input_patterns = [fmt(src) for src in input_folder_files + ([], self.htcFile.turbulence_files())
+                              [self.copy_turbulence] + self.additional_files().get('input', [])]
         else:
-            input_patterns = [fmt(src) for src in self.htcFile.input_files() + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + self.additional_files().get('input', [])]
-        input_files = set([f for pattern in input_patterns for f in glob.glob(os.path.join(self.exepath, pattern)) if os.path.isfile(f) and ".hawc2launcher" not in f])
-        if not os.path.isdir(os.path.dirname(self.exepath + self.stdout_filename)):
-            os.makedirs(os.path.dirname(self.exepath + self.stdout_filename))
+            input_patterns = [fmt(src) for src in self.htcFile.input_files(
+            ) + ([], self.htcFile.turbulence_files())[self.copy_turbulence] + self.additional_files().get('input', [])]
+        input_files = set([f for pattern in input_patterns for f in glob.glob(
+            os.path.join(self.exepath, pattern)) if os.path.isfile(f) and ".hawc2launcher" not in f])
+
         self.host._prepare_simulation(input_files)
 
 
@@ -224,8 +228,8 @@ class Simulation(object):
 #        self.host._prepare_simulation()
 
     def simulate(self):
-        #starts blocking simulation
-        
+        # starts blocking simulation
+
         self.is_simulating = True
         self.errors = []
         self.status = INITIALIZING
@@ -233,12 +237,12 @@ class Simulation(object):
         self.host._simulate()
         self.returncode, self.stdout = self.host.returncode, self.host.stdout
         if self.host.returncode or 'error' in self.host.stdout.lower():
-            if self.status==ABORTED:
+            if self.status == ABORTED:
                 return
             if "error" in self.host.stdout.lower():
                 self.errors = (list(set([l for l in self.host.stdout.split("\n") if 'error' in l.lower()])))
             self.status = ERROR
-        if  'HAWC2MB version:' not in self.host.stdout:
+        if 'HAWC2MB version:' not in self.host.stdout:
             self.errors.append(self.host.stdout)
             self.status = ERROR
 
@@ -249,10 +253,10 @@ class Simulation(object):
         if self.host.returncode or self.errors:
             raise Exception("Simulation error:\nReturn code: %d\n%s" % (self.host.returncode, "\n".join(self.errors)))
         elif self.logFile.status != log_file.DONE or self.logFile.errors:
-            raise Warning("Simulation succeded with errors:\nLog status:%s\nErrors:\n%s" % (self.logFile.status, "\n".join(self.logFile.errors)))
+            raise Warning("Simulation succeded with errors:\nLog status:%s\nErrors:\n%s" %
+                          (self.logFile.status, "\n".join(self.logFile.errors)))
         else:
             self.status = FINISH
-
 
     def finish_simulation(self):
         if self.status == ABORTED:
@@ -264,18 +268,24 @@ class Simulation(object):
             if os.path.isabs(dst):
                 dst = os.path.relpath(os.path.abspath(dst), self.exepath)
             else:
-                dst = os.path.relpath (dst)
+                dst = os.path.relpath(dst)
             dst = fmt_path(dst)
-            assert not os.path.relpath(os.path.join(self.exepath, dst), self.modelpath).startswith(".."), "%s referes to a file outside the model path\nAll input files be inside model path" % dst
+            assert not os.path.relpath(os.path.join(self.exepath, dst), self.modelpath).startswith(
+                ".."), "%s referes to a file outside the model path\nAll input files be inside model path" % dst
             return dst
-        turb_files = [f for f in self.htcFile.turbulence_files() if self.copy_turbulence and not os.path.isfile(os.path.join(self.exepath, f))]
+        turb_files = [f for f in self.htcFile.turbulence_files()
+                      if self.copy_turbulence and not os.path.isfile(os.path.join(self.exepath, f))]
         if self.ios:
-            output_patterns = ["../output/*", "../output/"] + turb_files + [os.path.join(self.exepath, self.stdout_filename)]
+            output_patterns = ["../output/*", "../output/"] + turb_files + \
+                [os.path.join(self.exepath, self.stdout_filename)]
         else:
-            output_patterns = self.htcFile.output_files() + turb_files + [os.path.join(self.exepath, self.stdout_filename)]
-        output_files = set(self.host.glob([fmt_path(os.path.join(self.tmp_exepath,fmt(p))) for p in output_patterns], recursive=self.ios))
-            
-            
+            output_patterns = self.htcFile.output_files() + turb_files + \
+                [os.path.join(self.exepath, self.stdout_filename)]
+        output_files = set(self.host.glob([fmt_path(os.path.join(self.tmp_exepath, fmt(p)))
+                                           for p in output_patterns], recursive=self.ios))
+        if not os.path.isdir(os.path.dirname(self.exepath + self.stdout_filename)):
+            os.makedirs(os.path.dirname(self.exepath + self.stdout_filename))
+
         try:
             self.host._finish_simulation(output_files)
             if self.status != ERROR:
@@ -287,14 +297,11 @@ class Simulation(object):
         except Exception as e:
             self.errors.append(str(e))
             raise
-            
+
         finally:
             self.set_id(self.filename)
             self.logFile.reset()
             self.htcFile.reset()
-
-
-
 
     def update_status(self, *args, **kwargs):
         self.host.update_logFile_status()
@@ -304,13 +311,8 @@ class Simulation(object):
             if self.logFile.status == log_file.DONE and self.is_simulating is False:
                 self.status = FINISH
 
-
-
     def __str__(self):
         return "Simulation(%s)" % self.filename
-
-
-
 
     def additional_files(self):
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
@@ -325,34 +327,34 @@ class Simulation(object):
         additional_files['input'] = list(set(additional_files.get('input', []) + [file]))
         additional_files_file = os.path.join(self.modelpath, 'additional_files.txt')
         with open(additional_files_file, 'w', encoding='utf-8') as fid:
-                json.dump(additional_files, fid)
+            json.dump(additional_files, fid)
 
-
-    def simulate_distributed(self):
+    def simulate_distributed(self, raise_simulation_errors=True):
         try:
-            self.prepare_simulation()
-            try:
-                self.simulate()
-            except Warning as e:
-                print ("simulation failed", str(self))
-                print ("Trying to finish")
-                raise
-            finally:
+            with tempfile.TemporaryDirectory(prefix="h2launcher_") as tmpdirname:
+                self.tmp_modelpath = tmpdirname + "/"
+                self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath)) + "/"
+                self.prepare_simulation()
                 try:
-                    if self.status!=ABORTED:
-                        self.finish_simulation()
-                except:
-                    print ("finish_simulation failed", str(self))
+                    self.simulate()
+                except Warning as e:
+                    print("simulation failed", str(self))
+                    print("Trying to finish")
                     raise
+                finally:
+                    try:
+                        if self.status != ABORTED:
+                            self.finish_simulation()
+                    except Exception:
+                        print("finish_simulation failed", str(self))
+                        raise
         except Exception as e:
             self.status = ERROR
             self.errors.append(str(e))
-            raise e
+            if raise_simulation_errors:
+                raise e
         finally:
             self.is_done = True
-
-
-
 
     def fix_errors(self):
         def confirm_add_additional_file(folder, file):
@@ -360,7 +362,8 @@ class Simulation(object):
                 filename = fmt_path(os.path.join(folder, file))
                 if self.get_confirmation("File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
                     self.add_additional_input_file(filename)
-                    self.show_message("'%s' is now added to additional_files.txt.\n\nPlease restart the simulation" % filename)
+                    self.show_message(
+                        "'%s' is now added to additional_files.txt.\n\nPlease restart the simulation" % filename)
         for error in self.errors:
             for regex in [r".*\*\*\* ERROR \*\*\* File '(.*)' does not exist in the (.*) folder",
                           r".*\*\*\* ERROR \*\*\* DLL (.*)()"]:
@@ -383,13 +386,14 @@ class Simulation(object):
         return True
 
     def show_message(self, msg, title="Information"):
-        print (msg)
+        print(msg)
 
     def set_id(self, *args, **kwargs):
         pass
 
-    def progress_callback(self,*args, **kwargs):
+    def progress_callback(self, *args, **kwargs):
         pass
+
 
 class UpdateSimStatusThread(Thread):
     def __init__(self, simulation, interval=1):
