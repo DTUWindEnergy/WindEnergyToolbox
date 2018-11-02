@@ -105,10 +105,17 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         import numpy as np
         input_files = HTCFile(self.filename, 'unknown').input_files()
         rel_input_files = [f for f in input_files if not os.path.isabs(f)]
-        found = ([np.sum([os.path.isfile(os.path.join(os.path.dirname(self.filename), "../" * i, f))
+
+        def isfile_case_insensitive(f):
+            try:
+                unix_path_old(f)
+                return True
+            except IOError:
+                return False
+        found = ([np.sum([isfile_case_insensitive(os.path.join(os.path.dirname(self.filename), "../" * i, f))
                           for f in rel_input_files]) for i in range(4)])
         # for f in self.input_files():
-        #    print (os.path.isfile(os.path.join(os.path.dirname(self.filename), "../",f)), f)
+        #     print(os.path.isfile(os.path.join(os.path.dirname(self.filename), "../", f)), f)
         if max(found) > 0:
             relpath = "../" * np.argmax(found)
             return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath))

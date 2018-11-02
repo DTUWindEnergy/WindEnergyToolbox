@@ -300,6 +300,10 @@ end turb_export;"""
             htcfile.filename)).replace("\\", "/"), "../..")
         self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected", HTCFile, self.testfilepath + "test2.htc")
 
+    def test_htc_model_autodetect_upper_case_files(self):
+        htcfile = HTCFile(self.testfilepath + "../simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc")
+        self.assertEqual(os.path.relpath(htcfile.modelpath, os.path.dirname(htcfile.filename)), "..")
+
     def test_open_eq_save(self):
         HTCFile(self.testfilepath + "test3.htc", "../").save(self.testfilepath + "tmp.htc")
         htcfile = HTCFile(self.testfilepath + "tmp.htc", "../")
