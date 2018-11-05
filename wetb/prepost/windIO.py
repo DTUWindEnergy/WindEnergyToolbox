@@ -540,7 +540,7 @@ class LoadResults(ReadHawc2):
     cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi', 'component',
                 'pos', 'coord', 'sensortype', 'radius', 'blade_nr', 'units',
                 'output_type', 'io_nr', 'io', 'dll', 'azimuth', 'flap_nr',
-                'direction'])
+                'direction', 'wake_source_nr'])
 
     # start with reading the .sel file, containing the info regarding
     # how to read the binary file and the channel information
@@ -1290,6 +1290,22 @@ class LoadResults(ReadHawc2):
                 channelinfo['units'] = self.ch_details[ch, 1].strip()
                 channelinfo['sensortype'] = 'aero'
                 tag = 'aero-induc_a_norm'
+
+            # wake   1 gl. pos pos_z  //  Wake pos_z of source   1, Met. coo.
+            elif self.ch_details[ch, 0][:4] == 'wake':
+                wake_nr = re.search(r'\d+', self.ch_details[ch,0]).group()
+                comp = re.search(r'pos_([xyz])', self.ch_details[ch,0]).group(1)
+
+                channelinfo = {}
+                channelinfo['output_type'] = 'wake_pos'
+                channelinfo['sensortype'] = 'wind_wake'
+                channelinfo['component'] = comp
+                channelinfo['units'] = self.ch_details[ch, 1].strip()
+                channelinfo['chi'] = ch
+                channelinfo['wake_source_nr'] = int(wake_nr)
+                channelinfo['coord'] = 'met'
+
+                tag = 'wind_wake-wake_pos_%s_%s' % (comp, wake_nr)
 
             # -----------------------------------------------------------------
             # If all this fails, just combine channel name and description

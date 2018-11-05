@@ -198,7 +198,7 @@ class TestsLoadResults(unittest.TestCase):
         # ---------------------------------------------------------------------
         res = windIO.LoadResults(self.respath, self.f1_chant, readdata=False)
         self.assertFalse(hasattr(res, 'sig'))
-        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,422))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,425))
         self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
         df = res.ch_df
         self.assertEqual(2, len(df[df['bearing_name']=='shaft_rot']))
@@ -209,7 +209,10 @@ class TestsLoadResults(unittest.TestCase):
                [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
                [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
                [415, 'Cl-1-54.82', 'deg'],
-               [421, 'qwerty-is-azerty', 'is']
+               [421, 'qwerty-is-azerty', 'is'],
+               [422, 'wind_wake-wake_pos_x_1', 'm'],
+               [423, 'wind_wake-wake_pos_y_2', 'm'],
+               [424, 'wind_wake-wake_pos_z_5', 'm'],
               ]
         for k in exp:
             self.assertEqual(df.loc[k[0], 'unique_ch_name'], k[1])

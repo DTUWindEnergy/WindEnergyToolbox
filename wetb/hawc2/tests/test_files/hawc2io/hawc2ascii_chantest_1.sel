@@ -6,7 +6,7 @@ ________________________________________________________________________________
   Result file : res/dlc12_wsp07_wdir000_s1004.dat
 ________________________________________________________________________________________________________________________
    Scans    Channels    Time [sec]        Format
-      25000     422          500.000       ASCII
+      25000     425          500.000       ASCII
 
   Channel   Variable Description               
 
@@ -432,4 +432,7 @@ ________________________________________________________________________________
     420      Cl, R= 75.5                    deg        Cl of blade  1 at radius  74.64
     421      Cl, R= 80.4                    deg        Cl of blade  1 at radius  80.30
     422      qwerty                         is         azerty
+    423      wake   1 gl. pos pos_x         m          Wake pos_x of source   1, Met. coo.
+    424      wake   2 gl. pos pos_y         m          Wake pos_y of source   2, Met. coo.
+    425      wake   5 gl. pos pos_z         m          Wake pos_z of source   5, Met. coo.
 ________________________________________________________________________________________________________________________
