@@ -42,7 +42,7 @@ def fmt_value(v):
             return int(float(v))
         return float(v)
     except ValueError:
-        return v
+        return v.replace("\\", "/")
 
 
 c = 0
@@ -157,6 +157,24 @@ class HTCContents(object):
         else:
             return self.parent.location() + "/" + self.name_
 
+    def compare(self, other):
+        my_keys = self.keys()
+        other_keys = other.keys()
+        s = ""
+        while my_keys or other_keys:
+            if my_keys:
+                if (my_keys[0] in other_keys):
+                    while other_keys[0] != my_keys[0]:
+                        s += "\n".join(["+ %s" % l for l in str(other[other_keys.pop(0)]).strip().split("\n")]) + "\n\n"
+
+                    s += self[my_keys.pop(0)].compare(other[other_keys.pop(0)])
+
+                else:
+                    s += "\n".join(["- %s" % l for l in str(self[my_keys.pop(0)]).strip().split("\n")]) + "\n\n"
+            else:
+                s += "\n".join(["+ %s" % l for l in str(other[other_keys.pop(0)]).strip().split("\n")]) + "\n\n"
+        return s
+
 
 class HTCSection(HTCContents):
     end_comments = ""
@@ -258,6 +276,14 @@ class HTCLine(HTCContents):
         self.values = []
         self.comments = ""
 
+    def compare(self, other):
+        s = ""
+        if self.values != other.values:
+            s += "\n".join(["+ %s" % l for l in str(self).strip().split("\n")]) + "\n"
+            s += "\n".join(["- %s" % l for l in str(other).strip().split("\n")]) + "\n"
+            s += "\n"
+        return s
+
 
 class HTCOutputSection(HTCSection):
     sensors = None
@@ -296,6 +322,17 @@ class HTCOutputSection(HTCSection):
         s += "".join([s.__str__(level + 1) for s in self.sensors])
         s += "%send %s;%s\n" % ("  " * level, self.name_, ("", "\t" + self.end_comments)
                                 [self.end_comments.strip() != ""])
+        return s
+
+    def compare(self, other):
+        s = HTCContents.compare(self, other)
+        for s1, s2 in zip(self.sensors, other.sensors):
+            s += s1.compare(s2)
+        for s1 in self.sensors[len(other.sensors):]:
+            s += "\n".join(["- %s" % l for l in str(s1).strip().split("\n")]) + "\n"
+        for s2 in self.sensors[len(self.sensors):]:
+            s += "\n".join(["- %s" % l for l in str(s2).strip().split("\n")]) + "\n"
+
         return s
 
 
@@ -359,3 +396,11 @@ class HTCSensor(HTCLine):
                                    self.sensor,
                                    ("", "\t" + self.str_values())[bool(self.values)],
                                    ("", "\t" + self.comments)[bool(self.comments.strip())])
+
+    def compare(self, other):
+        s = ""
+        if self.sensor != other.sensor or self.values != other.values:
+            s += "\n".join(["+ %s" % l for l in str(self).strip().split("\n")]) + "\n"
+            s += "\n".join(["- %s" % l for l in str(other).strip().split("\n")]) + "\n"
+            s += "\n"
+        return s

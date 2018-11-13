@@ -298,7 +298,8 @@ end turb_export;"""
         htcfile = HTCFile(self.testfilepath + "sub/test.htc")
         self.assertEqual(os.path.relpath(htcfile.modelpath, os.path.dirname(
             htcfile.filename)).replace("\\", "/"), "../..")
-        self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected", HTCFile, self.testfilepath + "test2.htc")
+        self.assertRaisesRegex(ValueError, "Modelpath cannot be autodetected",
+                               HTCFile, self.testfilepath + "missing_input_files.htc")
 
     def test_htc_model_autodetect_upper_case_files(self):
         htcfile = HTCFile(self.testfilepath + "../simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc")
@@ -318,6 +319,30 @@ end turb_export;"""
     def test_access_section__1(self):
         htc = HTCFile(self.testfilepath + "test_2xoutput.htc", "../")
         assert htc.output__1.name_ == "output"
+
+    def test_compare(self):
+        htc = HTCFile(self.testfilepath + "test_cmp1.htc", "../")
+        s = htc.compare(self.testfilepath + 'test_cmp2.htc')
+        ref = """- begin subsection1;
+- end subsection1;
+
++ begin subsection2;
++ end subsection2;
+
+- begin section1;
+- end section1;
+- ;
+
++ begin section2;
++ end section2;
++ ;
+
++ alfa 2;
+- alfa 1;
+
++ sensor1 1;
+- sensor2 2;"""
+        assert s.strip() == ref
 
 
 if __name__ == "__main__":

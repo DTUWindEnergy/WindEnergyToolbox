@@ -1,0 +1,38 @@
+; DTU_10MW_RWT, cpav, 17th Friday 2015
+; 
+begin simulation;
+  time_stop     100;
+  solvertype    1;    (newmark)
+  on_no_convergence continue;
+  convergence_limits 1E3 1.0 1E-7; ; . to run again, changed 07/11
+  logfile ./logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log;
+  visualization ./visualization/dlc12_wsp10_wdir000_s1004.hdf5;
+  animation ./animation/structure_aero_control_turb.dat;
+  begin newmark;
+    deltat    0.02;  
+  end newmark;
+end simulation;
+;
+begin aero; 
+  nblades  2;
+  hub_vec shaft -3;         rotor rotation vector (normally shaft composant directed from pressure to sustion side)
+  link 1 mbdy_c2_def blade1;
+  link 2 mbdy_c2_def blade2;
+    link    3 mbdy_c2_def blade3;
+    ae_filename ./data/missing_ae.dat;
+    pc_filename ./data/missing_pc.dat;
+  induction_method   1;     0=none, 1=normal
+  aerocalc_method    1;     0=ingen aerodynamic, 1=med aerodynamic
+  aerosections       50; def. 50
+  ae_sets            1 1 1;
+  tiploss_method     1;     0=none, 1=prandtl
+  dynstall_method    2;     0=none, 1=stig øye method,2=mhh method
+;  
+end aero; 
+;
+begin output_at_time aero 15;
+  filename ./res/rotor_check_inipos;
+  alfa 1;
+end output_at_time;
+;
+exit;

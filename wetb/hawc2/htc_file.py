@@ -104,6 +104,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         #print (["../"*i for i in range(3)])
         import numpy as np
         input_files = HTCFile(self.filename, 'unknown').input_files()
+        if len(input_files) == 1:
+            return "../"
         rel_input_files = [f for f in input_files if not os.path.isabs(f)]
 
         def isfile_case_insensitive(f):
@@ -382,6 +384,11 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
     def deltat(self):
         return self.simulation.newmark.deltat[0]
+
+    def compare(self, other):
+        if isinstance(other, str):
+            other = HTCFile(other)
+        return HTCContents.compare(self, other)
 
 
 #
