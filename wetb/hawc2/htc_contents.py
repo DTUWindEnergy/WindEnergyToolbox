@@ -204,6 +204,8 @@ class HTCSection(HTCContents):
                 break
             else:
                 section._add_contents(section.line_from_line(lines))
+        else:
+            raise Exception("Section '%s' has not end" % section.name_)
         return section
 
     def line_from_line(self, lines):

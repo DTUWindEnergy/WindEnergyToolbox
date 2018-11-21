@@ -23,6 +23,7 @@ INITIALIZATION = 'Initializing simulation'
 SIMULATING = "Simulating"
 DONE = "Simulation succeded"
 
+
 class LogInterpreter(object):
     def __init__(self, time_stop):
         self.time_stop = time_stop
@@ -60,7 +61,7 @@ class LogInterpreter(object):
         try:
             return float(time_line[time_line.index('=') + 1:time_line.index('Iter')])
         except:
-            print ("Cannot extract time from #" + time_line + "#")
+            print("Cannot extract time from #" + time_line + "#")
             pass
 
     def update_status(self, new_lines=""):
@@ -97,14 +98,16 @@ class LogInterpreter(object):
                     _3to2list1 = list(txt.split('Elapsed time'))
                     simulation_txt, rest, = _3to2list1[:1] + [_3to2list1[1:]]
                     if "*** ERROR ***" in simulation_txt:
-                        self.errors.extend([l.strip() for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
+                        self.errors.extend([l.strip()
+                                            for l in simulation_txt.strip().split("\n") if "error" in l.lower()])
                     i1 = simulation_txt.rfind("Global time")
                     if i1 > -1:
                         self.current_time = self.extract_time(simulation_txt[i1:])
                     if self.current_time is not None and self.time_stop > 0:
                         self.pct = int(100 * self.current_time // self.time_stop)
                     try:
-                        self.remaining_time = (time.time() - self.start_time[1]) / (self.current_time - self.start_time[0]) * (self.time_stop - self.current_time)
+                        self.remaining_time = (
+                            time.time() - self.start_time[1]) / (self.current_time - self.start_time[0]) * (self.time_stop - self.current_time)
                     except:
                         pass
                     if rest:
@@ -117,7 +120,6 @@ class LogInterpreter(object):
         for error in self.errors:
             error_dict[error] = error_dict.get(error, 0) + 1
         return "\n".join([("%d x %s" % (v, k), k)[v == 1] for k, v in error_dict.items()])
-
 
     def remaining_time_str(self):
         if self.remaining_time:
@@ -138,7 +140,6 @@ class LogFile(LogInterpreter):
         self.filename = log_filename
         LogInterpreter.__init__(self, time_stop)
 
-
     @staticmethod
     def from_htcfile(htcfile, modelpath=None):
         logfilename = htcfile.simulation.logfile[0]
@@ -150,13 +151,14 @@ class LogFile(LogInterpreter):
 
     def clear(self):
         # exist_ok does not exist in Python27
-        if not os.path.exists(os.path.dirname(self.filename)):
-            os.makedirs(os.path.dirname(self.filename))  #, exist_ok=True)
-        try:
-            with open(self.filename, 'w', encoding='utf-8'):
-                pass
-        except PermissionError as e:
-            raise PermissionError(str(e) + "\nLog file cannot be cleared. Check if it is open in another program")
+        # if not os.path.exists(os.path.dirname(self.filename)):
+        #    os.makedirs(os.path.dirname(self.filename))  #, exist_ok=True)
+        if os.path.isfile(self.filename):
+            try:
+                with open(self.filename, 'w', encoding='utf-8'):
+                    pass
+            except PermissionError as e:
+                raise PermissionError(str(e) + "\nLog file cannot be cleared. Check if it is open in another program")
         LogInterpreter.clear(self)
 
     def update_status(self):
@@ -173,6 +175,7 @@ class LogFile(LogInterpreter):
             txt = txt.decode(encoding='cp1252', errors='strict')
             if txt != "":
                 LogInterpreter.update_status(self, txt)
+
 
 class LogInfo(LogFile):
     def __init__(self, status, pct, remaining_time, lastline):

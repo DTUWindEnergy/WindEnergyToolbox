@@ -18,6 +18,8 @@ from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
 import tempfile
+import stat
+import shutil
 
 
 standard_library.install_aliases()
@@ -240,7 +242,8 @@ class Simulation(object):
             if self.status == ABORTED:
                 return
             if "error" in self.host.stdout.lower():
-                self.errors = (list(set([l for l in self.host.stdout.split("\n") if 'error' in l.lower()])))
+                self.errors = (list(set([l for l in self.host.stdout.split(
+                    "\n") if 'error' in l.lower() and not 'rms error' in l])))
             self.status = ERROR
         if 'HAWC2MB version:' not in self.host.stdout:
             self.errors.append(self.host.stdout)
@@ -331,23 +334,33 @@ class Simulation(object):
 
     def simulate_distributed(self, raise_simulation_errors=True):
         try:
-            with tempfile.TemporaryDirectory(prefix="h2launcher_") as tmpdirname:
-                self.tmp_modelpath = tmpdirname + "/"
-                self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath)) + "/"
-                self.prepare_simulation()
+            tmpdirname = tempfile.TemporaryDirectory(prefix="h2launcher_%s_" % os.path.basename(self.filename)).name
+            self.tmp_modelpath = tmpdirname + "/"
+            self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath)) + "/"
+            self.prepare_simulation()
+            try:
+                self.simulate()
+            except Warning as e:
+                print("simulation failed", str(self))
+                print("Trying to finish")
+                raise
+            finally:
                 try:
-                    self.simulate()
-                except Warning as e:
-                    print("simulation failed", str(self))
-                    print("Trying to finish")
+                    if self.status != ABORTED:
+                        self.finish_simulation()
+                except Exception:
+                    print("finish_simulation failed", str(self))
                     raise
                 finally:
-                    try:
-                        if self.status != ABORTED:
-                            self.finish_simulation()
-                    except Exception:
-                        print("finish_simulation failed", str(self))
-                        raise
+                    def remove_readonly(fn, path, excinfo):
+                        try:
+                            os.chmod(path, stat.S_IWRITE)
+                            fn(path)
+                        except Exception as exc:
+                            print("Skipped:", path, "because:\n", exc)
+
+                    shutil.rmtree(tmpdirname, onerror=remove_readonly)
+
         except Exception as e:
             self.status = ERROR
             self.errors.append(str(e))
