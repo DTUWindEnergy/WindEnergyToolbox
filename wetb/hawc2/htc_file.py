@@ -15,6 +15,8 @@ from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.utils.cluster_tools.cluster_resource import unix_path_old
+from wetb.utils.cluster_tools.pbsfile import PBSFile
+from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 standard_library.install_aliases()
 from collections import OrderedDict
 
@@ -80,18 +82,19 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     _contents = None
 
     def __init__(self, filename=None, modelpath=None):
-        """        
+        """
         Parameters
         ---------
         filename : str
             Absolute filename of htc file
         modelpath : str
-            Model path relative to htc file 
+            Model path relative to htc file
         """
 
         if filename is not None:
             self.filename = filename
         self.modelpath = modelpath or self.auto_detect_modelpath()
+
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
             self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
 
@@ -242,6 +245,29 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             if "wind" in self:  # and self.wind.turb_format[0] > 0:
                 self.wind.scale_time_start = start
 
+    def expected_simulation_time(self):
+        return 600
+
+    def pbs_file(self, hawc2_path, hawc2_cmd, queue='workq', walltime=None,
+                 input_files=None, output_files=None, copy_turb=(True, True)):
+        walltime = walltime or self.expected_simulation_time() * 2
+        if len(copy_turb) == 1:
+            copy_turb_fwd, copy_turb_back = copy_turb, copy_turb
+        else:
+            copy_turb_fwd, copy_turb_back = copy_turb
+
+        input_files = input_files or self.input_files()
+        if copy_turb_fwd:
+            input_files += [f for f in self.turbulence_files() if os.path.isfile(f)]
+
+        output_files = output_files or self.output_files()
+        if copy_turb_back:
+            output_files += self.turbulence_files()
+
+        return HAWC2PBSFile(hawc2_path, hawc2_cmd, self.filename, self.modelpath,
+                            input_files, output_files,
+                            queue, walltime)
+
     def input_files(self):
         self.contents  # load if not loaded
         if self.modelpath == "unknown":
@@ -264,9 +290,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 files.append(self.aero.bemwake_method.get('a-ct-filename', [None] * 3)[0])
         for dll in [self.dll[dll] for dll in self.get('dll', {}).keys() if 'filename' in self.dll[dll]]:
             files.append(dll.filename[0])
+            f, ext = os.path.splitext(dll.filename[0])
+            files.append(f + "_64" + ext)
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
             files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])
+            files.append(self.wind.get('met_mast_wind', [None])[0])
         if 'wakes' in self:
             files.append(self.wind.get('use_specific_deficit_file', [None])[0])
             files.append(self.wind.get('write_ct_cq_file', [None])[0])
@@ -281,8 +310,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         try:
             dtu_we_controller = self.dll.get_subsection_by_name('dtu_we_controller')
             theta_min = dtu_we_controller.init.constant__5[1]
-            files.append(os.path.join(os.path.dirname(
-                dtu_we_controller.filename[0]), "wpdata.%d" % theta_min).replace("\\", "/"))
+            if theta_min >= 90:
+                files.append(os.path.join(os.path.dirname(
+                    dtu_we_controller.filename[0]), "wpdata.%d" % theta_min).replace("\\", "/"))
         except:
             pass
 
@@ -323,7 +353,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         for key in [k for k in self.contents.keys() if k.startswith("output_at_time")]:
             files.append(self[key]['filename'][0] + ".dat")
-        return [f for f in files if f]
+        return [f.lower() for f in files if f]
 
     def turbulence_files(self):
         self.contents  # load if not loaded

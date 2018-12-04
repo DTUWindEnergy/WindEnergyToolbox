@@ -237,10 +237,15 @@ end turb_export;"""
                   './data/DTU_10MW_RWT_ae.dat',
                   './data/DTU_10MW_RWT_pc.dat',
                   './control/risoe_controller.dll',
+                  './control/risoe_controller_64.dll',
                   './control/generator_servo.dll',
+                  './control/generator_servo_64.dll',
                   './control/mech_brake.dll',
+                  './control/mech_brake_64.dll',
                   './control/servo_with_limits.dll',
+                  './control/servo_with_limits_64.dll',
                   './control/towclearsens.dll',
+                  './control/towclearsens_64.dll',
                   './data/user_shear.dat',
                   self.testfilepath.replace("\\", "/") + 'test.htc'
                   ]:
@@ -343,6 +348,21 @@ end turb_export;"""
 + sensor1 1;
 - sensor2 2;"""
         assert s.strip() == ref
+
+    def test_pbs_file(self):
+        htc = HTCFile(self.testfilepath + "../simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc")
+        assert os.path.relpath(htc.modelpath, self.testfilepath) == os.path.relpath(
+            "../simulation_setup/DTU10MWRef6.0/")
+        from wetb.hawc2.hawc2_pbs_file import JESS_WINE32_HAWC2MB
+        htc.pbs_file(r"R:\HAWC2_tests\v12.6_mmpe3\hawc2\win32", JESS_WINE32_HAWC2MB)
+
+    def test_pbs_file_inout(self):
+        htc = HTCFile(self.testfilepath + "../simulation_setup/DTU10MWRef6.0_IOS/input/htc/DTU_10MW_RWT.htc")
+        assert os.path.relpath(htc.modelpath, self.testfilepath) == os.path.relpath(
+            "../simulation_setup/DTU10MWRef6.0_IOS/input")
+        from wetb.hawc2.hawc2_pbs_file import JESS_WINE32_HAWC2MB
+        print(htc.pbs_file(r"R:\HAWC2_tests\v12.6_mmpe3\hawc2\win32",
+                           JESS_WINE32_HAWC2MB, input_files=["./input/*"], output_files=['./output/*']))
 
 
 if __name__ == "__main__":
