@@ -382,7 +382,7 @@ begin wind ;
     filename_u    ./turb/turb_s101_11msu.bin ;
     filename_v    ./turb/turb_s101_11msv.bin ;
     filename_w    ./turb/turb_s101_11msw.bin ;
-    box_dim_u    512 0.85938 ;
+    box_dim_u    512 0.859375 ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;

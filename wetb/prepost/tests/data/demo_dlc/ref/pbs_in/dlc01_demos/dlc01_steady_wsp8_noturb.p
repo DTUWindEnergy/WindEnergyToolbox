@@ -39,7 +39,6 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   mkdir -p logfiles/dlc01_demos/
   mkdir -p turb/
   cp -R $PBS_O_WORKDIR/htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc ./htc/dlc01_demos/
-  cp -R $PBS_O_WORKDIR/../turb/none*.bin turb/
   _HOSTNAME_=`hostname`
   if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then
     WINEARCH=win32 WINEPREFIX=~/.wine32 winefix
@@ -68,7 +67,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo "execute HAWC2, do not fork and wait"
-  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc) 2>&1 | tee pbs_out/dlc01_demos/dlc01_steady_wsp8_noturb.err.out 
+  (time WINEARCH=win32 WINEPREFIX=~/.wine32 numactl --physcpubind=$CPU_NR wine hawc2-latest ./htc/dlc01_demos/dlc01_steady_wsp8_noturb.htc) 2>&1 | tee pbs_out/dlc01_demos/dlc01_steady_wsp8_noturb.err.out
 fi
 # ------------------------------------------------------------------------------
 

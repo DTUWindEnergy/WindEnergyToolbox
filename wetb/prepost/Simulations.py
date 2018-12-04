@@ -58,9 +58,9 @@ from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
 from os.path import join as os_path_join
 
-def join_path(*args):
-    return os_path_join(*args).replace("\\","/")
-os.path.join = join_path
+#def join_path(*args):
+#    return os_path_join(*args).replace("\\","/")
+#os.path.join = join_path
 
 
 
@@ -470,7 +470,7 @@ def run_local(cases, silent=False, check_log=True):
         # create the required directories
         dirkeys = ['[data_dir]', '[htc_dir]', '[res_dir]', '[log_dir]',
                    '[eigenfreq_dir]', '[animation_dir]', '[turb_dir]',
-                   '[wake_dir]', '[meander_dir]', '[opt_dir]', '[control_dir]',
+                   '[micro_dir]', '[meander_dir]', '[opt_dir]', '[control_dir]',
                    '[mooring_dir]', '[hydro_dir]', '[externalforce]']
         for dirkey in dirkeys:
             if tags[dirkey]:
@@ -1181,24 +1181,22 @@ class HtcMaster(object):
         self.tags['[iter_dir]'] = 'iter/'
         self.tags['[log_dir]'] = 'logfiles/'
         self.tags['[turb_dir]'] = 'turb/'
-        self.tags['[wake_dir]'] = None
-        self.tags['[meand_dir]'] = None
+        self.tags['[micro_dir]'] = None
+        self.tags['[meander_dir]'] = None
         self.tags['[turb_db_dir]'] = None
-        self.tags['[wake_db_dir]'] = None
-        self.tags['[meand_db_dir]'] = None
+        self.tags['[micro_db_dir]'] = None
+        self.tags['[meander_db_dir]'] = None
         self.tags['[control_dir]'] = 'control/'
         self.tags['[externalforce]'] = 'externalforce/'
         self.tags['[animation_dir]'] = 'animation/'
         self.tags['[eigenfreq_dir]'] = 'eigenfreq/'
-        self.tags['[wake_dir]'] = 'wake/'
-        self.tags['[meander_dir]'] = 'meander/'
         self.tags['[htc_dir]'] = 'htc/'
         self.tags['[mooring_dir]'] = 'mooring/'
         self.tags['[hydro_dir]'] = 'htc_hydro/'
         self.tags['[pbs_out_dir]'] = 'pbs_out/'
         self.tags['[turb_base_name]'] = None
-        self.tags['[wake_base_name]'] = None
-        self.tags['[meand_base_name]'] = None
+        self.tags['[micro_base_name]'] = None
+        self.tags['[meander_base_name]'] = None
         self.tags['[zip_root_files]'] = []
 
         self.tags['[fname_source]'] = []
@@ -1215,8 +1213,8 @@ class HtcMaster(object):
 #        self.queue = Queue.Queue()
 
         self.output_dirs = ['[res_dir]', '[log_dir]', '[turb_dir]',
-                            '[case_id]', '[wake_dir]', '[animation_dir]',
-                            '[meand_dir]', '[eigenfreq_dir]']
+                            '[case_id]', '[micro_dir]', '[animation_dir]',
+                            '[meander_dir]', '[eigenfreq_dir]']
 
     def create_run_dir(self):
         """
@@ -1225,13 +1223,15 @@ class HtcMaster(object):
 
         dirkeys = ['[data_dir]', '[htc_dir]', '[res_dir]', '[log_dir]',
                    '[eigenfreq_dir]', '[animation_dir]', '[turb_dir]',
-                   '[wake_dir]', '[meander_dir]', '[opt_dir]', '[control_dir]',
+                   '[micro_dir]', '[meander_dir]', '[opt_dir]', '[control_dir]',
                    '[mooring_dir]', '[hydro_dir]', '[externalforce]']
 
         # create all the necessary directories
         for dirkey in dirkeys:
             if isinstance(self.tags[dirkey], str):
                 path = os.path.join(self.tags['[run_dir]'], self.tags[dirkey])
+                if self.tags[dirkey].lower() == 'none':
+                    continue
                 if not os.path.exists(path):
                     os.makedirs(path)
 
@@ -1356,7 +1356,7 @@ class HtcMaster(object):
         htcmaster_dir = self.tags['[master_htc_dir]']
         data_dir = self.tags['[data_dir]']
         turb_dir = self.tags['[turb_dir]']
-        wake_dir = self.tags['[wake_dir]']
+        wake_dir = self.tags['[micro_dir]']
         meander_dir = self.tags['[meander_dir]']
         mooring_dir = self.tags['[mooring_dir]']
         hydro_dir = self.tags['[hydro_dir]']
@@ -1383,7 +1383,7 @@ class HtcMaster(object):
 
         # the master file
         src = os.path.join(htcmaster_dir, htcmaster)
-        dst = os.path.join('htc', '_master', htcmaster)
+        dst = os.path.join('htc', '_master', os.path.basename(htcmaster))
         zf.write(src, dst, zipfile.ZIP_DEFLATED)
 
         # manually add all that resides in control, mooring and hydro
@@ -1934,9 +1934,9 @@ class PBS(object):
             self.animation_dir = tag_dict['[animation_dir]']
             self.TurbDirName = tag_dict['[turb_dir]']
             self.TurbDb = tag_dict['[turb_db_dir]']
-            self.wakeDb = tag_dict['[wake_db_dir]']
-            self.meandDb = tag_dict['[meand_db_dir]']
-            self.WakeDirName = tag_dict['[wake_dir]']
+            self.wakeDb = tag_dict['[micro_db_dir]']
+            self.meandDb = tag_dict['[meander_db_dir]']
+            self.WakeDirName = tag_dict['[micro_dir]']
             self.MeanderDirName = tag_dict['[meander_dir]']
             self.ModelZipFile = tag_dict['[model_zip]']
             self.htc_dir = tag_dict['[htc_dir]']
@@ -1944,8 +1944,8 @@ class PBS(object):
             self.mooring_dir = tag_dict['[mooring_dir]']
             self.model_path = tag_dict['[run_dir]']
             self.turb_base_name = tag_dict['[turb_base_name]']
-            self.wake_base_name = tag_dict['[wake_base_name]']
-            self.meand_base_name = tag_dict['[meand_base_name]']
+            self.wake_base_name = tag_dict['[micro_base_name]']
+            self.meand_base_name = tag_dict['[meander_base_name]']
             self.pbs_queue_command = tag_dict['[pbs_queue_command]']
             self.walltime = tag_dict['[walltime]']
             self.dyn_walltime = tag_dict['[auto_walltime]']
@@ -2059,12 +2059,17 @@ class PBS(object):
             self.pbs += "  mkdir -p " + self.htc_dir + '\n'
             self.pbs += "  mkdir -p " + self.results_dir + '\n'
             self.pbs += "  mkdir -p " + self.logs_dir + '\n'
-            if self.TurbDirName is not None or self.TurbDirName != 'None':
+            if self.TurbDirName is not None or self.TurbDirName.lower()!='none':
                 self.pbs += "  mkdir -p " + self.TurbDirName + '\n'
+
             if self.WakeDirName and self.WakeDirName != self.TurbDirName:
-                self.pbs += "  mkdir -p " + self.WakeDirName + '\n'
+                if str(self.WakeDirName).lower() != 'none':
+                    self.pbs += "  mkdir -p " + self.WakeDirName + '\n'
+
             if self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
-                self.pbs += "  mkdir -p " + self.MeanderDirName + '\n'
+                if str(self.MeanderDirName).lower() != 'none':
+                    self.pbs += "  mkdir -p " + self.MeanderDirName + '\n'
+
             if self.hydro_dir:
                 self.pbs += "  mkdir -p " + self.hydro_dir + '\n'
             # create the eigen analysis dir just in case that is necessary
@@ -2200,7 +2205,7 @@ class PBS(object):
                                             fname_pbs_out=fname_pbs_out,
                                             winenumactl=self.winenumactl)
             self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
-            self.pbs += "  %s \n" % execstr
+            self.pbs += "  %s\n" % execstr
 
             # param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
             #          self.wine_appendix)
@@ -5155,6 +5160,63 @@ class MannTurb64(prepost.PBSScript):
         self.silent = silent
         self.pbs_in_dir = 'pbs_in_turb/'
 
+    def create_turb(self, base_name, out_base, turb_dir, turb_db_dir, param):
+        """
+
+        Parameters
+        ----------
+
+        base_name
+
+        out_base
+
+        turb_dir
+
+        turb_db_dir
+
+        param : dictionary
+            Should contain the following keys: [MannAlfaEpsilon], [MannL]
+            [MannGamma], [seed], [turb_nr_u], [turb_nr_u], [turb_nr_w],
+            [turb_dx], [turb_dy], [turb_dz], [high_freq_comp]
+        """
+
+        self.path_pbs_e = os.path.join(out_base, turb_dir, base_name + '.err')
+        self.path_pbs_o = os.path.join(out_base, turb_dir, base_name + '.out')
+        self.path_pbs_i = os.path.join(self.pbs_in_dir, turb_dir, base_name + '.p')
+
+        # apply winefix
+        self.prelude = self.winefix
+        # browse to scratch dir
+        self.prelude += 'cd {}\n'.format(self.scratchdir)
+
+        self.coda = '# COPY BACK FROM SCRATCH AND RENAME, remove _ at end\n'
+        # copy back to turb dir at the end
+        if turb_db_dir is not None:
+            dst = os.path.join('$PBS_O_WORKDIR', turb_db_dir, base_name)
+        else:
+            dst = os.path.join('$PBS_O_WORKDIR', turb_dir, base_name)
+        # FIXME: Mann64 turb exe creator adds an underscore to output
+        for comp in list('uvw'):
+            src = '{}_{}.bin'.format(base_name, comp)
+            dst2 = '{}{}.bin'.format(dst, comp)
+            self.coda += 'cp {} {}\n'.format(src, dst2)
+
+        # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
+        rpl = (float(param['[MannAlfaEpsilon]']),
+               float(param['[MannL]']),
+               float(param['[MannGamma]']),
+               int(float(param['[seed]'])),
+               int(float(param['[turb_nr_u]'])),
+               int(float(param['[turb_nr_v]'])),
+               int(float(param['[turb_nr_w]'])),
+               float(param['[turb_dx]']),
+               float(param['[turb_dy]']),
+               float(param['[turb_dz]']),
+               int(float(param['[high_freq_comp]'])))
+        params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
+        self.execution = '%s %s %s' % (self.exe, base_name, params)
+        self.create(check_dirs=True)
+
     def gen_pbs(self, cases):
         """
         Parameters
@@ -5169,57 +5231,51 @@ class MannTurb64(prepost.PBSScript):
         self.pbsworkdir = os.path.join(case0['[run_dir]'], '')
         if not self.silent:
             print('\nStart creating PBS files for turbulence with Mann64...')
+
+        mann_turb = ['[MannAlfaEpsilon]', '[MannL]', '[MannGamma]',
+                     '[turb_nr_u]', '[turb_nr_v]', '[turb_nr_w]', '[seed]',
+                     '[turb_dx]', '[turb_dy]', '[turb_dz]',
+                     '[high_freq_comp]']
+        mann_micro = {k:k.replace(']', '_micro]') for k in mann_turb}
+        mann_meander = {k:k.replace(']', '_meander]') for k in mann_turb}
+
         for cname, case in cases.items():
 
-            # only relevant for cases with turbulence
-            if '[tu_model]' in case and int(case['[tu_model]']) == 0:
-                continue
-            if '[turb_base_name]' not in case:
-                continue
-
-            base_name = case['[turb_base_name]']
-            # pbs_in/out dir can contain subdirs, only take the inner directory
+            # pbs_in/out dir can contain subdirs, only take the base directory
             out_base = misc.path_split_dirs(case['[pbs_out_dir]'])[0]
-            turb = case['[turb_dir]']
 
-            self.path_pbs_e = os.path.join(out_base, turb, base_name + '.err')
-            self.path_pbs_o = os.path.join(out_base, turb, base_name + '.out')
-            self.path_pbs_i = os.path.join(self.pbs_in_dir, base_name + '.p')
+            # NORMAL ATMOSPHERIC TURBULENCE
+            # only relevant for cases with turbulence
+            req = '[tu_model]' in case and '[turb_base_name]' in case
+            if req and int(case['[tu_model]'])==1:
+                base = case['[turb_base_name]']
+                # pbs_in/out dir can contain subdirs, only take the base directory
+                turb_dir = case['[turb_dir]']
+                turb_db_dir = case['[turb_db_dir]']
+                # more fail safe switches in case user did not change defaults
+                if turb_dir and base and base.lower()!='none' and base!='':
+                    self.create_turb(base, out_base, turb_dir, turb_db_dir,
+                                     {key:case[key] for key in mann_turb})
 
-            # apply winefix
-            self.prelude = self.winefix
-            # browse to scratch dir
-            self.prelude += 'cd {}\n'.format(self.scratchdir)
+            # MICRO TURBULENCE
+            if ('[micro_dir]' in case) and ('[micro_base_name]' in case):
+                base = case['[micro_base_name]']
+                turb_dir = case['[micro_dir]']
+                turb_db_dir = case['[micro_db_dir]']
+                # more fail safe switches in case user did not change defaults
+                if turb_dir and base and base.lower()!='none' and base!='':
+                    p = {key:case[mann_micro[key]] for key in mann_turb}
+                    self.create_turb(base, out_base, turb_dir, turb_db_dir, p)
 
-            self.coda = '# COPY BACK FROM SCRATCH AND RENAME, remove _ at end\n'
-            # copy back to turb dir at the end
-            if case['[turb_db_dir]'] is not None:
-                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_db_dir]'],
-                                   base_name)
-            else:
-                dst = os.path.join('$PBS_O_WORKDIR', case['[turb_dir]'],
-                                   base_name)
-            # FIXME: Mann64 turb exe creator adds an underscore to output
-            for comp in list('uvw'):
-                src = '{}_{}.bin'.format(base_name, comp)
-                dst2 = '{}{}.bin'.format(dst, comp)
-                self.coda += 'cp {} {}\n'.format(src, dst2)
-
-            # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
-            rpl = (float(case['[MannAlfaEpsilon]']),
-                   float(case['[MannL]']),
-                   float(case['[MannGamma]']),
-                   int(case['[seed]']),
-                   int(case['[turb_nr_u]']),
-                   int(case['[turb_nr_v]']),
-                   int(case['[turb_nr_w]']),
-                   float(case['[turb_dx]']),
-                   float(case['[turb_dy]']),
-                   float(case['[turb_dz]']),
-                   int(case['[high_freq_comp]']))
-            params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
-            self.execution = '%s %s %s' % (self.exe, base_name, params)
-            self.create(check_dirs=True)
+            # MEANDER TURBULENCE
+            if ('[meander_dir]' in case) and ('[meander_base_name]' in case):
+                base = case['[meander_base_name]']
+                turb_dir = case['[meander_dir]']
+                turb_db_dir = case['[meander_db_dir]']
+                # more fail safe switches in case user did not change defaults
+                if turb_dir and base and base.lower()!='none' and base!='':
+                    p = {key:case[mann_meander[key]] for key in mann_turb}
+                    self.create_turb(base, out_base, turb_dir, turb_db_dir, p)
 
 
 def eigenbody(cases, debug=False):

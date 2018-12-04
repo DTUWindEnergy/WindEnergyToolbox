@@ -296,7 +296,7 @@ def tags_defaults(master):
     master.tags['[iter_dir]']      = 'iter/'
     master.tags['[turb_dir]']      = 'turb/'
     master.tags['[turb_db_dir]']   = '../turb/'
-    master.tags['[wake_dir]']      = False
+    master.tags['[micro_dir]']      = False
     master.tags['[hydro_dir]']     = False
     master.tags['[mooring_dir]']   = False
     master.tags['[externalforce]'] = False
@@ -416,7 +416,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                     tags_dict[str(key)] = str(value)
                 else:
                     tags_dict[str(key)] = value
-                # convert ; and empty to False/True
+                # convert ; and empty to False/True, "none" to None
                 if isinstance(tags_dict[str(key)], str):
                     if tags_dict[str(key)] == ';':
                         tags_dict[str(key)] = False
@@ -424,6 +424,8 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                         tags_dict[str(key)] = True
                     elif tags_dict[str(key)].lower() == 'nan':
                         tags_dict[str(key)] = True
+                    elif tags_dict[str(key)].lower() == 'none':
+                        tags_dict[str(key)] = None
 
             # FIXME: this horrible mess requires a nice and clearly defined
             # tag spec/naming convention, and with special tag prefix
@@ -443,6 +445,14 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             else:
                 raise KeyError('[seed] should be used as tag for turb. seed')
 
+            # for backwards compatibility
+            if '[wake_dir]' in tags_dict and not '[micro_dir]':
+                tags_dict['[micro_dir]'] = tags_dict['[wake_dir]']
+            if '[wake_db_dir]' in tags_dict and not '[micro_db_dir]':
+                tags_dict['[micro_db_dir]'] = tags_dict['[wake_db_dir]']
+            if '[wake_base_name]' in tags_dict and not '[micro_base_name]':
+                tags_dict['[micro_base_name]'] = tags_dict['[wake_base_name]']
+
             tags_dict['[Case folder]'] = tags_dict['[Case folder]'].lower()
             tags_dict['[Case id.]'] = tags_dict['[Case id.]'].lower()
             dlc_case = tags_dict['[Case folder]']
@@ -460,11 +470,17 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
                 tags_dict['[time_stop]'] = tags_dict['[time stop]']
             else:
                 tags_dict['[time stop]'] = tags_dict['[time_stop]']
-            try:
-                tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
-            except KeyError:
+
+            if '[Turb base name]' in tags_dict:
+                if not '[turb_base_name]' in tags_dict:
+                    tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
+            elif not '[turb_base_name]' in tags_dict:
                 tags_dict['[turb_base_name]'] = None
                 tags_dict['[Turb base name]'] = None
+            # for backwards compatibility: user has only defined [Turb base name]
+            elif not '[Turb base name]' in tags_dict:
+                tags_dict['[Turb base name]'] = tags_dict['[turb_base_name]']
+
             tags_dict['[DLC]'] = tags_dict['[Case id.]'].split('_')[0][3:]
             if '[pbs_out_dir]' not in tags_dict:
                 tags_dict['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case

@@ -277,9 +277,23 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     iter_dict['[empty]'] = [False]
 
     if postpro_node or postpro_node_zipchunks:
+#        pyenv = 'py36-wetb'
         pyenv = 'wetb_py3'
     else:
         pyenv = None
+
+    # if linux:
+    #     pyenv = 'wetb_py3'
+    #     pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
+    #     exesingle = "{hawc2_exe:} {fname_htc:}"
+    #     exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
+    #     exechunks += "2>&1 | tee {fname_pbs_out:}"
+    # else:
+    #     pyenv = ''
+    #     pyenv_cmd = 'source /home/ozgo/bin/activate_hawc2cfd.sh'
+    #     exesingle = "time {hawc2_exe:} {fname_htc:}"
+    #     exechunks = "(time numactl --physcpubind=$CPU_NR {hawc2_exe:} {fname_htc:}) "
+    #     exechunks += "2>&1 | tee {fname_pbs_out:}"
 
     # see if a htc/DLCs dir exists
     # Load all DLC definitions and make some assumptions on tags that are not
@@ -507,8 +521,19 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     # a line for the header
     mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=None,
                 header_fjoined=lf._header(), recursive=True)
+
+    # FIXME: this is due to bug in log file analysis. What is going on here??
+    # fix that some cases do not have enough columns
+    with open(fcsv.replace('.csv', '2.csv'), 'w') as f1:
+        with open(fcsv) as f2:
+            for line in f2.readlines():
+                if len(line.split(';'))==96:
+                    line = line.replace(';0.00000000000;nan;-0.0000;',
+                                        '0.00000000000;nan;-0.0000;')
+                f1.write(line)
+
     # convert from CSV to DataFrame
-    df = lf.csv2df(fcsv)
+    df = lf.csv2df(fcsv.replace('.csv', '2.csv'))
     df.to_hdf(fcsv.replace('.csv', '.h5'), 'table')
     # -------------------------------------------------------------------------
     path_pattern = os.path.join(P_RUN, 'res', '*', '*.csv')

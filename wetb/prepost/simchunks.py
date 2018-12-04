@@ -68,11 +68,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         fname_model = os.path.join(run_dir, model_zip)
         with zipfile.ZipFile(fname_model, 'r') as zf_model:
             for n in zf_model.namelist():
+                # FIXME: might be duplicates when creating dirs from dirtags
                 zf.writestr(n, zf_model.open(n).read())
 
         # create all necessary directories in the zip file
         dirtags = ['[htc_dir]', '[res_dir]','[log_dir]','[animation_dir]',
-                   '[pbs_in_dir]', '[eigenfreq_dir]','[turb_dir]','[wake_dir]',
+                   '[pbs_in_dir]', '[eigenfreq_dir]','[turb_dir]','[micro_dir]',
                    '[meander_dir]','[hydro_dir]', '[mooring_dir]',
                    '[pbs_in_dir]', '[pbs_out_dir]']
         dirnames = []
@@ -82,6 +83,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                     dirnames.append(dirname)
         for dirname in set(dirnames):
             if dirname != 0:
+                # FIXME: might have duplicates from the base model zip file
                 zf.write('.', os.path.join(dirname, '.'))
 
         # and the post-processing data
@@ -274,7 +276,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "create turb_db directories"\n'
-        turb_db_tags = ['[turb_db_dir]', '[meand_db_dir]', '[wake_db_dir]']
+        turb_db_tags = ['[turb_db_dir]', '[meander_db_dir]', '[micro_db_dir]']
         turb_db_dirs = []
         for tag in turb_db_tags:
             for dirname in set(df[tag].unique().tolist()):
@@ -283,7 +285,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                     turb_db_dirs.append(dirname)
         turb_db_dirs = set(turb_db_dirs)
         # create all turb dirs
-        for dirname in turb_db_dirs:
+        for dirname in sorted(turb_db_dirs):
             pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
 
         # =====================================================================
@@ -294,25 +296,36 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'cd $PBS_O_WORKDIR\n'
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
-        base_name_tags = ['[turb_base_name]', '[meand_base_name]',
-                          '[wake_base_name]']
+        base_name_tags = ['[turb_base_name]', '[meander_base_name]',
+                          '[micro_base_name]']
         for db, base_name in zip(turb_db_tags, base_name_tags):
             turb_db_dirs = df[db] + df[base_name]
             # When set to None, the DataFrame will have text as None
             # FIXME: CI runner has and old pandas version (v0.14.1)
             try:
-                turb_db_src = turb_db_dirs[turb_db_dirs.str.find('None')==-1]
+                p1 = turb_db_dirs.str.find('None')==-1
+                p2 = turb_db_dirs.str.find('none')==-1
+                p3 = turb_db_dirs.str.find('false')==-1
+                p4 = turb_db_dirs.str.find('False')==-1
+#                p4 = turb_db_dirs.str.find('0')==-1
+                turb_db_src = turb_db_dirs[p1 & p2 & p3 & p4]
             except AttributeError:
                 # and findall returns list with the search str occuring as
                 # many times as found in the str...
                 # sel should be True if str does NOT occur in turb_db_dirs
                 # meaning if findall returns empty list
-                findall = turb_db_dirs.str.findall('None').tolist()
-                sel = [True if len(k)==0 else False for k in findall]
+                sel = [True]*len(turb_db_dirs)
+                for val in ['false', 'none', 'None', 'False']:
+                    findall = turb_db_dirs.str.findall(val).tolist()
+                    # len==0 if nothing has been found
+                    sel_ = [True if len(k)==0 else False for k in findall]
+                    # merge with other search results, none of the elements
+                    # should occur
+                    sel = [True if k and kk else False for k, kk in zip(sel, sel_)]
                 turb_db_src = turb_db_dirs[sel]
             pbs += '\n'
             pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
-            for k in turb_db_src.unique():
+            for k in sorted(turb_db_src.unique()):
                 dst = os.path.dirname(os.path.join(pbase, sim_id, k))
                 pbs += 'cp %s* %s\n' % (k, os.path.join(dst, '.'))
 
@@ -323,14 +336,14 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "create turb directories in CPU dirs"\n'
-        turb_dir_tags = ['[turb_dir]', '[meand_dir]', '[wake_dir]']
+        turb_dir_tags = ['[turb_dir]', '[meander_dir]', '[micro_dir]']
         turb_dirs = []
         for tag in turb_dir_tags:
             for dirname in set(df[tag].unique().tolist()):
                 dirname_s = str(dirname).replace('.', '').replace('/', '')
                 if dirname_s.lower() not in ['false', 'none', '0']:
                     turb_dirs.append(dirname)
-        turb_dirs = set(turb_dirs)
+        turb_dirs = sorted(set(turb_dirs))
         for k in list(range(ppn)):
             for dirname in turb_dirs:
                 pbs += 'mkdir -p %s\n' % os.path.join(str(k), dirname, '')
@@ -504,7 +517,24 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     if not os.path.exists(fpath):
         os.makedirs(fpath)
 
-    df_iter = chunker(df, nr_procs_series*ppn)
+    # remove all cases that start with test_ and move them into a separate
+    # chunk
+    # FIXME: CI runner has and old pandas version (v0.14.1)
+    try:
+        sel_notest = df['[Case folder]'].str.find('test_')<0
+        sel_test = ~sel_notest
+    except AttributeError:
+        # and findall returns list with the search str occuring as
+        # many times as found in the str...
+        findall = df['[Case folder]'].str.findall('test_').tolist()
+        # len==0 if nothing has been found
+        sel_notest = [True if len(k)==0 else False for k in findall]
+        sel_test = [not k for k in sel_notest]
+    df_dlc = df[sel_notest]
+    df_test = df[sel_test]
+
+    # DLC CHUNKS
+    df_dlc_iter = chunker(df_dlc, nr_procs_series*ppn)
     sim_id = df['[sim_id]'].iloc[0]
     run_dir = df['[run_dir]'].iloc[0]
     model_zip = df['[model_zip]'].iloc[0]
@@ -512,15 +542,30 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     nodes = 1
     df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
     df_ind.index.name = '[case_id]'
-    for ii, dfi in enumerate(df_iter):
+    for ii, dfi in enumerate(df_dlc_iter):
         fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
         make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
                         wine_arch=wine_arch, wine_prefix=wine_prefix,
                         compress=compress)
         df_ind = df_ind.append(ind)
         print(fname)
-
     fname = os.path.join(post_dir, 'case_id-chunk-index')
+    df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
+    df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
+    df_ind.to_csv(fname+'.csv')
+
+    # TEST CHUNKS
+    df_test_iter = chunker(df_test, nr_procs_series*ppn)
+    df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
+    df_ind.index.name = '[case_id]'
+    for ii, dfi in enumerate(df_test_iter):
+        fname, ind = make_zip_chunks(dfi, 90000+ii, sim_id, run_dir, model_zip)
+        make_pbs_chunks(dfi, 90000+ii, sim_id, run_dir, model_zip,
+                        wine_arch=wine_arch, wine_prefix=wine_prefix,
+                        compress=compress)
+        df_ind = df_ind.append(ind)
+        print(fname)
+    fname = os.path.join(post_dir, 'case_id-chunk-test-index')
     df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
     df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
     df_ind.to_csv(fname+'.csv')

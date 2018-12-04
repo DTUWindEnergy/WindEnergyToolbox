@@ -98,12 +98,11 @@ class TestGenerateInputs(Template):
                                 print()
                         raise
 
-
         # we can not git check-in empty dirs so we can not compare the complete
         # directory structure withouth manually creating the empty dirs here
         for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
                        'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos',
-                       'zip-chunks-gorm', 'zip-chunks-jess']:
+                       'zip-chunks-jess', 'zip-chunks-gorm']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)
             # the zipfiles are taken care of separately

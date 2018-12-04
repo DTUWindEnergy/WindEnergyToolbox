@@ -81,13 +81,12 @@ echo 'current working directory:'
 pwd
 
 # copy to scratch db directory for [turb_db_dir], [turb_base_name]
-cp ../turb/none* /scratch/$USER/$PBS_JOBID/remote/../turb/.
 cp ../turb/turb_s100_10ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
 cp ../turb/turb_s101_11ms* /scratch/$USER/$PBS_JOBID/remote/../turb/.
 
-# copy to scratch db directory for [meand_db_dir], [meand_base_name]
+# copy to scratch db directory for [meander_db_dir], [meander_base_name]
 
-# copy to scratch db directory for [wake_db_dir], [wake_base_name]
+# copy to scratch db directory for [micro_db_dir], [micro_base_name]
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
@@ -95,17 +94,41 @@ echo 'current working directory:'
 pwd
 echo "create turb directories in CPU dirs"
 mkdir -p 0/turb/
+mkdir -p 0/turb_meander/
+mkdir -p 0/turb_micro/
 mkdir -p 1/turb/
+mkdir -p 1/turb_meander/
+mkdir -p 1/turb_micro/
 mkdir -p 2/turb/
+mkdir -p 2/turb_meander/
+mkdir -p 2/turb_micro/
 mkdir -p 3/turb/
+mkdir -p 3/turb_meander/
+mkdir -p 3/turb_micro/
 mkdir -p 4/turb/
+mkdir -p 4/turb_meander/
+mkdir -p 4/turb_micro/
 mkdir -p 5/turb/
+mkdir -p 5/turb_meander/
+mkdir -p 5/turb_micro/
 mkdir -p 6/turb/
+mkdir -p 6/turb_meander/
+mkdir -p 6/turb_micro/
 mkdir -p 7/turb/
+mkdir -p 7/turb_meander/
+mkdir -p 7/turb_micro/
 mkdir -p 8/turb/
+mkdir -p 8/turb_meander/
+mkdir -p 8/turb_micro/
 mkdir -p 9/turb/
+mkdir -p 9/turb_meander/
+mkdir -p 9/turb_micro/
 mkdir -p 10/turb/
+mkdir -p 10/turb_meander/
+mkdir -p 10/turb_micro/
 mkdir -p 11/turb/
+mkdir -p 11/turb_meander/
+mkdir -p 11/turb_micro/
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/remote/

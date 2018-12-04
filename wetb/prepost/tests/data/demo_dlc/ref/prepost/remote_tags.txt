@@ -25,6 +25,12 @@
                         [G_t0] : True                
               [Grid loss time] : 5000                
                    [Induction] : 1                   
+     [MannAlfaEpsilon_meander] : True                
+       [MannAlfaEpsilon_micro] : True                
+           [MannGamma_meander] : True                
+             [MannGamma_micro] : True                
+               [MannL_meander] : True                
+                 [MannL_micro] : True                
               [Pitch 1 DLC22b] : 0                   
                     [Pitvel 1] : 3                   
                     [Pitvel 2] : 4                   
@@ -34,7 +40,7 @@
                           [TI] : 0.232               
           [Time pitch runaway] : 5000                
            [Time stuck DLC22b] : -1                  
-              [Turb base name] : none                
+              [Turb base name] : None                
                    [Windspeed] : 8                   
                      [case_id] : dlc01_steady_wsp8_noturb
                     [data_dir] : data/               
@@ -42,15 +48,23 @@
                     [duration] : 20.0                
                         [gust] : False               
                    [gust_type] : True                
+      [high_freq_comp_meander] : True                
+        [high_freq_comp_micro] : True                
                      [htc_dir] : htc/dlc01_demos/    
                      [init_wr] : 0.5                 
                     [iter_dir] : iter/dlc01_demos/   
                      [log_dir] : logfiles/dlc01_demos/
+           [meander_base_name] : None                
+                 [meander_dir] : None                
+             [micro_base_name] : None                
+                   [micro_dir] : None                
                   [out_format] : hawc_binary         
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
                         [seed] : 0                   
+                [seed_meander] : True                
+                  [seed_micro] : True                
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -59,8 +73,21 @@
                    [time_stop] : 40                  
                     [tu_model] : 0                   
                      [tu_seed] : 0                   
-              [turb_base_name] : none                
-                     [turb_dx] : 0.03906             
+              [turb_base_name] : None                
+                    [turb_dir] : turb/               
+                     [turb_dx] : 0.0390625           
+             [turb_dx_meander] : True                
+               [turb_dx_micro] : True                
+             [turb_dy_meander] : True                
+               [turb_dy_micro] : True                
+             [turb_dz_meander] : True                
+               [turb_dz_micro] : True                
+           [turb_nr_u_meander] : True                
+             [turb_nr_u_micro] : True                
+           [turb_nr_v_meander] : True                
+             [turb_nr_v_micro] : True                
+           [turb_nr_w_meander] : True                
+             [turb_nr_w_micro] : True                
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 1.0                 
@@ -83,6 +110,12 @@
                         [G_t0] : True                
               [Grid loss time] : 5000                
                    [Induction] : 1                   
+     [MannAlfaEpsilon_meander] : True                
+       [MannAlfaEpsilon_micro] : True                
+           [MannGamma_meander] : True                
+             [MannGamma_micro] : True                
+               [MannL_meander] : True                
+                 [MannL_micro] : True                
               [Pitch 1 DLC22b] : 0                   
                     [Pitvel 1] : 3                   
                     [Pitvel 2] : 4                   
@@ -92,7 +125,7 @@
                           [TI] : 0.2196              
           [Time pitch runaway] : 5000                
            [Time stuck DLC22b] : -1                  
-              [Turb base name] : none                
+              [Turb base name] : None                
                    [Windspeed] : 9                   
                      [case_id] : dlc01_steady_wsp9_noturb
                     [data_dir] : data/               
@@ -100,15 +133,23 @@
                     [duration] : 20.0                
                         [gust] : False               
                    [gust_type] : True                
+      [high_freq_comp_meander] : True                
+        [high_freq_comp_micro] : True                
                      [htc_dir] : htc/dlc01_demos/    
                      [init_wr] : 0.5                 
                     [iter_dir] : iter/dlc01_demos/   
                      [log_dir] : logfiles/dlc01_demos/
+           [meander_base_name] : None                
+                 [meander_dir] : None                
+             [micro_base_name] : None                
+                   [micro_dir] : None                
                   [out_format] : hawc_binary         
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
                         [seed] : 0                   
+                [seed_meander] : True                
+                  [seed_micro] : True                
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -117,8 +158,21 @@
                    [time_stop] : 40                  
                     [tu_model] : 0                   
                      [tu_seed] : 0                   
-              [turb_base_name] : none                
-                     [turb_dx] : 0.04395             
+              [turb_base_name] : None                
+                    [turb_dir] : turb/               
+                     [turb_dx] : 0.0439453           
+             [turb_dx_meander] : True                
+               [turb_dx_micro] : True                
+             [turb_dy_meander] : True                
+               [turb_dy_micro] : True                
+             [turb_dz_meander] : True                
+               [turb_dz_micro] : True                
+           [turb_nr_u_meander] : True                
+             [turb_nr_u_micro] : True                
+           [turb_nr_v_meander] : True                
+             [turb_nr_v_micro] : True                
+           [turb_nr_w_meander] : True                
+             [turb_nr_w_micro] : True                
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.8889              
@@ -141,6 +195,12 @@
                         [G_t0] : True                
               [Grid loss time] : 5000                
                    [Induction] : 1                   
+     [MannAlfaEpsilon_meander] : True                
+       [MannAlfaEpsilon_micro] : True                
+           [MannGamma_meander] : True                
+             [MannGamma_micro] : True                
+               [MannL_meander] : True                
+                 [MannL_micro] : True                
               [Pitch 1 DLC22b] : 0                   
                     [Pitvel 1] : 3                   
                     [Pitvel 2] : 4                   
@@ -158,15 +218,23 @@
                     [duration] : 20.0                
                         [gust] : False               
                    [gust_type] : True                
+      [high_freq_comp_meander] : True                
+        [high_freq_comp_micro] : True                
                      [htc_dir] : htc/dlc01_demos/    
                      [init_wr] : 0.5                 
                     [iter_dir] : iter/dlc01_demos/   
                      [log_dir] : logfiles/dlc01_demos/
+           [meander_base_name] : None                
+                 [meander_dir] : None                
+             [micro_base_name] : None                
+                   [micro_dir] : None                
                   [out_format] : hawc_binary         
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
                         [seed] : 100                 
+                [seed_meander] : True                
+                  [seed_micro] : True                
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -176,7 +244,20 @@
                     [tu_model] : 1                   
                      [tu_seed] : 100                 
               [turb_base_name] : turb_s100_10ms      
+                    [turb_dir] : turb/               
                      [turb_dx] : 0.78125             
+             [turb_dx_meander] : True                
+               [turb_dx_micro] : True                
+             [turb_dy_meander] : True                
+               [turb_dy_micro] : True                
+             [turb_dz_meander] : True                
+               [turb_dz_micro] : True                
+           [turb_nr_u_meander] : True                
+             [turb_nr_u_micro] : True                
+           [turb_nr_v_meander] : True                
+             [turb_nr_v_micro] : True                
+           [turb_nr_w_meander] : True                
+             [turb_nr_w_micro] : True                
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.8                 
@@ -199,6 +280,12 @@
                         [G_t0] : True                
               [Grid loss time] : 5000                
                    [Induction] : 1                   
+     [MannAlfaEpsilon_meander] : 11.0                
+       [MannAlfaEpsilon_micro] : 21.0                
+           [MannGamma_meander] : 13.0                
+             [MannGamma_micro] : 23.0                
+               [MannL_meander] : 12.0                
+                 [MannL_micro] : 22.0                
               [Pitch 1 DLC22b] : 0                   
                     [Pitvel 1] : 3                   
                     [Pitvel 2] : 4                   
@@ -216,15 +303,23 @@
                     [duration] : 20.0                
                         [gust] : False               
                    [gust_type] : True                
+      [high_freq_comp_meander] : 1.0                 
+        [high_freq_comp_micro] : True                
                      [htc_dir] : htc/dlc01_demos/    
                      [init_wr] : 0.5                 
                     [iter_dir] : iter/dlc01_demos/   
                      [log_dir] : logfiles/dlc01_demos/
+           [meander_base_name] : meander_s101_11ms   
+                 [meander_dir] : turb_meander/       
+             [micro_base_name] : micro_s101_11ms     
+                   [micro_dir] : turb_micro/         
                   [out_format] : hawc_binary         
                   [pbs_in_dir] : pbs_in/dlc01_demos/ 
                  [pbs_out_dir] : pbs_out/dlc01_demos/
                      [res_dir] : res/dlc01_demos/    
                         [seed] : 100                 
+                [seed_meander] : 101.0               
+                  [seed_micro] : 101.0               
                    [shear_exp] : 0                   
                    [staircase] : False               
                    [t flap on] : -1                  
@@ -234,7 +329,20 @@
                     [tu_model] : 1                   
                      [tu_seed] : 100                 
               [turb_base_name] : turb_s101_11ms      
-                     [turb_dx] : 0.85938             
+                    [turb_dir] : turb/               
+                     [turb_dx] : 0.859375            
+             [turb_dx_meander] : 0.999               
+               [turb_dx_micro] : 10.999              
+             [turb_dy_meander] : 0.999               
+               [turb_dy_micro] : 10.999              
+             [turb_dz_meander] : 1.33                
+               [turb_dz_micro] : 11.33               
+           [turb_nr_u_meander] : 9.0                 
+             [turb_nr_u_micro] : 19.0                
+           [turb_nr_v_meander] : 9.0                 
+             [turb_nr_v_micro] : 19.0                
+           [turb_nr_w_meander] : 50.0                
+             [turb_nr_w_micro] : 60.0                
                         [wdir] : 0                   
                     [windramp] : False               
                   [wsp factor] : 0.7273              

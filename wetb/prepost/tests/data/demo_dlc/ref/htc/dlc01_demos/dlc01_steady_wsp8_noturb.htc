@@ -379,10 +379,10 @@ begin wind ;
   ;
   begin mann ;
     create_turb_parameters 29.4 1.0 3.9 0 1.0 ;      L, alfaeps, gamma, seed, highfrq compensation
-    filename_u    ./turb/noneu.bin ;
-    filename_v    ./turb/nonev.bin ;
-    filename_w    ./turb/nonew.bin ;
-    box_dim_u    512 0.03906 ;
+    filename_u    ./turb/Noneu.bin ;
+    filename_v    ./turb/Nonev.bin ;
+    filename_w    ./turb/Nonew.bin ;
+    box_dim_u    512 0.0390625 ;
     box_dim_v    32 7.5;
     box_dim_w    32 7.5;
     std_scaling   1.0 0.7 0.5 ;

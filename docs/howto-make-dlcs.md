@@ -41,7 +41,7 @@ result and log files with lower case file names, regardless of the user input.
 Hence, in order to avoid possible ambiguities at all times, make sure that there
 are no upper case symbols defined in the value of the following tags (as defined
 in the Excel spreadsheets): ```[Case folder]```,  ```[Case id.]```, and
-```[Turb base name]```.
+```[turb_base_name]```.
 
 The system will always force the values of the tags to be lower case anyway, and
 when working on Windows, this might cause some confusing and unexpected behavior.
@@ -406,12 +406,12 @@ Required, and used for the PBS output and post-processing
 
 Optional
 * ```[turb_db_dir] = '../turb/'```
-* ```[wake_dir] = False```
-* ```[wake_db_dir] = False```
-* ```[wake_base_name] = 'turb_'```
+* ```[micro_dir] = False```
+* ```[micro_db_dir] = False```
+* ```[micro_base_name] = 'turb_'```
 * ```[meander_dir] = False```
-* ```[meand_db_dir] = False```
-* ```[meand_base_name] = 'turb_'```
+* ```[meander_db_dir] = False```
+* ```[meander_base_name] = 'turb_'```
 * ```[mooring_dir] = False```, all files and sub-folders copied to node
 * ```[hydro_dir] = False```, all files and sub-folders copied to node
 
@@ -464,19 +464,48 @@ turbulence boxes using the 64-bit version of the stand alone Mann turbulence
 box generator. The appropriate input parameters are taken from the following
 tags:
 
-* ```[tu_model]```
-* ```[Turb base name]```
-* ```[MannAlfaEpsilon]```
-* ```[MannL]```
-* ```[MannGamma]```
-* ```[seed]```
-* ```[turb_nr_u]``` : number of grid points in the u direction
-* ```[turb_nr_v]``` : number of grid points in the v direction
-* ```[turb_nr_w]``` : number of grid points in the w direction
-* ```[turb_dx]``` : grid spacing in meters in the u direction
-* ```[turb_dy]``` : grid spacing in meters in the v direction
-* ```[turb_dz]``` : grid spacing in meters in the w direction
-* ```[high_freq_comp]```
+* Atmospheric turbulence:
+    * ```[tu_model] = 1```
+    * ```[turb_base_name]```
+    * ```[MannAlfaEpsilon]```
+    * ```[MannL]```
+    * ```[MannGamma]```
+    * ```[seed]```
+    * ```[turb_nr_u]``` : number of grid points in the u direction
+    * ```[turb_nr_v]``` : number of grid points in the v direction
+    * ```[turb_nr_w]``` : number of grid points in the w direction
+    * ```[turb_dx]``` : grid spacing in meters in the u direction
+    * ```[turb_dy]``` : grid spacing in meters in the v direction
+    * ```[turb_dz]``` : grid spacing in meters in the w direction
+    * ```[high_freq_comp]```
+
+* Micro turbulence for DWM:
+    * ```[micro_base_name]```
+    * ```[MannAlfaEpsilon_micro]```
+    * ```[MannL_micro]```
+    * ```[MannGamma_micro]```
+    * ```[seed_micro]```
+    * ```[turb_nr_u_micro]``` : number of grid points in the u direction
+    * ```[turb_nr_v_micro]``` : number of grid points in the v direction
+    * ```[turb_nr_w_micro]``` : number of grid points in the w direction
+    * ```[turb_dx_micro]``` : grid spacing in meters in the u direction
+    * ```[turb_dy_micro]``` : grid spacing in meters in the v direction
+    * ```[turb_dz_micro]``` : grid spacing in meters in the w direction
+    * ```[high_freq_comp_micro]```
+
+* Meander turbulence for DWM
+    * ```[meander_base_name]```
+    * ```[MannAlfaEpsilon_meander]```
+    * ```[MannL_meander]```
+    * ```[MannGamma_meander]```
+    * ```[seed_meander]```
+    * ```[turb_nr_u_meander]``` : number of grid points in the u direction
+    * ```[turb_nr_v_meander]``` : number of grid points in the v direction
+    * ```[turb_nr_w_meander]``` : number of grid points in the w direction
+    * ```[turb_dx_meander]``` : grid spacing in meters in the u direction
+    * ```[turb_dy_meander]``` : grid spacing in meters in the v direction
+    * ```[turb_dz_meander]``` : grid spacing in meters in the w direction
+    * ```[high_freq_comp_meander]```
 
 
 ### Tags required for hydro file generation
