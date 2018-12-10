@@ -23,17 +23,17 @@ class HTCFileSet():
                 for filename in glob.iglob(htc_path, recursive=True):
                     self.htc_files.append(filename)
 
-    def pbs_files(self, hawc2_path, hawc2_cmd, htc_lst="**/*.htc", queue='workq',
+    def pbs_files(self, hawc2_path, hawc2_cmd, queue='workq', walltime=None,
                   input_files=None, output_files=None, copy_turb=(True, True)):
 
-        return [HTCFile(htc).pbs_file(hawc2_path, hawc2_cmd, queue=queue,
+        return (HTCFile(htc).pbs_file(hawc2_path, hawc2_cmd, queue=queue, walltime=walltime,
                                       input_files=copy.copy(input_files),
                                       output_files=copy.copy(output_files),
-                                      copy_turb=copy_turb) for htc in self.htc_files]
+                                      copy_turb=copy_turb) for htc in self.htc_files)
 
-    def save_pbs_files(self, hawc2_path, hawc2_cmd, htc_lst="**/*.htc", queue='workq',
+    def save_pbs_files(self, hawc2_path=None, hawc2_cmd=JESS_WINE32_HAWC2MB, queue='workq', walltime=None,
                        input_files=None, output_files=None, copy_turb=(True, True)):
-        for pbs in self.pbs_files(hawc2_path, hawc2_cmd, htc_lst, queue=queue,
+        for pbs in self.pbs_files(hawc2_path, hawc2_cmd, queue=queue, walltime=walltime,
                                   input_files=input_files, output_files=output_files,
                                   copy_turb=copy_turb):
             pbs.save(self.model_path)

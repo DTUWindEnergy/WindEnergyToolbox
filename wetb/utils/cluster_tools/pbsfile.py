@@ -33,6 +33,7 @@ pbs_template = Template('''### Jobid
 #PBS -q [queue]
 cd [workdir]
 mkdir -p stdout
+if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 [commands]
 exit

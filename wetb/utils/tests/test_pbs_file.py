@@ -33,6 +33,7 @@ def test_pbs_file_str():
 #PBS -q workq
 cd /home/user/tmp
 mkdir -p stdout
+if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 python -c "print('hello world')"
 exit
@@ -83,6 +84,7 @@ def test_pbs_multirunner():
 #PBS -q workq
 cd /home/user/tmp
 mkdir -p stdout
+if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 echo "import os
 import glob

@@ -5,15 +5,7 @@ from wetb.utils.cluster_tools.os_path import pjoin, relpath, abspath,\
 
 template = Template("""
 
-#===============================================================================
-echo copy hawc2 to scratch
-#===============================================================================
-(flock -x 200
-unzip -u -o -q [hawc2_path]/*.zip -d /scratch/$USER/$PBS_JOBID/hawc2/
-find [hawc2_path]/* ! -name *.zip -exec cp -u -t /scratch/$USER/$PBS_JOBID/hawc2/ {} +
-) 200>/scratch/$USER/$PBS_JOBID/lock_file_hawc2
-mkdir -p /scratch/$USER/$PBS_JOBID/[model_name]/run_[jobname]/[rel_exe_dir]
-cp /scratch/$USER/$PBS_JOBID/hawc2/* /scratch/$USER/$PBS_JOBID/[model_name]/run_[jobname]/[rel_exe_dir]
+[copy_hawc2]
 
 #===============================================================================
 echo copy input
@@ -91,7 +83,7 @@ class HAWC2PBSFile(PBSFile):
     def commands(self):
         rel_exe_dir = relpath(self.exe_dir, self.model_path)
         copy_input_to_scratch, copy_input_to_exe_dir = self.copy_input()
-        return template(hawc2_path=os.path.dirname(cluster_path(self.hawc2_path)),
+        return template(copy_hawc2=self.copy_hawc2(),
                         exe_dir=cluster_path(self.exe_dir),
                         copy_input_to_scratch=copy_input_to_scratch,
                         copy_input_to_exe_dir=copy_input_to_exe_dir,
@@ -102,6 +94,21 @@ class HAWC2PBSFile(PBSFile):
                         copy_output=self.copy_output(),
                         model_path=cluster_path(self.model_path),
                         model_name=self.model_name)
+
+    def copy_hawc2(self):
+        copy_hawc2 = Template("""#===============================================================================
+echo copy hawc2 to scratch
+#===============================================================================
+(flock -x 200
+unzip -u -o -q [hawc2_path]/*.zip -d /scratch/$USER/$PBS_JOBID/hawc2/
+find [hawc2_path]/* ! -name *.zip -exec cp -u -t /scratch/$USER/$PBS_JOBID/hawc2/ {} +
+) 200>/scratch/$USER/$PBS_JOBID/lock_file_hawc2
+mkdir -p /scratch/$USER/$PBS_JOBID/[model_name]/run_[jobname]/[rel_exe_dir]
+cp /scratch/$USER/$PBS_JOBID/hawc2/* /scratch/$USER/$PBS_JOBID/[model_name]/run_[jobname]/[rel_exe_dir]""")
+        if self.hawc2_path is None:
+            return ""
+        else:
+            return copy_hawc2(hawc2_path=os.path.dirname(cluster_path(self.hawc2_path)))
 
     def copy_input(self):
         rel_input_files = [relpath(f, self.model_path) for f in self.input_files]
