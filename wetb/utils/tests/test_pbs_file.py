@@ -132,7 +132,7 @@ arg_lst = ['echo starting %s && mkdir -p %s && env PBS_JOBID=$PBS_JOBID %s &> %s
            (f, os.path.dirname(o), f, o, f) for f, o, _ in pbs_info_lst]
 print(arg_lst[0])
 print('Starting %d jobs on %s' % (len(arg_lst), platform.node()))
-pool = multiprocessing.Pool(os.environ['PBS_NUM_PPN'])
+pool = multiprocessing.Pool(int('$PBS_NUM_PPN'))
 res = pool.map_async(os.system, arg_lst)
 t = time.time()
 for (f, _, _), r in zip(pbs_info_lst, res.get()):
