@@ -137,7 +137,6 @@ class PBSMultiRunner(PBSFile):
         import os
         import glob
         import numpy as np
-        from pathlib import Path
         import re
 
         # find available nodes
@@ -150,7 +149,8 @@ class PBSMultiRunner(PBSFile):
 
         def get_info(f):
             try:
-                return (f,) + pat.match(Path(f).read_text()).groups()
+                with open(f) as fid:
+                    return (f,) + pat.match(fid.read()).groups()
             except Exception:
                 return (f, f.replace('.in', '.out'), '00:30:00')
         pbs_info_lst = map(get_info, pbs_files)
@@ -164,12 +164,11 @@ class PBSMultiRunner(PBSFile):
 
     def start_jobs(self):
         import os
-        from pathlib import Path
         import multiprocessing
         import platform
         import time
-
-        pbs_info_lst = eval(Path('pbs.dict').read_text())[platform.node()]
+        with open('pbs.dict') as fid:
+            pbs_info_lst = eval(fid.read())[platform.node()]
         arg_lst = ['echo starting %s && mkdir -p %s && env PBS_JOBID=$PBS_JOBID %s &> %s && echo finished %s' %
                    (f, os.path.dirname(o), f, o, f) for f, o, _ in pbs_info_lst]
         print(arg_lst[0])
