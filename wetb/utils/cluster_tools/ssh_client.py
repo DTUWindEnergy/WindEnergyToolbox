@@ -417,11 +417,10 @@ class SharedSSHClient(SSHClient):
 
 
 if __name__ == "__main__":
-    from mmpe.ui.qt_ui import QtInputUI
-    q = QtInputUI(None)
-    x = None
-    username, password = "mmpe", x.password  # q.get_login("mmpe")
-
-    client = SSHClient(host='gorm', port=22, username=username, password=password)
-    print(client.glob("*.*", ".hawc2launcher/medium1__1__"))
-    #    ssh.upload('../News.txt', 'news.txt')
+    try:
+        import x
+        username, password = 'mmpe', x.password
+        client = SSHClient(host='jess.dtu.dk', port=22, username=username, password=password)
+        print(client.execute("echo hello $USER from $HOSTNAME")[1])
+    except ImportError:
+        x = None
