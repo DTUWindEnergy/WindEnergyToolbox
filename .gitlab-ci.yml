@@ -6,11 +6,15 @@ before_script:
   #- git submodule sync
   #- git submodule update
 
-image: mmpe/wetb
+image: dtuwindenergy/wetb
+
 
 test-3.4:
+#   image: mmpe/wetb
   stage:  
     test
+  except:
+    - test_pypi
   script:
   #- python3 setup.py test
   - pip3 install pytest
@@ -27,8 +31,8 @@ pypi:
     - tags
     - test_pypi
   script:
-    - pip3 install -e . --upgrade
-    - python setup.py bdist_wheel -d dist
+    - pip install -e . --upgrade
+    # - python setup.py bdist_wheel -d dist
     # - python3 -m pip install -U setuptools wheel
     # - python3 setup.py sdist bdist_wheel
     # - python3 -m pip install -U twine
