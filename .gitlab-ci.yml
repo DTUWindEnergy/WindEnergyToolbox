@@ -27,7 +27,7 @@ pypi:
     - tags
     - test_pypi
   script:
-    - pip install -e . --upgrade
+    - pip3 install -e . --upgrade
     - python setup.py bdist_wheel -d dist
     # - python3 -m pip install -U setuptools wheel
     # - python3 setup.py sdist bdist_wheel
