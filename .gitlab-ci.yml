@@ -8,6 +8,8 @@ before_script:
 
 
 test-3.4:
+  stage:  
+    test
   image: mmpe/wetb
   script:
   #- python3 setup.py test
@@ -16,3 +18,21 @@ test-3.4:
   - python3 -m pytest --cov=wetb
   tags:
   - python
+
+  # ===== BUILD WHEELS AND UPLOAD TO PYPI =====
+pypi:
+  stage:  
+    deploy
+  only:
+    - tags
+    - test_pypi
+  script:
+    - python3 -m pip install -U setuptools wheel
+    - python3 setup.py sdist bdist_wheel
+    - python3 -m pip install -U twine
+    #- twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
+    - twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD # for testing purposes
+  tags:  
+    - python
+
+
