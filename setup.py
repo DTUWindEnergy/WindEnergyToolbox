@@ -38,7 +38,8 @@ def setup_package():
           cmdclass = {'build_ext': build_ext},
           ext_modules = extlist,
           use_pyscaffold=True,
-          long_description=read_md('README.md'))
+          long_description=read_md('README.md'),
+          version='0.0.6')
 
 
 if __name__ == "__main__":
