@@ -65,6 +65,15 @@ def write_vers(vers_file='wetb/__init__.py'):
             lines[n] = "__version__ = '{}'\n".format(version[1:])
     with open(vers_file, 'w') as f:
         f.write(''.join(lines))
+		
+def rename_dist_file():
+	for f in os.listdir('dist'):
+		if f.endswith('whl'):
+			split = f.split('linux')
+			new_name = 'manylinux1'.join(split)
+			old_path = os.path.join('dist',f)
+			new_path = os.path.join('dist',new_name)
+			os.rename(old_path, new_path)
     
 
 def main():
