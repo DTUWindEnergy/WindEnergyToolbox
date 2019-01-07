@@ -10,7 +10,7 @@
 
 import os
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 import wetb
 __version__ = wetb.__version__
@@ -42,7 +42,9 @@ def setup_package():
           ext_modules = extlist,
          # use_pyscaffold=True,
           long_description=read_md('README.md'),
-          version=__version__)
+          version=__version__,
+          packages=find_packages(),
+          )
 
 
 if __name__ == "__main__":
