@@ -32,6 +32,7 @@ pypi:
     - test_pypi
   script:
     - pip install -e . --upgrade
+    - python3 git_utils.py -write_vers
     # - python setup.py bdist_wheel -d dist
     - python3 -m pip install -U setuptools wheel
     - python3 setup.py sdist bdist_wheel

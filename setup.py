@@ -12,6 +12,9 @@ import os
 import sys
 from setuptools import setup
 
+import wetb
+__version__ = wetb.__version__
+
 try:
     from pypandoc import convert_file
     read_md = lambda f: convert_file(f, 'rst', format='md')
@@ -39,7 +42,7 @@ def setup_package():
           ext_modules = extlist,
           use_pyscaffold=True,
           long_description=read_md('README.md'),
-          version='0.0.6')
+          version=__version__)
 
 
 if __name__ == "__main__":
