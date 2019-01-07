@@ -40,7 +40,7 @@ def setup_package():
     setup(setup_requires=['six', 'pyscaffold>=2.5a0,<2.6a0'] + sphinx,
           cmdclass = {'build_ext': build_ext},
           ext_modules = extlist,
-          use_pyscaffold=True,
+         # use_pyscaffold=True,
           long_description=read_md('README.md'),
           version=__version__)
 

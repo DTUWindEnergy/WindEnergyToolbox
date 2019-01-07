@@ -67,7 +67,6 @@ def write_vers(vers_file='wetb/__init__.py'):
         f.write(''.join(lines))
 		
 def rename_dist_file():
-    print('Hello')
     for f in os.listdir('dist'):
         if f.endswith('whl'):
             split = f.split('linux')
@@ -80,7 +79,7 @@ def rename_dist_file():
 def main():
     """Example of how to run (pytest-friendly)"""
     if __name__ == '__main__':
-        pass
+#        pass
 #        import version
 #        import app_utils
 #        git_path = os.path.dirname(app_utils.__file__) + "/../"
@@ -90,6 +89,7 @@ def main():
 #        version = get_git_version(os.getcwd())
 #        print(version)
 #        rename_dist_file()
+        write_vers()
 
 
 main()
