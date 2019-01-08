@@ -3,8 +3,8 @@ image: dtuwindenergy/wetb
 test-3.4:
   stage:  
     test
-  except:
-    - test_pypi
+#  except:
+#    - test_pypi
   script:
   - apt-get update
   - pip3 install pytest
