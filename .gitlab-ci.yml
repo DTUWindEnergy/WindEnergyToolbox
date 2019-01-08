@@ -53,12 +53,12 @@ pypi_windows:
     - tags
     - test_pypi
   script:
-    - c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -e . --upgrade
-    - c:/Anaconda3/envs/pyTopfarm/python.exe -c 'from git_utils import write_vers; write_vers()'
+    #- c:/Anaconda3/envs/wetb_win/python.exe -m pip install -e . --upgrade
+    - c:/Anaconda3/envs/wetb_win/python.exe -c "from git_utils import write_vers; write_vers()"
     # - python setup.py bdist_wheel -d dist
-    - c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U setuptools wheel
-    - c:/Anaconda3/envs/pyTopfarm/python.exe setup.py sdist bdist_wheel
-    - c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U twine
+   # - c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U setuptools wheel
+    - c:/Anaconda3/envs/wetb_win/python.exe setup.py sdist bdist_wheel
+    #- c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U twine
     # #- twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
     #- python3 -c 'from git_utils import rename_dist_file; rename_dist_file()'
     - twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD # for testing purposes
