@@ -14,6 +14,8 @@ docker exec -it wetb bash
 # push
 docker push dtuwindenergy/wetb
 
-
 #checkout single branch for testing:
 git clone --single-branch --branch test_pypi https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox.git
+
+#Copy local folder into docker container:
+docker cp "C:\Sandbox\Git\WindEnergyToolbox\." wetb:/WETB/
