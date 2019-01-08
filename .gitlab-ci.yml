@@ -1,5 +1,5 @@
-before_script:
-  - apt-get update
+#before_script:
+#  - apt-get update
   # uncomment first time
   #- rm -rf TestFiles
   #- git submodule update --init
@@ -17,6 +17,7 @@ test-3.4:
     - test_pypi
   script:
   #- python3 setup.py test
+  - apt-get update
   - pip3 install pytest
   - pip3 install mock
   - python3 -m pytest --cov=wetb
@@ -31,6 +32,7 @@ pypi_linux:
     - tags
     - test_pypi
   script:
+    - apt-get update
     - pip install -e . --upgrade
     - python3 -c 'from git_utils import write_vers; write_vers()'
     # - python setup.py bdist_wheel -d dist
