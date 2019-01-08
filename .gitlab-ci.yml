@@ -1,22 +1,11 @@
-#before_script:
-#  - apt-get update
-  # uncomment first time
-  #- rm -rf TestFiles
-  #- git submodule update --init
-  #- git submodule sync
-  #- git submodule update
-
 image: dtuwindenergy/wetb
 
-
 test-3.4:
-#   image: mmpe/wetb
   stage:  
     test
   except:
     - test_pypi
   script:
-  #- python3 setup.py test
   - apt-get update
   - pip3 install pytest
   - pip3 install mock
@@ -35,12 +24,11 @@ pypi_linux:
     - apt-get update
     - pip install -e . --upgrade
     - python3 -c 'from git_utils import write_vers; write_vers()'
-    # - python setup.py bdist_wheel -d dist
     - python3 -m pip install -U setuptools wheel
     - python3 setup.py sdist bdist_wheel
     - python3 -m pip install -U twine
-    # #- twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
     - python3 -c 'from git_utils import rename_dist_file; rename_dist_file()'
+    #- twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
     - twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD # for testing purposes
   tags:  
     - python
@@ -53,18 +41,9 @@ pypi_windows:
     - tags
     - test_pypi
   script:
-    - echo %TWINE_USERNAME%
-    - echo %TWINE_PASSWORD%
-    - echo $env:TWINE_PASSWORD
-    #-conda activate wetb_win
-    #- c:/Anaconda3/envs/wetb_win/python.exe -m pip install -e . --upgrade
     - c:/Anaconda3/envs/WindEnergyToolbox/python.exe -c "from git_utils import write_vers; write_vers()"
-    # - python setup.py bdist_wheel -d dist
-   # - c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U setuptools wheel
-    - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py sdist bdist_wheel
-    #- c:/Anaconda3/envs/pyTopfarm/python.exe -m pip install -U twine
-    # #- twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
-    #- python3 -c 'from git_utils import rename_dist_file; rename_dist_file()'
+    - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py bdist_wheel
+    #- twine upload dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD%
     - twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD% # for testing purposes
   tags:  
     - CPAV_old
