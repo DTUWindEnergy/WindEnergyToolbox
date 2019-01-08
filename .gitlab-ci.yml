@@ -55,6 +55,7 @@ pypi_windows:
   script:
     - echo %TWINE_USERNAME%
     - echo %TWINE_PASSWORD%
+    - echo %TWINE_PASSWORD2%
     #-conda activate wetb_win
     #- c:/Anaconda3/envs/wetb_win/python.exe -m pip install -e . --upgrade
     - c:/Anaconda3/envs/WindEnergyToolbox/python.exe -c "from git_utils import write_vers; write_vers()"
