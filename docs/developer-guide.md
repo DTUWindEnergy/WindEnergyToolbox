@@ -262,6 +262,14 @@ To be written
 
 ## Make and upload wheels to PyPi
 
+### Linux
+
+For Linux the wheels are now automatically build and pushed to pypi when creating a tag.
+
+### Windows
+
+For Windows the automated build and push to pypi has not yet been implemented and the developer has to follow the manual procedure outlined below:
+
 Workflow for creating and uploading wheels is as follows:
 
 - Make tag: ```git tag "vX.Y.Z"```, and push tag to remote: ```git push --tags```

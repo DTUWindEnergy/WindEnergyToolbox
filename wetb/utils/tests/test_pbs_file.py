@@ -94,7 +94,7 @@ import re
 # find available nodes
 with open(os.environ['PBS_NODEFILE']) as fid:
     files = set([f.strip() for f in fid.readlines() if f.strip() != ''])
-pbs_files = glob.glob('./**/*.in', recursive=True)
+pbs_files = [os.path.join(root, f) for root, folders, f_lst in os.walk('.') for f in f_lst if f.endswith('.in')]
 
 # Make a list of [(pbs_in_filename, stdout_filename, walltime),...]
 pat = re.compile(r'[\s\S]*#\s*PBS\s+-o\s+(.*)[\s\S]*(\d\d:\d\d:\d\d)[\s\S]*')
@@ -110,7 +110,7 @@ pbs_info_lst = map(get_info, pbs_files)
 # sort wrt walltime
 pbs_info_lst = sorted(pbs_info_lst, key=lambda fow: tuple(map(int, fow[2].split(':'))))[::-1]
 # make dict {node1: pbs_info_lst1, ...} and save
-d = {f: pbs_info_lst[i::len(files)] for i, f in enumerate(files)}
+d = dict([(f, pbs_info_lst[i::len(files)]) for i, f in enumerate(files)])
 with open('pbs.dict', 'w') as fid:
     fid.write(str(d))
 
