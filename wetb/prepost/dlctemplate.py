@@ -352,7 +352,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                pbs_fname_appendix=False, short_job_names=False,
                                silent=silent, verbose=verbose, pyenv=pyenv,
                                m=[3,4,6,8,9,10,12], postpro_node=postpro_node,
-                               exechunks=None, exesingle=None,
+                               exechunks=None, exesingle=None, prelude=prelude,
                                postpro_node_zipchunks=postpro_node_zipchunks,
                                wine_arch=wine_arch, wine_prefix=wine_prefix)
 
