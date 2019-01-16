@@ -102,7 +102,7 @@ class TestGenerateInputs(Template):
         # directory structure withouth manually creating the empty dirs here
         for subdir in ['control', 'data', 'htc', 'pbs_in', 'pbs_in_turb',
                        'htc/_master', 'htc/dlc01_demos', 'pbs_in/dlc01_demos',
-                       'zip-chunks-jess', 'zip-chunks-gorm']:
+                       'zip-chunks-jess']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', subdir)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', subdir)
             # the zipfiles are taken care of separately
@@ -118,7 +118,6 @@ class TestGenerateInputs(Template):
 
         # compare the zip files
         for fname in ['demo_dlc_remote.zip',
-                      'zip-chunks-gorm/remote_chnk_00000.zip',
                       'zip-chunks-jess/remote_chnk_00000.zip']:
             remote = os.path.join(p_root, tmpl.PROJECT, 'remote', fname)
             ref = os.path.join(p_root, tmpl.PROJECT, 'ref', fname)
