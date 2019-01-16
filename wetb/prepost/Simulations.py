@@ -1797,10 +1797,14 @@ class PBS(object):
         # run in 32-bit or 64-bit mode. Note this uses the same assumptions
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
         wineparam = (wine_arch, wine_prefix)
-        self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
-
-        self.wine = self.winebase + 'wine'
-        self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
+        if wine_arch==None or wine_prefix==None:
+            self.winebase = 'time '
+            self.wine = self.winebase
+            self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR'
+        else:
+            self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
+            self.wine = self.winebase + 'wine'
+            self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
 
         # in case you want to redirect stdout to /dev/nul, append as follows:
         # '> /dev/null 2>&1'
@@ -1819,10 +1823,12 @@ class PBS(object):
         self.secperiter = 0.012
 
         # determine at runtime if winefix has to be ran
-        self.winefix = '  _HOSTNAME_=`hostname`\n'
-        self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then\n'
-        self.winefix += '    WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
-        self.winefix += '  fi\n'
+        self.winefix = ''
+        if wine_arch!=None or wine_prefix!=None:
+            self.winefix = '  _HOSTNAME_=`hostname`\n'
+            self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then\n'
+            self.winefix += '    WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
+            self.winefix += '  fi\n'
 
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels

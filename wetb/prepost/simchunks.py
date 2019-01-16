@@ -39,7 +39,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
                           wine_arch='win32', wine_prefix='~/.wine32',
                           pyenv_cmd='source /home/python/miniconda3/bin/activate',
-                          pyenv='wetb_py3'):
+                          pyenv='wetb_py3', prelude=''):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -214,6 +214,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs = pbs.replace('[queue]', queue)
         pbs += '\necho "%s"\n' % ('-'*70)
 
+        # run prelude code
+        # =====================================================================
+        pbs += prelude
+
         # =====================================================================
         # activate the python environment
         if pyenv is not None:
@@ -224,13 +228,14 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             # is this because it is activated at the same time on another node?
             # check twice if the environment got activated for real,
             # but only do so for /home/python/miniconda
-            pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
-            pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
-            pbs += 'print (get_python_lib().find(\'/usr/lib/python\'))"\n'
-            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
-            pbs += 'ACTIVATED=`python -c "$CMD"`\n'
-            pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
+            if pyenv_cmd.find('miniconda') > -1:
+                pbs += 'echo "CHECK 2x IF %s IS ACTIVE, IF NOT TRY AGAIN"\n' % pyenv
+                pbs += 'CMD=\"from distutils.sysconfig import get_python_lib;'
+                pbs += 'print (get_python_lib().find(\'/usr/lib/python\'))"\n'
+                pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+                pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
+                pbs += 'ACTIVATED=`python -c "$CMD"`\n'
+                pbs += 'if [ $ACTIVATED -eq 0 ]; then %s %s;fi\n' % rpl
 
         # =====================================================================
         # create all necessary directories at CPU_NR dirs
@@ -397,7 +402,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
-        pbs += 'WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
+        if wine_arch!=None or wine_prefix!=None:
+            pbs += 'WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
         pbs += 'echo "following cases will be run from following path:"\n'
         pbs += 'echo "%s"\n' % (os.path.join(sim_id, pbs_in_base))
@@ -479,11 +485,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             pbs += 'source deactivate\n'
         pbs += 'echo "DONE !!"\n'
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += '# in case wine has crashed, kill any remaining wine servers\n'
-        pbs += '# caution: ALL the users wineservers will die on this node!\n'
-        pbs += 'echo "following wineservers are still running:"\n'
-        pbs += 'ps -u $USER -U $USER | grep wineserver\n'
-        pbs += 'killall -u $USER wineserver\n'
+        if wine_arch!=None or wine_prefix!=None:
+            pbs += '# in case wine has crashed, kill any remaining wine servers\n'
+            pbs += '# caution: ALL the users wineservers will die on this node!\n'
+            pbs += 'echo "following wineservers are still running:"\n'
+            pbs += 'ps -u $USER -U $USER | grep wineserver\n'
+            pbs += 'killall -u $USER wineserver\n'
         pbs += 'exit\n'
 
         rpl = (sim_id, ii)

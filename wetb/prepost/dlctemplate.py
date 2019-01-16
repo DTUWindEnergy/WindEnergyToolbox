@@ -268,7 +268,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
                       wine_arch='win32', wine_prefix='~/.wine32',
-                      m=[3,4,6,8,9,10,12]):
+                      m=[3,4,6,8,9,10,12], module='', linux=False):
     """
     Launch load cases defined in Excel files
     """
@@ -281,6 +281,12 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         pyenv = 'wetb_py3'
     else:
         pyenv = None
+
+    # FIXME: THIS IS VERY MESSY, we have wine_prefix/arch and exesingle/chunks
+    if linux:
+        wine_arch = None
+        wine_prefix = None
+        module = 'module load mpi/openmpi_1.6.5_intelv14.0.0\n'
 
     # if linux:
     #     pyenv = 'wetb_py3'
@@ -367,11 +373,12 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
                               ppn=20, nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
-                              wine_arch=wine_arch, wine_prefix=wine_prefix)
-        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
-                              ppn=12, nr_procs_series=3, walltime='20:00:00',
-                              chunks_dir='zip-chunks-gorm', compress=compress,
-                              wine_arch=wine_arch, wine_prefix=wine_prefix)
+                              wine_arch=wine_arch, wine_prefix=wine_prefix,
+                              prelude=module)
+#        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
+#                              ppn=12, nr_procs_series=3, walltime='20:00:00',
+#                              chunks_dir='zip-chunks-gorm', compress=compress,
+#                              wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
@@ -706,6 +713,9 @@ if __name__ == '__main__':
     parser.add_argument('--wine_prefix', action='store', default='~/.wine32',
                         type=str, dest='wine_prefix', help='WINEPREFIX: '
                         'Directory used by wineserver. Default ~/.wine32')
+    parser.add_argument('--linux', action='store_true', default=False,
+                        dest='linux', help='Do not use wine. Implies that '
+                        'wine_prefix and wine_arch to None.')
     opt = parser.parse_args()
 
     # Wholer coefficients to be considered for the fatigue analysis
