@@ -567,7 +567,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_model_data=True, maxcpu=1, pyenv='wetb_py3',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
                 postpro_node=False, exesingle=None, exechunks=None,
-                wine_arch='win32', wine_prefix='~/.wine32',
+                wine_arch='win32', wine_prefix='~/.wine32', prelude='',
                 pyenv_cmd='source /home/python/miniconda3/bin/activate'):
     """
     Create the htc files, pbs scripts and replace the tags in master file
@@ -809,7 +809,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
            windows_nr_cpus=windows_nr_cpus, short_job_names=short_job_names,
            pbs_fname_appendix=pbs_fname_appendix, silent=silent, maxcpu=maxcpu,
            pyenv=pyenv, m=[3,4,6,8,9,10,12],
-           postpro_node_zipchunks=postpro_node_zipchunks,
+           postpro_node_zipchunks=postpro_node_zipchunks, prelude=prelude,
            postpro_node=postpro_node, exesingle=exesingle, exechunks=exechunks,
            wine_arch=wine_arch, wine_prefix=wine_prefix, pyenv_cmd=pyenv_cmd)
 
@@ -818,7 +818,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
 def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
            silent=False, check_log=True, windows_nr_cpus=2, qsub='time',
            pbs_fname_appendix=True, short_job_names=True,
-           maxcpu=1, pyenv='wetb_py3', m=[3,4,6,8,9,10,12],
+           maxcpu=1, pyenv='wetb_py3', m=[3,4,6,8,9,10,12], prelude='',
            postpro_node_zipchunks=True, postpro_node=False, exesingle=None,
            exechunks=None, wine_arch='win32', wine_prefix='~/.wine32',
            pyenv_cmd='source /home/python/miniconda3/bin/activate'):
@@ -862,7 +862,7 @@ def launch(cases, runmethod='none', verbose=False, copyback_turb=True,
         # create the pbs object
         pbs = PBS(cases, short_job_names=short_job_names, pyenv=pyenv,
                   pbs_fname_appendix=pbs_fname_appendix, qsub=qsub,
-                  verbose=verbose, silent=silent,
+                  verbose=verbose, silent=silent, prelude=prelude,
                   m=m, postpro_node_zipchunks=postpro_node_zipchunks,
                   postpro_node=postpro_node, exesingle=exesingle,
                   exechunks=exechunks, wine_arch=wine_arch,
@@ -1754,7 +1754,7 @@ class PBS(object):
 
     def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
-                 m=[3,4,6,8,9,10,12], exesingle=None,
+                 m=[3,4,6,8,9,10,12], exesingle=None, prelude='',
                  postpro_node_zipchunks=True, postpro_node=False,
                  exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
@@ -1791,6 +1791,8 @@ class PBS(object):
         self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
         self.postpro_node_zipchunks = postpro_node_zipchunks
         self.postpro_node = postpro_node
+        # Prelude is executed just before HAWC2 is
+        self.prelude = prelude
 
         self.m = m
 
@@ -2172,6 +2174,7 @@ class PBS(object):
                                             fname_log=fname_log,
                                             fname_pbs_out=fname_pbs_out,
                                             winenumactl=self.winenumactl)
+            self.pbs += self.prelude
             self.pbs += "  %s &\n" % execstr
             # # OLD METHOD
             # param = (self.wine, hawc2_exe, self.htc_dir+case)

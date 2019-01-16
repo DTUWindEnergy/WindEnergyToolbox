@@ -268,7 +268,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
                       wine_arch='win32', wine_prefix='~/.wine32',
-                      m=[3,4,6,8,9,10,12], module='', linux=False):
+                      m=[3,4,6,8,9,10,12], prelude='', linux=False):
     """
     Launch load cases defined in Excel files
     """
@@ -286,7 +286,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     if linux:
         wine_arch = None
         wine_prefix = None
-        module = 'module load mpi/openmpi_1.6.5_intelv14.0.0\n'
+        prelude = 'module load mpi/openmpi_1.6.5_intelv14.0.0\n'
 
     # if linux:
     #     pyenv = 'wetb_py3'
@@ -374,7 +374,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                               ppn=20, nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
                               wine_arch=wine_arch, wine_prefix=wine_prefix,
-                              prelude=module)
+                              prelude=prelude)
 #        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
 #                              ppn=12, nr_procs_series=3, walltime='20:00:00',
 #                              chunks_dir='zip-chunks-gorm', compress=compress,
@@ -430,6 +430,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
 #        add_sigs = {name:expr}
 
         # in addition, sim_id and case_id are always added by default
+        # FIXME: HAS TO BE THE SAME AS required IN postpro_node_merge
         tags = ['[Case folder]', '[run_dir]', '[res_dir]', '[DLC]',
                 '[wsp]', '[Windspeed]', '[wdir]']
         add = None
@@ -452,8 +453,23 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
         # load the statistics in case they are missing
         if not statistics:
             df_stats, Leq_df, AEP_df = cc.load_stats()
+
+        # CAUTION: depending on the type output, electrical power can be two
+        # different things with the DTU Wind Energy Controller.
+        # Either manually set ch_powe to the correct value or use simple
+        # mechanism to figure out which one of two expected values it is.
+        if 'DLL-2-inpvec-2' in df_stats['channel'].unique():
+            ch_powe = 'DLL-2-inpvec-2'
+        elif 'DLL-dtu_we_controller-inpvec-2' in df_stats['channel'].unique():
+            ch_powe = 'DLL-dtu_we_controller-inpvec-2'
+        else:
+            if ch_powe not in df_stats['channel'].unique():
+                msg = 'The defined channel for the electrical power does not '
+                msg =+ 'exist: %s' % ch_powe
+                raise UserWarning(msg)
+
         df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True,
-                        ch_powe='DLL-2-inpvec-2')
+                        ch_powe=ch_powe)
 
     if envelopeblade:
         ch_list = []
@@ -571,6 +587,7 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     store.close()
     # -------------------------------------------------------------------------
     # merge missing cols onto stats
+    # FIXME: HAS TO BE THE SAME AS tags IN post_launch
     required = ['[DLC]', '[run_dir]', '[wdir]', '[Windspeed]', '[res_dir]',
                 '[case_id]', '[Case folder]']
     df = pd.read_hdf(fdf, 'table')
@@ -715,7 +732,7 @@ if __name__ == '__main__':
                         'Directory used by wineserver. Default ~/.wine32')
     parser.add_argument('--linux', action='store_true', default=False,
                         dest='linux', help='Do not use wine. Implies that '
-                        'wine_prefix and wine_arch to None.')
+                        'wine_prefix and wine_arch is set to None.')
     opt = parser.parse_args()
 
     # Wholer coefficients to be considered for the fatigue analysis
