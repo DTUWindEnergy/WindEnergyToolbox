@@ -767,7 +767,7 @@ if __name__ == '__main__':
                           dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
                           postpro_node_zipchunks=opt.no_postpro_node_zipchunks,
                           wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix,
-                          compress=opt.compress)
+                          compress=opt.compress, linux=opt.linux)
     # post processing: check log files, calculate statistics
     if opt.check_logs or opt.stats or opt.fatigue or opt.envelopeblade \
         or opt.envelopeturbine or opt.AEP:
