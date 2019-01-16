@@ -4747,6 +4747,12 @@ class Cases(object):
                                 save=save, check_datatypes=True, xlsx=xlsx,
                                 complib=self.complib)
 
+        # check if the power channel actually exists first!
+        if ch_powe not in dfs[chan_col_name].unique():
+            msg = 'The defined channel for the electrical power does not '
+            msg =+ 'exist: %s' % ch_powe
+            raise UserWarning(msg)
+
         # and select only the power channels
         dfs_powe = dfs[dfs[chan_col_name]==ch_powe]
 

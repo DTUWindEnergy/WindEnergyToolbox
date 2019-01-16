@@ -462,11 +462,6 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
             ch_powe = 'DLL-2-inpvec-2'
         elif 'DLL-dtu_we_controller-inpvec-2' in df_stats['channel'].unique():
             ch_powe = 'DLL-dtu_we_controller-inpvec-2'
-        else:
-            if ch_powe not in df_stats['channel'].unique():
-                msg = 'The defined channel for the electrical power does not '
-                msg =+ 'exist: %s' % ch_powe
-                raise UserWarning(msg)
 
         df_AEP = cc.AEP(df_stats, csv=csv, update=update, save=True,
                         ch_powe=ch_powe)
