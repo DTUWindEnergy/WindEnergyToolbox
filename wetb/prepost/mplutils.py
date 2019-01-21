@@ -142,12 +142,12 @@ def one_legend(*args, **kwargs):
     return leg
 
 
-def p4psd(ax, rpm_mean, p_max=17, y_pos_rel=0.25, color='g', ls='--',
+def p4psd(ax, rpm_mean, fmax=10, y_pos_rel=0.25, color='g', ls='--', ps=None,
           col_text='w'):
     """
     Add the P's on a PSD
 
-    fn_max is the maximum value on the plot (ax.xlim). This only works when
+    fmax is the maximum value on the plot (ax.xlim). This only works when
     setting the xlim of the plot before calling p4psd.
 
     Parameters
@@ -157,22 +157,31 @@ def p4psd(ax, rpm_mean, p_max=17, y_pos_rel=0.25, color='g', ls='--',
 
     rpm_mean
 
-    p_max : int, default=17
+    fmax : int, default=17
+        stop plotting p's after fmax (when ps is None)
+
+    ps : iterable of ints, default=None
+        specify which p's to plot (ignores fmax)
 
     y_pos_rel : int or list, default=0.25
     """
+
+    if ps is None:
+        pmax = int(60*fmax/rpm_mean)
+        ps = list(range(1, pmax))
+    else:
+        pmax = len(ps)
+
     if isinstance(y_pos_rel, float) or isinstance(y_pos_rel, int):
-        y_pos_rel = [y_pos_rel]*p_max
+        y_pos_rel = [y_pos_rel]*pmax
 
     f_min = ax.get_xlim()[0]
     f_max = ax.get_xlim()[1]
 
     # add the P's
     bbox = dict(boxstyle="round", edgecolor=color, facecolor=color)
-    for i, p in enumerate(range(1, p_max)):
+    for i, p in enumerate(ps):
         p_freq = p * rpm_mean / 60.0
-        if p_freq > f_max:
-            break
         if p%3 == 0:
             alpha=0.5
             ax.axvline(x=p_freq, linewidth=1, color=color, alpha=0.7, ls=ls)

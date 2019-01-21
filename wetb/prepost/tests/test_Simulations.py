@@ -63,7 +63,7 @@ class TestGenerateInputs(Template):
             shutil.rmtree(os.path.join(p_root, tmpl.PROJECT, 'remote'))
 
         tmpl.force_dir = tmpl.P_RUN
-        tmpl.launch_dlcs_excel('remote', silent=True, runmethod='gorm',
+        tmpl.launch_dlcs_excel('remote', silent=True, runmethod='pbs',
                                pbs_turb=True, zipchunks=True,
                                postpro_node_zipchunks=False,
                                postpro_node=False)
