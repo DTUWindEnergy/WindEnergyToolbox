@@ -622,10 +622,26 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     fname = os.path.join(POST_DIR, '%s_unique-channel-names.csv' % sim_id)
     pd.DataFrame(chans).to_csv(fname)
 
+
+def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
+                   prelude='', zipchunks=False):
+
+    cc = sim.Cases(POST_DIR, sim_id)
+    df_tags = cc.cases2df()
+
     # -------------------------------------------------------------------------
     # find failed cases and create pbs_in_failed dir
     cc.find_failed(df_cases=df_tags)
     sim.copy_pbs_in_failedcases(cc.cases_fail, path=opt.pbs_failed_path)
+
+    if zipchunks:
+        # and for chunks as well
+        sorts_on = ['[DLC]', '[Windspeed]']
+        create_chunks_htc_pbs(cc.cases_fail, sort_by_values=sorts_on,
+                              ppn=20, nr_procs_series=3, walltime='20:00:00',
+                              chunks_dir='zip-chunks-jess-fail', compress=compress,
+                              wine_arch=wine_arch, wine_prefix=wine_prefix,
+                              prelude=prelude, queue='windq')
 
 
 if __name__ == '__main__':
@@ -635,6 +651,10 @@ if __name__ == '__main__':
                         dest='prep', help='create htc, pbs, files')
     parser.add_argument('--check_logs', action='store_true', default=False,
                         dest='check_logs', help='check the log files')
+    parser.add_argument('--failed', action='store_true', default=False,
+                        dest='failed', help='Create new pbs_in files for all '
+                        'failed cases. Combine with --zipchunks to also create '
+                        'new zipchunks for the failed cases.')
     parser.add_argument('--pbs_failed_path', default='pbs_in_fail', type=str,
                         action='store', dest='pbs_failed_path',
                         help='Copy pbs launch files of the failed cases to a '
@@ -776,7 +796,7 @@ if __name__ == '__main__':
         launch_dlcs_excel(sim_id, silent=False, zipchunks=opt.zipchunks,
                           pbs_turb=opt.pbs_turb, walltime=opt.walltime,
                           postpro_node=opt.postpro_node, runmethod=RUNMETHOD,
-                          dlcs_dir=os.path.join(P_SOURCE, 'htc', 'DLCs'),
+                          dlcs_dir=os.path.join(P_SOURCE, opt.dlcfolder),
                           postpro_node_zipchunks=opt.no_postpro_node_zipchunks,
                           wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix,
                           compress=opt.compress, linux=opt.linux)
@@ -791,6 +811,9 @@ if __name__ == '__main__':
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
+    if opt.failed:
+        prepare_failed(zipchunks=opt.zipchunks, compress=opt.compress,
+                       wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)
     if opt.postpro_node_merge:
         postpro_node_merge(zipchunks=opt.zipchunks, m=m)
     if opt.dlcplot:

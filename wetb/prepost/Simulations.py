@@ -50,13 +50,14 @@ import pandas as pd
 import tables as tbl
 
 # custom libraries
+from wetb.fatigue_tools.bearing_damage import bearing_damage
 from wetb.prepost import misc
 from wetb.prepost import windIO
 from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
-from wetb.prepost.GenerateHydro import hydro_input
+#from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
-from os.path import join as os_path_join
+#from os.path import join as os_path_join
 
 #def join_path(*args):
 #    return os_path_join(*args).replace("\\","/")
@@ -3688,7 +3689,8 @@ class Cases(object):
         """Given the log file analysis and the Cases tag list, generate a list
         of failed cases. This is usefull when either some cases have been
         re-run or when the post-processing is done at the same time as the
-        simulations (e.g. zipchunks approach).
+        simulations (e.g. zipchunks approach). Cases for which the elapsted_time
+        column of the error logs is 0 or smaller are also considered as failed
 
         Parameters
         ----------
@@ -3724,6 +3726,9 @@ class Cases(object):
         # convert case_id to log file names
         # logids = pd.DataFrame(columns=[''])
         df_cases['logid'] = df_cases['[log_dir]'] + df_cases['[case_id]'] + '.log'
+        # remove those cases for which the logfile has not ended with the last
+        # statement "Elapsed time", results in value 0
+        df_err = df_err[df_err['elapsted_time'] > 0]
         # we only need to merge with errorlogs using a portion of the data
         # join error logs and df_cases on the logid
         df = pd.merge(df_cases[['logid', '[case_id]']], df_err[['file_name']],
@@ -3831,7 +3836,8 @@ class Cases(object):
                    ch_fatigue={}, update=False, add_sensor=None,
                    chs_resultant=[], i0=0, i1=None, saveinterval=1000,
                    csv=True, suffix=None, A=None, add_sigs={},
-                   ch_wind=None, save_new_sigs=False, xlsx=False):
+                   ch_wind=None, save_new_sigs=False, xlsx=False,
+                   bearing_damage_lst=()):
         """
         Calculate statistics and save them in a pandas dataframe. Save also
         every 500 cases the statistics file.
@@ -3855,7 +3861,11 @@ class Cases(object):
 
         add_sigs : dict, default={}
             channel name, expression key/value paires. For example,
-            '[p1-p1-node-002-forcevec-z]*3 + [p1-p1-node-002-forcevec-y]'
+            'p1-p1-node-002-forcevec-z*3 + p1-p1-node-002-forcevec-y'
+
+        bearing_damage_lst : iterable, default=()
+            Input for wetb.fatigue_tools.bearing_damage: angle and moment
+            channels of the bearing of interest.
 
         chs_resultant
 
@@ -4167,6 +4177,15 @@ class Cases(object):
 
             # calculate the statistics values
             stats = self.res.calc_stats(self.sig, i0=i0, i1=i1)
+
+            # calculate any bearing damage
+            for name, angle_moment_lst in bearing_damage_lst:
+                angle_moment_timeseries_lst = []
+                for aa, mm in angle_moment_lst:
+                    angle = self.sig[:,self.res.ch_dict[aa]['chi']]
+                    moment = self.sig[:,self.res.ch_dict[mm]['chi']]
+                    angle_moment_timeseries_lst.append((angle, moment))
+                stats[name] = bearing_damage(angle_moment_timeseries_lst)
 
             # Because each channel is a new row, it doesn't matter how many
             # data channels each case has, and this approach does not brake
