@@ -641,7 +641,7 @@ def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
                               ppn=20, nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess-fail', compress=compress,
                               wine_arch=wine_arch, wine_prefix=wine_prefix,
-                              prelude=prelude, queue='windq')
+                              prelude=prelude, queue='windq', i0=1000)
 
 
 if __name__ == '__main__':

@@ -3748,23 +3748,28 @@ class Cases(object):
             save_pickle(os.path.join(self.post_dir, self.sim_id + '_fail.pkl'),
                         self.cases_fail)
 
-    def remove_failed(self):
+    def remove_failed(self, verbose=False):
 
         # don't do anything if there is nothing defined
         if self.cases_fail == None:
             print('no failed cases to remove')
             return
 
+        nr_cases = len(self.cases)
         # ditch all the failed cases out of the htc_dict
         # otherwise we will have fails when reading the results data files
         for k in self.cases_fail:
             try:
                 self.cases_fail[k] = copy.copy(self.cases[k])
                 del self.cases[k]
-                print('removed from htc_dict due to error: ' + k)
+                if verbose:
+                    print('removed from htc_dict due to error: ' + k)
             except KeyError:
-                print('WARNING: failed case does not occur in cases')
-                print('   ', k)
+                if verbose:
+                    print('WARNING: failed case does not occur in cases')
+                    print('   ', k)
+        rpl = (len(self.cases_fail), nr_cases)
+        print('removed %i failed cases (out of %i)' % rpl)
 
     def load_failed(self, sim_id):
 
