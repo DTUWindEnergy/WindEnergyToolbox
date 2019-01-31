@@ -811,11 +811,11 @@ if __name__ == '__main__':
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
                     envelopeturbine=opt.envelopeturbine,
                     envelopeblade=opt.envelopeblade)
+    if opt.postpro_node_merge:
+        postpro_node_merge(zipchunks=opt.zipchunks, m=m)
     if opt.failed:
         prepare_failed(zipchunks=opt.zipchunks, compress=opt.compress,
                        wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)
-    if opt.postpro_node_merge:
-        postpro_node_merge(zipchunks=opt.zipchunks, m=m)
     if opt.dlcplot:
         plot_chans = {}
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
