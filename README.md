@@ -20,6 +20,10 @@ Both Python2 and Python3 are supported.
 - [Simple user](docs/install.md)
 - [Developer/contributor](docs/developer-guide.md)
 
+# Documentation
+
+[https://toolbox.pages.windenergy.dtu.dk/WindEnergyToolbox/](https://toolbox.pages.windenergy.dtu.dk/WindEnergyToolbox/)
+
 
 # Contents of WindEnergyToolbox, [wetb](wetb)
 

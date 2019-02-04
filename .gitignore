@@ -27,3 +27,4 @@ tests/temp.htc
 /htmlcov
 /docs/build
 /docs/source_old
+.ipynb_checkpoints
