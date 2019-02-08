@@ -15,6 +15,10 @@ standard_library.install_aliases()
 
 import numpy as np
 
+
+stcols = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
+
+
 class StFile(object):
     """Read HAWC2 St (beam element structural data) file
 
@@ -69,7 +73,7 @@ class StFile(object):
         with open (filename) as fid:
             txt = fid.read()
 #         Some files starts with first set ("#1...") with out specifying number of sets
-#         no_maindata_sets = int(txt.strip()[0]) 
+#         no_maindata_sets = int(txt.strip()[0])
 #         assert no_maindata_sets == txt.count("#")
         self.main_data_sets = {}
         for mset in txt.split("#")[1:]:
@@ -83,8 +87,9 @@ class StFile(object):
                 set_data_dict[set_nr] = np.array([set_lines[i].split() for i in range(1, no_rows + 1)], dtype=np.float)
             self.main_data_sets[mset_nr] = set_data_dict
 
-        for i, name in enumerate("r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e".split()):
-            setattr(self, name, lambda radius=None, mset=1, set=1, column=i: self._value(radius, column, mset, set))
+        for i, name in enumerate(stcols.split()):
+            setattr(self, name, lambda radius=None, mset=1, set=1,
+                    column=i: self._value(radius, column, mset, set))
 
     def _value(self, radius, column, mset_nr=1, set_nr=1):
         st_data = self.main_data_sets[mset_nr][set_nr]
@@ -98,14 +103,35 @@ class StFile(object):
             return r
         return r[np.argmin(np.abs(r - radius))]
 
-    def to_str(self, mset=1, set=1):
+    def to_str(self, mset=1, set=1, precision='%12.5e '):
         d = self.main_data_sets[mset][set]
-        return "\n".join([("%12.5e "*d.shape[1]) % tuple(row) for row in d])
+        return '\n'.join([(precision*d.shape[1]) % tuple(row) for row in d])
+
+    def save(self, filename, precision='%15.07e', encoding='utf-8'):
+        """Save all data defined in main_data_sets to st file.
+        """
+        colwidth = len(precision % 1)
+        sep = '='*colwidth*len(stcols) + '\n'
+        colhead = ''.join([k.center(colwidth) for k in stcols.split()]) + '\n'
+
+        nsets = len(self.main_data_sets)
+
+        with open(filename, 'w', encoding=encoding) as fid:
+            fid.write('%i ; number of sets, Nset\n' % nsets)
+            for mset, set_data_dict in self.main_data_sets.items():
+                fid.write('#%i ; set number\n' % mset)
+                for set, set_array in set_data_dict.items():
+                    dstr = self.to_str(mset=mset, set=set, precision=precision)
+                    npoints = self.main_data_sets[mset][set].shape[0]
+                    fid.write(sep + colhead + sep)
+                    fid.write('$%i %i\n' % (set, npoints))
+                    fid.write(dstr + '\n')
 
 
 if __name__ == "__main__":
     import os
-    st = StFile(os.path.dirname(__file__) + r"/tests/test_files/DTU_10MW_RWT_Blade_st.dat")
+    cwd = os.path.dirname(__file__)
+    st = StFile(os.path.join(cwd, r'tests/test_files/DTU_10MW_RWT_Blade_st.dat'))
     print (st.m())
     print (st.E(radius=36, mset=1, set=1))  # Elastic blade
     print (st.E(radius=36, mset=1, set=2))  # stiff blade
@@ -121,8 +147,6 @@ if __name__ == "__main__":
     #print (np.sqrt(np.sum(np.diff(xyz, 0) ** 2, 1)))
     print (st.pitch(67.8883 - 0.01687))
     print (st.pitch(23.2446))
-
-
 
     #print (st.)
     #print (st.)
