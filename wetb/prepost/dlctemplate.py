@@ -386,8 +386,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                 force_dir=False, update=False, saveinterval=2000, csv=False,
-                m=[3, 4, 6, 8, 9, 10, 12], neq=1e7, no_bins=46,
-                years=20.0, fatigue=True, A=None, AEP=False,
+                m=[3, 4, 6, 8, 9, 10, 12], neq=1e7, no_bins=46, int_env=False,
+                years=20.0, fatigue=True, A=None, AEP=False, nx=300,
                 save_new_sigs=False, envelopeturbine=False, envelopeblade=False,
                 save_iter=False, pbs_failed_path=False):
 
@@ -477,7 +477,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                                 'blade%i-blade%i-node-%3.3i-forcevec-x' % rpl,
                                 'blade%i-blade%i-node-%3.3i-forcevec-y' % rpl,
                                 'blade%i-blade%i-node-%3.3i-forcevec-z' % rpl])
-        cc.envelopes(ch_list=ch_list, append='_blade')
+        cc.envelopes(ch_list=ch_list, append='_blade', int_env=int_env, Nx=nx)
 
     if envelopeturbine:
         ch_list = [['tower-tower-node-001-momentvec-x',
@@ -492,7 +492,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
                    ['hub1-hub1-node-001-momentvec-x',
                    'hub1-hub1-node-001-momentvec-y',
                    'hub1-hub1-node-001-momentvec-z']]
-        cc.envelopes(ch_list=ch_list, append='_turbine')
+        cc.envelopes(ch_list=ch_list, append='_turbine', int_env=int_env, Nx=nx)
 
     if fatigue:
         # load the statistics in case they are missing
@@ -687,6 +687,12 @@ if __name__ == '__main__':
                         dest='envelopeblade', help='Compute envelopeblade')
     parser.add_argument('--envelopeturbine', default=False, action='store_true',
                         dest='envelopeturbine', help='Compute envelopeturbine')
+    parser.add_argument('--int_env', default=False, action='store_true',
+                        dest='int_env', help='Interpolate load envelopes to '
+                        'a fixed number of nx angles.')
+    parser.add_argument('--nx', type=int, default=300, action='store',
+                        dest='nx', help='Number of angles to interpolate the '
+                        'load envelopes to. Default=300.')
     parser.add_argument('--zipchunks', default=False, action='store_true',
                         dest='zipchunks', help='Create PBS launch files for'
                         'running in zip-chunk find+xargs mode.')
@@ -809,8 +815,8 @@ if __name__ == '__main__':
                     fatigue=opt.fatigue, A=opt.rotarea, AEP=opt.AEP,
                     no_bins=opt.no_bins, pbs_failed_path=opt.pbs_failed_path,
                     save_new_sigs=opt.save_new_sigs, save_iter=False,
-                    envelopeturbine=opt.envelopeturbine,
-                    envelopeblade=opt.envelopeblade)
+                    envelopeturbine=opt.envelopeturbine, int_env=opt.int_env,
+                    envelopeblade=opt.envelopeblade, nx=opt.nx)
     if opt.postpro_node_merge:
         postpro_node_merge(zipchunks=opt.zipchunks, m=m)
     if opt.failed:

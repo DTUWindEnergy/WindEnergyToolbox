@@ -5062,13 +5062,26 @@ class Cases(object):
 
         return envelope
 
-    def envelopes(self, silent=False, ch_list=[], append=''):
+    def envelopes(self, silent=False, ch_list=[], append='', int_env=False,
+                  Nx=300):
         """
         Calculate envelopes and save them in a table.
 
         Parameters
         ----------
 
+        silent
+
+        ch_list
+
+        append
+
+        int_env : boolean, default=False
+            If the logic parameter is True, the function will interpolate the
+            envelope on a given number of points
+
+        Nx : int, default=300
+            Number of points for the envelope interpolation
 
         Returns
         -------
@@ -5108,7 +5121,7 @@ class Cases(object):
 
             self.load_result_file(case)
 
-            envelope = self.compute_envelopes(ch_list, int_env=False, Nx=300)
+            envelope = self.compute_envelopes(ch_list, int_env=int_env, Nx=Nx)
 
             for ch_id in ch_list:
                 title = str(ch_id[0].replace('-', '_'))
