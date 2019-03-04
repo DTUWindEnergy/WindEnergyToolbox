@@ -1,0 +1,34 @@
+  begin simulation;
+    time_stop	1;
+    solvertype	1;	(newmark)
+    on_no_convergence	continue;
+    convergence_limits	1000 1 1e-08;	
+;logfile ./log/nasty_gust.log ;
+;
+    begin newmark;
+      deltat	0.025;
+    end newmark;
+  end simulation;
+;----------------------------------------------------------------------------------------------------------------------------------------------------------------
+  begin wind;
+    density	1.225;
+    wsp	10;
+	tint 1;
+    horizontal_input	0;	0=false, 1=true
+    windfield_rotations	0 0 0;	yaw, tilt, rotation
+    center_pos0	0 0 -10;	hub heigth
+    shear_format	1 0;	0=none,1=constant,2=log,3=power,4=linear
+    turb_format	1;
+    tower_shadow_method	0;	0=none, 1=potential flow, 2=jet
+    begin mann;	
+      create_turb_parameters	30 1 3.9 1 1;	L, alfaeps, gamma, seed, highfrq compensation
+      filename_u	./turb/mann_l30.0_ae1.00_g3.9_h1_512x8x8_0.977x16.00x16.00_s0001u.turb;
+      filename_v	./turb/mann_l30.0_ae1.00_g3.9_h1_512x8x8_0.977x16.00x16.00_s0001v.turb;
+      filename_w	./turb/mann_l30.0_ae1.00_g3.9_h1_512x8x8_0.977x16.00x16.00_s0001w.turb;
+      box_dim_u	512 0.977;
+      box_dim_v	8 16;
+      box_dim_w	8 16;
+    end mann; 
+
+  end wind;
+exit;
