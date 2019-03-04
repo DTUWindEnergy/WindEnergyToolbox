@@ -35,7 +35,7 @@ def from_unix(sec):
         return datetime.utcfromtimestamp(sec)
     else:
         sec = np.array(sec).astype(np.float)
-        ms = np.atleast_1d((sec * 1000000 % 1000000).astype(np.int))
+        us = np.atleast_1d((sec * 1000000 % 1000000).astype(np.int))
         sec = sec.astype(np.int)
         S = np.atleast_1d(sec % 60)
         M = np.atleast_1d(sec % 3600 // 60)
@@ -45,4 +45,4 @@ def from_unix(sec):
             if du not in day_dict:
                 day_dict[du] = date.fromordinal(719163 + du).timetuple()[:3]
         y, m, d = zip(*[day_dict[d_] for d_ in d])
-        return ([datetime(*ymdhmsu) for ymdhmsu in zip(y, m, d, H.tolist(), M.tolist(), S.tolist(), ms.tolist())])
+        return ([datetime(*ymdhmsu) for ymdhmsu in zip(y, m, d, H.tolist(), M.tolist(), S.tolist(), us.tolist())])

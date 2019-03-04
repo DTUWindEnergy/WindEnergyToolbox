@@ -407,7 +407,9 @@ class PBSClusterSimulationHost(SimulationHost):
 
     def pbsjobfile(self, ios=False):
         cp_back = ""
-        for folder in set([fmt_path(os.path.relpath(os.path.dirname(f))) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
+        for folder in set([fmt_path(os.path.dirname(os.path.relpath(f))) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
+            if folder == '':
+                continue
             cp_back += "mkdir -p $PBS_O_WORKDIR/%s/. \n" % folder
             cp_back += "cp -R -f %s/. $PBS_O_WORKDIR/%s/.\n" % (folder, folder)
         rel_htcfilename = fmt_path(os.path.relpath(self.htcFile.filename, self.exepath))

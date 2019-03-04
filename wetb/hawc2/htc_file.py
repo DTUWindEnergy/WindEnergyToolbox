@@ -409,7 +409,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             log = stderr
 
         if errorcode or 'Elapsed time' not in log:
-            raise Exception(str(stdout) + str(stderr))
+            raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\ncmd:\n%s" %
+                            (str(stdout), str(stderr), cmd))
         return str(stdout) + str(stderr), log
 
     def deltat(self):

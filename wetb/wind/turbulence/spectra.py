@@ -7,6 +7,8 @@ Created on 27/11/2015
 
 import numpy as np
 import warnings
+
+
 def spectrum(x, y=None, k=1):
     """PSD or Cross spectrum (only positive half)
 
@@ -25,6 +27,7 @@ def spectrum(x, y=None, k=1):
     """
     if x is None:
         return None
+
     def fft(x):
         return np.fft.fft(x.T).T / len(x)
 
@@ -34,13 +37,14 @@ def spectrum(x, y=None, k=1):
     else:
         fftx = fft(x) * np.conj(fft(y))  # Cross spectra
 
-    fftx = fftx[:len(fftx) // 2 ] * 2  # positive half * 2
+    fftx = fftx[:len(fftx) // 2] * 2  # positive half * 2
 
 #    if len(fftx.shape) == 2:
 #        fftx = np.mean(fftx, 1)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")  
+        warnings.simplefilter("ignore")
         return np.real(fftx * len(x) / (2 * k))[1:]
+
 
 def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     """Return the wave number, the uu, vv, ww autospectra and the uw cross spectra
@@ -81,23 +85,29 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     assert isinstance(spatial_resolution, (int, float))
 
     k = 2 * np.pi * spatial_resolution
-    if v is not None: assert u.shape==v.shape
-    if w is not None: assert u.shape==w.shape
-    
-    if 1 and len(u.shape)==2:
-        assert np.abs(np.mean(u,0)).max()<1
-        if v is not None: assert np.abs(np.mean(v,0)).max()<1
-        if w is not None: assert np.abs(np.mean(w,0)).max()<1
+    if v is not None:
+        assert u.shape == v.shape
+    if w is not None:
+        assert u.shape == w.shape
+
+    if 1 and len(u.shape) == 2:
+        assert np.abs(np.mean(u, 0)).max() < 1
+        if v is not None:
+            assert np.abs(np.mean(v, 0)).max() < 1
+        if w is not None:
+            assert np.abs(np.mean(w, 0)).max() < 1
         if isinstance(k, float):
-            k = np.repeat(k,u.shape[1])
+            k = np.repeat(k, u.shape[1])
         else:
-            assert u.shape[1]==k.shape[0]
-        k1_vec = np.array([np.linspace(0, k_ / 2, len(u) / 2)[1:] for k_ in k]).T
+            assert u.shape[1] == k.shape[0]
+        k1_vec = np.array([np.linspace(0, k_ / 2, len(u) // 2)[1:] for k_ in k]).T
     else:
-        assert np.abs(np.mean(u))<1
-        if v is not None: assert np.abs(np.mean(v))<1
-        if w is not None: assert np.abs(np.mean(w))<1
-        assert isinstance(k,float)
+        assert np.abs(np.mean(u)) < 1
+        if v is not None:
+            assert np.abs(np.mean(v)) < 1
+        if w is not None:
+            assert np.abs(np.mean(w)) < 1
+        assert isinstance(k, float)
         k1_vec = np.linspace(0, k / 2, len(u) / 2)[1:]
     if detrend:
         u, v, w = detrend_wsp(u, v, w)
@@ -114,7 +124,7 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
         Sample frequency
     Uvw_lst : array_like
         list of U, v and w, [(U1,v1,w1),(U2,v2,w2)...], v and w are optional
-        
+
     Returns
     -------
     k1, uu[, vv[, ww, uw]] : 2-5 x array_like
@@ -129,25 +139,21 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
     assert isinstance(sample_frq, (int, float))
     Uvw_arr = np.array(Uvw_lst)
     Ncomp = Uvw_arr.shape[1]
-    U,v,w = [Uvw_arr[:,i,:].T for i in range(Ncomp)] + [None]*(3-Ncomp)
+    U, v, w = [Uvw_arr[:, i, :].T for i in range(Ncomp)] + [None] * (3 - Ncomp)
     k = 2 * np.pi * sample_frq / U.mean(0)
-    
-    if v is not None: assert np.abs(np.nanmean(v,0)).max()<1, "Max absolute mean of v is %f"%np.abs(np.nanmean(v,0)).max()
-    if w is not None: assert np.abs(np.nanmean(w,0)).max()<1
+
+    if v is not None:
+        assert np.abs(np.nanmean(v, 0)).max() < 1, "Max absolute mean of v is %f" % np.abs(np.nanmean(v, 0)).max()
+    if w is not None:
+        assert np.abs(np.nanmean(w, 0)).max() < 1
     k1_vec = np.array([np.linspace(0, k_ / 2, U.shape[0] / 2)[1:] for k_ in k]).T
-    u = U-np.nanmean(U, 0)
+    u = U - np.nanmean(U, 0)
     u, v, w = detrend_wsp(u, v, w)
 
     return [k1_vec] + [spectrum(x1, x2, k=k) for x1, x2 in [(u, u), (v, v), (w, w), (w, u)]]
 
 
-{'ns':( 298, 0.0455033341592, 30.7642421893, 2.32693322102, 0.00538254487239),
-'nu':( 853, 0.0355868134195, 71.0190181051, 2.95576644546, 0.00268903502954),
-'s' :( 367, 0.0300454276184, 24.7375807569, 2.40165270878, 0.00253338624678),
-'vs':( 223, 0.0149281609201, 11.7467239752, 3.21842435078, 0.00143453350246),
-'n' :( 984, 0.0494970534618, 47.3846412548, 2.83466101838, 0.00513954022345),
-'u' :( 696, 0.0258456660845, 78.9511607824, 2.51128584334, 0.00250014140782),
-'vu':( 468, 0.0218274041889, 73.0730383576, 2.01636095317, 0.00196337613117)}
+
 
 def bin_spectrum(x, y, bin_size, min_bin_count=2):
     assert min_bin_count > 0
@@ -155,8 +161,8 @@ def bin_spectrum(x, y, bin_size, min_bin_count=2):
     low, high = np.floor(np.nanmin(x)), np.ceil(np.nanmax(x))
     bins = int(high - low)
     nbr_in_bins = np.histogram(x, bins, range=(low, high))[0]
-    if len(x.shape)==2:
-        min_bin_count*=x.shape[1]
+    if len(x.shape) == 2:
+        min_bin_count *= x.shape[1]
     mask = nbr_in_bins >= min_bin_count
     return np.histogram(x, bins, range=(low, high), weights=y)[0][mask] / nbr_in_bins[mask], nbr_in_bins
 
@@ -170,6 +176,7 @@ def logbin_spectrum(k1, xx, log10_bin_size=.2, min_bin_count=2):
 
 def logbin_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=0.2, min_bin_count=2):
     return tuple([logbin_spectrum(k1, xx, log10_bin_size, min_bin_count) for xx in [k1, uu, vv, ww, uw]])
+
 
 def plot_spectrum(spacial_frq, u, plt=None):
     if plt is None:
@@ -187,7 +194,7 @@ def detrend_wsp(u, v=None, w=None):
         t = np.arange(dwsp.shape[0])
         A = np.vstack([t, np.ones(len(t))]).T
         for i in range(dwsp.shape[1]):
-            trend, offset = np.linalg.lstsq(A, dwsp[:, i])[0]
+            trend, offset = np.linalg.lstsq(A, dwsp[:, i], rcond=None)[0]
             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
         return dwsp.reshape(wsp.shape)
     return [_detrend(wsp) for wsp in [u, v, w]]
@@ -197,11 +204,12 @@ def plot_spectra(k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_size=.2,
     if plt is None:
         import matplotlib.pyplot as plt
     bk1, buu, bvv, bww, buw = logbin_spectra(k1, uu, vv, ww, uw, log10_bin_size)
+
     def plot(xx, label, color, plt):
-        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2 , marker_style + color, label=label)
+        plt.semilogx(bk1, bk1 * xx * 10 ** 0 / mean_u ** 2, marker_style + color, label=label)
     plot(buu, 'uu', 'r', plt)
     plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
-    if mean_u ==1:
+    if mean_u == 1:
         plt.ylabel(r'Spectral density $k_{1} F(k_{1}) [m^2/s^2]$')
     else:
         plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [-]$')

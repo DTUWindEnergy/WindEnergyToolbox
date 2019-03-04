@@ -50,13 +50,16 @@ from wetb import gtsdf
 ################################################################################
 ################################################################################
 ################################################################################
-## Read HAWC2 class
+# Read HAWC2 class
 ################################################################################
+
+
 class ReadHawc2(object):
     """
     """
 ################################################################################
 # read *.sel file
+
     def _ReadSelFile(self):
         """
         Some title
@@ -93,11 +96,16 @@ class ReadHawc2(object):
         self.t = np.linspace(0, self.Time, self.NrSc + 1)[1:]
         Format = temp[3]
         # reads channel info (name, unit and description)
-        Name = []; Unit = []; Description = [];
+        Name = []
+        Unit = []
+        Description = []
         for i in range(0, self.NrCh):
-            temp = str(Lines[i + 12][12:43]); Name.append(temp.strip())
-            temp = str(Lines[i + 12][43:54]); Unit.append(temp.strip())
-            temp = str(Lines[i + 12][54:-1]); Description.append(temp.strip())
+            temp = str(Lines[i + 12][12:43])
+            Name.append(temp.strip())
+            temp = str(Lines[i + 12][43:54])
+            Unit.append(temp.strip())
+            temp = str(Lines[i + 12][54:-1])
+            Description.append(temp.strip())
         self.ChInfo = [Name, Unit, Description]
         # if binary file format, scaling factors are read
         if Format.lower() == 'binary':
@@ -109,36 +117,42 @@ class ReadHawc2(object):
             self.FileFormat = 'HAWC2_ASCII'
 ################################################################################
 # read sensor file for FLEX format
+
     def _ReadSensorFile(self):
         # read sensor file used if results are saved in FLEX format
         DirName = os.path.dirname(self.FileName + ".int")
         try:
-            fid = opent(DirName + "\sensor ", 'r')
+            fid = opent(DirName + r"\sensor ", 'r')
         except IOError:
-            print ("can't finde sensor file for FLEX format")
+            print("can't finde sensor file for FLEX format")
             return
         Lines = fid.readlines()
         fid.close()
         # reads channel info (name, unit and description)
         self.NrCh = 0
-        Name = []; Unit = []; Description = [];
+        Name = []
+        Unit = []
+        Description = []
         for i in range(2, len(Lines)):
             temp = Lines[i]
             if not temp.strip():
                 break
             self.NrCh += 1
-            temp = str(Lines[i][38:45]); Unit.append(temp.strip())
-            temp = str(Lines[i][45:53]); Name.append(temp.strip())
-            temp = str(Lines[i][53:]); Description.append(temp.strip())
+            temp = str(Lines[i][38:45])
+            Unit.append(temp.strip())
+            temp = str(Lines[i][45:53])
+            Name.append(temp.strip())
+            temp = str(Lines[i][53:])
+            Description.append(temp.strip())
         self.ChInfo = [Name, Unit, Description]
         # read general info from *.int file
         fid = open(self.FileName + ".int", 'rb')
         fid.seek(4 * 19)
         if not np.fromfile(fid, 'int32', 1) == self.NrCh:
-            print ("number of sensors in sensor file and data file are not consisten")
+            print("number of sensors in sensor file and data file are not consisten")
         fid.seek(4 * (self.NrCh) + 8, 1)
         temp = np.fromfile(fid, 'f', 2)
-        self.Freq = 1 / temp[1];
+        self.Freq = 1 / temp[1]
         self.ScaleFactor = np.fromfile(fid, 'f', self.NrCh)
         fid.seek(2 * 4 * self.NrCh + 48 * 2)
         self.NrSc = int(len(np.fromfile(fid, 'int16')) / self.NrCh)
@@ -147,28 +161,31 @@ class ReadHawc2(object):
         fid.close()
 ################################################################################
 # init function, load channel and other general result file info
+
     def __init__(self, FileName, ReadOnly=0):
         self.FileName = FileName
         self.ReadOnly = ReadOnly
         self.Iknown = []  # to keep track of what has been read all ready
         self.Data = np.zeros(0)
         if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
-             self._ReadSelFile()
+            self._ReadSelFile()
         elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
-             self.FileFormat = 'FLEX'
-             self._ReadSensorFile()
+            self.FileFormat = 'FLEX'
+            self._ReadSensorFile()
         elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
             self.FileFormat = 'GTSDF'
             self.ReadGtsdf()
         else:
-            print ("unknown file: " + FileName)
+            print("unknown file: " + FileName)
 ################################################################################
 # Read results in binary format
+
     def ReadBinary(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
         with open(self.FileName + '.dat', 'rb') as fid:
-            data = np.zeros((self.NrSc, len(ChVec))); j = 0
+            data = np.zeros((self.NrSc, len(ChVec)))
+            j = 0
             for i in ChVec:
                 fid.seek(i * self.NrSc * 2, 0)
                 data[:, j] = np.fromfile(fid, 'int16', self.NrSc) * self.ScaleFactor[i]
@@ -176,6 +193,7 @@ class ReadHawc2(object):
         return data
 ################################################################################
 # Read results in ASCII format
+
     def ReadAscii(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
@@ -183,6 +201,7 @@ class ReadHawc2(object):
         return temp.reshape((self.NrSc, len(ChVec)))
 ################################################################################
 # Read results in FLEX format
+
     def ReadFLEX(self, ChVec=[]):
         if not ChVec:
             ChVec = range(1, self.NrCh)
@@ -194,8 +213,12 @@ class ReadHawc2(object):
         return np.dot(temp[:, ChVec], np.diag(self.ScaleFactor[ChVec]))
 ################################################################################
 # Read results in GTSD format
+
     def ReadGtsdf(self):
-        self.t, data, info = gtsdf.load(self.FileName + '.hdf5')
+        fn = self.FileName
+        if fn[-5:].lower() != '.hdf5':
+            fn += '.hdf5'
+        self.t, data, info = gtsdf.load(fn)
         self.Time = self.t
         self.ChInfo = [['Time'] + info['attribute_names'],
                        ['s'] + info['attribute_units'],
@@ -205,10 +228,11 @@ class ReadHawc2(object):
         self.Freq = self.NrSc / self.Time
         self.FileFormat = 'GTSDF'
         self.gtsdf_description = info['description']
-        data = np.hstack([self.Time[:,np.newaxis], data])
+        data = np.hstack([self.Time[:, np.newaxis], data])
         return data
 ################################################################################
 # One stop call for reading all data formats
+
     def ReadAll(self, ChVec=[]):
         if not ChVec and not self.FileFormat == 'GTSDF':
             ChVec = range(0, self.NrCh)
@@ -222,11 +246,12 @@ class ReadHawc2(object):
             return self.ReadFLEX(ChVec)
 ################################################################################
 # Main read data call, read, save and sort data
+
     def __call__(self, ChVec=[]):
         if not ChVec:
             ChVec = range(0, self.NrCh)
         elif max(ChVec) >= self.NrCh:
-            print ("to high channel number")
+            print("to high channel number")
             return
         # if ReadOnly, read data but no storeing in memory
         if self.ReadOnly:
@@ -235,7 +260,8 @@ class ReadHawc2(object):
         # and return all requested channels
         else:
             # sort into known channels and channels to be read
-            I1 = [];I2 = []  # I1=Channel mapping, I2=Channels to be read
+            I1 = []
+            I2 = []  # I1=Channel mapping, I2=Channels to be read
             for i in ChVec:
                 try:
                     I1.append(self.Iknown.index(i))
@@ -258,7 +284,7 @@ class ReadHawc2(object):
 ################################################################################
 ################################################################################
 ################################################################################
-## write HAWC2 class, to be implemented
+# write HAWC2 class, to be implemented
 ################################################################################
 
 if __name__ == '__main__':

@@ -19,6 +19,7 @@ def _z_u(z_u_lst):
     u = np.array([np.mean(np.array([u])[:]) for _, u in z_u_lst])
     return z, u
 
+
 def power_shear(alpha, z_ref, u_ref):
     """Power shear
 
@@ -41,7 +42,7 @@ def power_shear(alpha, z_ref, u_ref):
     >>> power_shear(.5, 70, 9)([20,50,70])
     [ 4.81070235  7.60638829  9.        ]
     """
-    return lambda z : u_ref * (np.array(z) / z_ref) ** alpha
+    return lambda z: u_ref * (np.array(z) / z_ref) ** alpha
 
 
 def fit_power_shear(z_u_lst):
@@ -69,6 +70,7 @@ def fit_power_shear(z_u_lst):
     z_hub, u_hub = z[0], u[0]
     alpha, _ = np.polyfit(np.log(z / z_hub), np.log(u / u_hub), 1)
     return alpha
+
 
 def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
     """Estimate power shear parameter, alpha, from two or more specific reference heights using polynomial fit.
@@ -108,10 +110,9 @@ def fit_power_shear_ref(z_u_lst, z_ref, plt=None):
         z = np.linspace(min(z), max(z), 100)
         plt.plot(power_shear(alpha, z_ref, u_ref)(z), z)
         plt.margins(.1)
-    if alpha==.1 and u_ref==10: # Initial conditions
+    if alpha == .1 and u_ref == 10:  # Initial conditions
         return np.nan, np.nan
     return alpha, u_ref
-
 
 
 def log_shear(u_star, z0):
@@ -139,12 +140,14 @@ def log_shear(u_star, z0):
     [ 1.73286795  4.02359478  4.86477537]
     """
     K = 0.4  # von Karmans constant
-    def log_shear(z,Obukhov_length=None):
+
+    def log_shear(z, Obukhov_length=None):
         if Obukhov_length is None:
             return u_star / K * (np.log(np.array(z) / z0))
         else:
             return u_star / K * (np.log(z / z0) - stability_term(z, z0, Obukhov_length))
     return log_shear
+
 
 def stability_term(z, z0, L):
     """Calculate the stability term for the log shear
@@ -152,8 +155,10 @@ def stability_term(z, z0, L):
     Not validated!!!
     """
     zL = z / L
-    phi_us = lambda zL : (1 + 16 * np.abs(zL)) ** (-1 / 4)  #unstable
-    phi_s = lambda zL : 1 + 5 * zL  # stable
+
+    def phi_us(zL): return (1 + 16 * np.abs(zL)) ** (-1 / 4)  # unstable
+
+    def phi_s(zL): return 1 + 5 * zL  # stable
     phi = np.zeros_like(zL) + np.nan
 
     for m, f in [(((-2 <= zL) & (zL <= 0)), phi_us), (((0 < zL) & (zL <= 1)), phi_s)]:
@@ -198,6 +203,7 @@ def fit_log_shear(z_u_lst, include_R=False):
     if include_R:
         return a * kappa, np.exp(-b / a), sum((U - (a * np.log(z) + b)) ** 2)
     return a * kappa, np.exp(-b / a)
+
 
 if __name__ == '__main__':
     from matplotlib.pyplot import plot, show

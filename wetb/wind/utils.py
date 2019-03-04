@@ -38,14 +38,15 @@ def wsp_dir2uv(wsp, dir, dir_ref=None):
     v = -np.sin(rad(dir)) * wsp[:]
     return np.array([u, v])
 
+
 def wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal, dir_ref=None):
-    """Convert horizontal wind speed and direction to u,v,w
+    r"""Convert horizontal wind speed and direction to u,v,w
 
     Parameters
     ----------
     wsp : array_like
-        - if wsp_horizontal is True: Horizontal wind speed, $\sqrt{u^2+v^2}\n
-        - if wsp_horizontal is False: Wind speed, $\sqrt{u^2+v^2+w^2}
+        - if wsp_horizontal is True: Horizontal wind speed, $\sqrt{u^2+v^2}$\n
+        - if wsp_horizontal is False: Wind speed, $\sqrt{u^2+v^2+w^2}$
     dir : array_like
         Wind direction
     tilt : array_like
@@ -66,6 +67,7 @@ def wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal, dir_ref=None):
     w : array_like
         v wind component
     """
+
     wsp, dir, tilt = wsp[:], dir[:], tilt[:]
     if wsp_horizontal:
         w = tand(tilt) * wsp
@@ -74,7 +76,6 @@ def wsp_dir_tilt2uvw(wsp, dir, tilt, wsp_horizontal, dir_ref=None):
         w = sind(tilt) * wsp
         u, v = wsp_dir2uv(np.sqrt(wsp ** 2 - w ** 2), dir, dir_ref)
     return np.array([u, v, w])
-
 
 
 def xyz2uvw(x, y, z, left_handed=True):
@@ -108,7 +109,7 @@ def xyz2uvw(x, y, z, left_handed=True):
     SV = cosd(theta) * y - sind(theta) * x
 
 #     SUW = cosd(theta) * x + sind(theta) * y
-# 
+#
 #     #% rotation around y of tilt
 #     tilt = deg(np.arctan2(np.mean(z), np.mean(SUW)))
 #     SU = SUW * cosd(tilt) + z * sind(tilt);
@@ -118,8 +119,6 @@ def xyz2uvw(x, y, z, left_handed=True):
     SW = z
 
     return np.array([SU, SV, SW])
-
-
 
 
 def abvrel2xyz_old(alpha, beta, vrel):
@@ -148,21 +147,23 @@ def abvrel2xyz_old(alpha, beta, vrel):
     vrel = np.array(vrel, dtype=np.float)
 
     sign_vsx = -((np.abs(beta) > np.pi / 2) * 2 - 1)  # +1 for |beta| < 90, -1 for |beta|>90
-    sign_vsy = np.sign(alpha)  #+ for alpha > 0
-    sign_vsz = -np.sign(beta)  #- for beta>0
-
+    sign_vsy = np.sign(alpha)  # + for alpha > 0
+    sign_vsz = -np.sign(beta)  # - for beta>0
 
     x = sign_vsx * np.sqrt(vrel ** 2 / (1 + np.tan(alpha) ** 2 + np.tan(beta) ** 2))
 
     m = alpha != 0
     y = np.zeros_like(alpha)
-    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 + 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
+    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 +
+                                                 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
 
     m = beta != 0
     z = np.zeros_like(alpha)
-    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
+    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 +
+                                                 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
 
     return x, y, z
+
 
 def abvrel2xyz(alpha, beta, vrel):
     """Convert pitot tube alpha, beta and relative velocity to local Cartesian wind speed velocities
@@ -202,36 +203,37 @@ def abvrel2xyz(alpha, beta, vrel):
     vrel = np.array(vrel, dtype=np.float)
 
     sign_vsx = ((np.abs(beta) > np.pi / 2) * 2 - 1)  # -1 for |beta| < 90, +1 for |beta|>90
-    sign_vsy = -np.sign(alpha)  #- for alpha > 0
+    sign_vsy = -np.sign(alpha)  # - for alpha > 0
     sign_vsz = np.sign(beta)  # for beta>0
-
 
     x = sign_vsx * np.sqrt(vrel ** 2 / (1 + np.tan(alpha) ** 2 + np.tan(beta) ** 2))
 
     m = alpha != 0
     y = np.zeros_like(alpha)
-    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 + 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
+    y[m] = sign_vsy[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(alpha[m])) ** 2 +
+                                                 1 + (np.tan(beta[m]) / np.tan(alpha[m])) ** 2))
 
     m = beta != 0
     z = np.zeros_like(alpha)
-    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 + 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
+    z[m] = sign_vsz[m] * np.sqrt(vrel[m] ** 2 / ((1 / np.tan(beta[m])) ** 2 +
+                                                 1 + (np.tan(alpha[m]) / np.tan(beta[m])) ** 2))
 
     return np.array([x, y, z]).T
 
 
 def detrend_uvw(u, v=None, w=None):
-#     def _detrend(wsp):
-#         if wsp is None:
-#             return None
-#         dwsp = np.atleast_2d(wsp.copy().T).T
-#         t = np.arange(dwsp.shape[0])
-#         A = np.vstack([t, np.ones(len(t))]).T
-#         for i in range(dwsp.shape[1]):
-#             trend, offset = np.linalg.lstsq(A, dwsp[:, i])[0]
-#             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
-#         return dwsp.reshape(wsp.shape)
+    #     def _detrend(wsp):
+    #         if wsp is None:
+    #             return None
+    #         dwsp = np.atleast_2d(wsp.copy().T).T
+    #         t = np.arange(dwsp.shape[0])
+    #         A = np.vstack([t, np.ones(len(t))]).T
+    #         for i in range(dwsp.shape[1]):
+    #             trend, offset = np.linalg.lstsq(A, dwsp[:, i])[0]
+    #             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
+    #         return dwsp.reshape(wsp.shape)
     def _detrend(y):
         if y is None:
             return None
         return detrend(y)
-    return [_detrend(uvw) for uvw in [u, v, w]] 
+    return [_detrend(uvw) for uvw in [u, v, w]]
