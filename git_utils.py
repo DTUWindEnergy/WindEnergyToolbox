@@ -14,11 +14,12 @@ def _run_git_cmd(cmd, git_repo_path=None):
     try:
         process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
                                    universal_newlines=True,
                                    cwd=os.path.abspath(git_repo_path))
-        stdout = process.communicate()[0]
+        stdout,stderr = process.communicate()
         if process.returncode != 0:
-            raise EnvironmentError()
+            raise EnvironmentError("%s\n%s"%(stdout, stderr))
         return stdout.strip()
 
     except EnvironmentError as e:
@@ -31,8 +32,11 @@ def get_git_version(git_repo_path=None):
     return _run_git_cmd(cmd, git_repo_path)
 
 
-def get_tag(git_repo_path=None):
-    return _run_git_cmd(['git', 'describe', '--tags', '--abbrev=0'], git_repo_path)
+def get_tag(git_repo_path=None, verbose=False):
+    tag = _run_git_cmd(['git', 'describe', '--tags', '--always', '--abbrev=0'], git_repo_path)
+    if verbose:
+        print(tag)
+    return tag
 
 
 def set_tag(tag, push, git_repo_path=None):
@@ -55,41 +59,39 @@ def update_git_version(version_module, git_repo_path=None):
         fid.read()
     return version_str
 
-def write_vers(vers_file='wetb/__init__.py'):
-    version = get_tag(os.getcwd())
+
+def write_vers(vers_file='wetb/__init__.py', repo=None, skip_chars=1):
+    if not repo:
+        repo = os.getcwd()
+    version = get_tag(repo)[skip_chars:]
     print('Writing version: {} in {}'.format(version, vers_file))
     with open(vers_file, 'r') as f:
         lines = f.readlines()
-    for n,l in enumerate(lines):
+    for n, l in enumerate(lines):
         if l.startswith('__version__'):
-            lines[n] = "__version__ = '{}'\n".format(version[1:])
+            lines[n] = "__version__ = '{}'\n".format(version)
+    for n, l in enumerate(lines):
+        if l.startswith('__release__'):
+            lines[n] = "__release__ = '{}'\n".format(version)
     with open(vers_file, 'w') as f:
         f.write(''.join(lines))
-		
+    return version
+
+
 def rename_dist_file():
     for f in os.listdir('dist'):
         if f.endswith('whl'):
             split = f.split('linux')
             new_name = 'manylinux1'.join(split)
-            old_path = os.path.join('dist',f)
-            new_path = os.path.join('dist',new_name)
+            old_path = os.path.join('dist', f)
+            new_path = os.path.join('dist', new_name)
             os.rename(old_path, new_path)
-    
+
 
 def main():
     """Example of how to run (pytest-friendly)"""
     if __name__ == '__main__':
-#        pass
-#        import version
-#        import app_utils
-#        git_path = os.path.dirname(app_utils.__file__) + "/../"
-#        update_git_version(version, git_path)
-#        tag = get_tag(os.getcwd())
-#        print(tag)
-#        version = get_git_version(os.getcwd())
-#        print(version)
-#        rename_dist_file()
-        write_vers()
+        pass
 
 
 main()

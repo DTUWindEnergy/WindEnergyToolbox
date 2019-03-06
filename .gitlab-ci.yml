@@ -44,7 +44,6 @@ pypi_linux:
   script:
     - apt-get update
     - pip install -e . --upgrade
-    - python3 -c 'from git_utils import write_vers; write_vers()'
     - python3 -m pip install -U setuptools wheel
     - python3 setup.py sdist bdist_wheel
     - python3 -m pip install -U twine

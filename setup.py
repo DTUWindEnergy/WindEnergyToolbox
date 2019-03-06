@@ -5,10 +5,12 @@
 """
 
 import os
+from git_utils import write_vers
 import sys
 from setuptools import setup, find_packages
-import wetb
-__version__ = wetb.__version__
+
+repo = os.path.dirname(__file__)
+version = write_vers(vers_file='wetb/__init__.py', repo=repo, skip_chars=1)
 
 try:
     from pypandoc import convert_file
@@ -34,7 +36,7 @@ def setup_package():
     build_requires = ['setuptools_scm',
                       'future',
                       'h5py',
-                      'pytables',
+                      'tables',
                       'pytest',
                       'pytest-cov',
                       'nose',
@@ -56,7 +58,7 @@ def setup_package():
           cmdclass={'build_ext': build_ext},
           ext_modules=extlist,
           long_description=read_md('README.md'),
-          version=__version__,
+          version=version,
           packages=find_packages(),
           )
 
