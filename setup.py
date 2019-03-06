@@ -40,7 +40,7 @@ def setup_package():
                       'pytest',
                       'pytest-cov',
                       'nose',
-                      'blosc',
+#                      'blosc', # gives an error - has to be pre-installed
                       'pbr',
                       'paramiko',
                       'scipy',

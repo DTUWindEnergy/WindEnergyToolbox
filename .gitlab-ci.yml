@@ -61,7 +61,6 @@ pypi_windows:
     - tags
     - test_pypi
   script:
-    - c:/Anaconda3/envs/WindEnergyToolbox/python.exe -c "from git_utils import write_vers; write_vers()"
     - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py bdist_wheel
     #- twine upload dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD%
     - twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD% # for testing purposes

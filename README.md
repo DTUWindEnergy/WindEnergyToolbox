@@ -1,6 +1,7 @@
 
 [![build status](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/build.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
 [![coverage report](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/badges/master/coverage.svg)](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/commits/master)
+[![pypi status](https://img.shields.io/pypi/v/wetb.png)](https://pypi.python.org/pypi/wetb)
 
 # Introduction
 
