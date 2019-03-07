@@ -391,7 +391,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
 
     if not silent:
         k = 0
-        for df in dict_dfs:
+        for dlc, df in viewitems(dict_dfs):
             k += len(df)
         print('in which a total of %i cases are defined.' % k)
 
