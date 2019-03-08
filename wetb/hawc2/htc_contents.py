@@ -57,11 +57,11 @@ class HTCContents(object):
     def __setitem__(self, key, value):
         if isinstance(key, str):
             self.contents[key] = value
+            value.parent = self
         elif isinstance(key, int):
             self.values[key] = value
         else:
             raise NotImplementedError
-        value.parent = self
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -133,6 +133,7 @@ class HTCContents(object):
             while contents.name_ + ending in self:
                 ending = "__%d" % (1 + float("0%s" % ending.replace("__", "")))
             self[contents.name_ + ending] = contents
+        contents.parent = self
 
     def add_section(self, name, allow_duplicate=False):
         if name in self and allow_duplicate is False:
@@ -145,6 +146,11 @@ class HTCContents(object):
             section = HTCSection(name)
         self._add_contents(section)
         return section
+
+    def delete(self):
+        keys = [k for (k, v) in self.parent.contents.items() if v == self]
+        for k in keys:
+            del self.parent.contents[k]
 
     def add_line(self, name, values, comments=""):
         line = HTCLine(name, values, comments)
@@ -301,6 +307,7 @@ class HTCOutputSection(HTCSection):
         if nr is None:
             nr = len(self.sensors)
         self.sensors.insert(nr, htcSensor)
+        htcSensor.parent = self
 
     def line_from_line(self, lines):
         while len(lines) and lines[0].strip() == "":
@@ -398,6 +405,9 @@ class HTCSensor(HTCLine):
                                    self.sensor,
                                    ("", "\t" + self.str_values())[bool(self.values)],
                                    ("", "\t" + self.comments)[bool(self.comments.strip())])
+
+    def delete(self):
+        self.parent.sensors.remove(self)
 
     def compare(self, other):
         s = ""

@@ -40,6 +40,8 @@ def process(args, cwd=None, shell=False):
             args[i] = str(args[i]).replace('/', os.path.sep).replace('\\', os.path.sep).replace('"', '')
 
     cmd_args = subprocess.list2cmdline(args)
+    if cwd and os.path.isfile(cwd):
+        cwd = os.path.dirname(cwd)
     if cwd:
         cmd_cwd = "cd %s && " % cwd
     else:
@@ -50,8 +52,6 @@ def process(args, cwd=None, shell=False):
     else:
         cmd = '%s%s' % (cmd_cwd, cmd_args)
 
-    if cwd and os.path.isfile(cwd):
-        cwd = os.path.dirname(cwd)
     return subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell, cwd=cwd), cmd
 
 

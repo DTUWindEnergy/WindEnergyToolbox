@@ -106,6 +106,12 @@ class TestHtcFile(unittest.TestCase):
         except KeyError:
             pass
 
+    def test_htc_file_delete(self):
+        htcfile = HTCFile(self.testfilepath + "test.htc")
+        self.assertTrue("logfile" in str(htcfile.simulation))
+        htcfile.simulation.logfile.delete()
+        self.assertTrue("logfile" not in str(htcfile.simulation))
+
     def test_htcfile_setname(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.set_name("mytest")

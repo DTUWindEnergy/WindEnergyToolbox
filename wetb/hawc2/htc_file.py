@@ -71,7 +71,10 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     2
 
     #Delete element
+    htc.simulation.logfile.delete()
+    #or
     del htc.simulation.logfile #Delete logfile line. Raise keyerror if not exists
+
     """
 
     filename = None
