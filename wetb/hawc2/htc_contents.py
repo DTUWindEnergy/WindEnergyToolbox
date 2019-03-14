@@ -54,15 +54,6 @@ class HTCContents(object):
     name_ = ""
     parent = None
 
-    def __setitem__(self, key, value):
-        if isinstance(key, str):
-            self.contents[key] = value
-            value.parent = self
-        elif isinstance(key, int):
-            self.values[key] = value
-        else:
-            raise NotImplementedError
-
     def __getitem__(self, key):
         if isinstance(key, str):
             key = key.replace(".", "/")
@@ -152,11 +143,6 @@ class HTCContents(object):
         for k in keys:
             del self.parent.contents[k]
 
-    def add_line(self, name, values, comments=""):
-        line = HTCLine(name, values, comments)
-        self._add_contents(line)
-        return line
-
     def location(self):
         if self.parent is None:
             return os.path.basename(self.filename)
@@ -191,6 +177,20 @@ class HTCSection(HTCContents):
         self.begin_comments = begin_comments.strip(" \t")
         self.end_comments = end_comments.strip(" \t")
         self.contents = OrderedDict()
+
+    def add_line(self, name, values, comments=""):
+        line = HTCLine(name, values, comments)
+        self._add_contents(line)
+        return line
+
+    def __setitem__(self, key, value):
+        if isinstance(value, HTCContents):
+            self.contents[key] = value
+            value.parent = self
+        elif isinstance(value, str):
+            self.add_line(key, [value])
+        else:
+            self.add_line(key, value)
 
     @staticmethod
     def from_lines(lines):
@@ -265,6 +265,12 @@ class HTCLine(HTCContents):
             return self.values[key]
         except:
             raise IndexError("Parameter %s does not exists for %s" % (key + 1, self.location()))
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            self.values[key] = value
+        else:
+            raise NotImplementedError
 
     @staticmethod
     def from_lines(lines):

@@ -19,21 +19,21 @@ class TurbulenceFile(object):
         self.mean_wsp = mean_wsp
         self.center_position = center_position
         self.data = mann_turbulence.load(filename, Nxyz)
-        
-        
-        
+
+    @property
+    def data3d(self):
+        return self.data.reshape(self.Nxyz)
+
     @staticmethod
     def load_from_htc(htcfilename, modelpath=None, type='mann'):
         htc = HTCFile(htcfilename, modelpath)
-        
-        Nxyz = np.array([htc.wind[type]['box_dim_%s'%uvw][0] for uvw in 'uvw'])
-        dxyz = np.array([htc.wind[type]['box_dim_%s'%uvw][1] for uvw in 'uvw'])
+
+        Nxyz = np.array([htc.wind[type]['box_dim_%s' % uvw][0] for uvw in 'uvw'])
+        dxyz = np.array([htc.wind[type]['box_dim_%s' % uvw][1] for uvw in 'uvw'])
         center_position = htc.wind.center_pos0.values
         wsp = htc.wind.wsp
-        return [TurbulenceFile(os.path.join(htc.modelpath , htc.wind[type]['filename_%s'%uvw][0]), Nxyz, dxyz,wsp, (0,wsp)[uvw=='u'], center_position)    for uvw in 'uvw']
-            
-        
-        
+        return [TurbulenceFile(os.path.join(htc.modelpath, htc.wind[type]['filename_%s' % uvw][0]), Nxyz, dxyz, wsp, (0, wsp)[uvw == 'u'], center_position) for uvw in 'uvw']
+
 
 if __name__ == '__main__':
     pass
