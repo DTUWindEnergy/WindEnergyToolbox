@@ -16,7 +16,7 @@ standard_library.install_aliases()
 import numpy as np
 
 
-stcols = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
+stc = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
 
 
 class StFile(object):
@@ -69,7 +69,16 @@ class StFile(object):
     >>> print (st.E(radius=36, mset=1, set=2))  # Same for stiff blade set
     8.722924514652648e+17
     """
-    def __init__(self, filename):
+
+    cols = stc.split()
+
+    def __init__(self, filename=None):
+
+        # in case the user wants to create a new non-existing st file
+        if filename is None:
+            self.main_data_sets = {}
+            return
+
         with open (filename) as fid:
             txt = fid.read()
 #         Some files starts with first set ("#1...") with out specifying number of sets
@@ -87,7 +96,7 @@ class StFile(object):
                 set_data_dict[set_nr] = np.array([set_lines[i].split() for i in range(1, no_rows + 1)], dtype=np.float)
             self.main_data_sets[mset_nr] = set_data_dict
 
-        for i, name in enumerate(stcols.split()):
+        for i, name in enumerate(self.cols):
             setattr(self, name, lambda radius=None, mset=1, set=1,
                     column=i: self._value(radius, column, mset, set))
 
@@ -111,8 +120,8 @@ class StFile(object):
         """Save all data defined in main_data_sets to st file.
         """
         colwidth = len(precision % 1)
-        sep = '='*colwidth*len(stcols) + '\n'
-        colhead = ''.join([k.center(colwidth) for k in stcols.split()]) + '\n'
+        sep = '='*colwidth*len(self.cols) + '\n'
+        colhead = ''.join([k.center(colwidth) for k in self.cols]) + '\n'
 
         nsets = len(self.main_data_sets)
 

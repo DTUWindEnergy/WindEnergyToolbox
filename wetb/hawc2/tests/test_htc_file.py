@@ -288,7 +288,7 @@ end turb_export;"""
                       [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
         self.assertEqual(str(htcfile).count("exit"), 1)
-        self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile))
+        self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile).lower())
 
     def test_continue_in_files_autodetect_path(self):
         htcfile = HTCFile(self.testfilepath + "sub/continue_in_file.htc")
@@ -297,7 +297,7 @@ end turb_export;"""
                       [os.path.abspath(f) for f in htcfile.input_files()])
         self.assertIn('./data/NREL_5MW_st1.txt', htcfile.input_files())
         self.assertEqual(str(htcfile).count("exit"), 1)
-        self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile))
+        self.assertIn('filename\t./res/oc4_p2_load_case_eq;', str(htcfile).lower())
 
     def test_tjul_example(self):
         htcfile = HTCFile(self.testfilepath + "./tjul.htc", ".")

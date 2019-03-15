@@ -45,6 +45,8 @@ class AEFile(object):
     1.00000000000000000e+00   1.00000000000000006e-01   1.00000000000000000e+01     1
     """
 
+    cols = ['radius', 'chord', 'relative_thickness', 'setnr']
+
     def __init__(self, filename=None):
         self.ae_sets = {}
         if filename is not None:

@@ -258,7 +258,7 @@ class HTCLine(HTCContents):
                                 ("", "\t" + self.comments)[bool(self.comments.strip())])
 
     def str_values(self):
-        return " ".join([str(v).lower() for v in self.values])
+        return " ".join([str(v) for v in self.values])
 
     def __getitem__(self, key):
         try:
