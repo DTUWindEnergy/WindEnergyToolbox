@@ -598,8 +598,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     cc = sim.Cases(POST_DIR, sim_id)
     df_tags = cc.cases2df()
     df_stats = pd.merge(df, df_tags[required], on=['[case_id]'])
-    # if the merge didn't work due to other misaligned case_id tags, do not
-    # overwrite our otherwise ok tables!
+    # find out if we have some misalignment between generated cases and results
+    # this could happen when we added new cases and removed others
     if len(df_stats) != len(df):
         print('failed to merge required tags, something is wrong!')
         # find out which cases we lost and why
@@ -610,8 +610,12 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
         msg = 'nr of case_ids lost:'
         print(msg, (len(df)-len(df_stats))/len(df['channel'].unique()))
         print('following case_ids have mysteriously disappeared:')
-        print(s_df-s_stats)
-        return
+        missing = s_df-s_stats
+        print(missing)
+        # save misalligned cases
+        fname = os.path.join(POST_DIR, '%s_misallgined_cases.tsv' % sim_id)
+        pd.DataFrame(missing).to_csv(fname, sep='\t')
+
     df_stats.to_hdf(fdf, 'table', mode='w')
     df_stats.to_csv(fdf.replace('.h5', '.csv'))
 
