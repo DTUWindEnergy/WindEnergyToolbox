@@ -626,7 +626,7 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
 def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
                    prelude='', zipchunks=False):
 
-    cc = sim.Cases(POST_DIR, sim_id)
+    cc = sim.Cases(POST_DIR, sim_id, rem_failed=False)
     df_tags = cc.cases2df()
 
     # -------------------------------------------------------------------------
