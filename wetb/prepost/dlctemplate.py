@@ -374,7 +374,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                               ppn=20, nr_procs_series=3, walltime='20:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
                               wine_arch=wine_arch, wine_prefix=wine_prefix,
-                              prelude=prelude)
+                              prelude=prelude, ppn_pbs=20)
 #        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
 #                              ppn=12, nr_procs_series=3, walltime='20:00:00',
 #                              chunks_dir='zip-chunks-gorm', compress=compress,

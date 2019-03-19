@@ -39,7 +39,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
                           wine_arch='win32', wine_prefix='~/.wine32',
                           pyenv_cmd='source /home/python/miniconda3/bin/activate',
-                          pyenv='wetb_py3', prelude=''):
+                          pyenv='wetb_py3', prelude='', ppn_pbs=20):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """
@@ -145,7 +145,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
     pbs_tmplate += "#PBS -W umask=[umask]\n"
     pbs_tmplate += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
     pbs_tmplate += "#PBS -l walltime=[walltime]\n"
-    pbs_tmplate += "#PBS -l nodes=[nodes]:ppn=[ppn]\n"
+    pbs_tmplate += "#PBS -l nodes=[nodes]:ppn=[ppn_pbs]\n"
     pbs_tmplate += "### Queue name\n"
     pbs_tmplate += "#PBS -q [queue]\n"
     pbs_tmplate += "\n"
@@ -210,7 +210,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs = pbs.replace('[umask]', '0003')
         pbs = pbs.replace('[walltime]', walltime)
         pbs = pbs.replace('[nodes]', str(nodes))
-        pbs = pbs.replace('[ppn]', str(ppn))
+        pbs = pbs.replace('[ppn_pbs]', str(ppn_pbs))
         pbs = pbs.replace('[queue]', queue)
         pbs += '\necho "%s"\n' % ('-'*70)
 
