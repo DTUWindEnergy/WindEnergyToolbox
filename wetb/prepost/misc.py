@@ -1113,8 +1113,10 @@ def df_dict_check_datatypes(df_dict):
     # we can not pop/delete items from a dict while iterating over it
     df_dict2 = {}
     for colkey, col in df_dict.items():
+        if len(col)==0:
+            pass
         # if we have a list, convert to string
-        if type(col[0]).__name__ == 'list':
+        elif type(col[0]).__name__ == 'list':
             for ii, item in enumerate(col):
                 col[ii] = '**'.join(item)
         # if we already have an array (statistics) or a list of numbers
