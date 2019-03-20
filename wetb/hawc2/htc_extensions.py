@@ -20,9 +20,7 @@ import os
 standard_library.install_aliases()
 
 
-
 class HTCDefaults(object):
-
 
     empty_htc = """begin simulation;
         time_stop 600;
@@ -69,7 +67,6 @@ class HTCDefaults(object):
     end output;
     exit;"""
 
-
     def add_mann_turbulence(self, L=29.4, ae23=1, Gamma=3.9, seed=1001, high_frq_compensation=True,
                             filenames=None,
                             no_grid_points=(16384, 32, 32), box_dimension=(6000, 100, 100),
@@ -81,19 +78,22 @@ class HTCDefaults(object):
         if 'create_turb_parameters' in mann:
             mann.create_turb_parameters.values = [L, ae23, Gamma, seed, int(high_frq_compensation)]
         else:
-            mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)], "L, alfaeps, gamma, seed, highfrq compensation")
+            mann.add_line('create_turb_parameters', [L, ae23, Gamma, seed, int(high_frq_compensation)],
+                          "L, alfaeps, gamma, seed, highfrq compensation")
         if filenames is None:
-            
+
             import numpy as np
             dxyz = tuple(np.array(box_dimension) / no_grid_points)
             from wetb.wind.turbulence import mann_turbulence
-            filenames = ["./turb/" + mann_turbulence.name_format % ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw)) for uvw in ['u', 'v', 'w']]
+            filenames = ["./turb/" + mann_turbulence.name_format %
+                         ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw))
+                         for uvw in ['u', 'v', 'w']]
         if isinstance(filenames, str):
             filenames = ["./turb/%s_s%04d%s.bin" % (filenames, seed, c) for c in ['u', 'v', 'w']]
         for filename, c in zip(filenames, ['u', 'v', 'w']):
             setattr(mann, 'filename_%s' % c, filename)
         for c, n, dim in zip(['u', 'v', 'w'], no_grid_points, box_dimension):
-            setattr(mann, 'box_dim_%s' % c, "%d %.4f" % (n, dim / (n - 1)))
+            setattr(mann, 'box_dim_%s' % c, "%d %.4f" % (n, dim / (n)))
         if dont_scale:
             mann.dont_scale = 1
         else:
@@ -108,28 +108,24 @@ class HTCDefaults(object):
                 del mann.std_scaling
             except KeyError:
                 pass
-            
 
-
-    def add_turb_export(self, filename="export_%s.turb", samplefrq = None):
+    def add_turb_export(self, filename="export_%s.turb", samplefrq=None):
         exp = self.wind.add_section('turb_export', allow_duplicate=True)
         for uvw in 'uvw':
-            exp.add_line('filename_%s'%uvw, [filename%uvw])
-        sf = samplefrq or max(1,int( self.wind.mann.box_dim_u[1]/(self.wind.wsp[0] * self.deltat())))
+            exp.add_line('filename_%s' % uvw, [filename % uvw])
+        sf = samplefrq or max(1, int(self.wind.mann.box_dim_u[1] / (self.wind.wsp[0] * self.deltat())))
         exp.samplefrq = sf
         if "time" in self.output:
             exp.time_start = self.output.time[0]
         else:
             exp.time_start = 0
-        exp.nsteps = (self.simulation.time_stop[0]-exp.time_start[0]) / self.deltat()
+        exp.nsteps = (self.simulation.time_stop[0] - exp.time_start[0]) / self.deltat()
         for vw in 'vw':
-            exp.add_line('box_dim_%s'%vw, self.wind.mann['box_dim_%s'%vw].values)
-
-        
+            exp.add_line('box_dim_%s' % vw, self.wind.mann['box_dim_%s' % vw].values)
 
     def import_dtu_we_controller_input(self, filename):
         dtu_we_controller = [dll for dll in self.dll if dll.name[0] == 'dtu_we_controller'][0]
-        with open (filename) as fid:
+        with open(filename) as fid:
             lines = fid.readlines()
         K_r1 = float(lines[1].replace("K = ", '').replace("[Nm/(rad/s)^2]", ''))
         Kp_r2 = float(lines[4].replace("Kp = ", '').replace("[Nm/(rad/s)]", ''))
@@ -154,9 +150,9 @@ class HTCExtensions(object):
         shear_type, parameter = self.wind.shear_format.values
         z0 = -self.wind.center_pos0[2]
         wsp = self.wind.wsp[0]
-        if shear_type==1: #constant
-            return lambda z : wsp
-        elif shear_type==3:
+        if shear_type == 1:  # constant
+            return lambda z: wsp
+        elif shear_type == 3:
             from wetb.wind.shear import power_shear
             return power_shear(parameter, z0, wsp)
         else:
