@@ -34,15 +34,20 @@ except NameError as e:
 
 def Weibull(u, k, start, stop, step):
     C = 2 * u / np.sqrt(np.pi)
-    cdf = lambda x :-np.exp(-(x / C) ** k)
 
-    return {wsp:-cdf(wsp - step / 2) + cdf(wsp + step / 2) for wsp in np.arange(start, stop + step, step)}
+    def cdf(x): return -np.exp(-(x / C) ** k)
+
+    return {wsp: -cdf(wsp - step / 2) + cdf(wsp + step / 2) for wsp in np.arange(start, stop + step, step)}
+
 
 def Weibull2(u, k, wsp_lst):
     C = 2 * u / np.sqrt(np.pi)
-    cdf = lambda x :-np.exp(-(x / C) ** k)
-    edges = np.r_[wsp_lst[0] - (wsp_lst[1] - wsp_lst[0]) / 2, (wsp_lst[1:] + wsp_lst[:-1]) / 2, wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2]) / 2]
+
+    def cdf(x): return -np.exp(-(x / C) ** k)
+    edges = np.r_[wsp_lst[0] - (wsp_lst[1] - wsp_lst[0]) / 2, (wsp_lst[1:] + wsp_lst[:-1]) /
+                  2, wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2]) / 2]
     return [-cdf(e1) + cdf(e2) for wsp, e1, e2 in zip(wsp_lst, edges[:-1], edges[1:])]
+
 
 def Weibull_IEC(Vref, Vhub_lst):
     """Weibull distribution according to IEC 61400-1:2005, page 24
@@ -64,15 +69,16 @@ def Weibull_IEC(Vref, Vhub_lst):
     [ 0.11002961  0.14116891  0.15124155]
     """
     Vhub_lst = np.array(Vhub_lst)
-    #Average wind speed
-    Vave=.2*Vref
-    #Rayleigh distribution
-    Pr = lambda x : 1 - np.exp(-np.pi*(x/(2*Vave))**2)
-    #Wsp bin edges: [4,6,8] -> [3,5,7,9]
-    wsp_bin_edges = np.r_[Vhub_lst[0] - (Vhub_lst[1] - Vhub_lst[0]) / 2, (Vhub_lst[1:] + Vhub_lst[:-1]) / 2, Vhub_lst[-1] + (Vhub_lst[-1] - Vhub_lst[-2]) / 2]
-    #probabilities of 3-5, 5-7, 7-9
-    return np.array([-Pr(e1) + Pr(e2) for e1, e2 in zip(wsp_bin_edges[:-1], wsp_bin_edges[1:])])
+    # Average wind speed
+    Vave = .2 * Vref
+    # Rayleigh distribution
 
+    def Pr(x): return 1 - np.exp(-np.pi * (x / (2 * Vave))**2)
+    # Wsp bin edges: [4,6,8] -> [3,5,7,9]
+    wsp_bin_edges = np.r_[Vhub_lst[0] - (Vhub_lst[1] - Vhub_lst[0]) / 2, (Vhub_lst[1:] +
+                                                                          Vhub_lst[:-1]) / 2, Vhub_lst[-1] + (Vhub_lst[-1] - Vhub_lst[-2]) / 2]
+    # probabilities of 3-5, 5-7, 7-9
+    return np.array([-Pr(e1) + Pr(e2) for e1, e2 in zip(wsp_bin_edges[:-1], wsp_bin_edges[1:])])
 
 
 class DLCHighLevel(object):
@@ -96,7 +102,7 @@ class DLCHighLevel(object):
                           "result folder" % self.filename)
         self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
 
-        #DLC sheet
+        # DLC sheet
         self.dlc_df = pd.read_excel(self.filename, sheetname='DLC', skiprows=[1])
         # empty strings are now nans, convert back to empty strings
         self.dlc_df.fillna('', inplace=True)
@@ -137,8 +143,9 @@ class DLCHighLevel(object):
 
         for k in ['Name', 'Nr']:
             assert k.lower() in self.sensor_df.keys(), "Sensor sheet must have a '%s' column" % k
-        self.sensor_df = self.sensor_df[self.sensor_df.name!=""]
-        assert not any(self.sensor_df['name'].duplicated()), "Duplicate sensor names: %s" % ",".join(self.sensor_df['name'][self.sensor_df['name'].duplicated()].values)
+        self.sensor_df = self.sensor_df[self.sensor_df.name != ""]
+        assert not any(self.sensor_df['name'].duplicated()), "Duplicate sensor names: %s" % ",".join(
+            self.sensor_df['name'][self.sensor_df['name'].duplicated()].values)
         for k in ['description', 'unit', 'statistic', 'ultimate', 'fatigue', 'm', 'neql', 'extremeload', 'bearingdamage', 'mindistance', 'maxdistance']:
             if k not in self.sensor_df.keys():
                 self.sensor_df[k] = ""
@@ -164,6 +171,7 @@ class DLCHighLevel(object):
 
     def dlc_variables(self, dlc):
         dlc_row = self.dlc_df[self.dlc_df['name'] == dlc]
+
         def get_lst(x):
             if isinstance(x, pd.Series):
                 x = x.iloc[0]
@@ -185,7 +193,11 @@ class DLCHighLevel(object):
             try:
                 values = [(eval(v, globals(), self.__dict__)) for v in str(values).lower().replace("/", ",").split(",")]
             except SyntaxError:
-                values = [(eval(v.lstrip('0'), globals(), self.__dict__)) for v in str(values).lower().replace("/", ",").split(",")]
+                try:
+                    values = [(eval(v.lstrip('0'), globals(), self.__dict__))
+                              for v in str(values).lower().replace("/", ",").split(",")]
+                except Exception:
+                    values = str(values).lower().replace("/", ",").split(",")
 
         dist = self.dlc_df[dist_key][row]
         if str(dist).lower() == "weibull" or str(dist).lower() == "rayleigh":
@@ -200,7 +212,8 @@ class DLCHighLevel(object):
                     else:
                         return float(v) / 100
             dist = [fmt(v) for v in str(self.dlc_df[dist_key][row]).replace("/", ",").split(",")]
-        assert len(values) == len(dist), "Number of %s-values (%d)!= number of %s-values(%d)" % (value_key, len(values), dist_key, len(dist))
+        assert len(values) == len(dist), "Number of %s-values (%d)!= number of %s-values(%d)" % (value_key,
+                                                                                                 len(values), dist_key, len(dist))
         return OrderedDict(zip(map(self.format_tag_value, values), dist))
 
     def fatigue_distribution(self):
@@ -209,7 +222,8 @@ class DLCHighLevel(object):
             if "F" not in str(load).upper():
                 continue
             dlc = self.dlc_df[self.dist_value_keys[0][1]][row]
-            fatigue_dist[str(dlc)] = [self.distribution(value_key, dist_key, row) for dist_key, value_key in self.dist_value_keys]
+            fatigue_dist[str(dlc)] = [self.distribution(value_key, dist_key, row)
+                                      for dist_key, value_key in self.dist_value_keys]
         return fatigue_dist
 
     def files_dict(self, files=None):
@@ -235,9 +249,11 @@ class DLCHighLevel(object):
         if isinstance(files, list):
             pass
         elif not hasattr(self, "res_folder") or self.res_folder == "":
-            files = glob.glob(os.path.join(self.res_path, "*"+ext)) + glob.glob(os.path.join(self.res_path, "*/*"+ext))
-            if len(files)==0:
-                raise Exception('No *%s files found in:\n%s or\n%s'%(ext, self.res_path, os.path.join(self.res_path, "*/")))
+            files = glob.glob(os.path.join(self.res_path, "*" + ext)) + \
+                glob.glob(os.path.join(self.res_path, "*/*" + ext))
+            if len(files) == 0:
+                raise Exception('No *%s files found in:\n%s or\n%s' %
+                                (ext, self.res_path, os.path.join(self.res_path, "*/")))
         else:
             files = []
             for dlc_id in fatigue_dlcs:
@@ -246,15 +262,16 @@ class DLCHighLevel(object):
                     folder = self.res_folder % dlc_id
                 else:
                     folder = self.res_folder
-                dlc_files = (glob.glob(os.path.join(self.res_path , folder, "*"+ext)))
-                if len(dlc_files)==0:
-                    raise Exception('DLC%s included in fatigue analysis, but no *%s files found in:\n%s'%(dlc_id, ext, os.path.join(self.res_path , folder)))
+                dlc_files = (glob.glob(os.path.join(self.res_path, folder, "*" + ext)))
+                if len(dlc_files) == 0:
+                    raise Exception('DLC%s included in fatigue analysis, but no *%s files found in:\n%s' %
+                                    (dlc_id, ext, os.path.join(self.res_path, folder)))
                 files.extend(dlc_files)
         keys = list(zip(*self.dist_value_keys))[1]
         fmt = self.format_tag_value
         tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).split("_"), keys)] for f in files]
         dlc_tags = list(zip(*tags))[0]
-        files_dict = {dlc_tag:{} for dlc_tag in dlc_tags}
+        files_dict = {dlc_tag: {} for dlc_tag in dlc_tags}
         for tag_row, f in zip(tags, files):
             d = files_dict[tag_row[0]]
             for tag in tag_row[1:]:
@@ -306,6 +323,7 @@ class DLCHighLevel(object):
             dlc_id = str(dlc_id)
 
             fmt = self.format_tag_value
+
             def tag_prop_lst(dist_lst):
                 if len(dist_lst) == 0:
                     return [[]]
@@ -330,7 +348,8 @@ class DLCHighLevel(object):
                     files = (files_from_tags(self, files_dict, tags))
                 except KeyError:
                     if self.fail_on_resfile_not_found:
-                        raise FileNotFoundError("Result files for %s not found" % (", ".join(["%s='%s'" % (dv[1], t) for dv, t in zip(self.dist_value_keys, tags)])))
+                        raise FileNotFoundError("Result files for %s not found" % (
+                            ", ".join(["%s='%s'" % (dv[1], t) for dv, t in zip(self.dist_value_keys, tags)])))
                     else:
                         continue
                 if files:
@@ -341,7 +360,8 @@ class DLCHighLevel(object):
         return fh_lst
 
     def dlc_lst(self, load='all'):
-        dlc_lst = np.array(self.dlc_df['dlc'])[np.array([load == 'all' or load.lower() in d.lower() for d in self.dlc_df['load']])]
+        dlc_lst = np.array(self.dlc_df['dlc'])[np.array(
+            [load == 'all' or load.lower() in d.lower() for d in self.dlc_df['load']])]
         return [v.lower().replace('dlc', '') for v in dlc_lst]
 
     @cache_function
@@ -354,6 +374,4 @@ if __name__ == "__main__":
     #print (DLCHighLevelInputFile(r'C:\mmpe\Projects\DLC.xlsx').sensor_info(0, 0, 1)['Name'])
     #print (dlc_dict()['64'])
     #print (dlc_hl.fatigue_distribution()['64'])
-    print (dlc_hl.file_hour_lst(r"X:\DTU10MW/Q0010/res/"))
-
-
+    print(dlc_hl.file_hour_lst(r"X:\DTU10MW/Q0010/res/"))
