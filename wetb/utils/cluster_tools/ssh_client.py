@@ -104,6 +104,10 @@ class SSHClient(object):
         self.host = host
         self.username = username
         self.password = password
+        if password is None and key is None:
+            from os.path import expanduser
+            home = expanduser("~")
+            key = home + '/.ssh/id_rsa'
         self.port = port
         self.key = key
         self.gateway = gateway
