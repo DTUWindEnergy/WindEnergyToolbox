@@ -172,9 +172,25 @@ def vartag_excel_stabcon(master):
     print('creating hydro input file for: %s.inp\n' % mt['[hydro input name]'])
 
     mt['[wdepth]'] = float(mt['[wdepth]'])
-    mt['[Hs]'] = float(mt['[Hs]'])
-    mt['[Tp]'] = float(mt['[Tp]'])
 
+    if '[Hs]' in mt:
+        hs_key = '[Hs]'
+    elif '[hs]' in mt:
+        hs_key = '[hs]'
+    else:
+        msg = 'Significant wave tag is expected to be called: [Hs]'
+        raise KeyError(msg)
+
+    if '[Tp]' in mt:
+        tp_key = '[Tp]'
+    elif '[tp]' in mt:
+        tp_key = '[tp]'
+    else:
+        msg = 'Wave period tag is expected to be called: [Tp]'
+        raise KeyError(msg)
+
+    mt[hs_key] = float(mt[hs_key])
+    mt[tp_key] = float(mt[tp_key])
 
     if '[wave_gamma]' not in mt or not mt['[wave_gamma]']:
         mt['[wave_gamma]'] = 3.3
@@ -203,7 +219,7 @@ def vartag_excel_stabcon(master):
         embed_sf = None
         embed_sf_t0 = None
 
-    hio = hydro_input(wavetype=mt['[wave_type]'], Hs=mt['[Hs]'], Tp=mt['[Tp]'],
+    hio = hydro_input(wavetype=mt['[wave_type]'], Hs=mt[hs_key], Tp=mt[tp_key],
                       gamma=mt['[wave_gamma]'], wdepth=mt['[wdepth]'],
                       spectrum=mt['[wave_spectrum]'], seed=mt['[wave_seed]'],
                       stretching=mt['[stretching]'], coef=mt['[wave_coef]'],
