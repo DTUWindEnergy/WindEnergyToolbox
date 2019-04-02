@@ -151,13 +151,13 @@ class ReadHawc2(object):
         if not np.fromfile(fid, 'int32', 1) == self.NrCh:
             print("number of sensors in sensor file and data file are not consisten")
         fid.seek(4 * (self.NrCh) + 8, 1)
-        temp = np.fromfile(fid, 'f', 2)
-        self.Freq = 1 / temp[1]
+        time_start, time_step = np.fromfile(fid, 'f', 2)
+        self.Freq = 1 / time_step
         self.ScaleFactor = np.fromfile(fid, 'f', self.NrCh)
         fid.seek(2 * 4 * self.NrCh + 48 * 2)
         self.NrSc = int(len(np.fromfile(fid, 'int16')) / self.NrCh)
-        self.Time = self.NrSc * temp[1]
-        self.t = np.arange(0, self.Time, temp[1])
+        self.Time = self.NrSc * time_step
+        self.t = np.arange(0, self.Time, time_step) + time_start
         fid.close()
 ################################################################################
 # init function, load channel and other general result file info
