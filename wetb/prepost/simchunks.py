@@ -20,6 +20,7 @@ from builtins import object
 
 # standard python library
 import os
+from os.path import join as pjoin
 import zipfile
 import copy
 import tarfile
@@ -81,14 +82,16 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             for dirname in set(df[tag].unique().tolist()):
                 if not dirname or dirname.lower() not in ['false', 'none', 0]:
                     dirnames.append(dirname)
+
+        namelist = set(zf.namelist())
         for dirname in set(dirnames):
-            if dirname != 0:
+            if dirname != 0 and pjoin(dirname, '') not in namelist:
                 # FIXME: might have duplicates from the base model zip file
-                zf.write('.', os.path.join(dirname, '.'))
+                zf.write('.', arcname=os.path.join(dirname, '.'))
 
         # and the post-processing data
         # FIXME: do not use hard coded paths!
-        zf.write('.', 'prepost-data/')
+        zf.write('.', arcname='prepost-data/')
 
         # HTC files
         df_src = df['[run_dir]'] + df['[htc_dir]'] + df['[case_id]']
@@ -101,7 +104,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # Since df_src and df_dst are already Series, iterating is fast an it
         # is slower to first convert to a list
         for src, dst_rel in zip(df_src, df_dst):
-            zf.write(src+'.htc', dst_rel+'.htc')
+            zf.write(src+'.htc', arcname=dst_rel+'.htc')
 
         # PBS files
         df_src = df['[run_dir]'] + df['[pbs_in_dir]'] + df['[case_id]']
@@ -109,7 +112,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # Since df_src and df_dst are already Series, iterating is fast an it
         # is slower to first convert to a list
         for src, dst_rel in zip(df_src, df_dst):
-            zf.write(src+'.p', dst_rel+'.p')
+            zf.write(src+'.p', arcname=dst_rel+'.p')
 
         # copy and rename input files with given versioned name to the
         # all files that will have to be renamed to their non-changeable
@@ -119,19 +122,26 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         copyto_files = []
         # cycle through the unique elements
         for k in set(copyto_files_tmp):
-            # k is of form: "['some/file.txt', 'another/file1.txt']"
-            if len(k) < 2:
+            # k is of form: 'some/file.txt**another/file1.txt
+            if len(k) < 1:
                 continue
-            items = [kk[1:-1] for kk in k.split('[')[1].split(']')[0].split(', ')]
-            copyto_files.extend(items)
+            copyto_files.extend(k.split('**'))
         # we might still have non unique elements
         copyto_files = set(copyto_files)
         for copyto_file, dst_rel in zip(copyto_files, df_dst):
             src = os.path.join(run_dir, copyto_file)
             # make dir if it does not exist
-            zf.write('.', os.path.dirname(copyto_file), '.')
-            zf.write(src, copyto_file)
-
+            namelist = set(zf.namelist())
+            # write an empty directory if applicable, make sure ends with /
+            copyto_file_folder = pjoin(os.path.dirname(copyto_file), '')
+            if len(copyto_file_folder) > 0:
+                if copyto_file_folder not in set(namelist):
+                    zf.write('.', arcname=copyto_file_folder)
+            # if we have a wildcard, copy all files accordingly
+            for fname in glob.glob(copyto_file, recursive=True):
+                print(fname)
+                if copyto_file not in namelist:
+                    zf.write(fname, arcname=fname)
         zf.close()
 
         return fname, df_index
