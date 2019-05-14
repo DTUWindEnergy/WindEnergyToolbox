@@ -2622,7 +2622,11 @@ class PBS(object):
             except OSError:
                 size_sel = 0
                 size_dat = 0
-            if size_sel < 5 or size_dat < 5:
+            try:
+                size_hdf = os.stat(f_res + '.hdf5').st_size
+            except OSError:
+                size_hdf = 0
+            if (size_sel < 5 or size_dat < 5) and size_hdf < 5:
                 cases_fail[cname] = copy.copy(cases[cname])
 
         if not self.silent:
