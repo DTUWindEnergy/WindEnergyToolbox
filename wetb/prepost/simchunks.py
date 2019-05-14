@@ -125,7 +125,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             # k is of form: 'some/file.txt**another/file1.txt
             if len(k) < 1:
                 continue
-            copyto_files.extend(k.split('**'))
+            # note that *;* is done in df_dict_check_datatypes()
+            copyto_files.extend(k.split('*;*'))
         # we might still have non unique elements
         copyto_files = set(copyto_files)
         for copyto_file, dst_rel in zip(copyto_files, df_dst):

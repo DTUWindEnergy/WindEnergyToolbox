@@ -4434,7 +4434,7 @@ class Cases(object):
             # if we have a list, convert to string
             if type(col[0]).__name__ == 'list':
                 for ii, item in enumerate(col):
-                    col[ii] = '**'.join(item)
+                    col[ii] = '*;*'.join(item)
             # if we already have an array (statistics) or a list of numbers
             # do not try to cast into another data type, because downcasting
             # in that case will not raise any exception
