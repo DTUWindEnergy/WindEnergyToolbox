@@ -18,6 +18,7 @@ standard_library.install_aliases()
 from builtins import object
 
 import os
+from copy import copy
 
 import numpy as np
 #import scipy.interpolate as interpolate
@@ -100,7 +101,7 @@ class ConfigBase(object):
         """
         opt_tags = [self.opt_h2.copy()]
         opt_tags[0].update(self.eigenan.copy())
-        opt_tags[0]['[Case id.]'] = '%s_hawc2_eigenanalysis' % basename
+        opt_tags[0]['[case_id]'] = '%s_hawc2_eigenanalysis' % basename
         opt_tags[0]['[blade_damp_x]'] = 0.0
         opt_tags[0]['[blade_damp_y]'] = 0.0
         opt_tags[0]['[blade_damp_z]'] = 0.0
@@ -111,7 +112,7 @@ class ConfigBase(object):
         opt_tags[0]['[eigen_analysis]'] = True
         opt_tags[0]['[output]'] = False
         opt_tags[0]['[t0]'] = 0.0
-        opt_tags[0]['[time stop]'] = 0.0
+        opt_tags[0]['[time_stop]'] = 0.0
 
         return opt_tags
 
@@ -120,7 +121,7 @@ class ConfigBase(object):
         analysis, at 0 RPM.
         """
         opt_tags = [self.opt_hs2.copy()]
-        opt_tags[0]['[Case id.]'] = '%s_hs2_eigenanalysis' % basename
+        opt_tags[0]['[case_id]'] = '%s_hs2_eigenanalysis' % basename
         opt_tags[0]['[blade_damp_x]'] = 0.0
         opt_tags[0]['[blade_damp_y]'] = 0.0
         opt_tags[0]['[blade_damp_z]'] = 0.0
@@ -136,7 +137,7 @@ class ConfigBase(object):
     def opt_tags_hs2(self, basename):
 
         opt_tags = [self.opt_hs2.copy()]
-        opt_tags[0]['[Case id.]'] = '%s_hawcstab2' % basename
+        opt_tags[0]['[case_id]'] = '%s_hawcstab2' % basename
         return opt_tags
 
     def set_hs2opdata(self, master, basename):
@@ -150,10 +151,10 @@ class ConfigBase(object):
         fpath = os.path.join(master.tags['[data_dir]'],
                              master.tags['[operational_data]'])
         hs2_res = hs2.results()
-        hs2_res.load_operation(fpath)
-        omegas = hs2_res.operation.rotorspeed_rpm.values*np.pi/30.0
-        winds = hs2_res.operation.windspeed.values
-        pitchs = -1.0*hs2_res.operation.pitch_deg.values
+        operation = hs2_res.load_operation(fpath)
+        omegas = operation.rotorspeed_rpm.values*np.pi/30.0
+        winds = operation.windspeed.values
+        pitchs = -1.0*operation.pitch_deg.values
 
         return self.set_opdata(winds, pitchs, omegas, basename=basename)
 
@@ -174,9 +175,9 @@ class ConfigBase(object):
             rotor speed at given operating point [rad/s]
 
         basename : str, default=None
-            If not None, the [Case id.] tag is composed out of the basename,
+            If not None, the [case_id] tag is composed out of the basename,
             wind speed, pitch angle and rotor speed. If set to None, the
-            [Case id.] tag is not set.
+            [case_id] tag is not set.
 
         Returns
         -------
@@ -192,13 +193,13 @@ class ConfigBase(object):
             rpl = (basename, wind, pitch, omega)
             if basename is not None:
                 tmp = '%s_%02.0fms_%04.01fdeg_%04.02frads_hawc2' % rpl
-                opt_dict['[Case id.]'] = tmp
+                opt_dict['[case_id]'] = tmp
             opt_dict['[Windspeed]'] = wind
             opt_dict['[blade_pitch_deg]'] = pitch
             opt_dict['[fixspeed_rotor_rads]'] = omega
             opt_dict['[initspeed_rotor_rads]'] = omega
 #            opt_dict['[t0]'] = int(2000.0/opt_dict['[Windspeed]']) # or 2000?
-#            opt_dict['[time stop]'] = opt_dict['[t0]']+100
+#            opt_dict['[time_stop]'] = opt_dict['[t0]']+100
 #            opt_dict['[time_stop]'] = opt_dict['[t0]']+100
             opt_tags.append(opt_dict.copy())
         return opt_tags
@@ -286,28 +287,29 @@ class Sims(object):
 
         """
 
-        mt = master.tags
+        master_copy = copy(master)
+        mt = master_copy.tags
 
         dlc_case = mt['[Case folder]']
         mt['[data_dir]'] = 'data/'
         mt['[res_dir]'] = 'res/%s/' % dlc_case
         mt['[log_dir]'] = 'logfiles/%s/' % dlc_case
         mt['[htc_dir]'] = 'htc/%s/' % dlc_case
-        mt['[case_id]'] = mt['[Case id.]']
+        mt['[case_id]'] = mt['[case_id]']
         mt['[DLC]'] = dlc_case
         mt['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
         mt['[pbs_in_dir]'] = 'pbs_in/%s/' % dlc_case
         mt['[iter_dir]'] = 'iter/%s/' % dlc_case
 
         if mt['[eigen_analysis]']:
-            rpl = os.path.join(dlc_case, mt['[Case id.]'])
+            rpl = os.path.join(dlc_case, mt['[case_id]'])
             mt['[eigenfreq_dir]'] = 'res_eigen/%s/' % rpl
 
         # for HAWCStab2 certain things have to be done differently
         if mt['[hs2]']:
             mt['[htc_dir]'] = ''
             mt['[t0]'] = 0
-            mt['[time stop]'] = 1
+            mt['[time_stop]'] = 1
             mt['[hawc2]'] = False
             mt['[output]'] = False
             mt['[copyback_files]'] = ['./*.ind', './*.pwr', './*.log',
@@ -336,10 +338,10 @@ class Sims(object):
                 mt['[hs2_gradients]'] = 'nogradients'
 
         mt['[windspeed]'] = mt['[Windspeed]']
-        mt['[time_stop]'] = mt['[time stop]']
+        mt['[time_stop]'] = mt['[time_stop]']
         mt['[duration]'] = str(float(mt['[time_stop]']) - float(mt['[t0]']))
 
-        return master
+        return master_copy
 
     def _set_path_auto_config(self, verbose=True):
         """
@@ -414,7 +416,7 @@ class Sims(object):
             opt['[zip_root_files]'] = f_ziproot
 
         self.master.output_dirs.extend('[Case folder]')
-        self.master.output_dirs.extend('[Case id.]')
+        self.master.output_dirs.extend('[case_id]')
 
         return iter_dict, opt_tags
 
@@ -425,7 +427,8 @@ class Sims(object):
                            write_htc=True, runmethod=runmethod, verbose=False,
                            copyback_turb=False, msg='', update_cases=False,
                            ignore_non_unique=False, run_only_new=False,
-                           pbs_fname_appendix=False, short_job_names=False)
+                           pbs_fname_appendix=False, short_job_names=False,
+                           windows_nr_cpus=2)
 
     def get_control_tuning(self, fpath):
         """
@@ -553,7 +556,7 @@ class MappingsH2HS2(object):
     def blade_distribution(self, fname_h2, fname_hs2, h2_df_stats=None,
                            fname_h2_tors=None):
 
-        self.hs2_res.df_ind = self.hs2_res.load_ind(fname_hs2)
+        self.df_ind = self.hs2_res.load_ind(fname_hs2)
         self.h2_res = sim.windIO.ReadOutputAtTime(fname_h2)
         self._distribution_hs2()
         self._distribution_h2()
@@ -601,7 +604,7 @@ class MappingsH2HS2(object):
             hs2_cols = list(mapping_hs2)
             # select only the HS channels that will be used for the mapping
             std_cols = list(mapping_hs2.values())
-            self.hs_aero = self.hs2_res.df_ind[hs2_cols].copy()
+            self.hs_aero = self.df_ind[hs2_cols].copy()
         except KeyError:
             # some results have been created with older HAWCStab2 that did not
             # include CT and CP columns
@@ -610,7 +613,7 @@ class MappingsH2HS2(object):
             hs2_cols = list(mapping_hs2)
             std_cols = list(mapping_hs2.values())
             # select only the HS channels that will be used for the mapping
-            self.hs_aero = self.hs2_res.df_ind[hs2_cols].copy()
+            self.hs_aero = self.df_ind[hs2_cols].copy()
 
         # change column names to the standard form that is shared with H2
         self.hs_aero.columns = std_cols
@@ -682,7 +685,7 @@ class MappingsH2HS2(object):
         # load the HAWC2 .sel file for the channels
         fpath = os.path.dirname(fname_h2)
         fname = os.path.basename(fname_h2)
-        res = sim.windIO.LoadResults(fpath, fname, readdata=False)
+        res = sim.windIO.LoadResults(fpath, fname, readdata=True)
         sel = res.ch_df[res.ch_df.sensortype == sensortype].copy()
         if len(sel) == 0:
             msg = 'HAWC2 sensor type "%s" is missing, are they defined?'

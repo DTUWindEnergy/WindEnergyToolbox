@@ -232,12 +232,30 @@ class results(object):
 
         with open(fname) as f:
             line = f.readline()
+            f.readline()
+            line3 = f.readline()
+            line4 = f.readline() # first data entry
 
-        width = 14
-        nrcols = int((len(line)-1)/width)
-        # first columns has one extra character
-        # col nr1: rotor speed, col nr2: radius
-        widths = [width+1] + [width]*(nrcols-1)
+        # assuming first we have: "# Mode number:"
+        mode_nrs = line.split()[3:]
+
+        elements_line1 = line4.split()
+#        nrcols = len(elements_line1)
+        element1 = elements_line1[0]
+        width_col1 = line4.find(element1) + len(element1)
+
+#        width = 14
+#        nrcols = int((len(line)-1)/width)
+#        # first columns has one extra character
+#        # col nr1: rotor speed, col nr2: radius
+#        widths = [width+1] + [width]*(nrcols-1)
+
+        # the rotor/wind speed column does not have a unit
+        ilocs = [0, width_col1-1] + [m.start() for m in re.finditer('\]', line3)]
+        widths = np.diff(np.array(ilocs))
+        # the length of the first element should be +1 due to zero based index
+        widths[0] += 1
+
         # last line is empty
         df = pd.read_fwf(fname, header=2, widths=widths, skipfooter=1)
         units = regex_units.findall(''.join(df.columns))
@@ -245,11 +263,15 @@ class results(object):
         # since U_x, u_y, phase and theta will be repeated as many times as
         # there are modes, add the mode number in the column name
         columns = [k.replace('#', '').strip() for k in df.columns]
-        nrmodes = int((len(columns) - 2 )/6)
-        for k in range(nrmodes):
-            for i in range(6):
-                j = 2+k*6+i
-                columns[j] = columns[j].split('.')[0] + ' nr%i' % (k+1)
+#        nrmodes = int((len(columns) - 2 )/6)
+#        for k in range(nrmodes):
+#            for i in range(6):
+#                j = 2+k*6+i
+#                columns[j] = columns[j].split('.')[0] + ' nr%i' % (k+1)
+
+        for i, k in enumerate(mode_nrs):
+            columns[i+2] = columns[i+2].split('.')[0] + ' nr%s' % k
+
         df.columns = columns
 
         return df, units
@@ -338,6 +360,8 @@ class results(object):
         """
         Get the aerosection positions from the HS2 ind result file and
         write them as outputs for HAWC2
+
+        NOT IMPLEMENTED YET
         """
         self.ind
 
