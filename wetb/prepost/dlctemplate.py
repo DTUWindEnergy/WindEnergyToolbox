@@ -610,7 +610,7 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
         msg = 'nr of case_ids lost:'
         print(msg, (len(df)-len(df_stats))/len(df['channel'].unique()))
         print('following case_ids have mysteriously disappeared:')
-        missing = s_df-s_stats
+        missing = list(s_df-s_stats)
         print(missing)
         # save misalligned cases
         fname = os.path.join(POST_DIR, '%s_misallgined_cases.tsv' % sim_id)
