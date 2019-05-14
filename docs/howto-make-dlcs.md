@@ -15,7 +15,7 @@ DONE:
 -->
 
 > WARNING: these notes contain configuration settings that are specif to the
-DTU Wind Energy cluster Gorm. Only follow this guide in another environment if
+DTU Wind Energy cluster Jess. Only follow this guide in another environment if
 you know what you are doing!
 
 
@@ -53,8 +53,8 @@ either let the system fill that in for you (by using the variable ```$USER```),
 or explicitly user your user name instead. This user name is the same as your
 DTU account name (or student account/number).
 
-This document refers to commands to be entered in the terminal on Gorm when the
-line starts with ```g-000 $```. The command that needs to be entered starts
+This document refers to commands to be entered in the terminal on Jess when the
+line starts with ```j-000 $```. The command that needs to be entered starts
 after the ```$```.
 
 
@@ -73,10 +73,7 @@ Connecting to the cluster
 -------------------------
 
 We provide here an overview of how to connect to the cluster, but general,
-up-to-date information can be found in the [HPC documentation](https://docs.hpc.ait.dtu.dk)
-or on the [Gorm wiki](http://gorm.risoe.dk/gormwiki). Note that the
-information from the Gorm wiki will be migrated into the HPC documentation
-over time.
+up-to-date information can be found in the [HPC documentation](https://docs.hpc.ait.dtu.dk).
 
 You connect to the cluster via an SSH terminal, and there are different SSH
 terminals based on your operating system (see the platform-specific
@@ -94,10 +91,10 @@ be downloaded from
 Once you have installed PuTTY and placed the executable somewhere convenient
 (e.g., the Desktop), double click on the executable. In the window that opens
 up, enter/verify the following settings:
-* Session > Host Name: gorm.risoe.dk
+* Session > Host Name: jess.dtu.dk
 * Session > Port: 22
 * Session > Connection type: SSH
-* Session > Saved Sessions: Gorm
+* Session > Saved Sessions: Jess
 * Connection > Data > Auto-login username: your DTU username
 * Connection > Data > When username is not specified: Use system username
 * Window > Colours > Select a colour to adjust > ANSI Blue: RGB = 85, 85, 255
@@ -110,12 +107,12 @@ to be lighter and therefore easier to read when working in the terminal. Once
 you have entered these options, click "Save" on the "Session" tab and close
 the window.
 
-With PuTTY configured, you can connect to Gorm by double-clicking the PuTTY
-executable; then, in the window that opens select "Gorm" in "Saved Sessions",
+With PuTTY configured, you can connect to Jess by double-clicking the PuTTY
+executable; then, in the window that opens select "Jess" in "Saved Sessions",
 click the "Load" button, and finally click the "Open" button. A terminal
 window will open up. Type your DTU password in this new window when prompted
 (your text will not appear in the window) and then hit the Enter key. You
-should now be logged into Gorm.
+should now be logged into Jess.
 
 To close the PuTTY window, you can either hit the red "X" in the upper-right
 corner of the window or type "exit" in the terminal and hit enter.
@@ -133,11 +130,11 @@ terminals. To connect to the cluster, enter the following command into
 the terminal:
 
 ```
-ssh $USER@gorm.risoe.dk
+ssh $USER@jess.dtu.dk
 ```
 
 Enter your DTU password when prompted. This will give you terminal access
-to the Gorm cluster.
+to the Jess cluster.
 
 
 Mounting the cluster discs
@@ -145,7 +142,7 @@ Mounting the cluster discs
 
 When doing the HAWC2 simulations, you will interact regularly with the cluster
 file system and discs. Thus, it can be very useful to have two discs mounted
-locally so you can easily access them: 1) your home directory on Gorm and 2)
+locally so you can easily access them: 1) your home directory on Jess and 2)
 the HAWC2 simulation folder on Mimer.
 
 You need to be connected to the DTU network (either directly or via VPN) for
@@ -167,17 +164,17 @@ $WIN_VERSION is your version number.
 In Windows 7, you can map a network drive in the following steps:
 1. Open a Windows Explorer window
 2. Right-click on "Computer" and select "Map network drive"
-3. Select any unused drive and type ```\\gorm.risoe.dk\$USER``` into the folder field,
-replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Gorm home
-drive of ```\\gorm.risoe.dk\abcd```)
+3. Select any unused drive and type ```\\Jess.dtu.dk\$USER``` into the folder field,
+replacing "$USER" with your DTU username (e.g., DTU user "ABCD" has a Jess home
+drive of ```\\Jess.dtu.dk\abcd```)
 4. Check the "Reconnect at logon" box if you want to connect to this drive
 every time you log into your computer (recommended)
 5. Click the Finish button
-6. Repeat Steps 1 through 5, replacing the Gorm home address in Step 3 with the
+6. Repeat Steps 1 through 5, replacing the Jess home address in Step 3 with the
 HAWC2 simulation folder address: ```\\mimer.risoe.dk\hawc2sim```
 
 Note that by default Windows Explorer will hide some of the files you will need
-edit. In order to show all files on your Gorm home drive, you need to un-hide
+edit. In order to show all files on your Jess home drive, you need to un-hide
 system files: Explorer > Organize > Folder and search options > "View" tab >
 Hidden files and folders > "Show hidden files, folders, and drives".
 
@@ -187,7 +184,7 @@ From Linux/Mac, you should be able to mount using either of the following
 addresses:
 ```
 //mimer.risoe.dk/hawc2sim
-//gorm.risoe.dk/$USER
+//jess.dtu.dk/$USER
 ```
 You can use either ```sshfs``` or ```mount -t cifs``` to mount the discs.
 
@@ -195,8 +192,8 @@ You can use either ```sshfs``` or ```mount -t cifs``` to mount the discs.
 Preparation
 -----------
 
-Add the cluster-tools script to your system's PATH of you Gorm environment,
-by editing the file ```.bash_profile``` file in your Gorm’s home directory
+Add the cluster-tools script to your system's PATH of you Jess environment,
+by editing the file ```.bash_profile``` file in your Jess’s home directory
 (```/home/$USER/.bash_profile```), and add the following lines (add at the end,
 or create a new file with this file name in case it doesn't exist):
 
@@ -212,13 +209,13 @@ are much appreciated!)
 > If you have been using an old version of this how-to, you might be pointing
 to an earlier version of these tools/utils and any references containing
 ```cluster-tools``` or ```prepost``` should be removed
-from your ```.bash_profile``` and/or ```.bashrc``` file on your gorm home drive.
+from your ```.bash_profile``` and/or ```.bashrc``` file on your Jess home drive.
 
 After modifying ```.bash_profile```, save and close it. Then, in the terminal,
 run the command (or logout and in again to be safe):
 ```
-g-000 $ source ~/.bash_profile
-g-000 $ source ~/.bashrc
+j-000 $ source ~/.bash_profile
+j-000 $ source ~/.bashrc
 ```
 
 You will also need to configure wine and place the HAWC2 executables in your
@@ -226,7 +223,7 @@ local wine directory, which by default is assumed to be ```~/.wine32```, and
 ```pbsutils``` contains and automatic configuration script you can run:
 
 ```
-g-000 $ /home/MET/repositories/toolbox/pbsutils/config-wine-hawc2.sh
+j-000 $ /home/MET/repositories/toolbox/pbsutils/config-wine-hawc2.sh
 ```
 
 If you need more information on what is going on, you can read a more detailed
@@ -252,7 +249,7 @@ precedence over the ones placed in ```/home/$USER/wine_exe/win32```.
 At this stage you can run HAWC2 as follows:
 
 ```
-g-000 $ wine32 hawc2-latest htc/some-intput-file.htc
+j-000 $ wine32 hawc2-latest htc/some-intput-file.htc
 ```
 
 
@@ -263,7 +260,7 @@ When there is a new version of HAWC2, or when a new license manager is released,
 you can update your local wine directory as follows:
 
 ```
-g-000 $ rsync -au /home/MET/hawc2exe/win32 /home/$USER/wine_exe/win32 --progress
+j-000 $ rsync -au /home/MET/hawc2exe/win32 /home/$USER/wine_exe/win32 --progress
 ```
 
 The file ```hawc2-latest.exe``` will always be the latest HAWC2
@@ -310,19 +307,19 @@ For example, in order to generate all the HAWC2 htc input files and the
 corresponding ```*.p``` cluster launch files using this default DLB setup with:
 
 ```
-g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001 # folder where the hawc2 model is located
-g-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
+j-000 $ cd /mnt/mimer/hawc2sim/demo/A0001 # folder where the hawc2 model is located
+j-000 $ qsub-wrap.py -f /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py --prep
 ```
 
 You could consider adding ```dlctemplate.py``` into the turbine folder or in
 the simulation set id folder for your convenience:
 
 ```
-g-000 $ cd /mnt/mimer/hawc2sim/demo/
+j-000 $ cd /mnt/mimer/hawc2sim/demo/
 # copy the dlctemplate to your turbine model folder and rename to myturbine.py
-g-000 $ cp /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py ./myturbine.py
-g-000 $ cd A0001
-g-000 $ qsub-wrap.py -f ../myturbine.py --prep
+j-000 $ cp /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/dlctemplate.py ./myturbine.py
+j-000 $ cd A0001
+j-000 $ qsub-wrap.py -f ../myturbine.py --prep
 ```
 
 
@@ -338,23 +335,23 @@ First activate the Anaconda Python environment by typing:
 
 ```bash
 # add the Anaconda Python environment paths to the system PATH
-g-000 $ export PATH=/home/python/miniconda3/bin:$PATH
+j-000 $ export PATH=/home/python/miniconda3/bin:$PATH
 # activate the custom python environment:
-g-000 $ source activate wetb_py3
+j-000 $ source activate wetb_py3
 ```
 For example, launch the auto-generation of DLCs input files:
 
 ```
 # folder where the HAWC2 model is located
-g-000 $ cd /mnt/mimer/hawc2sim/demo/AA0001
+j-000 $ cd /mnt/mimer/hawc2sim/demo/AA0001
 # assuming myturbine.py is copy of dlctemplate.py and is placed one level up
-g-000 $ python ../myturbine.py --prep
+j-000 $ python ../myturbine.py --prep
 ```
 
 Or start an interactive IPython shell:
 
 ```
-g-000 $ ipython
+j-000 $ ipython
 ```
 
 Users should be aware that running computational heavy loads on the login node
@@ -518,6 +515,11 @@ tags:
 * ```[Hs]``` : see HAWC2 manual for options
 * ```[Tp]``` : see HAWC2 manual for options
 * ```[wave_seed]``` : see HAWC2 manual for options
+* ```[wave_gamma]``` : see HAWC2 manual for options
+* ```[wave_coef]``` : see HAWC2 manual for options
+* ```[stretching]``` : see HAWC2 manual for options
+* ```[embed_sf]``` : see HAWC2 manual for options, and look for how it is implemented
+in [prepost.dlcsdefs.vartag_excel_stabcon(master)](wetb/prepost/dlcdefs.py).
 
 And the corresponding section the htc master file:
 
@@ -600,7 +602,7 @@ The ```launch.py``` script has various different options, and you can read about
 them by using the help function (the output is included for your convenience):
 
 ```bash
-g-000 $ launch.py --help
+j-000 $ launch.py --help
 Usage:
 
 launch.py -n nr_cpus
@@ -656,8 +658,8 @@ Then launch the actual jobs (each job is a ```*.p``` file in ```pbs_in```) using
 100 cpu's:
 
 ```bash
-g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
-g-000 $ launch.py -n 100 -p pbs_in/
+j-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+j-000 $ launch.py -n 100 -p pbs_in/
 ```
 
 If the launching process requires hours, and you have to close you SHH/PuTTY
@@ -670,8 +672,8 @@ simple and light job. ```launch.py``` will remove all the users crontab jobs
 at the end with ```crontab -r```.
 
 ```bash
-g-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
-g-000 $ launch.py -n 100 -p pbs_in/ --crontab
+j-000 $ cd /mnt/mimer/hawc2sim/demo/A0001
+j-000 $ launch.py -n 100 -p pbs_in/ --crontab
 ```
 
 
@@ -689,25 +691,25 @@ length of the queue, etc
 
 Notice that the pbs output files in ```pbs_out``` are only created when the job
 has ended (or failed). When you want to inspect a running job, you can ssh from
-the Gorm login node to node that runs the job. First, find the job id by listing
+the Jess login node to node that runs the job. First, find the job id by listing
 all your current jobs (```qstat -u $USER```). The job id can be found in the
 first column, and you only need to consider the number, not the domain name
 attached to it. Now find the on which node it runs with (replace 123546 with the
 relevant job id):
 ```
-g-000 $ qstat -f 123456 | grep exec_host
+j-000 $ qstat -f 123456 | grep exec_host
 ```
 
-From here you login into the node as follows (replace g-078 with the relevant
+From here you login into the node as follows (replace j-078 with the relevant
 node):
 ```
-g-000 $ ssh g-078
+j-000 $ ssh j-078
 ```
 
 And browse to the scratch directory which lands you in the root directory of
 your running HAWC2 model (replace 123456 with the relevant job id):
 ```
-g-000 $ cd /scratch/$USER/123456.g-000.risoe.dk
+j-000 $ cd /scratch/$USER/123456.j-000.risoe.dk
 ```
 
 You can find what HAWC2 (or whatever other executable you are running) is
@@ -719,8 +721,6 @@ Or when watch what is happening at the end in real time
 ```
 # on Jess:
 tail -f /var/lib/torque/spool/JOBID.jess.dtu.dk.OU
-# on Gorm:
-tail -f /var/spool/pbs/spool/JOBID.g-000.risoe.dk.OU
 ```
 
 
@@ -735,7 +735,7 @@ found in the ```pbs_in``` folder) of the failed cases to a new folder (for
 example ```pbs_in_failed```). Now run ```launch.py``` again, but instead point
 to the folder that contains the ```*.p``` files of the failed cases, for example:
 ```
-g-000 $ launch.py -n 100 --node -p pbs_in_failed
+j-000 $ launch.py -n 100 --node -p pbs_in_failed
 ```
 
 2. Use the ```--cache``` option, and edit the PBS file list in the file
@@ -747,7 +747,7 @@ job will be launched.
 
 3. Each pbs file can be launched manually as follows:
 ```
-g-000 $ qsub path/to/pbs_file.p
+j-000 $ qsub path/to/pbs_file.p
 ```
 
 Alternatively, one can use the following options in ```launch.py```:
@@ -771,7 +771,7 @@ files, calculating the statistics, the AEP and the life time equivalent loads:
 
 ```
 # myturbine.py (copy of dlctemplate.py) is assumed to be located one folder up
-g-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_logs --fatigue
+j-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_logs --fatigue
 ```
 
 Other options for the original ```dlctemplate.py``` script:
