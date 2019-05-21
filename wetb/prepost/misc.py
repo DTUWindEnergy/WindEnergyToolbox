@@ -741,7 +741,7 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
                 if fext == 'csv':
                     df = pd.read_csv(f_target)
                 else:
-                    df = pd.read_excel(f_target, sheetname=sheet)
+                    df = pd.read_excel(f_target, sheet_name=sheet)
                 df_list[f_target.replace('.'+fext, '')] = df
                 if not silent:
                     print(': sucesfully included %i case(s)' % len(df))
