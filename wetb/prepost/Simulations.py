@@ -4675,7 +4675,7 @@ class Cases(object):
 
     def AEP(self, dfs, fh_lst=None, ch_powe='DLL-2-inpvec-2', extra_cols=[],
             res_dir='res/', dlc_folder="dlc%s_iec61400-1ed3/", csv=False,
-            new_sim_id=False, save=False, years=20.0, update=False, xlsx=False):
+            new_sim_id=False, save=False, update=False, xlsx=False):
 
         """
         Calculate the Annual Energy Production (AEP) for DLC1.2 cases.

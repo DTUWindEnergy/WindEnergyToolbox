@@ -136,7 +136,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             # write an empty directory if applicable, make sure ends with /
             copyto_file_folder = pjoin(os.path.dirname(copyto_file), '')
             if len(copyto_file_folder) > 0:
-                if copyto_file_folder not in set(namelist):
+                if copyto_file_folder not in namelist:
                     zf.write('.', arcname=copyto_file_folder)
             # if we have a wildcard, copy all files accordingly
             for fname in glob.glob(copyto_file, recursive=True):
