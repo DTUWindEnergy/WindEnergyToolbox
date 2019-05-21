@@ -134,6 +134,12 @@ class LogFile(object):
         #  *** ERROR *** Out of limits in user defined shear field - limit value used
         self.err_sim[' *** ERROR *** Out of limit'] = len(self.err_sim)
 
+        # NEAR WAKE ERRORS
+        # ERROR in Near Wake! The radius of the tip is smaller (or equal) to
+        self.err_sim[' ERROR in Near Wake! The ra'] = len(self.err_sim)
+        # ERROR: Maximum number of near wake iterations reached
+        self.err_sim[' ERROR: Maximum number of n'] = len(self.err_sim)
+
         # TODO: error message from a non existing channel output/input
         # add more messages if required...
 
@@ -253,7 +259,8 @@ class LogFile(object):
                 iterations[time_step-1,2] = 1
 
             # method of last resort, we have no idea what message
-            elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING':
+            elif line[:10] == ' *** ERROR' or line[:10]==' ** WARNING' \
+                    or line[:6] == ' ERROR':
                 icol = subcols_sim*self.sim_cols
                 icol += subcols_init*self.init_cols + 1
                 # line number of the message
@@ -442,7 +449,7 @@ class LogFile(object):
 
         gr = ('first_tstep_%i', 'last_step_%i', 'nr_%i', 'msg_%i')
         colnames.extend(list(chain_iter( (k % i for k in gr)
-                           for i in range(100,105,1))) )
+                           for i in range(100,100+nr_sim,1))) )
         colnames.extend(['nr_extra', 'msg_extra'])
         colnames.extend(['elapsted_time',
                        'last_time_step',
