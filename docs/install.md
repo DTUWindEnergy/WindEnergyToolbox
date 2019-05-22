@@ -7,9 +7,7 @@
 Install the necessary Python dependencies using the ```conda``` package manager:
 
 ```
->> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
->> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
->> conda install -c conda-forge pyscaffold sshtunnel --no-deps
+>> conda install blosc
 ```
 
 Now you can install ```wetb``` with ```pip``` (there is no ```conda``` package
@@ -58,8 +56,4 @@ in Python 2.7 by default. You can also write code that is compatible with both
 [issue 1](https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox/issues/1)).
 
 
-# Note
-
-This project has been set up using PyScaffold 2.5. For details and usage
-information on PyScaffold see http://pyscaffold.readthedocs.org/.
 

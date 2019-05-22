@@ -5,10 +5,12 @@
 """
 
 import os
+from git_utils import write_vers
 import sys
 from setuptools import setup, find_packages
-import wetb
-__version__ = wetb.__version__
+
+repo = os.path.dirname(__file__)
+version = write_vers(vers_file='wetb/__init__.py', repo=repo, skip_chars=1)
 
 try:
     from pypandoc import convert_file
@@ -25,18 +27,38 @@ from Cython.Distutils import build_ext
 def setup_package():
 
     ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm']),
-			   ('wetb.signal.filters', ['cy_filters'])]
+               ('wetb.signal.filters', ['cy_filters'])]
     extlist = [Extension('%s.%s' % (module, n),
-                         [os.path.join(module.replace(".","/"), n)+'.pyx'],
+                         [os.path.join(module.replace(".", "/"), n) + '.pyx'],
                          include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
-
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
     sphinx = ['sphinx'] if needs_sphinx else []
-    setup(setup_requires=['six'] + sphinx,
-          cmdclass = {'build_ext': build_ext},
-          ext_modules = extlist,
+    install_requires = ['future',
+                        'h5py',
+                        'tables',
+                        'pytest',
+                        'pytest-cov',
+#                        'blosc', # gives an error - has to be pre-installed
+                        'pbr',
+                        'paramiko',
+                        'scipy',
+                        'pandas',
+                        'matplotlib',
+                        'cython',
+                        'xlrd',
+                        'coverage',
+                        'xlwt',
+                        'openpyxl',
+                        'psutil',
+                        'six',
+                        'sshtunnel']
+    build_requires = ['cython']
+    setup(install_requires=install_requires,
+          setup_requires=install_requires + build_requires + sphinx,
+          cmdclass={'build_ext': build_ext},
+          ext_modules=extlist,
           long_description=read_md('README.md'),
-          version=__version__,
+          version=version,
           packages=find_packages(),
           )
 

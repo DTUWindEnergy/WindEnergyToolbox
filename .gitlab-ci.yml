@@ -44,7 +44,6 @@ pypi_linux:
   script:
     - apt-get update
     - pip install -e . --upgrade
-    - python3 -c 'from git_utils import write_vers; write_vers()'
     - python3 -m pip install -U setuptools wheel
     - python3 setup.py sdist bdist_wheel
     - python3 -m pip install -U twine
@@ -62,7 +61,6 @@ pypi_windows:
     - tags
     - test_pypi
   script:
-    - c:/Anaconda3/envs/WindEnergyToolbox/python.exe -c "from git_utils import write_vers; write_vers()"
     - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py bdist_wheel
     - twine upload dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD%
     #- twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD% # for testing purposes

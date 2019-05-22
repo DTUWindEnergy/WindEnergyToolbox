@@ -139,7 +139,6 @@ use ```deactivate``` to deactivate the environment.
 - [h5py](http://www.h5py.org/)
 - [matplotlib](http://matplotlib.org/)
 - [pytables](http://www.pytables.org/)
-- [pyscaffold](http://pyscaffold.readthedocs.org/en/)
 - [pytest](https://pypi.python.org/pypi/pytest)
 - [pytest-cov](https://pypi.python.org/pypi/pytest-cov/)
 - six, [future](http://python-future.org/index.html)
@@ -159,7 +158,7 @@ Install the necessary Python dependencies using the conda package manager:
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc
->> conda install -c conda-forge pyscaffold sshtunnel --no-deps
+>> conda install -c conda-forge sshtunnel --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel
