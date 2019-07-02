@@ -16,6 +16,7 @@ import numpy.ma as ma
 import pandas as pd
 block_name_fmt = "block%04d"
 
+
 def load(filename, dtype=None):
     """Load a 'General Time Series Data Format'-hdf5 datafile
 
@@ -93,13 +94,14 @@ def load(filename, dtype=None):
     f = _open_h5py_file(filename)
     try:
         info = _load_info(f)
-        time, data = _load_timedata(f,dtype)
+        time, data = _load_timedata(f, dtype)
         return time, data, info
     finally:
         try:
             f.close()
         except:
             pass
+
 
 def _open_h5py_file(filename):
     if isinstance(filename, h5py.File):
@@ -110,15 +112,16 @@ def _open_h5py_file(filename):
         f = h5py.File(filename, 'r')
     return f
 
+
 def decode(v):
-        if isinstance(v, bytes):
-            return v.decode('latin1')
-        elif hasattr(v,'len'):
-            return [decode(v_) for v_ in v]
-        return v
+    if isinstance(v, bytes):
+        return v.decode('latin1')
+    elif hasattr(v, 'len'):
+        return [decode(v_) for v_ in v]
+    return v
+
 
 def _load_info(f):
-    
 
     info = {k: decode(v) for k, v in f.attrs.items()}
     check_type(f)
@@ -130,8 +133,13 @@ def _load_info(f):
         info['attribute_units'] = [v.decode('latin1') for v in f['attribute_units']]
     if 'attribute_descriptions' in f:
         info['attribute_descriptions'] = [v.decode('latin1') for v in f['attribute_descriptions']]
+    try:
+        info['dtype'] = f[block_name_fmt % 0]['data'].dtype
+    except:
+        pass
     return info
-    
+
+
 def _load_timedata(f, dtype):
     no_blocks = f.attrs['no_blocks']
     if (block_name_fmt % 0) not in f:
@@ -140,7 +148,6 @@ def _load_timedata(f, dtype):
     if 'data' not in block0:
         raise ValueError("group %s must contain a dataset called 'data'" % (block_name_fmt % 0))
     _, no_attributes = block0['data'].shape
-    
 
     if dtype is None:
         file_dtype = f[block_name_fmt % 0]['data'].dtype
@@ -156,7 +163,7 @@ def _load_timedata(f, dtype):
 
         try:
             block = f[block_name_fmt % i]
-        except KeyError:
+        except Error:
             continue
         no_observations, no_attributes = block['data'].shape
         block_time = (block.get('time', np.arange(no_observations))[:]).astype(np.float64)
@@ -178,7 +185,8 @@ def _load_timedata(f, dtype):
 
     if no_blocks > 0:
         data = np.vstack(data)
-    return np.array(time).astype(np.float64), np.array(data).astype(dtype)    
+    return np.array(time).astype(np.float64), np.array(data).astype(dtype)
+
 
 def save(filename, data, **kwargs):
     """Save a 'General Time Series Data Format'-hdf5 datafile
@@ -246,9 +254,10 @@ def save(filename, data, **kwargs):
         filename += ".hdf5"
     # exist_ok does not exist in Python27
     if not os.path.exists(os.path.dirname(os.path.abspath(filename))):
-        os.makedirs(os.path.dirname(os.path.abspath(filename)))  #, exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.abspath(filename)))  # , exist_ok=True)
     _save_info(filename, data.shape, **kwargs)
     append_block(filename, data, **kwargs)
+
 
 def _save_info(filename, data_shape, **kwargs):
 
@@ -256,7 +265,7 @@ def _save_info(filename, data_shape, **kwargs):
     try:
         f.attrs["type"] = "General time series data format"
         no_observations, no_attributes = data_shape
-        
+
         if 'name' in kwargs:
             f.attrs['name'] = kwargs['name']
         if 'description' in kwargs:
@@ -264,7 +273,8 @@ def _save_info(filename, data_shape, **kwargs):
         f.attrs['no_attributes'] = no_attributes
         if 'attribute_names' in kwargs:
             if no_attributes:
-                assert len(kwargs['attribute_names']) == no_attributes, "len(attribute_names)=%d but data shape is %s" % (len(kwargs['attribute_names']), data_shape)
+                assert len(kwargs['attribute_names']) == no_attributes, "len(attribute_names)=%d but data shape is %s" % (
+                    len(kwargs['attribute_names']), data_shape)
             f.create_dataset("attribute_names", data=np.array([v.encode('utf-8') for v in kwargs['attribute_names']]))
         if 'attribute_units' in kwargs:
             if no_attributes:
@@ -273,7 +283,8 @@ def _save_info(filename, data_shape, **kwargs):
         if 'attribute_descriptions' in kwargs:
             if no_attributes:
                 assert(len(kwargs['attribute_descriptions']) == no_attributes)
-            f.create_dataset("attribute_descriptions", data=np.array([v.encode('utf-8') for v in kwargs['attribute_descriptions']]))
+            f.create_dataset("attribute_descriptions", data=np.array(
+                [v.encode('utf-8') for v in kwargs['attribute_descriptions']]))
         f.attrs['no_blocks'] = 0
     except Exception:
         raise
@@ -364,7 +375,8 @@ def append_block(filename, data, **kwargs):
         if "int" in str(dtype):
             if np.any(np.isinf(data)):
                 f.close()
-                raise ValueError ("Int compression does not support 'inf'\nConsider removing outliers or use float datatype")
+                raise ValueError(
+                    "Int compression does not support 'inf'\nConsider removing outliers or use float datatype")
             nan = np.isnan(data)
             non_nan_data = ma.masked_array(data, nan)
             offsets = np.min(non_nan_data, 0)
@@ -375,8 +387,10 @@ def append_block(filename, data, **kwargs):
             data -= offsets
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")  # ignore warning caused by abs(nan) and np.nanmax(nan)
-                pct_res = (np.percentile(data[~np.isnan(data)], 75, 0) - np.percentile(data[~np.isnan(data)], 25, 0)) / np.nanmax(np.abs(data), 0)  # percent of resolution for middle half of data
-            gains = np.max(non_nan_data - offsets, 0).astype(np.float64) / (np.iinfo(dtype).max - 1)  #-1 to save value for NaN
+                pct_res = (np.percentile(data[~np.isnan(data)], 75, 0) - np.percentile(data[~np.isnan(data)],
+                                                                                       25, 0)) / np.nanmax(np.abs(data), 0)  # percent of resolution for middle half of data
+            gains = np.max(non_nan_data - offsets, 0).astype(np.float64) / \
+                (np.iinfo(dtype).max - 1)  # -1 to save value for NaN
             not0 = np.where(gains != 0)
             data[:, not0] /= gains[not0]
 
@@ -394,7 +408,8 @@ def append_block(filename, data, **kwargs):
             int_res = (np.iinfo(dtype).max - np.iinfo(dtype).min)
             with np.errstate(invalid='ignore'):
                 if min(pct_res[pct_res > 0]) * int_res < 256:
-                    raise Warning("Less than 256 values are used to represent 50%% of the values in column(s): %s\nConsider removing outliers or use float datatype" % np.where(pct_res[pct_res > 0] * int_res < 256)[0])
+                    raise Warning("Less than 256 values are used to represent 50%% of the values in column(s): %s\nConsider removing outliers or use float datatype" % np.where(
+                        pct_res[pct_res > 0] * int_res < 256)[0])
 
     except Exception:
         try:
@@ -415,50 +430,49 @@ def load_pandas(filename, dtype=None):
     return df
 
 
-
 def check_type(f):
     if 'type' not in f.attrs or \
-        (f.attrs['type'].lower() != "general time series data format" and f.attrs['type'].lower() != b"general time series data format"):
+            (f.attrs['type'].lower() != "general time series data format" and f.attrs['type'].lower() != b"general time series data format"):
         raise ValueError("HDF5 file must contain a 'type'-attribute with the value 'General time series data format'")
     if 'no_blocks' not in f.attrs:
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
-    
-    
-def _get_statistic(time, data, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+
+
+def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     def get_stat(stat):
         if hasattr(np, stat):
-            return getattr(np,stat)(data,0)
+            return getattr(np, stat)(data, 0)
         elif (stat.startswith("eq") and stat[2:].isdigit()):
             from wetb.fatigue_tools.fatigue import eq_load
             m = float(stat[2:])
-            return [eq_load(sensor, 46, m, time[-1]-time[0]+time[1]-time[0])[0][0] for sensor in data.T]
+            return [eq_load(sensor, 46, m, time[-1] - time[0] + time[1] - time[0])[0][0] for sensor in data.T]
     return np.array([get_stat(stat) for stat in statistics]).T
-    
-def _add_statistic_data(file, stat_data, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+
+
+def _add_statistic_data(file, stat_data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     f = h5py.File(file, "a")
     stat_grp = f.create_group("Statistic")
     stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
     stat_grp.create_dataset("statistic_data", data=stat_data.astype(np.float))
     f.close()
-    
-def add_statistic(file, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+
+
+def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     time, data, info = load(file)
     stat_data = _get_statistic(time, data, statistics)
     _add_statistic_data(file, stat_data, statistics)
 
-    
+
 def load_statistic(filename):
     f = _open_h5py_file(filename)
     info = _load_info(f)
     names = decode(f['Statistic']['statistic_names'])
-    data =np.array(f['Statistic']['statistic_data'])
+    data = np.array(f['Statistic']['statistic_data'])
     return pd.DataFrame(data, columns=names), info
 
-def compress2statistics(filename, statistics=['min','mean','max','std','eq3','eq4','eq6','eq8','eq10','eq12']):
+
+def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     time, data, info = load(filename)
     stat_data = _get_statistic(time, data, statistics)
     _save_info(filename, data.shape, **info)
     _add_statistic_data(filename, stat_data, statistics)
-    
-    
-    

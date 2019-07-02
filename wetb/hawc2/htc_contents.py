@@ -285,11 +285,6 @@ class HTCLine(HTCContents):
         values = [fmt_value(v) for v in values]
         return HTCLine(name, values, end_comments)
 
-    def remove(self):
-        self.name_ = ""
-        self.values = []
-        self.comments = ""
-
     def compare(self, other):
         s = ""
         if self.values != other.values:

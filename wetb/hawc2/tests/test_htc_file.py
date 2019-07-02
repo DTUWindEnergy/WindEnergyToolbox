@@ -123,6 +123,11 @@ class TestHtcFile(unittest.TestCase):
         htcfile.simulation.logfile.delete()
         self.assertTrue("logfile" not in str(htcfile.simulation))
 
+        self.assertTrue('newmark' in str(htcfile.simulation))
+        htcfile.simulation.newmark.delete()
+        with self.assertRaises(KeyError):
+            htcfile.simulation.newmark
+
     def test_htcfile_setname(self):
         htcfile = HTCFile(self.testfilepath + "test.htc")
         htcfile.set_name("mytest")

@@ -184,13 +184,15 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip().lower()
 
                 if self.modelpath == 'unknown':
-                    self.htc_inputfiles.append(filename)
+                    p = os.path.dirname(self.filename)
+                    lu = [os.path.isfile(os.path.join(p, "../" * i, filename)) for i in range(4)].index(True)
+                    filename = os.path.join(p, "../" * lu, filename)
                 else:
                     filename = os.path.join(self.modelpath, filename)
-                    for line in self.readlines(filename):
-                        if line.lstrip().lower().startswith('exit'):
-                            break
-                        htc_lines.append(line)
+                for line in self.readlines(filename):
+                    if line.lstrip().lower().startswith('exit'):
+                        break
+                    htc_lines.append(line)
             else:
                 htc_lines.append(l)
         return htc_lines

@@ -22,6 +22,7 @@ import os
 tmp_path = os.path.dirname(__file__) + "/tmp/"
 tfp = os.path.dirname(os.path.abspath(__file__)) + "/test_files/"
 
+
 class Test_gsdf(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
@@ -31,29 +32,28 @@ class Test_gsdf(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(Test_gsdf, cls).tearDownClass()
-        #shutil.rmtree(tmp_path)
+        # shutil.rmtree(tmp_path)
 
-    def test_minimum_requirements (self):
+    def test_minimum_requirements(self):
         fn = tmp_path + "minimum.hdf5"
         f = h5py.File(fn, "w")
-        #no type
+        # no type
         self.assertRaises(ValueError, gtsdf.load, fn)
         f.attrs["type"] = "General time series data format"
 
-        #no no_blocks
+        # no no_blocks
         self.assertRaises(ValueError, gtsdf.load, fn)
         f.attrs["no_blocks"] = 0
 
-        #no block0000
+        # no block0000
         self.assertRaises(ValueError, gtsdf.load, fn)
         b = f.create_group("block0000")
 
-        #no data
+        # no data
         self.assertRaises(ValueError, gtsdf.load, fn)
         b.create_dataset("data", data=np.empty((0, 0)))
         f.close()
         gtsdf.load(fn)
-
 
     def test_save_no_hdf5_ext(self):
         fn = tmp_path + "no_hdf5_ext"
@@ -66,7 +66,6 @@ class Test_gsdf(unittest.TestCase):
         gtsdf.save(fn, np.arange(12).reshape(4, 3))
         _, _, info = gtsdf.load(fn)
         self.assertEqual(info['name'], 'filename')
-
 
     def test_load_fileobject(self):
         fn = tmp_path + "fileobject.hdf5"
@@ -108,13 +107,11 @@ class Test_gsdf(unittest.TestCase):
         time, _, _ = gtsdf.load(fn)
         np.testing.assert_array_equal(time, range(4, 10))
 
-
     def test_time_offset(self):
         fn = tmp_path + 'time.hdf5'
         gtsdf.save(fn, np.arange(12).reshape(6, 2), time=range(6), time_start=4)
         time, _, _ = gtsdf.load(fn)
         np.testing.assert_array_equal(time, range(4, 10))
-
 
     def test_time_gain_offset(self):
         fn = tmp_path + 'time.hdf5'
@@ -147,7 +144,6 @@ class Test_gsdf(unittest.TestCase):
         f.close()
         _, data, _ = gtsdf.load(fn)
         np.testing.assert_array_equal(data, np.arange(12).reshape(6, 2))
-
 
     def test_all(self):
         fn = tmp_path + "all.hdf5"
@@ -192,7 +188,6 @@ class Test_gsdf(unittest.TestCase):
         self.assertNotIn('gains', f['block0001'])
         f.close()
 
-
     def test_nan_float(self):
         fn = tmp_path + 'nan.hdf5'
         d = np.arange(12, dtype=np.float32).reshape(6, 2)
@@ -200,8 +195,6 @@ class Test_gsdf(unittest.TestCase):
         gtsdf.save(fn, d)
         _, data, _ = gtsdf.load(fn)
         np.testing.assert_array_almost_equal(data, d, 4)
-
-
 
     def test_outlier(self):
         fn = tmp_path + 'outlier.hdf5'
@@ -234,33 +227,25 @@ class Test_gsdf(unittest.TestCase):
         self.assertEqual(time[1], 0.05)
         self.assertEqual(data[1, 1], 11.986652374267578)
         self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
-    
+
     def test_loadhdf5File(self):
         f = h5py.File(tfp + 'test.hdf5')
         time, data, info = gtsdf.load(f)
-        
+
         self.assertEqual(time[1], 0.05)
         self.assertEqual(data[1, 1], 11.986652374267578)
         self.assertEqual(info['attribute_names'][1], "WSP gl. coo.,Vy")
-        
-        
+
     def test_gtsdf_dataset(self):
-        ds = gtsdf.Dataset(tfp+'test.hdf5')
-        self.assertEqual(ds.data.shape, (2440,49))
+        ds = gtsdf.Dataset(tfp + 'test.hdf5')
+        self.assertEqual(ds.data.shape, (2440, 49))
         self.assertEqual(ds('Time')[1], 0.05)
         self.assertEqual(ds.Time[1], 0.05)
-        self.assertRaisesRegex(AttributeError, "'Dataset' object has no attribute 'Time1'", lambda : ds.Time1)
+        self.assertRaisesRegex(AttributeError, "'Dataset' object has no attribute 'Time1'", lambda: ds.Time1)
         self.assertEqual(ds(2)[1], 12.04148006439209)
         n = ds.info['attribute_names'][2]
         self.assertEqual(n, "WSP gl. coo.,Vy")
         self.assertEqual(ds(n)[1], 12.04148006439209)
-        
-        
-        
-
-
-
-
 
 
 if __name__ == "__main__":
