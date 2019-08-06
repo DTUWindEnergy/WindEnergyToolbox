@@ -220,7 +220,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs = pbs.replace('[std_err]', './pbs_out_chunks/%s.err' % jobid)
         pbs = pbs.replace('[umask]', '0003')
         pbs = pbs.replace('[walltime]', walltime)
-        pbs = pbs.replace('[nodes]', str(nodes))
+        pbs = pbs.replace('[nodes]', str(1)) # only one node for the time being
         pbs = pbs.replace('[ppn_pbs]', str(ppn_pbs))
         pbs = pbs.replace('[queue]', queue)
         pbs += '\necho "%s"\n' % ('-'*70)
@@ -537,56 +537,79 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
     # remove all cases that start with test_ and move them into a separate
     # chunk
-    # FIXME: CI runner has and old pandas version (v0.14.1)
     try:
-        sel_notest = df['[Case folder]'].str.find('test_')<0
-        sel_test = ~sel_notest
+        sel_notest = df['[Case folder]'].str.find('test_') < 0
+
+        if '[hs2]' in df.columns:
+            # depends on if '' or ';' was translated into 0/1 or not
+            if df['[hs2]'].dtype == np.dtype('O'):
+                sel_hs2 = df['[hs2]'].str.find(';') < 0
+            else:
+                sel_hs2 = df['[hs2]'] == 1
+        else:
+            sel_hs2 = pd.Series(data=False, index=df.index)
+
+        # remove hs2 cases from notest
+        sel_notest = sel_notest & ~sel_hs2
+
+        # tests but not HS2
+        sel_test = ~sel_notest & ~sel_hs2
+
     except AttributeError:
+        # FIXME: CI runner has and old pandas version (v0.14.1)
         # and findall returns list with the search str occuring as
         # many times as found in the str...
         findall = df['[Case folder]'].str.findall('test_').tolist()
         # len==0 if nothing has been found
         sel_notest = [True if len(k)==0 else False for k in findall]
-        sel_test = [not k for k in sel_notest]
+
+        if '[hs2]' in df.columns:
+            if df['[hs2]'].dtype == np.dtype('O'):
+                findall = df['[hs2]'].str.findall(';').tolist()
+            else:
+                findall = (df['[hs2]']==1).tolist()
+
+            # only select it if we do NOT find ;
+            sel_hs2 = [True if len(k)==0 else False for k in findall]
+        else:
+            sel_hs2 = [False]*len(findall)
+
+        # remove hs2 cases from notest
+        sel_notest = [i and not j for (i,j) in zip(sel_notest, sel_hs2)]
+        # tests but not HS2, so everything that is not in either notest or hs2
+        sel_test = [not i and not j for (i,j) in zip(sel_notest, sel_hs2)]
+
     df_dlc = df[sel_notest]
     df_test = df[sel_test]
+    df_hs2 = df[sel_hs2]
 
     # DLC CHUNKS
-    df_dlc_iter = chunker(df_dlc, nr_procs_series*ppn)
     sim_id = df['[sim_id]'].iloc[0]
     run_dir = df['[run_dir]'].iloc[0]
     model_zip = df['[model_zip]'].iloc[0]
     post_dir = df['[post_dir]'].iloc[0]
-    nodes = 1
-    df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
-    df_ind.index.name = '[case_id]'
-    for ii, dfi in enumerate(df_dlc_iter):
-        fname, ind = make_zip_chunks(dfi, i0+ii, sim_id, run_dir, model_zip)
-        make_pbs_chunks(dfi, i0+ii, sim_id, run_dir, model_zip,
-                        wine_arch=wine_arch, wine_prefix=wine_prefix,
-                        compress=compress)
-        df_ind = df_ind.append(ind)
-        print(fname)
-    fname = os.path.join(post_dir, 'case_id-chunk-index')
-    df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
-    df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
-    df_ind.to_csv(fname+'.csv')
 
-    # TEST CHUNKS
-    df_test_iter = chunker(df_test, nr_procs_series*ppn)
-    df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
-    df_ind.index.name = '[case_id]'
-    for ii, dfi in enumerate(df_test_iter):
-        fname, ind = make_zip_chunks(dfi, 90000+ii, sim_id, run_dir, model_zip)
-        make_pbs_chunks(dfi, 90000+ii, sim_id, run_dir, model_zip,
-                        wine_arch=wine_arch, wine_prefix=wine_prefix,
-                        compress=compress)
-        df_ind = df_ind.append(ind)
-        print(fname)
-    fname = os.path.join(post_dir, 'case_id-chunk-test-index')
-    df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
-    df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
-    df_ind.to_csv(fname+'.csv')
+    names = ['case_id-chunk-index', 'case_id-chunk-test-index',
+             'case_id-chunk-hs2-index']
+    i0s = [0, 90000, 80000]
+
+    # group test_ hs2 and normal dlc's in 3 different chunks
+    for df, name, i02 in zip([df_dlc, df_test, df_hs2], names, i0s):
+        i02 = i02 + i0
+        df_ind = pd.DataFrame(columns=['chnk_nr'], dtype=np.int32)
+        df_ind.index.name = '[case_id]'
+        df_iter = chunker(df, nr_procs_series*ppn)
+        for ii, dfi in enumerate(df_iter):
+            fname, ind = make_zip_chunks(dfi, i02+ii, sim_id, run_dir, model_zip)
+            make_pbs_chunks(dfi, i02+ii, sim_id, run_dir, model_zip,
+                            wine_arch=wine_arch, wine_prefix=wine_prefix,
+                            compress=compress)
+            df_ind = df_ind.append(ind)
+            print(fname)
+        fname = os.path.join(post_dir, 'case_id-chunk-index')
+        df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
+        df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
+        df_ind.to_csv(fname+'.csv')
 
 
 def regroup_tarfiles(cc):
