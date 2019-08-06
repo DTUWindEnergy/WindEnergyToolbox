@@ -97,7 +97,9 @@ def write_vers(vers_file='wetb/__init__.py', repo=None, skip_chars=1):
     if len(verel) > 2 and nr_commits > 0:
         # first character on the hash is always a g (not part of the hash)
         version += '-' + verel[2][1:]
-
+    # if "-HEAD" is added to the version, which pypi does not like:
+    if version.endswith('-HEAD'):
+        version = version[:-5]
     print(version_long)
     print('Writing version: {} in {}'.format(version, vers_file))
 
