@@ -60,7 +60,7 @@ def setup_package():
           cmdclass={'build_ext': build_ext},
           ext_modules=extlist,
           long_description=long_description,
-          long_description_content_type="text/plain",
+          long_description_content_type="text/markdown",
           version=version,
           packages=find_packages(),
           )
