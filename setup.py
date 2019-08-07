@@ -12,12 +12,14 @@ from setuptools import setup, find_packages
 repo = os.path.dirname(__file__)
 version = write_vers(vers_file='wetb/__init__.py', repo=repo, skip_chars=1)
 
-try:
-    from pypandoc import convert_file
-    read_md = lambda f: convert_file(f, 'rst', format='md')
-except ImportError:
-    print("warning: pypandoc module not found, could not convert Markdown to RST")
-    read_md = lambda f: open(f, 'r').read()
+#try:
+#    from pypandoc import convert_file
+#    read_md = lambda f: convert_file(f, 'rst', format='md')
+#except ImportError:
+#    print("warning: pypandoc module not found, could not convert Markdown to RST")
+#    read_md = lambda f: open(f, 'r').read()
+with open("README.md", "r") as fh:
+    long_description = fh.read()
 
 import numpy as np
 from distutils.extension import Extension
@@ -57,7 +59,8 @@ def setup_package():
           setup_requires=install_requires + build_requires + sphinx,
           cmdclass={'build_ext': build_ext},
           ext_modules=extlist,
-          long_description=read_md('README.md'),
+          long_description=long_description,
+          long_description_content_type="text/markdown",
           version=version,
           packages=find_packages(),
           )
