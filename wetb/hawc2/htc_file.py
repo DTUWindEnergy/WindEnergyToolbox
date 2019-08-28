@@ -415,8 +415,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         if errorcode or 'Elapsed time' not in log:
             log_lines = log.split("\n")
-            i = [i for i, l in enumerate(log_lines) if 'error' in l.lower()][0]
-            error_log = "\n".join(log_lines[i - 3:i + 3])
+            error_lines = [i for i, l in enumerate(log_lines) if 'error' in l.lower()]
+            if error_lines:
+                i = error_lines[0]
+                error_log = "\n".join(log_lines[i - 3:i + 3])
+            else:
+                error_log = log
             raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
                             (str(stdout), str(stderr), error_log, cmd))
         return str(stdout) + str(stderr), log
