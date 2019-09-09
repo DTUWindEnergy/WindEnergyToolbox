@@ -24,22 +24,11 @@ class HTCDefaults(object):
 
     empty_htc = """begin simulation;
         time_stop 600;
-        solvertype    1;    (newmark)
-        on_no_convergence continue;
-        convergence_limits 1E3 1.0 1E-7; ; . to run again, changed 07/11
+        solvertype    2;    (newmark)
         begin newmark;
           deltat    0.02;
         end newmark;
     end simulation;
-    ;
-    ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
-    ;
-    begin new_htc_structure;
-      begin orientation;
-      end orientation;
-      begin constraint;
-      end constraint;
-    end new_htc_structure;
     ;
     ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
     ;
@@ -57,12 +46,9 @@ class HTCDefaults(object):
     ;
     ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
     ;
-    begin dll;
-    end dll;
-    ;
-    ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
     ;
     begin output;
+      filename    ./tmp;
       general time;
     end output;
     exit;"""
@@ -143,6 +129,13 @@ class HTCDefaults(object):
         cs.constant__17.values[1] = "%.6E" % Ki_r3
         cs.constant__21.values[1] = "%.6E" % KK1
         cs.constant__22.values[1] = "%.6E" % KK2
+
+    def add_hydro(self, mudlevel, mwl, gravity=9.81, rho=1027):
+        wp = self.add_section("hydro").add_section('water_properties')
+        wp.mudlevel = mudlevel
+        wp.mwl = mwl
+        wp.gravity = gravity
+        wp.rho = rho
 
 
 class HTCExtensions(object):
