@@ -356,6 +356,15 @@ class results(object):
 
         return matrices
 
+    def load_cntrl_tuning(self, fname):
+        """Load contruller tuning file.
+        """
+
+        tune = ReadControlTuning()
+        tune.read_parameters(fname)
+        tuning = tune.parameters2tags()
+        return tuning
+
     def write_ae_sections_h2(self):
         """
         Get the aerosection positions from the HS2 ind result file and

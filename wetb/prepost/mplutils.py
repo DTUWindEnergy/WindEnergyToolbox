@@ -22,6 +22,7 @@ standard_library.install_aliases()
 import numpy as np
 
 import matplotlib as mpl
+from matplotlib.figure import Figure
 # use a headless backend
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 # wafo is an optional dependency only required for non default PSD peak marking
@@ -69,7 +70,7 @@ def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={}):
 
     """
 
-    fig = mpl.figure.Figure(figsize=figsize, dpi=dpi)
+    fig = Figure(figsize=figsize, dpi=dpi)
     canvas = FigCanvas(fig)
     fig.set_canvas(canvas)
     axes = np.ndarray((nrows, ncols), dtype=np.object)
@@ -386,6 +387,40 @@ def time_psd(results, labels, axes, alphas=[1.0, 0.7], colors=['k-', 'r-'],
         ax.grid(True)
 
     return axes
+
+
+def get_list_colors(nr, cmap='magma'):
+    """Returns a list of color tuples
+
+    Paramters
+    ---------
+
+    nr : int
+        number of colors
+
+    cmap : str
+        a matplotlib color map name, for example: viridis, plasma, magma, hot,
+        cool, binary, see also https://matplotlib.org/users/colormaps.html
+
+    Returns
+    -------
+
+    clist : list
+        List continaing 'nr' color tuples (with 3 elements).
+
+    """
+    # define the number of positions you want to have the color for
+    # select a color map
+    cmap = mpl.cm.get_cmap(cmap, nr)
+    # other color maps: 	cubehelix, afmhot, hot
+    # convert to array
+    cmap_arr = cmap(np.arange(nr))
+    # and now you have each color as an RGB tuple as
+    clist = []
+    for i in cmap_arr:
+        clist.append(tuple(i[0:3]))
+
+    return clist
 
 
 if __name__ == '__main__':
