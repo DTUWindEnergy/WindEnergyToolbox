@@ -818,9 +818,13 @@ class LoadResults(ReadHawc2):
         # scan through all channels and see which can be converted
         # to sensible unified name
         for ch in range(self.Nch):
-            items = self.ch_details[ch, 2].split(' ')
+
+            items_ch0 = self.ch_details[ch, 0].split(' ')
+            items_ch0 = misc.remove_items(items_ch0, '')
+
+            items_ch2 = self.ch_details[ch, 2].split(' ')
             # remove empty values in the list
-            items = misc.remove_items(items, '')
+            items_ch2 = misc.remove_items(items_ch2, '')
 
             dll = False
 
@@ -842,19 +846,19 @@ class LoadResults(ReadHawc2):
             #    0          1        2      3  4    5     6 and up
             # MomentMz Mbdy:blade nodenr:   5 coo: blade  TAG TEXT
             elif self.ch_details[ch, 2].startswith('MomentM'):
-                coord = items[5]
-                bodyname = items[1].replace('Mbdy:', '')
+                coord = items_ch2[5]
+                bodyname = items_ch2[1].replace('Mbdy:', '')
                 # set nodenr to sortable way, include leading zeros
                 # node numbers start with 0 at the root
-                nodenr = '%03i' % int(items[3])
+                nodenr = '%03i' % int(items_ch2[3])
                 # skip the attached the component
                 # sensortype = items[0][:-2]
                 # or give the sensor type the same name as in HAWC2
                 sensortype = 'momentvec'
-                component = items[0][-1:len(items[0])]
+                component = items_ch2[0][-1:len(items_ch2[0])]
                 # the tag only exists if defined
-                if len(items) > 6:
-                    sensortag = ' '.join(items[6:])
+                if len(items_ch2) > 6:
+                    sensortag = ' '.join(items_ch2[6:])
                 else:
                     sensortag = ''
 
@@ -877,16 +881,16 @@ class LoadResults(ReadHawc2):
             #   0    1      2        3       4  5     6     7 and up
             # Force  Fx Mbdy:blade nodenr:   2 coo: blade  TAG TEXT
             elif self.ch_details[ch, 2].startswith('Force'):
-                coord = items[6]
-                bodyname = items[2].replace('Mbdy:', '')
-                nodenr = '%03i' % int(items[4])
+                coord = items_ch2[6]
+                bodyname = items_ch2[2].replace('Mbdy:', '')
+                nodenr = '%03i' % int(items_ch2[4])
                 # skipe the attached the component
                 # sensortype = items[0]
                 # or give the sensor type the same name as in HAWC2
                 sensortype = 'forcevec'
-                component = items[1][1]
-                if len(items) > 7:
-                    sensortag = ' '.join(items[7:])
+                component = items_ch2[1][1]
+                if len(items_ch2) > 7:
+                    sensortag = ' '.join(items_ch2[7:])
                 else:
                     sensortag = ''
 
@@ -917,11 +921,11 @@ class LoadResults(ReadHawc2):
 #                 or self.ch_details[ch,0].startswith('ax') \
 #                 or self.ch_details[ch,0].startswith('omega') \
 #                 or self.ch_details[ch,0].startswith('proj'):
-                coord = items[8]
-                bodyname = items[3].replace('Mbdy:', '')
+                coord = items_ch2[8]
+                bodyname = items_ch2[3].replace('Mbdy:', '')
                 # element numbers start with 1 at the root
-                elementnr = '%03i' % int(items[5])
-                zrel = '%04.2f' % float(items[6].replace('Z-rel:', ''))
+                elementnr = '%03i' % int(items_ch2[5])
+                zrel = '%04.2f' % float(items_ch2[6].replace('Z-rel:', ''))
                 # skip the attached the component
                 #sensortype = ''.join(items[0:2])
                 # or give the sensor type the same name as in HAWC2
@@ -929,9 +933,9 @@ class LoadResults(ReadHawc2):
                 sensortype = tmp[0]
                 if sensortype.startswith('State'):
                     sensortype += ' ' + tmp[1]
-                component = items[2]
-                if len(items) > 8:
-                    sensortag = ' '.join(items[9:])
+                component = items_ch2[2]
+                if len(items_ch2) > 8:
+                    sensortag = ' '.join(items_ch2[9:])
                 else:
                     sensortag = ''
 
@@ -968,30 +972,27 @@ class LoadResults(ReadHawc2):
             #          hawc_dll :echo outvec :  1
             elif self.ch_details[ch, 0].startswith('DLL'):
                 # case 3
-                if items[1][0] == ':echo':
+                if items_ch2[0] == 'hawc_dll':
                     # hawc_dll named case (case 3) is polluted with colons
-                    items = self.ch_details[ch,2].replace(':', '')
-                    items = items.split(' ')
-                    items = misc.remove_items(items, '')
-                    dll = items[1]
-                    io = items[2]
-                    io_nr = items[3]
+                    dll = items_ch2[1].replace(':', '')
+                    io = items_ch2[2]
+                    io_nr = items_ch2[4]
                     tag = 'DLL-%s-%s-%s' % (dll, io, io_nr)
                     sensortag = ''
                 # case 2: no reference to dll name
                 elif self.ch_details[ch,2].startswith('DLL'):
-                    dll = items[2]
-                    io = items[3]
-                    io_nr = items[5]
-                    sensortag = ' '.join(items[6:])
+                    dll = items_ch2[2]
+                    io = items_ch2[3]
+                    io_nr = items_ch2[5]
+                    sensortag = ' '.join(items_ch2[6:])
                     # and tag it
                     tag = 'DLL-%s-%s-%s' % (dll,io,io_nr)
                 # case 1: type2 dll name is given
                 else:
-                    dll = items[0]
-                    io = items[1]
-                    io_nr = items[2]
-                    sensortag = ' '.join(items[3:])
+                    dll = items_ch2[0]
+                    io = items_ch2[1]
+                    io_nr = items_ch2[2]
+                    sensortag = ' '.join(items_ch2[3:])
                     tag = 'DLL-%s-%s-%s' % (dll, io, io_nr)
 
                 # save all info in the dict
@@ -1009,7 +1010,7 @@ class LoadResults(ReadHawc2):
             # bea1 angle_speed       rpm      shaft_nacelle angle speed
             elif self.ch_details[ch, 0].startswith('bea'):
                 output_type = self.ch_details[ch, 0].split(' ')[1]
-                bearing_name = items[0]
+                bearing_name = items_ch2[0]
                 units = self.ch_details[ch, 1]
                 # there is no label option for the bearing output
 
@@ -1031,8 +1032,6 @@ class LoadResults(ReadHawc2):
             # YOU ASKED FOR, AND ch_details[ch, 2] IS WHAT YOU GET, which is
             # still based on a mean radius (deflections change the game)
             elif self.ch_details[ch, 0].split(',')[0] in ch_aero:
-                dscr_list = self.ch_details[ch, 2].split(' ')
-                dscr_list = misc.remove_items(dscr_list, '')
                 sensortype = self.ch_details[ch, 0].split(',')[0]
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
@@ -1061,9 +1060,9 @@ class LoadResults(ReadHawc2):
             # for the induction grid over the rotor
             # a_grid, azi    0.00 r   1.74
             elif self.ch_details[ch, 0].split(',')[0] in ch_aerogrid:
-                items = self.ch_details[ch, 0].split(',')
-                sensortype = items[0]
-                items2 = items[1].split(' ')
+                items_ = self.ch_details[ch, 0].split(',')
+                sensortype = items_[0]
+                items2 = items_[1].split(' ')
                 items2 = misc.remove_items(items2, '')
                 azi = items2[1]
                 # radius what you asked for
@@ -1093,10 +1092,9 @@ class LoadResults(ReadHawc2):
             # Induc. Vx, rpco, R=  8.4
             #    Induced wsp Vx of blade  1 at radius   8.43, RP. coo.
             elif self.ch_details[ch, 0].strip()[:5] == 'Induc':
-                items = self.ch_details[ch, 2].split(' ')
-                items = misc.remove_items(items, '')
+
                 coord = self.ch_details[ch, 2].split(', ')[1].strip()
-                blade_nr = int(items[5])
+                blade_nr = int(items_ch2[5])
 
                 # radius what you get
                 #  radius = float(items[8].replace(',', ''))
@@ -1131,9 +1129,6 @@ class LoadResults(ReadHawc2):
             #     Aero position x of blade  1 at radius  88.17, global coo.
             elif self.ch_details[ch, 0].strip()[:2] == 'Ae':
                 units = self.ch_details[ch, 1]
-
-                items = self.ch_details[ch, 2].split(' ')
-                items = misc.remove_items(items, '')
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
                 blade_nr = int(blade_nr)
