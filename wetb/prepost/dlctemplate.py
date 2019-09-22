@@ -505,7 +505,7 @@ def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
     return df_stats, df_AEP, df_Leq
 
 
-def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
+def postpro_node_merge(tqdm=False, zipchunks=False):
     """With postpro_node each individual case has a .csv file for the log file
     analysis and a .csv file for the statistics tables. Merge all these single
     files into one table/DataFrame.
@@ -537,8 +537,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     mdf = AppendDataFrames(tqdm=tqdm)
     # individual log file analysis does not have header, make sure to include
     # a line for the header
-    mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=None,
-                header_fjoined=lf._header(), recursive=True)
+    cols = mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=None,
+                       header_fjoined=lf._header(), recursive=True)
 
     # FIXME: this is due to bug in log file analysis. What is going on here??
     # fix that some cases do not have enough columns
@@ -562,16 +562,16 @@ def postpro_node_merge(tqdm=False, zipchunks=False, m=[3,4,6,8,9,10,12]):
     mdf = AppendDataFrames(tqdm=tqdm)
     # individual log file analysis does not have header, make sure to include
     # a line for the header
-    mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=0, sep=',',
-                header_fjoined=None, recursive=True, fname_col='[case_id]')
+    cols = mdf.txt2txt(fcsv, path_pattern, tarmode='r:xz', header=0, sep=',',
+                       header_fjoined=None, recursive=True, fname_col='[case_id]')
     # and convert to df: takes 2 minutes
     fdf = fcsv.replace('.csv', '.h5')
     store = pd.HDFStore(fdf, mode='w', format='table', complevel=9,
                         complib='zlib')
-    colnames = ['channel', 'max', 'min', 'mean', 'std', 'range',
-                'absmax', 'rms', 'int', 'intabs']
-    colnames.extend(['m=%1.0f' % k for k in m])
-    colnames.extend(['[case_id]'])
+    colnames = cols.split(',')
+    # the first column is the channel name but the header is emtpy
+    assert colnames[0] == ''
+    colnames[0] = 'channel'
     dtypes = {col:np.float64 for col in colnames}
     dtypes['channel'] = str
     dtypes['[case_id]'] = str
@@ -760,9 +760,6 @@ if __name__ == '__main__':
                         'wine_prefix and wine_arch is set to None.')
     opt = parser.parse_args()
 
-    # Wholer coefficients to be considered for the fatigue analysis
-    m = [3, 4, 6, 8, 9, 10, 12]
-
     # -------------------------------------------------------------------------
 #    # manually configure paths, HAWC2 model root path is then constructed as
 #    # p_root_remote/PROJECT/sim_id, and p_root_local/PROJECT/sim_id
@@ -822,7 +819,7 @@ if __name__ == '__main__':
                     envelopeturbine=opt.envelopeturbine, int_env=opt.int_env,
                     envelopeblade=opt.envelopeblade, nx=opt.nx)
     if opt.postpro_node_merge:
-        postpro_node_merge(zipchunks=opt.zipchunks, m=m)
+        postpro_node_merge(zipchunks=opt.zipchunks)
     if opt.failed:
         prepare_failed(zipchunks=opt.zipchunks, compress=opt.compress,
                        wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)

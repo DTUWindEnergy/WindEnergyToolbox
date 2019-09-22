@@ -851,6 +851,12 @@ class AppendDataFrames(object):
 
         recursive
 
+        Return
+        ------
+
+        header_fjoined : str
+            String of the header that was written to the joined file.
+
         """
         if isinstance(header, int):
             write_header = True
@@ -886,6 +892,7 @@ class AppendDataFrames(object):
 
         # and move from temp dir to fjoined
         shutil.move(ftname, fjoined)
+        return header_fjoined.replace('\n', '')
 
     def csv2df_chunks(self, store, fcsv, chunksize=100000, min_itemsize={},
                       colnames=None, dtypes={}, header='infer', sep=';'):
