@@ -502,7 +502,9 @@ class ReadControlTuning(object):
             arr = np.loadtxt(fpath, skiprows=17)
             columns = ['theta', 'dq/dtheta', 'dq/dtheta_fit', 'dq/domega',
                        'dq/domega_fit']
-            self.aero_gains = pd.DataFrame(arr, columns=columns)
+            # sometimes not all columns are present here, only take those that
+            # are present
+            self.aero_gains = pd.DataFrame(arr, columns=columns[:arr.shape[1]])
 
         # set some parameters to zero for the linear case, or when aerodynamic
         # gain scheduling is not used
