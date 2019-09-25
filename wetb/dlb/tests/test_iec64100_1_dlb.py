@@ -47,7 +47,7 @@ def test_DLC12(writer):
     writer.from_pandas(dlc12[::24][:2])
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC12")),
                            ['DLC12_wsp04_wdir350_s1001.htc', 'DLC12_wsp06_wdir000_s1101.htc'])
-    htc = HTCFile(path + "htc/dlc12/dlc12_wsp04_wdir350_s1001.htc")
+    htc = HTCFile(path + "htc/DLC12/DLC12_wsp04_wdir350_s1001.htc")
     assert htc.wind.wsp[0] == 4
     npt.assert_array_equal(htc.wind.windfield_rotations.values, [-10, 0, 0])
     assert htc.wind.turb_format[0] == 1
@@ -60,7 +60,7 @@ def test_DLC21(writer):
     writer.from_pandas(dlc[::16][:2])
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC21")),
                            ['DLC21_wsp04_wdir350_s1001.htc', 'DLC21_wsp06_wdir000_s1101.htc'])
-    htc = HTCFile(path + "htc/dlc21/dlc21_wsp04_wdir350_s1001.htc")
+    htc = HTCFile(path + "htc/DLC21/DLC21_wsp04_wdir350_s1001.htc")
     assert htc.wind.wsp[0] == 4
     npt.assert_array_equal(htc.wind.windfield_rotations.values, [-10, 0, 0])
     assert htc.wind.turb_format[0] == 1
@@ -74,7 +74,7 @@ def test_DLC22y(writer):
     writer.from_pandas(dlc[::24][:2])
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC22y")),
                            ['DLC22y_wsp04_wdir015_s1001.htc', 'DLC22y_wsp06_wdir030_s1101.htc'])
-    htc = HTCFile(path + "htc/dlc22y/dlc22y_wsp04_wdir015_s1001.htc")
+    htc = HTCFile(path + "htc/DLC22y/DLC22y_wsp04_wdir015_s1001.htc")
     assert htc.wind.wsp[0] == 4
     npt.assert_array_equal(htc.wind.windfield_rotations.values, [15, 0, 0])
     assert htc.wind.turb_format[0] == 1

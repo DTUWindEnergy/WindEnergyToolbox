@@ -55,7 +55,7 @@ class HAWC2InputWriter():
     def __call__(self, name, folder='', **kwargs):
         return self.write_input_files(name, folder, **kwargs)
 
-    def write_input_files(self, Name, Folder='', **kwargs):
+    def write_input_files(self, Name, Folder='', DLC=None, **kwargs):
         htc = HTCFile(self.base_htc_file)
         for k, v in kwargs.items():
             k = k.replace('/', '.')

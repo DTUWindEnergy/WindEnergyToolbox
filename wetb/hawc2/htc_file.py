@@ -95,11 +95,14 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         """
 
         if filename is not None:
+            with open(str(filename)):
+                pass
+
             self.filename = filename
         self.modelpath = modelpath or self.auto_detect_modelpath()
 
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(self.filename), self.modelpath))
+            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(str(self.filename)), self.modelpath))
 
             #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
@@ -276,9 +279,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     def input_files(self):
         self.contents  # load if not loaded
         if self.modelpath == "unknown":
-            files = [f.replace("\\", "/") for f in self.htc_inputfiles]
+            files = [str(f).replace("\\", "/") for f in self.htc_inputfiles]
         else:
-            files = [os.path.abspath(f).replace("\\", "/") for f in self.htc_inputfiles]
+            files = [os.path.abspath(str(f)).replace("\\", "/") for f in self.htc_inputfiles]
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
                 if "timoschenko_input" in mb:

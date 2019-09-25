@@ -17,6 +17,10 @@ import zipfile
 import glob
 from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
 from wetb.utils.ui import UI
+from contextlib import contextmanager
+import io
+from pathlib import Path
+import tempfile
 
 
 class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
@@ -210,7 +214,7 @@ class SSHClient(object):
             print("Download %s > %s" % (remotefilepath, str(localfile)))
         if callback is None:
             callback = self.ui.progress_callback()
-
+        remotefilepath = remotefilepath.replace("\\", "/")
         for i in range(retry):
             if i > 0:
                 print("Retry download %s, #%d" % (remotefilepath, i))
@@ -319,16 +323,29 @@ class SSHClient(object):
             '[ -f %s ] && echo "File exists" || echo "File does not exists"' % filename.replace("\\", "/")))
         return out.strip() == "File exists"
 
-    def execute(self, command, sudo=False, verbose=False):
+    def isfile(self, filename):
+        return self.file_exists(filename)
+
+    def folder_exists(self, folder):
+        _, out, _ = (self.execute(
+            '[ -d %s ] && echo "Folder exists" || echo "Folder does not exists"' % folder.replace("\\", "/")))
+        return out.strip() == "Folder exists"
+
+    def isdir(self, folder):
+        return self.folder_exists(folder)
+
+    def execute(self, command, cwd='.', sudo=False, verbose=False):
         feed_password = False
         if sudo and self.username != "root":
             command = "sudo -S -p '' %s" % command
             feed_password = self.password is not None and len(self.password) > 0
         if isinstance(command, (list, tuple)):
             command = "\n".join(command)
-
+        cwd = Path(cwd).as_posix()
         if verbose:
-            print(">>> " + command)
+            print("[%s]$ %s" % (cwd, command))
+
+        command = "cd %s && %s" % (cwd, command)
         with self as ssh:
             if ssh is None:
                 exc_info = sys.exc_info()
@@ -380,6 +397,29 @@ class SSHClient(object):
         else:
             _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
         return [file for file in out.strip().split("\n") if file != ""]
+
+    def listdir(self, folder):
+        _, out, _ = self.execute('ls -p', cwd=folder)
+        return out.split()
+
+    @contextmanager
+    def open(self, filename, mode='r'):
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as tmp:
+            tmp_name = tmp.name
+
+        if mode in 'r+':
+            if not self.file_exists(filename):
+                raise FileNotFoundError("No such file: '%s'" % filename)
+            self.download(filename, tmp_name)
+        try:
+            fid = open(tmp_name, mode=mode)
+            yield fid
+
+        finally:
+            fid.close()
+            if mode in ['wa+']:
+                self.upload(tmp_name, filename)
+            os.remove(tmp_name)
 
 
 class SharedSSHClient(SSHClient):

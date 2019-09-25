@@ -386,6 +386,10 @@ end turb_export;"""
         print(htc.pbs_file(r"R:\HAWC2_tests\v12.6_mmpe3\hawc2\win32",
                            JESS_WINE32_HAWC2MB, input_files=["./input/*"], output_files=['./output/*']))
 
+    def test_htc_file_Path_object(self):
+        from pathlib import Path
+        htcfile = HTCFile(Path(self.testfilepath) / "test.htc")
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

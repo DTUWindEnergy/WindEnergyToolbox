@@ -210,7 +210,9 @@ class DLB():
             kwargs['Description'] = dlc_dict['Description']
             variables.update(dlc_dict)
             dlc = DLC(variables=variables, **kwargs)
-            self.dataframe_dict[name] = dlc.to_pandas()
+            df = dlc.to_pandas()
+            df.loc[:, 'DLC'] = name
+            self.dataframe_dict[name] = df
 
     def get_overview(self):
         cols = ['Name', 'Description', 'WSP', 'Wdir', 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault', 'Time']
@@ -250,7 +252,7 @@ class DLB():
         return self.dataframe_dict[key]
 
     def to_pandas(self):
-        return pd.Panel(self.dataframe_dict)
+        return pd.concat([df for df in self.dataframe_dict.values()], sort=False)
 
     def to_excel(self, filename):
         if os.path.dirname(filename) != "":

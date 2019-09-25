@@ -10,6 +10,7 @@ import re
 import threading
 
 from wetb.utils.cluster_tools import pbswrap
+from pathlib import Path
 
 
 def unix_path(path, cwd=None, fail_on_missing=False):
@@ -34,15 +35,16 @@ def unix_path(path, cwd=None, fail_on_missing=False):
     if r:
         path = r[0]
     elif fail_on_missing:
-        raise FileExistsError("File or folder matching '%s' not found"%path)
+        raise FileExistsError("File or folder matching '%s' not found" % path)
     if cwd:
         path = os.path.relpath(path, cwd)
     if os.path.isdir(path):
-        path+="/"
-    return path.replace("\\","/")
+        path += "/"
+    return path.replace("\\", "/")
+
 
 def unix_path_old(filename):
-    filename = os.path.realpath(filename.replace("\\", "/")).replace("\\", "/")
+    filename = os.path.realpath(str(filename)).replace("\\", "/")
     ufn, rest = os.path.splitdrive(filename)
     ufn += "/"
     for f in rest[1:].split("/"):
@@ -51,11 +53,9 @@ def unix_path_old(filename):
             f_lst = [f_ for f_ in f_lst if f_ == f]
         elif len(f_lst) == 0:
             raise IOError("'%s' not found in '%s'" % (f, ufn))
-        else: # one match found
+        else:  # one match found
             ufn = os.path.join(ufn, f_lst[0])
     return ufn.replace("\\", "/")
-
-
 
 
 class Resource(object):
@@ -63,10 +63,10 @@ class Resource(object):
     def __init__(self, min_cpu, min_free):
         self.min_cpu = min_cpu
         self.min_free = min_free
-        self.cpu_free=0
+        self.cpu_free = 0
         self.acquired = 0
-        self.no_cpu="?"
-        self.used_by_user=0
+        self.no_cpu = "?"
+        self.used_by_user = 0
         self.resource_lock = threading.Lock()
 
     def ok2submit(self):
@@ -75,7 +75,7 @@ class Resource(object):
             #print ("ok2submit")
             total, free, user = self.check_resources()
             user = max(user, self.acquired)
-            user_max = max((self.min_cpu-user), self.cpu_free - self.min_free)
+            user_max = max((self.min_cpu - user), self.cpu_free - self.min_free)
             #print ("ok2submit", total, free, user, user_max)
             return user_max
         except:
@@ -95,7 +95,6 @@ class Resource(object):
         with self.resource_lock:
             self.acquired -= 1
 
-
     def update_resource_status(self):
         try:
             self.no_cpu, self.cpu_free, self.used_by_user = self.check_resources()
@@ -107,28 +106,27 @@ class SSHPBSClusterResource(Resource):
     finished = []
     loglines = {}
     is_executing = []
-    
+
     def __init__(self, sshclient, min_cpu, min_free):
         Resource.__init__(self, min_cpu, min_free)
         self.ssh = sshclient
         self.resource_lock = threading.Lock()
-        
+
     def glob(self, filepattern, cwd="", recursive=False):
         return self.ssh.glob(filepattern, cwd, recursive)
 
     @property
     def host(self):
         return self.ssh.host
-    
+
     @property
     def username(self):
         return self.ssh.username
 
-
     def new_ssh_connection(self):
         from wetb.utils.cluster_tools.ssh_client import SSHClient
         return SSHClient(self.host, self.ssh.username, self.ssh.password, self.ssh.port)
-        #return self.ssh
+        # return self.ssh
 
     def check_resources(self):
         with self.resource_lock:
@@ -153,22 +151,20 @@ class SSHPBSClusterResource(Resource):
             except Exception as e:
                 raise EnvironmentError(str(e))
 
-
     def jobids(self, jobname_prefix):
-            _, output, _ = self.ssh.execute('qstat -u %s' % self.username)
-            return [l.split()[0].split(".")[0] for l in output.split("\n")[5:] if l.strip() != "" and l.split()[3].startswith("h2l")]
+        _, output, _ = self.ssh.execute('qstat -u %s' % self.username)
+        return [l.split()[0].split(".")[0] for l in output.split("\n")[5:] if l.strip() != "" and l.split()[3].startswith("h2l")]
 
     def stop_pbsjobs(self, jobids):
         if not hasattr(jobids, "len"):
             jobids = list(jobids)
         self.ssh.execute("qdel %s" % (" ".join(jobids)))
-        
-    def setup_wine(self):    
+
+    def setup_wine(self):
         self.ssh.execute("""rm -f ./config-wine-hawc2.sh &&
 wget https://gitlab.windenergy.dtu.dk/toolbox/pbsutils/raw/master/config-wine-hawc2.sh &&
 chmod 777 config-wine-hawc2.sh &&
 ./config-wine-hawc2.sh""")
-   
 
 
 class LocalResource(Resource):
@@ -178,8 +174,6 @@ class LocalResource(Resource):
         #self.process_name = process_name
         self.host = 'Localhost'
 
-    
-    
     def check_resources(self):
         import psutil
         no_cpu = multiprocessing.cpu_count()
