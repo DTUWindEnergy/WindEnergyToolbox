@@ -10,7 +10,6 @@ import re
 import threading
 
 from wetb.utils.cluster_tools import pbswrap
-from pathlib import Path
 
 
 def unix_path(path, cwd=None, fail_on_missing=False):

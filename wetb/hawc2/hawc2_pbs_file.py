@@ -73,8 +73,10 @@ class HAWC2PBSFile(PBSFile):
         self.output_files = [abspath((pjoin(exe_dir, f), abspath(f))[os.path.isabs(f)])
                              for f in output_files]
 
-        self.model_path = abspath(pjoin(exe_dir, relpath(os.path.commonprefix(
+        drive = os.path.splitdrive(exe_dir)[0]
+        p = abspath(pjoin(exe_dir, relpath(os.path.commonprefix(
             self.input_files + self.output_files).rpartition("/")[0], exe_dir)))
+        self.model_path = os.path.join(drive, os.path.splitdrive(p)[1])
         self.model_name = os.path.basename(abspath(self.model_path))
         self.jobname = os.path.splitext(os.path.basename(htc_file))[0]
 
@@ -100,6 +102,7 @@ class HAWC2PBSFile(PBSFile):
 echo copy hawc2 to scratch
 #===============================================================================
 (flock -x 200
+mkdir -p /scratch/$USER/$PBS_JOBID/hawc2/
 unzip -u -o -q [hawc2_path]/*.zip -d /scratch/$USER/$PBS_JOBID/hawc2/
 find [hawc2_path]/* ! -name *.zip -exec cp -u -t /scratch/$USER/$PBS_JOBID/hawc2/ {} +
 ) 200>/scratch/$USER/$PBS_JOBID/lock_file_hawc2

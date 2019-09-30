@@ -10,20 +10,15 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 from __future__ import absolute_import
-from io import open
 from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
-from wetb.utils.cluster_tools.cluster_resource import unix_path_old
-from wetb.utils.cluster_tools.pbsfile import PBSFile
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 standard_library.install_aliases()
 from collections import OrderedDict
-
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
 from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
 import os
-from copy import copy
 
 
 def fmt_path(path):
@@ -95,7 +90,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         """
 
         if filename is not None:
-            with open(str(filename)):
+            with self.open(str(filename)):
                 pass
 
             self.filename = filename
@@ -119,7 +114,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         def isfile_case_insensitive(f):
             try:
-                unix_path_old(f)
+                self.unix_path(f)
                 return True
             except IOError:
                 return False
@@ -172,7 +167,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         self._contents = value
 
     def readfilelines(self, filename):
-        with open(unix_path_old(filename), encoding='cp1252') as fid:
+        with self.open(self.unix_path(filename), encoding='cp1252') as fid:
             lines = list(fid.readlines())
         if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             lines[0] = lines[0][3:]
@@ -216,7 +211,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         # exist_ok does not exist in Python27
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))  # , exist_ok=True)
-        with open(filename, 'w', encoding='cp1252') as fid:
+        with self.open(filename, 'w', encoding='cp1252') as fid:
             fid.write(str(self))
 
     def set_name(self, name, subfolder=''):
@@ -411,7 +406,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         errorcode, stdout, stderr, cmd = pexec([hawc2exe, htcfile], self.modelpath)
 
         if "logfile" in self.simulation:
-            with open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
+            with self.open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
                 log = fid.read()
         else:
             log = stderr
@@ -435,6 +430,24 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if isinstance(other, str):
             other = HTCFile(other)
         return HTCContents.compare(self, other)
+
+    @property
+    def open(self):
+        return open
+
+    def unix_path(self, filename):
+        filename = os.path.realpath(str(filename)).replace("\\", "/")
+        ufn, rest = os.path.splitdrive(filename)
+        ufn += "/"
+        for f in rest[1:].split("/"):
+            f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
+            if len(f_lst) > 1:
+                f_lst = [f_ for f_ in f_lst if f_ == f]
+            elif len(f_lst) == 0:
+                raise IOError("'%s' not found in '%s'" % (f, ufn))
+            else:  # one match found
+                ufn = os.path.join(ufn, f_lst[0])
+        return ufn.replace("\\", "/")
 
 
 #
@@ -468,6 +481,29 @@ class H2aeroHTCFile(HTCFile):
             self.output.time = start, stop
             if "wind" in self and self.wind.turb_format[0] > 0:
                 self.wind.scale_time_start = start
+
+
+class SSH_HTCFile(HTCFile):
+    def __init__(self, ssh, filename=None, modelpath=None):
+        object.__setattr__(self, 'ssh', ssh)
+        HTCFile.__init__(self, filename=filename, modelpath=modelpath)
+
+    @property
+    def open(self):
+        return self.ssh.open
+
+    def unix_path(self, filename):
+        rel_filename = os.path.relpath(filename, self.modelpath).replace("\\", "/")
+        _, out, _ = self.ssh.execute("find -ipath ./%s" % rel_filename, cwd=self.modelpath)
+        out = out.strip()
+        if out == "":
+            raise IOError("'%s' not found in '%s'" % (rel_filename, self.modelpath))
+        elif "\n" in out:
+            raise IOError("Multiple '%s' found in '%s' (due to case senitivity)" % (rel_filename, self.modelpath))
+        else:
+            drive, path = os.path.splitdrive(os.path.join(self.modelpath, out))
+            path = os.path.realpath(path).replace("\\", "/")
+            return os.path.join(drive, os.path.splitdrive(path)[1])
 
 
 if "__main__" == __name__:

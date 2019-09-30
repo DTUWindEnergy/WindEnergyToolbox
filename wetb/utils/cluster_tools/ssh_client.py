@@ -19,7 +19,6 @@ from sshtunnel import SSHTunnelForwarder, SSH_CONFIG_FILE
 from wetb.utils.ui import UI
 from contextlib import contextmanager
 import io
-from pathlib import Path
 import tempfile
 
 
@@ -232,7 +231,7 @@ class SSHClient(object):
                 SSHClient.__exit__(self)
 
             print("Download %s failed from %s" % (remotefilepath, self.host))
-        if verbose:
+        if verbose and ret:
             print(ret)
 
     def upload(self, localfile, filepath, verbose=False, callback=None):
@@ -254,9 +253,8 @@ class SSHClient(object):
             print("upload failed ", str(e))
             raise e
         finally:
-            sftp.close()
             SSHClient.__exit__(self)
-        if verbose:
+        if verbose and ret:
             print(ret)
 
     def upload_files(self, localpath, remotepath, file_lst=["."], compression_level=1, callback=None):
@@ -341,7 +339,7 @@ class SSHClient(object):
             feed_password = self.password is not None and len(self.password) > 0
         if isinstance(command, (list, tuple)):
             command = "\n".join(command)
-        cwd = Path(cwd).as_posix()
+        cwd = str(cwd).replace("\\", "/")
         if verbose:
             print("[%s]$ %s" % (cwd, command))
 
@@ -403,21 +401,22 @@ class SSHClient(object):
         return out.split()
 
     @contextmanager
-    def open(self, filename, mode='r'):
-        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as tmp:
+    def open(self, filename, mode='r', encoding=None, newline=None):
+        with tempfile.NamedTemporaryFile(mode='x', delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
             tmp_name = tmp.name
 
-        if mode in 'r+':
-            if not self.file_exists(filename):
-                raise FileNotFoundError("No such file: '%s'" % filename)
+        if mode in 'ra+':
+            #            try:
             self.download(filename, tmp_name)
+ #           except FileNotFoundError:
+ #               raise FileNotFoundError("No such file: '%s'" % filename)
         try:
-            fid = open(tmp_name, mode=mode)
+            fid = open(tmp_name, mode=mode, encoding=encoding, newline=newline)
             yield fid
 
         finally:
             fid.close()
-            if mode in ['wa+']:
+            if mode in 'wa+':
                 self.upload(tmp_name, filename)
             os.remove(tmp_name)
 
