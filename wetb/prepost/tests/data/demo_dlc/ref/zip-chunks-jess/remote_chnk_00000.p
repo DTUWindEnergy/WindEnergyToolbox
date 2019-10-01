@@ -6,7 +6,7 @@
 #PBS -e ./pbs_out_chunks/remote_chnk_00000.err
 #PBS -W umask=0003
 ### Maximum wallclock time format HOURS:MINUTES:SECONDS
-#PBS -l walltime=20:00:00
+#PBS -l walltime=09:00:00
 #PBS -l nodes=1:ppn=20
 ### Queue name
 #PBS -q workq
@@ -46,9 +46,6 @@ mkdir -p /scratch/$USER/$PBS_JOBID/13/
 mkdir -p /scratch/$USER/$PBS_JOBID/14/
 mkdir -p /scratch/$USER/$PBS_JOBID/15/
 mkdir -p /scratch/$USER/$PBS_JOBID/16/
-mkdir -p /scratch/$USER/$PBS_JOBID/17/
-mkdir -p /scratch/$USER/$PBS_JOBID/18/
-mkdir -p /scratch/$USER/$PBS_JOBID/19/
 
 echo "----------------------------------------------------------------------"
 cd $PBS_O_WORKDIR
@@ -79,9 +76,6 @@ echo "unzip chunk, create dirs in cpu and sim_id folders"
 /usr/bin/unzip remote_chnk_00000.zip -d 14/. >> /dev/null
 /usr/bin/unzip remote_chnk_00000.zip -d 15/. >> /dev/null
 /usr/bin/unzip remote_chnk_00000.zip -d 16/. >> /dev/null
-/usr/bin/unzip remote_chnk_00000.zip -d 17/. >> /dev/null
-/usr/bin/unzip remote_chnk_00000.zip -d 18/. >> /dev/null
-/usr/bin/unzip remote_chnk_00000.zip -d 19/. >> /dev/null
 /usr/bin/unzip remote_chnk_00000.zip -d remote/. >> /dev/null
 
 echo "----------------------------------------------------------------------"
@@ -160,15 +154,6 @@ mkdir -p 15/turb_micro/
 mkdir -p 16/turb/
 mkdir -p 16/turb_meander/
 mkdir -p 16/turb_micro/
-mkdir -p 17/turb/
-mkdir -p 17/turb_meander/
-mkdir -p 17/turb_micro/
-mkdir -p 18/turb/
-mkdir -p 18/turb_meander/
-mkdir -p 18/turb_micro/
-mkdir -p 19/turb/
-mkdir -p 19/turb_meander/
-mkdir -p 19/turb_micro/
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/remote/
@@ -192,9 +177,6 @@ find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /sc
 find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/14/turb/ \;
 find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/15/turb/ \;
 find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/16/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/17/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/18/turb/ \;
-find /scratch/$USER/$PBS_JOBID/remote/../turb/ -iname "*.bin" -exec ln -s {} /scratch/$USER/$PBS_JOBID/19/turb/ \;
 
 echo "----------------------------------------------------------------------"
 cd /scratch/$USER/$PBS_JOBID/
@@ -209,7 +191,7 @@ export LAUNCH_PBS_MODE=false
 /home/MET/sysalt/bin/find remote/pbs_in/dlc01_demos/ -type f -name '*.p' | sort -z
 
 echo "number of files to be launched: "`find remote/pbs_in/dlc01_demos/ -type f | wc -l`
-/home/MET/sysalt/bin/find remote/pbs_in/dlc01_demos/ -type f -name '*.p' -print0 | sort -z | /home/MET/sysalt/bin/xargs -0 -I{} --process-slot-var=CPU_NR -n 1 -P 20 sh {}
+/home/MET/sysalt/bin/find remote/pbs_in/dlc01_demos/ -type f -name '*.p' -print0 | sort -z | /home/MET/sysalt/bin/xargs -0 -I{} --process-slot-var=CPU_NR -n 1 -P 17 sh {}
 echo "END OF JOBS IN find+xargs MODE"
 
 
@@ -224,11 +206,11 @@ find .
 
 echo "move statsdel into compressed archive"
 find res/dlc01_demos/ -name "*.csv" -print0 | xargs -0 tar --remove-files -rf prepost/statsdel_chnk_00000.tar
-xz -z2 -T 20 prepost/statsdel_chnk_00000.tar
+xz -z2 -T 17 prepost/statsdel_chnk_00000.tar
 
 echo "move log analysis into compressed archive"
 find logfiles/dlc01_demos/ -name "*.csv" -print0 | xargs -0 tar --remove-files -rf prepost/loganalysis_chnk_00000.tar
-xz -z2 -T 20 prepost/loganalysis_chnk_00000.tar
+xz -z2 -T 17 prepost/loganalysis_chnk_00000.tar
 
 
 echo "----------------------------------------------------------------------"

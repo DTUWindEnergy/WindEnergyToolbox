@@ -267,7 +267,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
-                      wine_arch='win32', wine_prefix='~/.wine32',
+                      wine_arch='win32', wine_prefix='~/.wine32', ppn=17,
                       m=[3,4,6,8,9,10,12], prelude='', linux=False):
     """
     Launch load cases defined in Excel files
@@ -371,14 +371,10 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         # respective nodes. It is not walltime per case.
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
-                              ppn=20, nr_procs_series=3, walltime='20:00:00',
+                              ppn=ppn, nr_procs_series=3, walltime='09:00:00',
                               chunks_dir='zip-chunks-jess', compress=compress,
                               wine_arch=wine_arch, wine_prefix=wine_prefix,
                               prelude=prelude, ppn_pbs=20)
-#        create_chunks_htc_pbs(cases, sort_by_values=sorts_on, queue='workq',
-#                              ppn=12, nr_procs_series=3, walltime='20:00:00',
-#                              chunks_dir='zip-chunks-gorm', compress=compress,
-#                              wine_arch=wine_arch, wine_prefix=wine_prefix)
 
     df = sim.Cases(cases).cases2df()
     df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
@@ -642,7 +638,7 @@ def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
         # and for chunks as well
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cc.cases_fail, sort_by_values=sorts_on,
-                              ppn=20, nr_procs_series=3, walltime='20:00:00',
+                              ppn=17, nr_procs_series=3, walltime='09:00:00',
                               chunks_dir='zip-chunks-jess-fail', compress=compress,
                               wine_arch=wine_arch, wine_prefix=wine_prefix,
                               prelude=prelude, queue='windq', i0=1000)

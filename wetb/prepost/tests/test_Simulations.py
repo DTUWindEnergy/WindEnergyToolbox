@@ -64,7 +64,7 @@ class TestGenerateInputs(Template):
 
         tmpl.force_dir = tmpl.P_RUN
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='pbs',
-                               pbs_turb=True, zipchunks=True,
+                               pbs_turb=True, zipchunks=True, ppn=17,
                                postpro_node_zipchunks=False,
                                postpro_node=False)
 
