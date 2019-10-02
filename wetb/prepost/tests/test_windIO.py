@@ -198,7 +198,7 @@ class TestsLoadResults(unittest.TestCase):
         # ---------------------------------------------------------------------
         res = windIO.LoadResults(self.respath, self.f1_chant, readdata=False)
         self.assertFalse(hasattr(res, 'sig'))
-        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,425))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,431))
         self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
         df = res.ch_df
         self.assertEqual(2, len(df[df['bearing_name']=='shaft_rot']))
@@ -213,12 +213,18 @@ class TestsLoadResults(unittest.TestCase):
                [422, 'wind_wake-wake_pos_x_1', 'm'],
                [423, 'wind_wake-wake_pos_y_2', 'm'],
                [424, 'wind_wake-wake_pos_z_5', 'm'],
+               [425, 'statevec_new-blade1-c2def-blade1-absolute-014.00-Dx', 'm'],
+               [429, 'statevec_new-blade1-c2def-blade1-elastic-014.00-Ry', 'deg'],
               ]
         for k in exp:
             self.assertEqual(df.loc[k[0], 'unique_ch_name'], k[1])
             self.assertEqual(df.loc[k[0], 'units'], k[2])
             self.assertEqual(res.ch_dict[k[1]]['chi'], k[0])
             self.assertEqual(res.ch_dict[k[1]]['units'], k[2])
+
+        # also check we have the tag from a very long description because
+        # we truncate after 150 characters
+        self.assertEqual(df.loc[426, 'sensortag'], 'this is a tag')
 
         # ---------------------------------------------------------------------
         res = windIO.LoadResults(self.respath, self.f2_chant, readdata=False)

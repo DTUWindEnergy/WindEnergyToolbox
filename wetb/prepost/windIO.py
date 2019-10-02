@@ -547,7 +547,7 @@ class LoadResults(ReadHawc2):
     cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi', 'component',
                 'pos', 'coord', 'sensortype', 'radius', 'blade_nr', 'units',
                 'output_type', 'io_nr', 'io', 'dll', 'azimuth', 'flap_nr',
-                'direction', 'wake_source_nr'])
+                'direction', 'wake_source_nr', 'center', 's', 'srel'])
 
     # start with reading the .sel file, containing the info regarding
     # how to read the binary file and the channel information
@@ -584,7 +584,7 @@ class LoadResults(ReadHawc2):
         if not (not readdata and (self.FileType == 'GTSDF')):
             self.N = int(self.NrSc)
             self.Nch = int(self.NrCh)
-            self.ch_details = np.ndarray(shape=(self.Nch, 3), dtype='<U100')
+            self.ch_details = np.ndarray(shape=(self.Nch, 3), dtype='<U150')
             for ic in range(self.Nch):
                 self.ch_details[ic, 0] = self.ChInfo[0][ic]
                 self.ch_details[ic, 1] = self.ChInfo[1][ic]
@@ -950,6 +950,47 @@ class LoadResults(ReadHawc2):
                 channelinfo['pos'] = pos
                 channelinfo['sensortype'] = sensortype
                 channelinfo['component'] = component
+                channelinfo['chi'] = ch
+                channelinfo['sensortag'] = sensortag
+                channelinfo['units'] = self.ch_details[ch, 1]
+
+            # -----------------------------------------------------------------
+            # statevec_new
+            #   0     1          2      3  4           5     6       7
+            # elastic Deflection blade1 Dx Mbdy:blade1 s=   0.00[m] s/S=
+            # 8     9     10     11
+            # 0.00 coo: blade1 center:c2def
+            # note that: 2 and 10 are the same
+            elif items_ch2[0] == 'elastic' or items_ch2[0] == 'absolute':
+                output_type = ' '.join(items_ch2[0:2])
+                bodyname = items_ch2[4].replace('Mbdy:', '')
+                s = '%06.02f' % float(items_ch2[6].replace('[m]', ''))
+                srel = '%04.02f' % float(items_ch2[8])
+                coord = items_ch2[10]
+                center = items_ch2[11].split(':')[1]
+                sensortype = 'statevec_new'
+
+                component = items_ch0[0]
+
+                if len(items_ch2) > 12:
+                    sensortag = ' '.join(items_ch2[12:])
+                else:
+                    sensortag = ''
+
+                # and tag it, allmost the same as in htc file here
+                tagitems = (sensortype, bodyname, center, coord, items_ch2[0],
+                            s, component)
+                tag = '-'.join(['%s']*7) % tagitems
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['coord'] = coord
+                channelinfo['bodyname'] = bodyname
+                channelinfo['s'] = float(s)
+                channelinfo['srel'] = float(srel)
+                channelinfo['sensortype'] = sensortype
+                channelinfo['output_type'] = output_type
+                channelinfo['component'] = component
+                channelinfo['center'] = center
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
                 channelinfo['units'] = self.ch_details[ch, 1]
