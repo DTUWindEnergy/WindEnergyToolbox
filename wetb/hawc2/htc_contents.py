@@ -126,7 +126,7 @@ class HTCContents(object):
             self[contents.name_ + ending] = contents
         contents.parent = self
 
-    def add_section(self, name, allow_duplicate=False):
+    def add_section(self, name, members={}, allow_duplicate=False):
         if name in self and allow_duplicate is False:
             return self[name]
         if name == "output":
@@ -136,6 +136,8 @@ class HTCContents(object):
         else:
             section = HTCSection(name)
         self._add_contents(section)
+        for k, v in members.items():
+            section[k] = v
         return section
 
     def delete(self):
@@ -187,7 +189,7 @@ class HTCSection(HTCContents):
         if isinstance(value, HTCContents):
             self.contents[key] = value
             value.parent = self
-        elif isinstance(value, str):
+        elif isinstance(value, (str, int, float)):
             self.add_line(key, [value])
         else:
             self.add_line(key, value)

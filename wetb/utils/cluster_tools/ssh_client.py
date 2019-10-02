@@ -99,6 +99,11 @@ class SSHInteractiveAuthTunnelForwarder(SSHTunnelForwarder):
         self.logger.error('Could not open connection to gateway')
 
 
+def unix_path(path):
+    drive, p = os.path.splitdrive(str(path))
+    return os.path.join(drive, os.path.splitdrive(os.path.realpath(p))[1]).replace("\\", "/")
+
+
 class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
@@ -263,7 +268,7 @@ class SSHClient(object):
             file_lst = [file_lst]
         files = ([os.path.join(root, f) for fp in file_lst for root, _, files in os.walk(os.path.join(localpath, fp)) for f in files] +
                  [f for fp in file_lst for f in glob.glob(os.path.join(localpath, fp))])
-        files = set([os.path.abspath(f) for f in files])
+        files = set([os.path.abspath(f) for f in files if os.path.isfile(f)])
 
         compression_levels = {0: zipfile.ZIP_STORED, 1: zipfile.ZIP_DEFLATED, 2: zipfile.ZIP_BZIP2, 3: zipfile.ZIP_LZMA}
         with self.counter_lock:
@@ -279,7 +284,7 @@ class SSHClient(object):
                 self.execute("mkdir -p %s" % (remotepath))
 
                 self.upload(zn, remote_zn, callback=callback)
-                self.execute("unzip %s -d %s && rm %s" % (remote_zn, remotepath, remote_zn))
+                self.execute("unzip -o %s -d %s && rm %s" % (remote_zn, remotepath, remote_zn))
         except:
             print("upload files failed", )
             traceback.print_exc()
@@ -318,7 +323,7 @@ class SSHClient(object):
 
     def file_exists(self, filename):
         _, out, _ = (self.execute(
-            '[ -f %s ] && echo "File exists" || echo "File does not exists"' % filename.replace("\\", "/")))
+            '[ -f %s ] && echo "File exists" || echo "File does not exists"' % unix_path(filename)))
         return out.strip() == "File exists"
 
     def isfile(self, filename):
@@ -326,7 +331,7 @@ class SSHClient(object):
 
     def folder_exists(self, folder):
         _, out, _ = (self.execute(
-            '[ -d %s ] && echo "Folder exists" || echo "Folder does not exists"' % folder.replace("\\", "/")))
+            '[ -d %s ] && echo "Folder exists" || echo "Folder does not exists"' % unix_path(folder)))
         return out.strip() == "Folder exists"
 
     def isdir(self, folder):
@@ -339,7 +344,7 @@ class SSHClient(object):
             feed_password = self.password is not None and len(self.password) > 0
         if isinstance(command, (list, tuple)):
             command = "\n".join(command)
-        cwd = str(cwd).replace("\\", "/")
+        cwd = unix_path(cwd)
         if verbose:
             print("[%s]$ %s" % (cwd, command))
 
@@ -408,8 +413,6 @@ class SSHClient(object):
         if mode in 'ra+':
             #            try:
             self.download(filename, tmp_name)
- #           except FileNotFoundError:
- #               raise FileNotFoundError("No such file: '%s'" % filename)
         try:
             fid = open(tmp_name, mode=mode, encoding=encoding, newline=newline)
             yield fid

@@ -97,7 +97,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         self.modelpath = modelpath or self.auto_detect_modelpath()
 
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
-            self.modelpath = os.path.realpath(os.path.join(os.path.dirname(str(self.filename)), self.modelpath))
+            drive, p = os.path.splitdrive(os.path.join(os.path.dirname(str(self.filename)), self.modelpath))
+            self.modelpath = os.path.join(drive, os.path.splitdrive(os.path.realpath(p))[1]).replace("\\", "/")
 
             #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 

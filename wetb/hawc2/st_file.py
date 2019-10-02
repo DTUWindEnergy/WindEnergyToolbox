@@ -11,8 +11,9 @@ from io import open
 from builtins import range
 from builtins import int
 from future import standard_library
+import types
 standard_library.install_aliases()
-
+import os
 import numpy as np
 
 
@@ -62,7 +63,7 @@ class StFile(object):
     Examples
     --------
     >>> stfile = StFile(r"tests/test_files/DTU_10MW_RWT_Blade_st.dat")
-    >>> print (stfile.m()) # Interpolated mass at radius 36
+    >>> print (stfile.m()) # Mass at nodes
     [ 1189.51054664  1191.64291781  1202.76694262  ... 15.42438683]
     >>> print (st.E(radius=36, mset=1, set=1))  # Elasticity interpolated to radius 36m
     8722924514.652649
@@ -79,7 +80,7 @@ class StFile(object):
             self.main_data_sets = {}
             return
 
-        with open (filename) as fid:
+        with open(filename) as fid:
             txt = fid.read()
 #         Some files starts with first set ("#1...") with out specifying number of sets
 #         no_maindata_sets = int(txt.strip()[0])
@@ -114,17 +115,22 @@ class StFile(object):
 
     def to_str(self, mset=1, set=1, precision='%12.5e '):
         d = self.main_data_sets[mset][set]
-        return '\n'.join([(precision*d.shape[1]) % tuple(row) for row in d])
+        return '\n'.join([(precision * d.shape[1]) % tuple(row) for row in d])
+
+    def set_value(self, mset_nr, set_nr, **kwargs):
+        for k, v in kwargs.items():
+            column = self.cols.index(k)
+            self.main_data_sets[mset_nr][set_nr][:, column] = v
 
     def save(self, filename, precision='%15.07e', encoding='utf-8'):
         """Save all data defined in main_data_sets to st file.
         """
         colwidth = len(precision % 1)
-        sep = '='*colwidth*len(self.cols) + '\n'
+        sep = '=' * colwidth * len(self.cols) + '\n'
         colhead = ''.join([k.center(colwidth) for k in self.cols]) + '\n'
 
         nsets = len(self.main_data_sets)
-
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', encoding=encoding) as fid:
             fid.write('%i ; number of sets, Nset\n' % nsets)
             for mset, set_data_dict in self.main_data_sets.items():
@@ -141,21 +147,21 @@ if __name__ == "__main__":
     import os
     cwd = os.path.dirname(__file__)
     st = StFile(os.path.join(cwd, r'tests/test_files/DTU_10MW_RWT_Blade_st.dat'))
-    print (st.m())
-    print (st.E(radius=36, mset=1, set=1))  # Elastic blade
-    print (st.E(radius=36, mset=1, set=2))  # stiff blade
+    print(st.m())
+    print(st.E(radius=36, mset=1, set=1))  # Elastic blade
+    print(st.E(radius=36, mset=1, set=2))  # stiff blade
     #print (st.radius())
     xyz = np.array([st.x_e(), st.y_e(), st.r()]).T[:40]
     n = 2
     xyz = np.array([st.x_e(None, 1, n), st.y_e(None, 1, n), st.r(None, 1, n)]).T[:40]
     #print (xyz)
-    print (np.sqrt(np.sum((xyz[1:] - xyz[:-1]) ** 2, 1)).sum())
-    print (xyz[-1, 2])
-    print (np.sqrt(np.sum((xyz[1:] - xyz[:-1]) ** 2, 1)).sum() - xyz[-1, 2])
-    print (st.x_e(67.8883), st.y_e(67.8883))
+    print(np.sqrt(np.sum((xyz[1:] - xyz[:-1]) ** 2, 1)).sum())
+    print(xyz[-1, 2])
+    print(np.sqrt(np.sum((xyz[1:] - xyz[:-1]) ** 2, 1)).sum() - xyz[-1, 2])
+    print(st.x_e(67.8883), st.y_e(67.8883))
     #print (np.sqrt(np.sum(np.diff(xyz, 0) ** 2, 1)))
-    print (st.pitch(67.8883 - 0.01687))
-    print (st.pitch(23.2446))
+    print(st.pitch(67.8883 - 0.01687))
+    print(st.pitch(23.2446))
 
-    #print (st.)
-    #print (st.)
+    # print (st.)
+    # print (st.)
