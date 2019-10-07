@@ -53,7 +53,9 @@ def setup_package():
                         'openpyxl',
                         'psutil',
                         'six',
-                        'sshtunnel']
+                        'sshtunnel',
+                        'click',
+                        'jinja2',]
     build_requires = ['cython']
     setup(install_requires=install_requires,
           setup_requires=install_requires + build_requires + sphinx,

@@ -45,6 +45,7 @@ def test_DLC12(writer):
     dlc12 = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC12']
     assert len(dlc12) == 216  # 12 wsp, 3 wdir, 6 seeds
     writer.from_pandas(dlc12[::24][:2])
+    writer.write_all(path + "htc/DLC12")
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC12")),
                            ['DLC12_wsp04_wdir350_s1001.htc', 'DLC12_wsp06_wdir000_s1101.htc'])
     htc = HTCFile(path + "htc/DLC12/DLC12_wsp04_wdir350_s1001.htc")
@@ -58,6 +59,7 @@ def test_DLC21(writer):
     dlc = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC21']
     assert len(dlc) == 144  # 12 wsp, 3 wdir, 4 seeds
     writer.from_pandas(dlc[::16][:2])
+    writer.write_all(path + "htc/DLC21")
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC21")),
                            ['DLC21_wsp04_wdir350_s1001.htc', 'DLC21_wsp06_wdir000_s1101.htc'])
     htc = HTCFile(path + "htc/DLC21/DLC21_wsp04_wdir350_s1001.htc")
@@ -72,6 +74,7 @@ def test_DLC22y(writer):
     dlc = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC22y']
     assert len(dlc) == 276  # 12 wsp, 23 wdir, 1 seeds
     writer.from_pandas(dlc[::24][:2])
+    writer.write_all(path + "htc/DLC22y")
     npt.assert_array_equal(sorted(os.listdir(path + "htc/DLC22y")),
                            ['DLC22y_wsp04_wdir015_s1001.htc', 'DLC22y_wsp06_wdir030_s1101.htc'])
     htc = HTCFile(path + "htc/DLC22y/DLC22y_wsp04_wdir015_s1001.htc")

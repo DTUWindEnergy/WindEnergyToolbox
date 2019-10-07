@@ -146,6 +146,8 @@ use ```deactivate``` to deactivate the environment.
 - [parimeko](http://www.paramiko.org/)
 - [sshtunnel](https://github.com/pahaz/sshtunnel)
 - [pandoc](http://pandoc.org/) , [pypandoc](https://pypi.python.org/pypi/pypandoc):
+- [click](https://click.palletsprojects.com/en/7.x/)
+- [jinja2](https://jinja.palletsprojects.com/en/2.10.x/)
 convert markdown formatted readme file to rst for PyPi compatibility. See also
 issue #22. ```pandoc``` is available in Anaconda. When installing
 ```pypandoc``` via pip, you have to install ```pandoc``` via your package
@@ -157,7 +159,7 @@ Install the necessary Python dependencies using the conda package manager:
 
 ```
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
->> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc
+>> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc click jinja2
 >> conda install -c conda-forge sshtunnel --no-deps
 ```
 
@@ -290,4 +292,3 @@ In case of problems:
 will fail. This means commit hashes can not be part of the version number.
 Note that when your git working directory is not clean, the scheme for automatic
 versioning number will add ```dirty``` to the version number.
-
