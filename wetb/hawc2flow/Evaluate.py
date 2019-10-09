@@ -166,7 +166,7 @@ class wetbAccessor(object):
         Returns a time series dataframe of a single result file given an index number.
         '''
         fn = self._obj._filenames[idx]
-        channels = channels or self.channels
+        channels = channels or self._obj.channels
 
         raw = ReadHawc2(os.path.join(self._obj._directory, fn)).ReadAll(ChVec=[i-1 for i in channels.values()])
         #raw = readHawc2Res(os.path.join(self._directory, fn), channels)
