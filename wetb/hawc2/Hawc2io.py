@@ -36,10 +36,14 @@ from builtins import range
 from io import open as opent
 from builtins import str
 from future import standard_library
+from pathlib import Path
+from jinja2 import Template
+from datetime import datetime
 standard_library.install_aliases()
 from builtins import object
 import numpy as np
 import os
+
 
 from wetb import gtsdf
 
@@ -287,6 +291,152 @@ class ReadHawc2(object):
 # write HAWC2 class, to be implemented
 ################################################################################
 
+class ModifyHawc2(ReadHawc2):
+    '''
+    An object which can modify HAWC2 result files. Functionality includes:
+    - Add or remove channels
+    - Save results to HAWC2 data file format (Binary)
+    
+    Note: Unlike the ReadHawc2 class, ModifyHawc2 loads the result file at 
+    initialisation to self.data.
+    
+    '''
+    JINJA_SEL_TEMPLATE = Path(__file__).parent/'template.sel.j2'
+    
+    def __init__(self, filename, ReadOnly=0):
+        super().__init__(filename, ReadOnly) 
+        self.data = self()
+
+
+    def WriteAll(self, filename, fileformat=None):
+        '''
+        One-stop call for writing all data formats.
+        Args:
+            filename (str, or pathlib.Path): output filename (without extension).
+            fileformat (None or str): Output file format (HAWC2_BINARY, HAWC2_ASCII, GTSDF).
+                if fileformat == None, the file will be written in the same format it was read.
+        
+        Returns: 
+            None
+        '''
+        fileformat = fileformat or self.FileFormat
+        if fileformat == 'HAWC2_BINARY':
+            self.WriteBinary(filename)
+        if fileformat == 'HAWC2_ASCII':
+            self.WriteASCII(filename)
+        else:
+            raise NotImplementedError()
+            
+            
+    def WriteSel(self, filename):
+        '''
+        Write the .sel file. Uses jinja2 templating.
+        Args:
+            filename (str, or pathlib.Path): output filename (without extension).
+        
+        Returns: 
+            None
+        '''
+        filename = Path(filename)
+        
+        # preformat channel strings
+        self.ChString = []
+        for i, (name, unit, desc)  in enumerate(zip(*self.ChInfo)):
+            self.ChString.append('{:>7}      {:<31}{:<11}{}'.format(i+1, name, unit, desc))
+            
+        if self.FileFormat == 'HAWC2_BINARY':
+            self.FileFormat = 'BINARY'
+            
+        self.current_date = datetime.now().strftime("%d:%m.%Y")    
+        self.current_time = datetime.now().strftime("%H:%M:%S")  
+          
+        ## render template
+        with open(self.JINJA_SEL_TEMPLATE) as f:
+            template = Template(f.read())
+            
+        out_sel = template.render(self.__dict__)
+            
+        with open(filename.as_posix() + '.sel', 'w') as f:
+            f.write(out_sel)
+                    
+                        
+    def WriteBinary(self, filename):
+        '''
+        Write result file in Binary format.
+        Args:
+            filename (str, or pathlib.Path): output filename (without extension).
+        
+        Returns: 
+            None
+        '''
+        filename = Path(filename)
+        self.WriteSel(filename)
+        
+        ChVec = range(0, self.NrCh)
+        with open(filename.as_posix() + '.dat', 'wb') as fid:
+            for i in ChVec:
+                scale = abs(self.data[:, i]).max()/32000
+                if scale == 0: scale = 1
+                
+                this_data = (self.data[:, i]/scale).round().astype('int16')
+                
+                fid.write(this_data.tobytes())
+    
+    
+    def WriteASCII(self, filename):
+        '''
+        Write result file in ASCII format.
+        Args:
+            filename (str, or pathlib.Path): output filename (without extension).
+        
+        Returns: 
+            None
+        '''
+        # filename = Path(filename)
+        # self.WriteSel(filename)
+        raise NotImplementedError()
+                
+                
+    def add_channel(self, new_data, name, unit='-', desc=''):
+        '''
+        Add the data of a single channel to the results.
+        Args:
+            new_data (list of floats, numpy.array): time series data of new channel. 
+                Should be the same length as self.NrSc.
+            name (str): name of channel.
+            unit (str): units of channel. Defaults to '-'.
+            desc (str): description of channel. Defaults to ''.
+        
+        Returns:
+            None
+        '''
+        assert len(new_data) == self.NrSc
+        new_data = new_data.reshape(-1, 1)
+        
+        self.data = np.concatenate([self.data, new_data], axis=1)
+        
+        self.ChInfo[0].append(name)
+        self.ChInfo[1].append(unit)
+        self.ChInfo[2].append(desc)
+        
+        self.NrCh += 1
+        
+        self.ScaleFactor = np.append(self.ScaleFactor, abs(new_data).max()/32000)
+        
+        
+    def remove_channel(ChVec):
+        '''
+        Removes channels from result file for the given channel numbers.
+        
+        Args:
+            ChVec (list of ints): channel numbers to remove.
+        Returns:
+            None
+        '''
+        raise NotImplementedError()
+        
+        
+        
 if __name__ == '__main__':
     res_file = ReadHawc2('structure_wind')
     results = res_file.ReadAscii()

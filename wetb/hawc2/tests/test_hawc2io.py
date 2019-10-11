@@ -11,7 +11,7 @@ from future import standard_library
 standard_library.install_aliases()
 import unittest
 import numpy as np
-from wetb.hawc2.Hawc2io import ReadHawc2
+from wetb.hawc2.Hawc2io import ReadHawc2, ModifyHawc2
 import os
 
 
@@ -47,6 +47,39 @@ class TestHAWC2IO(unittest.TestCase):
         self.assertAlmostEqual(file()[0, 0], 0.025)
         self.assertEqual(file()[799, 0], 20)
         self.assertAlmostEqual(file()[1, 0], .05)
+        
+    def test_writing_with_no_modifications(self):
+        '''
+        Read a HAWC2 binary result file, rewrite it, then read it again.
+        Check that both the original and rewritten result files return the
+        same results.
+        '''
+        ref_fn = testfilepath + "Hawc2bin"
+        out_fn = testfilepath + "output_results"
+        
+        read_obj = ModifyHawc2(ref_fn)
+        read_obj.WriteBinary(out_fn)
+        
+        out_data = ReadHawc2(out_fn)()
+        self.assertEqual(((out_data - read_obj.data)**2).sum(), 0)
+    
+    def test_write_new_channel_and_read(self):
+        '''
+        Read a HAWC2 Binary result file, add a row, write it, and read it again.
+        '''
+        
+        ref_fn = testfilepath + "Hawc2bin"
+        out_fn = testfilepath + "output_results2"
+        
+        write_obj = ModifyHawc2(ref_fn)
+        write_obj.add_channel(np.ones(write_obj.NrSc), 'the_name', 'the_unit', 'the_description')
+        write_obj.WriteBinary(out_fn)
+        
+        read_obj = ReadHawc2(out_fn)
+        out_data = read_obj()
+        
+        self.assertEqual( read_obj.NrCh, write_obj.NrCh)
+        self.assertEqual(((write_obj.data - out_data)**2).sum(), 0)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
