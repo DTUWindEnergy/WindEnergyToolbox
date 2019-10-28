@@ -390,6 +390,20 @@ end turb_export;"""
         from pathlib import Path
         htcfile = HTCFile(Path(self.testfilepath) / "test.htc")
 
+    def test_htc_copy(self):
+        htc = HTCFile(self.testfilepath + "test.htc")
+        tower2 = htc.new_htc_structure.main_body.copy()
+        tower2.name = "tower2"
+        htc.new_htc_structure.add_section(tower2, allow_duplicate=True)
+        assert htc.new_htc_structure.main_body__8 is tower2
+        assert htc.new_htc_structure.main_body.name[0] == 'tower'
+        assert htc.new_htc_structure.main_body__8.name[0] == 'tower2'
+        ti2 = tower2.add_section(section_name='timoschenko_input',
+                                 section=tower2.timoschenko_input.copy(), allow_duplicate=True)
+        ti2.set = 3, 3
+        assert tower2.timoschenko_input.set.values == [1, 2]
+        assert tower2.timoschenko_input__2.set.values == [3, 3]
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

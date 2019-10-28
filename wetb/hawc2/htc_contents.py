@@ -87,12 +87,12 @@ class HTCContents(object):
             return object.__setattr__(self, *args, **kwargs)
         if isinstance(v, str):
             v = [fmt_value(v) for v in v.split()]
-        if isinstance(v, HTCContents):
-            self.contents[k] = v
-        else:
+        if not isinstance(v, HTCContents):
             if not isinstance(v, (list, tuple)):
                 v = [v]
-            self.contents[k] = HTCLine(k, v, "")
+            v = HTCLine(k, v, "")
+        self.contents[k] = v
+        v.parent = self
 
     def __delattr__(self, *args, **kwargs):
         k, = args
@@ -100,7 +100,10 @@ class HTCContents(object):
             del self.contents[k]
 
     def __iter__(self):
-        return iter(self.contents.values())
+        # mainbodies must preceed constraints
+        values = ([v for v in self.contents.values() if v.name_ == 'main_body'] +
+                  [v for v in self.contents.values() if v.name_ != 'main_body'])
+        return iter(values)
 
     def __contains__(self, key):
         if self.contents is None:
@@ -126,17 +129,21 @@ class HTCContents(object):
             self[contents.name_ + ending] = contents
         contents.parent = self
 
-    def add_section(self, name, members={}, allow_duplicate=False):
-        if name in self and allow_duplicate is False:
-            return self[name]
-        if name == "output":
-            section = HTCOutputSection(name)
-        elif name.startswith("output_at_time"):
-            section = HTCOutputAtTimeSection(name)
-        else:
-            section = HTCSection(name)
+    def add_section(self, section_name, members={}, section=None, allow_duplicate=False, **kwargs):
+        if isinstance(section_name, HTCSection):
+            section = section_name
+            section_name = section.name_
+        if section_name in self and allow_duplicate is False:
+            return self[section_name]
+        if section_name == "output":
+            section = HTCOutputSection(section_name)
+        elif section_name.startswith("output_at_time"):
+            section = HTCOutputAtTimeSection(section_name)
+        elif section is None:
+            section = HTCSection(section_name)
         self._add_contents(section)
-        for k, v in members.items():
+        kwargs.update(members)
+        for k, v in kwargs.items():
             section[k] = v
         return section
 
@@ -237,6 +244,12 @@ class HTCSection(HTCContents):
             else:
                 raise NotImplementedError()
 
+    def copy(self):
+        copy = HTCSection(name=self.name_, begin_comments=self.begin_comments, end_comments=self.end_comments)
+        for k, v in self.contents.items():
+            copy.contents[k] = v.copy()
+        return copy
+
 
 class HTCLine(HTCContents):
     values = None
@@ -294,6 +307,9 @@ class HTCLine(HTCContents):
             s += "\n".join(["- %s" % l for l in str(other).strip().split("\n")]) + "\n"
             s += "\n"
         return s
+
+    def copy(self):
+        return HTCLine(name=self.name_, values=self.values, comments=self.comments)
 
 
 class HTCOutputSection(HTCSection):
@@ -377,7 +393,7 @@ class HTCSensor(HTCLine):
     def __init__(self, type, sensor, values, comments):
         self.type = type
         self.sensor = sensor
-        self.values = values
+        self.values = list(values)
         self.comments = comments.strip(" \t")
 
     @staticmethod

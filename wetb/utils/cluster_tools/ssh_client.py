@@ -344,7 +344,7 @@ class SSHClient(object):
             feed_password = self.password is not None and len(self.password) > 0
         if isinstance(command, (list, tuple)):
             command = "\n".join(command)
-        cwd = unix_path(cwd)
+        #cwd = unix_path(cwd)
         if verbose:
             print("[%s]$ %s" % (cwd, command))
 
