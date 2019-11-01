@@ -26,8 +26,8 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 
-def setup_package(build_ext=True):
-    if build_ext:
+def setup_package(build_ext_switch=True):
+    if build_ext_switch:
         ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm']),
                    ('wetb.signal.filters', ['cy_filters'])]
     else:
@@ -74,6 +74,6 @@ if __name__ == "__main__":
     try:
         setup_package()
     except:
-        setup_package(False)
+        setup_package(build_ext_switch=False)
         raise Warning(
             "WETB installed, but building extensions failed (i.e. it falls back on the slower pure python implementions)")
