@@ -1680,7 +1680,10 @@ class HtcMaster(object):
             else:
                 value = self.tags[k]
             # if string is not found, it will do nothing
-            htc = htc.replace(str(k), str(value))
+            # case sensitive tag names
+#            htc = htc.replace(str(k), str(value))
+            # tag names are case insensitive
+            htc = re.sub(re.escape(str(k)), str(value), htc, flags=re.IGNORECASE)
 
         # and save the the case htc file:
         cname = self.tags['[case_id]'] + '.htc'

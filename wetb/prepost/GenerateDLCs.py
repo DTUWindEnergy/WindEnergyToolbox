@@ -252,7 +252,7 @@ class GenerateDLCCases(GeneralDLC):
             for i in range(sheet.ncols):
                 if sheet.cell_value(1, i) is not None:
                     tag = str(sheet.cell_value(1, i))
-                    if tag is not '':
+                    if len(tag) > 0:
                         # FIXME: only works if [wsp] is defined as variable
                         # and [seed] tags are present
                         if sheet.cell_value(0, i) == 'C':

@@ -487,6 +487,11 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
             else:
                 tags_dict['[time stop]'] = tags_dict['[time_stop]']
 
+            # [tu_model] is in the docs, but some of dave's examples have
+            # [turb_format]...so that is great...
+            if '[turb_format]' in tags_dict:
+                tags_dict['[tu_model]'] = tags_dict['[turb_format]']
+
             if '[Turb base name]' in tags_dict:
                 if not '[turb_base_name]' in tags_dict:
                     tags_dict['[turb_base_name]'] = tags_dict['[Turb base name]']
