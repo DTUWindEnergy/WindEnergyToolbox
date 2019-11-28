@@ -10,7 +10,12 @@ import sys
 from setuptools import setup, find_packages
 
 repo = os.path.dirname(__file__)
-version = write_vers(vers_file='wetb/__init__.py', repo=repo, skip_chars=1)
+try:
+    version = write_vers(vers_file='wetb/__init__.py', repo=repo, skip_chars=1)
+except Warning:
+    # when there is not git repo, take version string form wetb/__init__.py
+    import wetb
+    version = wetb.__version__
 
 # try:
 #    from pypandoc import convert_file
