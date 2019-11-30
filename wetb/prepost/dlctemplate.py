@@ -634,7 +634,7 @@ def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
     cc.find_failed(df_cases=df_tags)
     sim.copy_pbs_in_failedcases(cc.cases_fail, path=opt.pbs_failed_path)
 
-    if zipchunks:
+    if zipchunks and len(cc.cases_fail) > 0:
         # and for chunks as well
         sorts_on = ['[DLC]', '[Windspeed]']
         create_chunks_htc_pbs(cc.cases_fail, sort_by_values=sorts_on,
