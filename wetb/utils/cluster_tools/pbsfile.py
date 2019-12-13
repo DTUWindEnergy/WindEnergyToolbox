@@ -123,7 +123,16 @@ wait
 
 
 class PBSMultiRunner(PBSFile):
-    def __init__(self, workdir, queue='workq', walltime='01:00:00', nodes=1, ppn=1, merge_std=True):
+    def __init__(self, workdir, queue='workq', walltime='01:00:00', nodes=1, ppn=1, merge_std=True, pbsfiles=None):
+        if pbsfiles:
+            def fmt(pbsfile):
+                if isinstance(pbsfile, PBSFile):
+                    return pbsfile.filename
+                return pbsfile
+            self.PBS_FILES = "['" + "',\n             '".join([fmt(pbsfile) for pbsfile in pbsfiles]) + "']"
+        else:
+            self.PBS_FILES = """[os.path.join(root, f) for root, folders, f_lst in os.walk('.') for f in f_lst if f.endswith('.in')]"""
+
         commands = multirunner_template(make_dict=self.get_src(self.make_dict),
                                         start_jobs=self.get_src(self.start_jobs),
                                         workdir=cluster_path(workdir)).replace("self.ppn", str(ppn))
@@ -131,7 +140,8 @@ class PBSMultiRunner(PBSFile):
         jobname = 'pbs_multirunner'
         PBSFile.__init__(self, workdir, jobname, commands, queue, walltime=walltime,
                          nodes=nodes, ppn=ppn, merge_std=merge_std)
-        self.filename = "%s.all" % self.jobname
+        self.filename = "%s.%s" % (self.jobname, ("lst", "all")[pbsfiles is None])
+        self.pbsfiles = pbsfiles
 
     def make_dict(self):
         import os
@@ -142,7 +152,7 @@ class PBSMultiRunner(PBSFile):
         # find available nodes
         with open(os.environ['PBS_NODEFILE']) as fid:
             nodes = set([f.strip() for f in fid.readlines() if f.strip() != ''])
-        pbs_files = [os.path.join(root, f) for root, folders, f_lst in os.walk('.') for f in f_lst if f.endswith('.in')]
+        pbs_files = eval(self.PBS_FILES)
 
         # Make a list of [(pbs_in_filename, stdout_filename, walltime),...]
         pat = re.compile(r'[\s\S]*#\s*PBS\s+-o\s+(.*)[\s\S]*(\d\d:\d\d:\d\d)[\s\S]*')
@@ -183,9 +193,13 @@ class PBSMultiRunner(PBSFile):
     def get_src(self, func):
         src_lines = inspect.getsource(func).split("\n")[1:]
         indent = len(src_lines[0]) - len(src_lines[0].lstrip())
-        return "\n".join([l[indent:] for l in src_lines])
+        src = "\n".join([l[indent:] for l in src_lines])
+        if func == self.make_dict:
+            src = src.replace("eval(self.PBS_FILES)", self.PBS_FILES)
+        return src
 
 
 if __name__ == '__main__':
-    pbsmr = PBSMultiRunner(workdir="W:/simple1", queue='workq', nodes=2, ppn=10)
-    pbsmr.save("c:/tmp/")
+    pbsmr = PBSMultiRunner(workdir="W:/simple1", queue='workq', nodes=2, ppn=10, pbsfiles=['/mnt/t1', "/mnt/t2"])
+    print(pbsmr.get_src(pbsmr.make_dict))
+    # pbsmr.save("c:/tmp/")

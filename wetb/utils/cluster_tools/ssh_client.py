@@ -239,7 +239,7 @@ class SSHClient(object):
         if verbose and ret:
             print(ret)
 
-    def upload(self, localfile, filepath, verbose=False, callback=None):
+    def upload(self, localfile, filepath, chmod="770", verbose=False, callback=None):
         if verbose:
             print("Upload %s > %s" % (localfile, filepath))
         if callback is None:
@@ -254,6 +254,7 @@ class SSHClient(object):
                 size = len(localfile.read())
                 localfile.seek(0)
                 ret = sftp.putfo(localfile, filepath, file_size=size, callback=callback)
+            self.execute('chmod %s %s' % (chmod, filepath))
         except Exception as e:
             print("upload failed ", str(e))
             raise e
