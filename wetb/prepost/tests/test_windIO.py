@@ -198,7 +198,7 @@ class TestsLoadResults(unittest.TestCase):
         # ---------------------------------------------------------------------
         res = windIO.LoadResults(self.respath, self.f1_chant, readdata=False)
         self.assertFalse(hasattr(res, 'sig'))
-        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,431))
+        np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,432))
         self.assertEqual(res.ch_df.unique_ch_name.values[0], 'Time')
         df = res.ch_df
         self.assertEqual(2, len(df[df['bearing_name']=='shaft_rot']))
@@ -245,8 +245,22 @@ class TestsLoadResults(unittest.TestCase):
         self.assertEqual(8, len(df1[df1['sensortype']=='a_grid']))
         self.assertEqual(84, len(df1[df1['blade_nr']==1]))
 
+    def test_unified_chan_names_extensive2(self):
+
+        res = windIO.LoadResults(self.respath, self.f3_chant, readdata=False)
+        df1 = res.ch_df
+
         fname = os.path.join(self.respath, self.f3_chant.replace('.sel',
                                                                  '.ch_df.csv'))
+        # when changing the tests, update the reference, check, and commit
+        # but keep the same column ordering to not make the diffs to big
+#        cols = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',
+#                'component', 'coord', 'direction', 'dll', 'flap_nr', 'io',
+#                'io_nr', 'output_type', 'pos', 'radius', 'sensortag',
+#                'sensortype', 'unique_ch_name', 'units', ]
+#        df1[cols].to_csv(fname)
+#        df1.to_excel(fname.replace('.csv', '.xlsx'))
+
         # FIXME: read_csv for older pandas versions fails on reading the
         # mixed str/tuple column. Ignore the pos column for now
         colref = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',

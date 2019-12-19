@@ -12,9 +12,9 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 10,,,,,,,,,,,,,,,Aero rotor torque,,Ae rot. torque,kNm
 11,,,,,,,,,,,,,,,Aero rotor power,,Ae rot. power,kW
 12,,,,,,,,,,,,,,,Aero rotor thrust,,Ae rot. thrust,kN
-13,,,,,,global,Vx,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vx-0.00-0.00--119.00,m/s
-14,,,,,,global,Vy,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vy-0.00-0.00--119.00,m/s
-15,,,,,,global,Vz,,,,,,"('0.00', '0.00', '-119.00')",,,wsp-global,windspeed-global-Vz-0.00-0.00--119.00,m/s
+13,,,,,,global,Vx,,,,,,"(0.0, 0.0, -119.0)",,,wsp-global,windspeed-global-Vx-0.00-0.00--119.00,m/s
+14,,,,,,global,Vy,,,,,,"(0.0, 0.0, -119.0)",,,wsp-global,windspeed-global-Vy-0.00-0.00--119.00,m/s
+15,,,,,,global,Vz,,,,,,"(0.0, 0.0, -119.0)",,,wsp-global,windspeed-global-Vz-0.00-0.00--119.00,m/s
 16,,,,shaft,x,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-x,kNm
 17,,,,shaft,y,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-y,kNm
 18,,,,shaft,z,shaft_nonrotate,,,,,,,node-004,,non rotating shaft tip,momentvec,shaft_nonrotate-shaft-node-004-momentvec-z,kNm
@@ -104,16 +104,16 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 102,,,,blade1,z,local,,,,,,,node-023,,,momentvec,local-blade1-node-023-momentvec-z,kNm
 103,,,,blade1,x,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-x,kNm
 104,,,,blade1,y,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-y,kNm
-105,,,,blade1,z,local,,,,,,,node-024,,,momentvec,local-blade1-node-024-momentvec-z,kNm
-106,,,,blade1,x,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-x,kNm
-107,,,,blade1,y,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-y,kNm
-108,,,,blade1,z,local,,,,,,,node-025,,,momentvec,local-blade1-node-025-momentvec-z,kNm
-109,,,,blade1,x,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-x,kNm
-110,,,,blade1,y,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-y,kNm
-111,,,,blade1,z,local,,,,,,,node-026,,,momentvec,local-blade1-node-026-momentvec-z,kNm
-112,,,,blade1,x,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-x,kNm
-113,,,,blade1,y,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-y,kNm
-114,,,,blade1,z,local,,,,,,,node-027,,,momentvec,local-blade1-node-027-momentvec-z,kNm
+105,,,,,x,met,,,,,,wake_pos,,,,wind_wake,wind_wake-wake_pos_x_1,m
+106,,,,,y,met,,,,,,wake_pos,,,,wind_wake,wind_wake-wake_pos_y_2,m
+107,,,,,z,met,,,,,,wake_pos,,,,wind_wake,wind_wake-wake_pos_z_5,m
+108,,,,blade1,Dx,blade1,,,,,,absolute Deflection,,,,statevec_new,statevec_new-blade1-c2def-blade1-absolute-014.00-Dx,m
+109,,,,blade1,Dy,global,,,,,,elastic Deflection,,,this is a tag,statevec_new,statevec_new-blade1-c2def-global-elastic-014.00-Dy,m
+110,,,,blade1,Dz,blade1,,,,,,elastic Deflection,,,,statevec_new,statevec_new-blade1-c2def-blade1-elastic-014.00-Dz,m
+111,,,,blade1,Rx,blade1,,,,,,absolute Rotation,,,this is a tag,statevec_new,statevec_new-blade1-c2def-blade1-absolute-014.00-Rx,deg
+112,,,,blade1,Ry,blade1,,,,,,elastic Rotation,,,,statevec_new,statevec_new-blade1-c2def-blade1-elastic-014.00-Ry,deg
+113,,,,blade1,Rz,blade1,,,,,,elastic Rotation,,,this is a tag,statevec_new,statevec_new-blade1-c2def-blade1-elastic-014.00-Rz,deg
+114,,,,,,global,,,,,,,"(0.0, 0.0)",,,,watersurface-global-0.00-0.00,m
 115,,,,tower,x,global,,,,,,,elem-019-zrel-1.00,,tower top fa displ,State pos,global-tower-elem-019-zrel-1.00-State pos-x,m
 116,,,,tower,y,global,,,,,,,elem-019-zrel-1.00,,tower top ss displ,State pos,global-tower-elem-019-zrel-1.00-State pos-y,m
 117,,,,tower,x,global,,,,,,,elem-019-zrel-1.00,,tower top fa acc,State acc,global-tower-elem-019-zrel-1.00-State acc-x,m/s^2
@@ -246,15 +246,15 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 244,,,1,,tx,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-tx-r-64.3,deg
 245,,,1,,ty,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-ty-r-64.3,deg
 246,,,1,,tz,Bl.co,,,,,,,,64.3,,rot,aero-Bl.co-blade-1-rot-tz-r-64.3,deg
-247,,,,,,global,Vx,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vx-0.00-0.00--90.00,m/s
-248,,,,,,global,Vy,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vy-0.00-0.00--90.00,m/s
-249,,,,,,global,Vz,,,,,,"('0.00', '0.00', '-90.00')",,tower top,wsp-global,windspeed-global-Vz-0.00-0.00--90.00,m/s
-250,,,,,,global,Vx,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vx-44.54-0.00--134.54,m/s
-251,,,,,,global,Vy,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vy-44.54-0.00--134.54,m/s
-252,,,,,,global,Vz,,,,,,"('44.54', '0.00', '-134.54')",,1 radius at 45 deg,wsp-global,windspeed-global-Vz-44.54-0.00--134.54,m/s
-253,,,,,,global,Vx,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vx-22.27-0.00--112.27,m/s
-254,,,,,,global,Vy,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vy-22.27-0.00--112.27,m/s
-255,,,,,,global,Vz,,,,,,"('22.27', '0.00', '-112.27')",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vz-22.27-0.00--112.27,m/s
+247,,,,,,global,Vx,,,,,,"(0.0, 0.0, -90.0)",,tower top,wsp-global,windspeed-global-Vx-0.00-0.00--90.00,m/s
+248,,,,,,global,Vy,,,,,,"(0.0, 0.0, -90.0)",,tower top,wsp-global,windspeed-global-Vy-0.00-0.00--90.00,m/s
+249,,,,,,global,Vz,,,,,,"(0.0, 0.0, -90.0)",,tower top,wsp-global,windspeed-global-Vz-0.00-0.00--90.00,m/s
+250,,,,,,global,Vx,,,,,,"(44.54, 0.0, -134.54)",,1 radius at 45 deg,wsp-global,windspeed-global-Vx-44.54-0.00--134.54,m/s
+251,,,,,,global,Vy,,,,,,"(44.54, 0.0, -134.54)",,1 radius at 45 deg,wsp-global,windspeed-global-Vy-44.54-0.00--134.54,m/s
+252,,,,,,global,Vz,,,,,,"(44.54, 0.0, -134.54)",,1 radius at 45 deg,wsp-global,windspeed-global-Vz-44.54-0.00--134.54,m/s
+253,,,,,,global,Vx,,,,,,"(22.27, 0.0, -112.27)",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vx-22.27-0.00--112.27,m/s
+254,,,,,,global,Vy,,,,,,"(22.27, 0.0, -112.27)",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vy-22.27-0.00--112.27,m/s
+255,,,,,,global,Vz,,,,,,"(22.27, 0.0, -112.27)",,0.5 radius at 45 deg,wsp-global,windspeed-global-Vz-22.27-0.00--112.27,m/s
 256,0.0,,,,,,,,,,,,,44.9,,CT,CT-azi-0.00-r-44.90,-
 257,22.5,,,,,,,,,,,,,44.9,,CT,CT-azi-22.50-r-44.90,-
 258,45.0,,,,,,,,,,,,,44.9,,CT,CT-azi-45.00-r-44.90,-

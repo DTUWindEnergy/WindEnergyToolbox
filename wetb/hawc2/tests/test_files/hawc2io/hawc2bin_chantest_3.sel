@@ -115,16 +115,16 @@ ________________________________________________________________________________
     103      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  23 coo: local
     104      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  24 coo: local
     105      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  24 coo: local
-    106      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  24 coo: local
-    107      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  25 coo: local
-    108      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  25 coo: local
-    109      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  25 coo: local
-    110      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  26 coo: local
-    111      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  26 coo: local
-    112      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  26 coo: local
-    113      Mx coo: local                  kNm        MomentMx Mbdy:blade1 nodenr:  27 coo: local
-    114      My coo: local                  kNm        MomentMy Mbdy:blade1 nodenr:  27 coo: local
-    115      Mz coo: local                  kNm        MomentMz Mbdy:blade1 nodenr:  27 coo: local
+    106      wake   1 gl. pos pos_x         m          Wake pos_x of source   1, Met. coo.
+    107      wake   2 gl. pos pos_y         m          Wake pos_y of source   2, Met. coo.
+    108      wake   5 gl. pos pos_z         m          Wake pos_z of source   5, Met. coo.
+    109      Dx coo: blade1                 m          absolute Deflection blade1 Dx Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def
+    110      Dy coo: blade1                 m          elastic Deflection global Dy Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: global center:c2def  this is a tag
+    111      Dz coo: blade1                 m          elastic Deflection blade1 Dz Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def
+    112      Rx coo: blade1                 deg        absolute Rotation blade1 Rx Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def  this is a tag
+    113      Ry coo: blade1                 deg        elastic Rotation blade1 Ry Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def
+    114      Rz coo: blade1                 deg        elastic Rotation blade1 Rz Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def  this is a tag
+    115      Water surf.                    m          Water surface gl. coo, at gl. coo, x,y=   0.00,   0.00
     116      State pos x  coo: global       m          State pos x  Mbdy:tower E-nr:  19 Z-rel:1.00 coo: global  tower top fa displ
     117      State pos y  coo: global       m          State pos y  Mbdy:tower E-nr:  19 Z-rel:1.00 coo: global  tower top ss displ
     118      State acc x  coo: global       m/s^2      State acc x  Mbdy:tower E-nr:  19 Z-rel:1.00 coo: global  tower top fa acc

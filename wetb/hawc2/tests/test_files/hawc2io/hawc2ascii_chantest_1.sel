@@ -6,7 +6,7 @@ ________________________________________________________________________________
   Result file : res/dlc12_wsp07_wdir000_s1004.dat
 ________________________________________________________________________________________________________________________
    Scans    Channels    Time [sec]        Format
-      25000     431          500.000       ASCII
+      25000     432          500.000       ASCII
 
   Channel   Variable Description               
 
@@ -441,4 +441,5 @@ ________________________________________________________________________________
     429      Rx coo: blade1                 deg        absolute Rotation blade1 Rx Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def  this is a tag
     430      Ry coo: blade1                 deg        elastic Rotation blade1 Ry Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def
     431      Rz coo: blade1                 deg        elastic Rotation blade1 Rz Mbdy:blade1 s=  14.00[m] s/S=   0.24 coo: blade1 center:c2def  this is a tag
+    432      Water surf.                    m          Water surface gl. coo, at gl. coo, x,y=   0.00,   0.00
 ________________________________________________________________________________________________________________________

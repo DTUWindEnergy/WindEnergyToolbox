@@ -1140,11 +1140,11 @@ class LoadResults(ReadHawc2):
                 # radius what you get
                 #  radius = float(items[8].replace(',', ''))
                 # radius what you asked for, identified as the last float in the string
-                s = self.ch_details[ch, 2]
-                radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
+#                s = self.ch_details[ch, 2]
+#                radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
+                radius = float(items_ch2[8][:-1])
 
-                items = self.ch_details[ch, 0].split(',')
-                component = items[0][-2:]
+                component = items_ch2[2]
                 units = self.ch_details[ch, 1]
 
                 # and tag it
@@ -1186,9 +1186,8 @@ class LoadResults(ReadHawc2):
                 else:
                     coord = 'aero'
 
-                items = self.ch_details[ch, 0].split(' ')
-                sensortype = items[1]
-                component = items[2].replace(',', '')
+                sensortype = items_ch0[1]
+                component = items_ch0[2].replace(',', '')
 
                 # save all info in the dict
                 channelinfo = {}
@@ -1216,8 +1215,8 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1]
 
                 # but remove the comma
-                x = items[-2][:-1]
-                y = items[-1]
+                x = items_ch2[-2][:-1]
+                y = items_ch2[-1]
 
                 # and tag it
                 tag = 'watersurface-global-%s-%s' % (x, y)
@@ -1250,7 +1249,7 @@ class LoadResults(ReadHawc2):
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['coord'] = 'global'
-                channelinfo['pos'] = (x, y, z)
+                channelinfo['pos'] = (float(x), float(y), float(z))
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
