@@ -337,7 +337,7 @@ First activate the Anaconda Python environment by typing:
 # add the Anaconda Python environment paths to the system PATH
 j-000 $ export PATH=/home/python/miniconda3/bin:$PATH
 # activate the custom python environment:
-j-000 $ source activate wetb_py3
+j-000 $ source activate py36-wetb
 ```
 For example, launch the auto-generation of DLCs input files:
 
@@ -777,7 +777,7 @@ j-000 $ qsub-wrap.py -f ../myturbine.py --years=25 --neq=1e7 --stats --check_log
 Other options for the original ```dlctemplate.py``` script:
 
 ```
-(wetb_py3) [dave@jess]$ python dlctemplate.py --help
+(py36-wetb) [dave@jess]$ python dlctemplate.py --help
 usage: dlctemplate.py [-h] [--prep] [--check_logs]
                       [--pbs_failed_path PBS_FAILED_PATH] [--stats]
                       [--fatigue] [--AEP] [--csv] [--years YEARS]
