@@ -41,6 +41,7 @@ def transformation_matrix(angles, xyz):
     m[indexes[xyz][4]::9] = -sinx
     return m.reshape(n, 3, 3)
 
+
 def rotmat(angles, xyz):
     """Create rotation matrix(es)
     !!!Note that the columns of the returned matrix(es) is rotated xyz-axes in original(unrotated) coordinates\n
@@ -75,6 +76,7 @@ def rotmat(angles, xyz):
     m[indexes[xyz][3]::9] = -sinx
     m[indexes[xyz][4]::9] = sinx
     return m.reshape(n, 3, 3)
+
 
 def mdot(m1, m2):
     """Multiplication of matrix pairs
@@ -160,7 +162,8 @@ def rotate(rotmats, v):
             return rotate(rotmats_red, v)
         else:
             rotmats = rotmats[0]
-    assert rotmats.shape[-1] == rotmats.shape[-2] == v.shape[-1] == 3, "rotmats is %d x %x and v is i x %d, but must be 3" % (rotmats.shape[-1], rotmats.shape[-2], v.shape[-1])
+    assert rotmats.shape[-1] == rotmats.shape[-2] == v.shape[-1] == 3, "rotmats is %d x %x and v is i x %d, but must be 3" % (
+        rotmats.shape[-1], rotmats.shape[-2], v.shape[-1])
 
 #    if isinstance(v, tuple):
 #        v = np.array([v])
@@ -177,6 +180,7 @@ def rotate(rotmats, v):
             v_rot[:, i] = np.dot(rotmats[i], v[:, i])
         return v_rot.T
 
+
 def rotate_x(v, angle):
     """Rotate vector(s) around x axis
 
@@ -192,7 +196,8 @@ def rotate_x(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin : [x, cos * y - sin * z, sin * y + cos * z])
+    return _rotate(v, angle, lambda x, y, z, cos, sin: [x, cos * y - sin * z, sin * y + cos * z])
+
 
 def rotate_y(v, angle):
     """Rotate vector(s) around y axis
@@ -209,7 +214,8 @@ def rotate_y(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin : [cos * x + sin * z, y, -sin * x + cos * z])
+    return _rotate(v, angle, lambda x, y, z, cos, sin: [cos * x + sin * z, y, -sin * x + cos * z])
+
 
 def rotate_z(v, angle):
     """Rotate vector(s) around z axis
@@ -226,7 +232,8 @@ def rotate_z(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin : [cos * x - sin * y, sin * x + cos * y, z])
+    return _rotate(v, angle, lambda x, y, z, cos, sin: [cos * x - sin * y, sin * x + cos * y, z])
+
 
 def _rotate(v, angle, rotfunc):
     angle = np.atleast_1d(angle)
@@ -240,3 +247,129 @@ def _rotate(v, angle, rotfunc):
         assert angle.shape[0] == 1 or angle.shape[0] == v.shape[0]
         assert v.shape[1] == 3
         return np.array(rotfunc(v[:, 0], v[:, 1], v[:, 2], cos, sin), dtype=np.float).T
+
+
+#=======================================================================================================================
+# Conversions
+#=======================================================================================================================
+# http://www.euclideanspace.com/maths/geometry/rotations/conversions/
+# - axis: [x,y,z]*angle_deg
+# - axis_angle: [x,y,z,angle_rad]
+# - Quaternion: [qw,qx,qy,qz]
+# - Matrix 3x3 transformation matrix
+
+def norm(vector):
+    return np.sqrt(np.sum(np.asarray(vector)**2))
+
+
+#=======================================================================================================================
+# axis to ...
+#=======================================================================================================================
+def axis2axis_angle(axis):
+    axis = np.asarray(axis)
+    angle = np.sqrt(((axis**2).sum()))
+    x, y, z = axis / np.sqrt((axis**2).sum())
+    return np.r_[axis / np.sqrt((axis**2).sum()), np.deg2rad(angle)]
+
+
+def axis2matrix(axis):
+    axis = np.asarray(axis)
+    angle = np.sqrt(((axis**2).sum()))
+    x, y, z = axis / np.sqrt((axis**2).sum())
+
+    angle = np.deg2rad(angle)
+    c, s = np.cos(angle), np.sin(angle)
+    t = 1 - c
+
+    return np.array([[t * x * x + c, t * x * y - z * s, t * x * z + y * s],
+                     [t * x * y + z * s, t * y * y + c, t * y * z - x * s],
+                     [t * x * z - y * s, t * y * z + x * s, t * z * z + c]])
+
+
+#=======================================================================================================================
+# # axis_angle to ...
+#=======================================================================================================================
+
+
+def axis_angle2axis(axis_angle):
+    x, y, z, angle = axis_angle
+    return np.array([x, y, z]) * np.rad2deg(angle)
+
+
+def axis_angle2quaternion(axis_angle):
+    x, y, z, angle = axis_angle
+    s = np.sin(angle / 2)
+    x = x * s
+    y = y * s
+    z = z * s
+    w = np.cos(angle / 2)
+    return w, x, y, z
+
+
+#=======================================================================================================================
+# # quaternion to ...
+#=======================================================================================================================
+
+def quaternion2axis_angle(quaternion):
+    qw, qx, qy, qz = quaternion / norm(quaternion)
+    angle = 2 * np.arccos(qw)
+    t = np.sqrt(1 - qw**2)
+    x = qx / t
+    y = qy / t
+    z = qz / t
+    return x, y, z, angle
+
+
+def quaternion2matrix(quaternion):
+    q = quaternion / norm(quaternion)
+    qw, qx, qy, qz = q
+    sqw, sqx, sqy, sqz = q**2
+
+    qxw = qx * qw
+    qxy = qx * qy
+    qxz = qx * qz
+    qyw = qy * qw
+    qyz = qy * qz
+    qzw = qz * qw
+
+    return np.array([[sqx - sqy - sqz + sqw, 2.0 * (qxy - qzw), 2.0 * (qxz + qyw)],
+                     [2.0 * (qxy + qzw), -sqx + sqy - sqz + sqw, 2.0 * (qyz - qxw)],
+                     [2.0 * (qxz - qyw), 2.0 * (qyz + qxw), -sqx - sqy + sqz + sqw]])
+
+#=======================================================================================================================
+# Matrix to ...
+#=======================================================================================================================
+
+
+def matrix2quaternion(matrix):
+    # method from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+    sqrt = np.sqrt
+    (m00, m01, m02), (m10, m11, m12), (m20, m21, m22) = matrix
+    tr = m00 + m11 + m22
+
+    if (tr > 0):
+        S = sqrt(tr + 1.0) * 2  # // S=4*qw
+        qw = 0.25 * S
+        qx = (m21 - m12) / S
+        qy = (m02 - m20) / S
+        qz = (m10 - m01) / S
+    elif ((m00 > m11) and (m00 > m22)):
+        S = sqrt(1.0 + m00 - m11 - m22) * 2  # // S=4*qx
+        qw = (m21 - m12) / S
+        qx = 0.25 * S
+        qy = (m01 + m10) / S
+        qz = (m02 + m20) / S
+    elif (m11 > m22):
+        S = sqrt(1.0 + m11 - m00 - m22) * 2  # // S=4*qy
+        qw = (m02 - m20) / S
+        qx = (m01 + m10) / S
+        qy = 0.25 * S
+        qz = (m12 + m21) / S
+    else:
+        S = sqrt(1.0 + m22 - m00 - m11) * 2  # // S=4*qz
+        qw = (m10 - m01) / S
+        qx = (m02 + m20) / S
+        qy = (m12 + m21) / S
+        qz = 0.25 * S
+    e = np.array([qw, qx, qy, qz])
+    return e / np.sqrt(np.sum(e**2))
