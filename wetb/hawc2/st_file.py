@@ -38,8 +38,8 @@ class StFile(object):
     - Ix : area moment of inertia with respect to principal bending xe axis [m4]. This is the principal bending axis most parallel to the xc2 axis
     - Iy : area moment of inertia with respect to principal bending ye axis [m4]
     - K : torsional stiffness constant with respect to ze axis at the shear center [m4/rad]. For a circular section only this is identical to the polar moment of inertia.
-    - kx : shear factor for force in principal bending xe direction [-]
-    - ky : shear factor for force in principal bending ye direction [-]
+    - k_x : shear factor for force in principal bending xe direction [-]
+    - k_y : shear factor for force in principal bending ye direction [-]
     - A : cross sectional area [m2]
     - pitch : structural pitch about z_c2 axis. This is the angle between the xc2 -axis defined with the c2_def command and the main principal bending axis xe.
     - xe : xc2-coordinate from C1/2 to center of elasticity [m]. The elastic center is the point where radial force (in the z-direction) does not contribute to bending around the x or y directions.
@@ -141,6 +141,113 @@ class StFile(object):
                     fid.write(sep + colhead + sep)
                     fid.write('$%i %i\n' % (set, npoints))
                     fid.write(dstr + '\n')
+
+    def element_stiffnessmatrix(self, radius, mset_nr, set_nr, length):
+        """Compute the element stiffness matrix
+
+        Parameters
+        ----------
+        radius : float
+            radius of element (used of obtain element properties
+        length : float
+            eleement length
+        """
+        K = np.zeros((13, 13))
+        "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
+        ES1, ES2, EMOD, GMOD, IX, IY, IZ, KX, KY, A = [getattr(self, n)(radius, mset_nr, set_nr)
+                                                       for n in "x_sh,y_sh,E,G,I_x,I_y,I_p,k_x,k_y,A".split(",")]
+        ELLGTH = length
+
+        ETAX = EMOD * IX / (KY * GMOD * A * ELLGTH**2)
+        ETAY = EMOD * IY / (KX * GMOD * A * ELLGTH**2)
+        ROX = 1 / (1 + 12 * ETAX)
+        ROY = 1 / (1 + 12 * ETAY)
+        ROY = 1 / (1 + 12 * ETAX)
+        K[1, 1] = 12 * EMOD * IY * ROY / ELLGTH**3
+        K[1, 5] = 6 * EMOD * IY * ROY / ELLGTH**2
+        K[1, 6] = -K[1, 1] * ES2
+        K[1, 7] = -K[1, 1]
+        K[1, 11] = K[1, 5]
+        K[1, 12] = -K[1, 6]
+        K[2, 2] = 12 * EMOD * IX * ROX / ELLGTH**3
+        K[2, 4] = -6 * EMOD * IX * ROX / ELLGTH**2
+        K[2, 6] = K[2, 2] * ES1
+        K[2, 8] = -K[2, 2]
+        K[2, 10] = K[2, 4]
+        K[2, 12] = -K[2, 6]
+        K[3, 3] = A * EMOD / ELLGTH
+        K[3, 9] = -K[3, 3]
+        K[4, 4] = 4 * EMOD * IX * (1 + 3 * ETAX) * ROX / ELLGTH
+        K[4, 6] = K[2, 4] * ES1
+        K[4, 8] = -K[2, 4]
+        K[4, 10] = 2 * EMOD * IX * (1 - 6 * ETAX) * ROX / ELLGTH
+        K[4, 12] = -K[4, 6]
+        K[5, 5] = 4 * EMOD * IY * (1 + 3 * ETAY) * ROY / ELLGTH
+        K[5, 6] = -K[1, 5] * ES2
+        K[5, 7] = -K[1, 5]
+        K[5, 11] = 2 * EMOD * IY * (1 - 6 * ETAY) * ROY / ELLGTH
+        K[5, 12] = -K[5, 6]
+        K[6, 6] = GMOD * IZ / ELLGTH + 12 * EMOD * (IX * ES1**2 * ROX + IY * ES2**2 * ROY) / ELLGTH**3
+        K[6, 7] = K[1, 12]
+        K[6, 8] = K[2, 12]
+        K[6, 10] = -K[4, 12]
+        K[6, 11] = -K[5, 12]
+        K[6, 12] = -K[6, 6]
+        K[7, 7] = K[1, 1]
+        K[7, 11] = -K[1, 5]
+        K[7, 12] = K[1, 6]
+        K[8, 8] = K[2, 2]
+        K[8, 10] = -K[2, 4]
+        K[8, 12] = K[2, 6]
+        K[9, 9] = K[3, 3]
+        K[10, 10] = K[4, 4]
+        K[10, 12] = -K[4, 6]
+        K[11, 11] = K[5, 5]
+        K[11, 12] = -K[5, 6]
+        K[12, 12] = K[6, 6]
+        K = K[1:, 1:]
+        K = K + K.T - np.eye(12) * K
+        return K
+
+    def shape_function_ori(self, radius, mset_nr, set_nr, length, z):
+        XSC, YSC, EMOD, GMOD, IX, IY, IZ, KX, KY, AREA = [getattr(self, n)(radius, mset_nr, set_nr)
+                                                          for n in "x_sh,y_sh,E,G,I_x,I_y,I_p,k_x,k_y,A".split(",")]
+
+        etax = EMOD * IX / KY / GMOD / AREA / (length**2)
+        etay = EMOD * IY / KX / GMOD / AREA / (length**2)
+        rhox = 1 / (1 + 12 * etax)
+        rhoy = 1 / (1 + 12 * etay)
+
+        f1 = z / length
+        f2 = 1 - f1
+        f3x = f1 * (3 * f1 - 2 * f1**2 + 12 * etax) * rhox
+        f4x = f2 * (3 * f2 - 2 * f2**2 + 12 * etax) * rhox
+        f5x = length * (f1**2 - (1 - 6 * etax) * f1 - 6 * etax) * f1 * rhox
+        f6x = length * (f2**2 - (1 - 6 * etax) * f2 - 6 * etax) * f2 * rhox
+        f7x = 6 / length * f1 * f2 * rhox
+        f8x = f1 * (3 * f1 - 2 * (1 - 6 * etax)) * rhox
+        f9x = f2 * (3 * f2 - 2 * (1 - 6 * etax)) * rhox
+
+        f3y = f1 * (3 * f1 - 2 * f1**2 + 12 * etay) * rhoy
+        f4y = f2 * (3 * f2 - 2 * f2**2 + 12 * etay) * rhoy
+        f5y = length * (f1**2 - (1 - 6 * etay) * f1 - 6 * etay) * f1 * rhoy
+        f6y = length * (f2**2 - (1 - 6 * etay) * f2 - 6 * etay) * f2 * rhoy
+        f7y = 6 / length * f1 * f2 * rhoy
+        f8y = f1 * (3 * f1 - 2 * (1 - 6 * etay)) * rhoy
+        f9y = f2 * (3 * f2 - 2 * (1 - 6 * etay)) * rhoy
+
+        return np.array([[f4y, 0, 0, 0, -f7y, 0],
+                         [0,  f4x, 0,  f7x, 0, 0],
+                         [0, 0,   f2, 0, 0, 0],
+                         [0, f6x, 0, f9x, 0, 0],
+                         [-f6y, 0, 0, 0, f9y, 0],
+                         [(f2 - f4y) * YSC, -(f2 - f4x) * XSC, 0, f7x * XSC, f7y * YSC, f2],
+                         [f3y, 0, 0, 0, f7y, 0],
+                         [0, f3x, 0, -f7x, 0, 0],
+                         [0, 0,    f1, 0, 0, 0],
+                         [0, -f5x, 0, f8x, 0, 0],
+                         [f5y, 0, 0, 0, f8y, 0],
+                         [(f1 - f3y) * YSC, -(f1 - f3x) * XSC, 0, -f7x * XSC, -f7y * YSC, f1]]).T
 
 
 if __name__ == "__main__":

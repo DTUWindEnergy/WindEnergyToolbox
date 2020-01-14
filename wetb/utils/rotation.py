@@ -6,6 +6,28 @@ Created on 21/07/2014
 import numpy as np
 
 
+def s2matrix(s):
+    """Creates a transformation matrix from string
+
+    Parameters
+    ----------
+    s : string
+        x is 
+    Returns
+    -------
+    matrix : array_like
+        3x3 transformation matrix             
+
+    Examples
+    --------
+    >> s2matrix('x,y,z') # identity matrix
+    >> s2matrix('x,-z,y) # 90 deg rotation around x
+
+    """
+    d = {xyz: v for xyz, v in zip('xyz', np.eye(3))}
+    return np.array([eval(xyz, d) for xyz in s.split(",")]).T
+
+
 def transformation_matrix(angles, xyz):
     """Create Transformation matrix(es)
     !!!Note that the columns of the returned matrix(es) is original(unrotate) xyz-axes in rotated coordinates\n
@@ -266,24 +288,34 @@ def norm(vector):
 # axis to ...
 #=======================================================================================================================
 def axis2axis_angle(axis):
+    """
+    deg : boolean
+        if True, axis length is assumed to be angle in deg 
+    """
     axis = np.asarray(axis)
     angle = np.sqrt(((axis**2).sum()))
-    x, y, z = axis / np.sqrt((axis**2).sum())
-    return np.r_[axis / np.sqrt((axis**2).sum()), np.deg2rad(angle)]
+    return np.r_[axis / np.sqrt((axis**2).sum()), angle]
 
 
-def axis2matrix(axis):
+def axis2matrix(axis, deg=False):
+    # http://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToMatrix/index.htm
     axis = np.asarray(axis)
     angle = np.sqrt(((axis**2).sum()))
-    x, y, z = axis / np.sqrt((axis**2).sum())
+    if deg:
+        angle = np.deg2rad(angle)
+    if angle == 0:
+        return np.eye(3)
+    x, y, z = xyz = axis / np.sqrt((axis**2).sum())
 
-    angle = np.deg2rad(angle)
     c, s = np.cos(angle), np.sin(angle)
     t = 1 - c
 
     return np.array([[t * x * x + c, t * x * y - z * s, t * x * z + y * s],
                      [t * x * y + z * s, t * y * y + c, t * y * z - x * s],
                      [t * x * z - y * s, t * y * z + x * s, t * z * z + c]])
+    # alternative implementation
+    #asym = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+    # return c * np.eye(3, 3) + s * asym + (1 - c) * xyz[np.newaxis] * xyz[:, np.newaxis]
 
 
 #=======================================================================================================================
@@ -293,11 +325,13 @@ def axis2matrix(axis):
 
 def axis_angle2axis(axis_angle):
     x, y, z, angle = axis_angle
-    return np.array([x, y, z]) * np.rad2deg(angle)
+    return np.array([x, y, z]) * angle
 
 
-def axis_angle2quaternion(axis_angle):
+def axis_angle2quaternion(axis_angle, deg=False):
     x, y, z, angle = axis_angle
+    if deg:
+        angle = np.deg2rad(angle)
     s = np.sin(angle / 2)
     x = x * s
     y = y * s
@@ -310,9 +344,11 @@ def axis_angle2quaternion(axis_angle):
 # # quaternion to ...
 #=======================================================================================================================
 
-def quaternion2axis_angle(quaternion):
+def quaternion2axis_angle(quaternion, deg=False):
     qw, qx, qy, qz = quaternion / norm(quaternion)
     angle = 2 * np.arccos(qw)
+    if deg:
+        angle = np.rad2deg(angle)
     t = np.sqrt(1 - qw**2)
     x = qx / t
     y = qy / t
@@ -373,3 +409,11 @@ def matrix2quaternion(matrix):
         qz = 0.25 * S
     e = np.array([qw, qx, qy, qz])
     return e / np.sqrt(np.sum(e**2))
+
+
+def matrix2axis_angle(matrix, deg=False):
+    return quaternion2axis_angle(matrix2quaternion(matrix), deg)
+
+
+def matrix2axis(matrix, deg=False):
+    return axis_angle2axis(matrix2axis_angle(matrix, deg))

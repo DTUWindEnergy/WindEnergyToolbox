@@ -9,11 +9,16 @@ import numpy as np
 from wetb.utils.geometry import rad
 from wetb.utils.rotation import transformation_matrix, mdot, dots, rotate, rotate_x, \
     rotmat, rotate_y, rotate_z, norm, axis2axis_angle, axis_angle2axis, axis2matrix, axis_angle2quaternion,\
-    quaternion2matrix, quaternion2axis_angle, matrix2quaternion
+    quaternion2matrix, quaternion2axis_angle, matrix2quaternion, s2matrix
 from tests import npt
 import pytest
 
 x, y, z = 0, 1, 2
+
+
+def test_s2matrix():
+    npt.assert_array_equal(s2matrix('x,-y,-z'), np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]]).T)
+    npt.assert_array_equal(s2matrix('x,-z,y'), np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]]).T)
 
 
 def test_transformation_matrix():
@@ -136,7 +141,7 @@ def test_norm():
 
 
 def test_axis2axis_angle():
-    axis_angle = np.array([2.504687681842697E-002, 0.654193239950699, 0.755912599950848, 3.09150937138433])
+    axis_angle = np.array([2.504687681842697E-002, 0.654193239950699, 0.755912599950848, np.rad2deg(3.09150937138433)])
     axis = np.array([4.43656429408, 115.877535983, 133.895130906])
     npt.assert_array_almost_equal(axis2axis_angle(axis), axis_angle)
     npt.assert_array_almost_equal(axis_angle2axis(axis2axis_angle(axis)), axis)
@@ -156,11 +161,11 @@ axis_quaternion_matrix_lst = [([30, 0, 0], [0.9659258262890683, 0.25881904510252
 
 @pytest.mark.parametrize("axis,quaternion,matrix", axis_quaternion_matrix_lst)
 def test_axis2matrix(axis, quaternion, matrix):
-    npt.assert_array_almost_equal(axis2matrix(axis), matrix)
+    npt.assert_array_almost_equal(axis2matrix(axis, deg=True), matrix)
 
 
 def test_axis_angle2axis():
-    axis_angle = np.array([2.504687681842697E-002, 0.654193239950699, 0.755912599950848, 3.09150937138433])
+    axis_angle = np.array([2.504687681842697E-002, 0.654193239950699, 0.755912599950848, np.rad2deg(3.09150937138433)])
     axis = np.array([4.43656429408, 115.877535983, 133.895130906])
     npt.assert_array_almost_equal(axis_angle2axis(axis_angle), axis)
     npt.assert_array_almost_equal(axis2axis_angle(axis_angle2axis(axis_angle)), axis_angle)
