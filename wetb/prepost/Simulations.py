@@ -32,6 +32,7 @@ import datetime
 import math
 import pickle
 import re
+import io
 # what is actually the difference between warnings and logging.warn?
 # for which context is which better?
 import warnings
@@ -1607,8 +1608,16 @@ class HtcMaster(object):
         if not self.silent:
             print('loading master: ' + fpath)
 
-        with open(fpath, 'r') as f:
-            lines = f.readlines()
+        encodings = ['utf-8', 'cp1252', 'latin-1', 'windows-1250']
+        for e in encodings:
+            try:
+                with io.open(fpath, 'r', encoding=e) as f:
+                    lines = f.readlines()
+            except UnicodeDecodeError:
+                print('unicode error with %s , trying different encoding' % e)
+            else:
+                print('opening the file with encoding:  %s ' % e)
+                break
 
         # regex for finding all tags in a line
         regex = re.compile('(\\[.*?\\])')
