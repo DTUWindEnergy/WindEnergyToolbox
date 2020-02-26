@@ -91,7 +91,7 @@ class DLCHighLevel(object):
         self.shape_k = shape_k
 
         # Variables
-        df_vars = pd.read_excel(self.filename, sheetname='Variables',
+        df_vars = pd.read_excel(self.filename, sheet_name='Variables',
                                 index_col='Name')
         df_vars.fillna('', inplace=True)
         for name, value in zip(df_vars.index, df_vars.Value.values):
@@ -103,7 +103,7 @@ class DLCHighLevel(object):
         self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
 
         # DLC sheet
-        self.dlc_df = pd.read_excel(self.filename, sheetname='DLC', skiprows=[1])
+        self.dlc_df = pd.read_excel(self.filename, sheet_name='DLC', skiprows=[1])
         # empty strings are now nans, convert back to empty strings
         self.dlc_df.fillna('', inplace=True)
         # force headers to lower case
@@ -135,7 +135,7 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        self.sensor_df = pd.read_excel(self.filename, sheetname='Sensors')
+        self.sensor_df = pd.read_excel(self.filename, sheet_name='Sensors')
         # empty strings are now nans, convert back to empty strings
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
