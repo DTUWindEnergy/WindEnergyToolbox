@@ -149,7 +149,7 @@ class results(object):
         pass
 
     def load_pwr(self, fname):
-        pwr = np.loadtxt(fname)
+        pwr = np.atleast_2d(np.loadtxt(fname))
 
         res = dummy()
 
