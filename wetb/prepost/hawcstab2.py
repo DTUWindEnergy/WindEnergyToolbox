@@ -374,68 +374,6 @@ class results(object):
         """
         self.ind
 
-    def plot_pwr(self, figname, fnames, labels=[], figsize=(11,7.15), dpi=120):
-
-        results = []
-        if isinstance(fnames, list):
-            if len(fnames) > 4:
-                raise ValueError('compare up to maximum 4 HawcStab2 cases')
-            for fname in fnames:
-                results.append(self.load_pwr(fname))
-                # if the labels are not defined, take the file name
-                if len(labels) < len(fnames):
-                    labels.append(os.path.basename(fname))
-        else:
-            results.append(self.load_pwr(fname))
-
-        colors = list('krbg')
-        symbols = list('o<+x')
-        alphas = [1.0, 0.9, 0.8, 0.75]
-
-        fig, axes = mplutils.subplots(nrows=2, ncols=2, figsize=figsize,
-                                       dpi=dpi, num=0)
-        for i, res in enumerate(results):
-            ax = axes[0,0]
-            ax.plot(res.wind, res.power, color=colors[i],
-                    label='Power %s ' % labels[i],
-                    marker=symbols[i], ls='-', alpha=alphas[i])
-            ax.set_title('Aerodynamic Power [kW]')#, RPM')
-
-            ax = axes[0,1]
-            ax.plot(res.wind, res.pitch_deg, color=colors[i],
-                    label='Pitch %s' % labels[i],
-                    marker=symbols[i], ls='-', alpha=alphas[i])
-            ax.plot(res.wind, res.rpm, color=colors[i],
-                    label='RPM %s ' % labels[i],
-                    marker=symbols[i], ls='--', alpha=alphas[i])
-            ax.set_title('Pitch [deg], RPM')
-
-            ax = axes[1,0]
-            ax.plot(res.wind, res.thrust, color=colors[i], label=labels[i],
-                    marker=symbols[i], ls='-', alpha=alphas[i])
-            ax.set_title('Thrust [kN]')
-
-            ax = axes[1,1]
-            ax.plot(res.wind, res.cp, label='$C_p$ %s ' % labels[i], ls='-',
-                    color=colors[i], marker=symbols[i], alpha=alphas[i])
-            ax.plot(res.wind, res.ct, label='$C_t$ %s ' % labels[i], ls='--',
-                    color=colors[i], marker=symbols[i], alpha=alphas[i])
-            ax.set_title('Power and Thrust coefficients [-]')
-
-        for ax in axes.ravel():
-            ax.legend(loc='best')
-            ax.grid(True)
-            ax.set_xlim([res.wind[0], res.wind[-1]])
-        fig.tight_layout()
-
-        print('saving figure: %s ... ' % figname, end='')
-        figpath = os.path.dirname(figname)
-        if not os.path.exists(figpath):
-            os.makedirs(figpath)
-        fig.savefig(figname)
-        fig.clear()
-        print('done!')
-
 
 class ReadControlTuning(object):
 
@@ -546,6 +484,302 @@ class ReadControlTuning(object):
         tune_tags['[aero_damp.Ko2]'] = self.aero_damp.Ko2
 
         return tune_tags
+
+
+def read_modid(fname):
+    """Separate text file describing the modes.
+    """
+
+    df_modes = pd.read_csv(fname, comment='#', delimiter=';',
+                           header=None, names=['mode_nr', 'description'],
+                           converters={0:lambda x:x.strip(),
+                                       1:lambda x:x.strip()})
+    return df_modes['description'].values.tolist()
+
+
+def read_cmb_all(f_cmb, f_pwr=None, f_modid=None, f_save=None, ps=[1,3,6]):
+    """Convenience method to load Campbell and Performance data in one go
+
+    Parameters
+    ----------
+
+    f_cmb : str
+
+    f_pwr : str, default=None
+
+    f_modid : str, default=None
+
+    f_save : str, default=None
+
+    ps : list, default=[1,2,3]
+
+
+    Returns
+    -------
+
+    df_perf, df_freq, df_damp
+
+    """
+
+    hs2 = results()
+
+    # create DataFrames with the freq/damp on the column name
+    wind, freqs, damps, real_eig = hs2.load_cmb(f_cmb)
+    nr_oper, nr_modes = freqs.shape
+
+    # performance indicators, optional
+    df_perf = None
+    if f_pwr is not None:
+        df_perf, units = hs2.load_pwr_df(f_pwr)
+        nr_perf = df_perf.shape[0]
+        if nr_oper != nr_perf or not np.allclose(wind, df_perf['V [m/s]'].values):
+            raise UserWarning('pwr and cmb files must have same operating points')
+
+    # strip characters if there is a comment after the description
+    if f_modid is None or not os.path.isfile(f_modid):
+        modes_descr = ['{:02d}'.format(k+1) for k in range(nr_modes)]
+    else:
+        modes_descr = read_modid(f_modid)[:nr_modes]
+
+    df_freq = pd.DataFrame(freqs, columns=modes_descr, index=wind)
+    df_damp = pd.DataFrame(damps, columns=modes_descr, index=wind)
+
+    if f_save is not None:
+        tmp = pd.DataFrame(freqs, columns=modes_descr, index=wind)
+        tmp.index.name = 'windspeed'
+        # add p in frequencies
+        if f_pwr is not None:
+            for p in ps:
+                tmp[f'{p}P'] = p*df_perf['rpm'].values / 60
+        # sort columns on mean frequeny over wind speeds
+        icolsort = tmp.values.mean(axis=0).argsort()
+        tmp = tmp[tmp.columns[icolsort]]
+        tmp.to_excel(f_save + '_freqs.xlsx')
+
+        tmp = pd.DataFrame(damps, columns=modes_descr, index=wind)
+        tmp.index.name = 'windspeed'
+        tmp.to_excel(f_save + '_damps.xlsx')
+
+    return df_perf, df_freq, df_damp
+
+
+def plot_pwr(figname, fnames, labels=[], figsize=(11,7.15), dpi=120):
+
+    hs2res = results()
+    reslist = []
+    if isinstance(fnames, list):
+        if len(fnames) > 4:
+            raise ValueError('compare up to maximum 4 HawcStab2 cases')
+        for fname in fnames:
+            reslist.append(hs2res.load_pwr(fname))
+            # if the labels are not defined, take the file name
+            if len(labels) < len(fnames):
+                labels.append(os.path.basename(fname))
+    else:
+        reslist.append(hs2res.load_pwr(fname))
+
+    colors = list('krbg')
+    symbols = list('o<+x')
+    alphas = [1.0, 0.9, 0.8, 0.75]
+
+    fig, axes = mplutils.subplots(nrows=2, ncols=2, figsize=figsize,
+                                   dpi=dpi, num=0)
+    for i, res in enumerate(reslist):
+        ax = axes[0,0]
+        ax.plot(res.wind, res.power, color=colors[i],
+                label='Power %s ' % labels[i],
+                marker=symbols[i], ls='-', alpha=alphas[i])
+        ax.set_title('Aerodynamic Power [kW]')#, RPM')
+
+        ax = axes[0,1]
+        ax.plot(res.wind, res.pitch_deg, color=colors[i],
+                label='Pitch %s' % labels[i],
+                marker=symbols[i], ls='-', alpha=alphas[i])
+        ax.plot(res.wind, res.rpm, color=colors[i],
+                label='RPM %s ' % labels[i],
+                marker=symbols[i], ls='--', alpha=alphas[i])
+        ax.set_title('Pitch [deg], RPM')
+
+        ax = axes[1,0]
+        ax.plot(res.wind, res.thrust, color=colors[i], label=labels[i],
+                marker=symbols[i], ls='-', alpha=alphas[i])
+        ax.set_title('Thrust [kN]')
+
+        ax = axes[1,1]
+        ax.plot(res.wind, res.cp, label='$C_p$ %s ' % labels[i], ls='-',
+                color=colors[i], marker=symbols[i], alpha=alphas[i])
+        ax.plot(res.wind, res.ct, label='$C_t$ %s ' % labels[i], ls='--',
+                color=colors[i], marker=symbols[i], alpha=alphas[i])
+        ax.set_title('Power and Thrust coefficients [-]')
+
+    for ax in axes.ravel():
+        ax.legend(loc='best')
+        ax.grid(True)
+        ax.set_xlim([res.wind[0], res.wind[-1]])
+    fig.tight_layout()
+
+    print('saving figure: %s ... ' % figname, end='')
+    figpath = os.path.dirname(figname)
+    if not os.path.exists(figpath):
+        os.makedirs(figpath)
+    fig.savefig(figname)
+    fig.clear()
+    print('done!')
+
+
+class PlotCampbell(object):
+    """
+    Generic base class for a Campbell diagram plot. This class assumes a
+    pandas DataFrame df_freq and df_damp is set by a subclass that deals
+    with the tool dependen file IO. The following DataFrames are requried:
+        * df_freq[operating points, modes] holds the respective mode frequencies
+        * df_damp[operating points, modes] holds the respective mode damping
+        * df_perf['wind'] holding the relevant wind speeds
+
+    The column names are used as labels in the Campbell diagram.
+
+    """
+
+    alpha_box = 0.5
+
+    def __init__(self, wind, df_freq, df_damp):
+        self.wind = wind
+        self.df_freq = df_freq
+        self.df_damp = df_damp
+
+    def _inplot_label_pos(self, nr_xpos, nr_series, xpos):
+        """
+        Generate sensible label positions
+        """
+
+        if xpos == 'random':
+            pos = np.random.randint(1, nr_xpos-5, nr_series)
+        elif xpos == 'centre':
+            pos = np.zeros((nr_series,))
+            pos[0:len(pos):2] = np.ceil(nr_xpos/4.0)
+            pos[1:len(pos):2] = np.ceil(2.0*nr_xpos/4.0)
+        elif xpos == 'borders':
+            pos = np.zeros((nr_series,))
+            pos[0:len(pos):2] = 2
+            pos[2:len(pos):4] += 1
+            pos[1:len(pos):2] = np.floor(3.0*nr_xpos/4.0)
+            # and +1 alternating on the right
+            pos[1:len(pos):4] += 1
+            pos[3:len(pos):4] -= 1
+        elif xpos == 'right':
+            pos = np.zeros((nr_series,))
+            pos[0:len(pos):2] = 2
+            pos[1:len(pos):2] = np.ceil(1.0*nr_xpos/4.0)
+        elif xpos == 'left':
+            pos = np.zeros((nr_series,))
+            pos[0:len(pos):2] = np.ceil(2.0*nr_xpos/4.0)
+            pos[1:len(pos):2] = np.ceil(3.0*nr_xpos/4.0)
+
+        return pos
+
+    def plot_freq(self, ax, xpos='random', col='k', mark='^', ls='-',
+                  modes='all'):
+
+        if isinstance(modes, str) and modes == 'all':
+            df_freq = self.df_freq
+        elif isinstance(modes, int):
+            df_freq = self.df_freq[:modes]
+        else:
+            df_freq = self.df_freq[modes]
+
+        nr_winds = df_freq.shape[0]
+        nr_modes = df_freq.shape[1]
+        pos = self._inplot_label_pos(nr_winds, nr_modes, xpos)
+
+        if isinstance(col, str):
+            col = [col]
+        if isinstance(mark, str):
+            mark = [mark]
+        if isinstance(ls, str):
+            ls = [ls]
+        # just to make sure we always have enough colors/marks,lss
+        col = col*nr_modes
+        mark = mark*nr_modes
+        ls = ls*nr_modes
+
+        for i, (name, row) in enumerate(df_freq.iteritems()):
+            colmark = '%s%s%s' % (col[i], ls[i], mark[i])
+            ax.plot(self.wind, row.values, colmark)#, mfc='w')
+            x, y = self.wind[pos[i]], row.values[pos[i]]
+            bbox = dict(boxstyle="round", alpha=self.alpha_box,
+                        edgecolor=col[i], facecolor=col[i])
+            ax.annotate(name, xy=(x, y), xycoords='data',
+                        xytext=(-6, +20), textcoords='offset points',
+                        fontsize=12, bbox=bbox, arrowprops=dict(arrowstyle="->",
+                        connectionstyle="arc3,rad=.05"), color='w')
+
+        self.nr_modes = nr_modes
+
+        return ax
+
+    def plot_damp(self, ax, xpos='random', col='r', mark='o' ,ls='--',
+                  modes=14):
+
+        # reduce the number of modes we are going to plot
+        if isinstance(modes, int):
+            nr_modes = modes
+            # sort the columns according to damping: lowest damped modes first
+            # sort according to damping at lowest wind speed
+            isort = self.df_damp.iloc[0,:].values.argsort()
+            modes_sort_reduced = self.df_damp.columns[isort][:nr_modes]
+            df_damp = self.df_damp[modes_sort_reduced]
+        else:
+            df_damp = self.df_damp[modes]
+            nr_modes = len(modes)
+
+        # put the labels in sensible places
+        nr_winds = df_damp.shape[0]
+        nr_damps = df_damp.shape[1]
+        pos = self._inplot_label_pos(nr_winds, nr_damps, xpos)
+        bbox = dict(boxstyle="round", alpha=self.alpha_box, edgecolor=col,
+                    facecolor=col,)
+        for imode, (name, row) in enumerate(df_damp.iteritems()):
+            colmark = '%s%s%s' % (col, ls, mark)
+            ax.plot(self.wind, row.values, colmark, alpha=0.8)#, mfc='w')
+            x, y = self.wind[pos[imode]], row.values[pos[imode]]
+            ax.annotate(name, xy=(x, y), xycoords='data',
+                        xytext=(-6, 20), textcoords='offset points',
+                        fontsize=12, bbox=bbox, arrowprops=dict(arrowstyle="->",
+                        connectionstyle="arc3,rad=.05"), color='w')
+
+        self.nr_modes = nr_modes
+
+        return ax
+
+    def add_legend(self, ax, labels, on='freq'):
+        if on == 'freq':
+            i0s = self.istart_freqs
+        else:
+            i0s = self.istart_damps
+
+        return ax.legend([ax.lines[k] for k in i0s[:-1]], labels, loc='best')
+
+
+def plot_add_ps(ax, wind, rpm, col='g', fmax=10, ps=None):
+    # plot 1P, 2P, ..., 9P
+    bbox = dict(boxstyle="round", alpha=0.4, edgecolor=col, facecolor=col,)
+    if ps is None:
+        pmax = int(60*fmax/rpm.mean())
+        ps = list(range(1, pmax))
+    for p in ps:
+        if p%3 == 0:
+            alpha=0.6
+            ax.plot(wind, rpm*p/60, '%s--' % col, )
+        else:
+            alpha = 0.4
+            ax.plot(wind, rpm*p/60, '%s-.' % col)#, alpha=alpha)
+        x, y = wind[10], rpm[10]*p/60
+        p_str = '%iP' % p
+        bbox['alpha'] = alpha
+        ax.text(x, y, p_str, fontsize=9, verticalalignment='bottom',
+                horizontalalignment='center', bbox=bbox, color='w')
+
+    return ax
 
 
 if __name__ == '__main__':

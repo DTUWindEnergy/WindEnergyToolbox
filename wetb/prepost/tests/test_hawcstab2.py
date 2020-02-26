@@ -16,7 +16,9 @@ from os.path import dirname as pdirname
 
 import numpy as np
 
-from wetb.prepost.hawcstab2 import results, ReadControlTuning
+from wetb.prepost.hawcstab2 import (results, ReadControlTuning, read_cmb_all,
+                                    read_modid, PlotCampbell, plot_add_ps)
+from wetb.prepost.mplutils import subplots
 
 
 class Tests(unittest.TestCase):
@@ -24,13 +26,12 @@ class Tests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.fpath_linear = pjoin(pdirname(__file__),
-                                  'data/controller_input_linear.txt')
-        self.fpath_quad = pjoin(pdirname(__file__),
-                                'data/controller_input_quadratic.txt')
+        self.fbase = pdirname(__file__)
+        self.fpath_linear = pjoin(self.fbase, 'data/controller_input_linear.txt')
+        self.fpath_quad = pjoin(self.fbase, 'data/controller_input_quadratic.txt')
 
     def test_cmb_df(self):
-        fname1 = pjoin(pdirname(__file__), 'data/campbell_diagram.cmb')
+        fname1 = pjoin(self.fbase, 'data/campbell_diagram.cmb')
         speed, freq, damp, real_eig = results().load_cmb(fname1)
 
         self.assertIsNone(real_eig)
@@ -40,7 +41,7 @@ class Tests(unittest.TestCase):
         ops = freq.shape[0]
 
         self.assertEqual(len(speed), ops)
-        self.assertEqual(ops, 22)
+        self.assertEqual(ops, 21)
         self.assertEqual(mods, 10)
 
         for k in range(ops):
@@ -50,6 +51,30 @@ class Tests(unittest.TestCase):
             np.testing.assert_allclose(np.arange(1,len(df_oper)+1), df_oper['mode'])
             self.assertEqual(len(df_oper['wind_ms'].unique()), 1)
             self.assertEqual(df_oper['wind_ms'].unique()[0], speed[k])
+
+    def test_read_cmb_all(self):
+
+        f_pwr = pjoin(self.fbase, 'data/dtu10mw_v1.pwr')
+        f_cmb = pjoin(self.fbase, 'data/campbell_diagram.cmb')
+        f_modid = pjoin(self.fbase, 'data/dtu10mw.modid')
+        dfp, dff, dfd = read_cmb_all(f_cmb, f_pwr=f_pwr, f_modid=f_modid)
+        self.assertEqual(dfp.shape, (21, 27))
+        self.assertEqual(dff.shape, (21, 10))
+        self.assertEqual(dfd.shape, (21, 10))
+
+        dfp, dff, dfd = read_cmb_all(f_cmb, f_pwr=None)
+        self.assertIsNone(dfp)
+
+    def test_read_modid(self):
+        fname = pjoin(self.fbase, 'data/dtu10mw.modid')
+        modes = read_modid(fname)
+        ref = ['', '1st Tower FA', '1st Tower SS', '1st BF B whirling',
+               '1st BF collective', '1st BF F whirling', '1st BE B whirling',
+               '1st BE F whirling', '2nd BF B whirling', '2nd BF F whirling',
+               '2nd BF collective', '1st shaft / BE collective',
+               '2nd Tower FA', '2nd Tower SS', 'Tower torsion']
+        self.assertEqual(len(modes), 25)
+        self.assertEqual(modes[:15], ref)
 
     def test_linear_file(self):
 
@@ -138,7 +163,7 @@ class Tests(unittest.TestCase):
                   ]
 
         for fname in fnames:
-            fname = pjoin(pdirname(__file__), 'data', fname)
+            fname = pjoin(self.fbase, 'data', fname)
             res = results()
             df_data = res.load_ind(fname)
             data = np.loadtxt(fname)
@@ -150,7 +175,7 @@ class Tests(unittest.TestCase):
                   'dtu10mw_nogradient_v2.pwr',
                   'dtu10mw_v1.pwr',]
         for fname in fnames:
-            fname = pjoin(pdirname(__file__), 'data', fname)
+            fname = pjoin(self.fbase, 'data', fname)
             res = results()
             df_data, units = res.load_pwr_df(fname)
             data = np.loadtxt(fname)
@@ -161,7 +186,7 @@ class Tests(unittest.TestCase):
 
         res = results()
 
-        fname = pjoin(pdirname(__file__), 'data', 'dtu10mw.opt')
+        fname = pjoin(self.fbase, 'data', 'dtu10mw.opt')
         df = res.load_operation(fname)
         tmp = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
                 21, 22, 23, 24, 25]
@@ -183,6 +208,21 @@ class Tests(unittest.TestCase):
                106.469433544515]
         np.testing.assert_allclose(tmp, df['P_aero'].values)
         self.assertEqual(df.values.shape, (22, 5))
+
+    def test_plot_cmb(self):
+
+        base = pdirname(__file__)
+        f_pwr = pjoin(base, 'data/dtu10mw_v1.pwr')
+        f_cmb = pjoin(base, 'data/campbell_diagram.cmb')
+        dfp, dff, dfd = read_cmb_all(f_cmb, f_pwr=f_pwr)
+        cmb = PlotCampbell(dfp['V [m/s]'].values, dff, dfd)
+
+        fig, axes = subplots(nrows=2, ncols=1, figsize=(8,10))
+        ax = axes[0,0]
+        ax = cmb.plot_freq(ax, col='k', mark='^', ls='-', modes='all')
+        ax = plot_add_ps(ax, dfp['V [m/s]'], dfp['Speed [rpm]'], ps=[1,3,6])
+        ax = axes[1,0]
+        ax = cmb.plot_damp(ax, col='k', mark='^', ls='-', modes=10)
 
 
 if __name__ == "__main__":
