@@ -277,7 +277,6 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
     iter_dict['[empty]'] = [False]
 
     if postpro_node or postpro_node_zipchunks:
-#        pyenv = 'py36-wetb'
         pyenv = 'py36-wetb'
     else:
         pyenv = None
