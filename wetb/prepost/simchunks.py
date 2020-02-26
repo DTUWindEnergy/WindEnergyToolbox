@@ -725,6 +725,9 @@ def merge_from_tarfiles(df_fname, path, pattern, tarmode='r:xz', tqdm=False,
         def tqdm(itereable):
             return itereable
 
+    if len(glob.glob(os.path.join(path, pattern))) < 1:
+        raise RuntimeError('No files found to merge')
+
     for tar_fname in tqdm(glob.glob(os.path.join(path, pattern))):
         if verbose:
             print(tar_fname)
