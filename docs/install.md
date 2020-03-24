@@ -1,4 +1,3 @@
-
 # Anaconda (Windows/Mac/Linux)
 
 ## Installation
@@ -9,7 +8,6 @@ Install the necessary Python dependencies using the ```conda``` package manager:
 >> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil
 >> conda install -c conda-forge sshtunnel --no-deps
->> conda install blosc
 ```
 
 Now you can install ```wetb``` with ```pip``` (there is no ```conda``` package
@@ -31,6 +29,8 @@ expclicitally tell ```pip``` to only install ```wetb``` and nothing more:
 
 
 # Pip (Windows/Mac/Linux)
+
+Do not use this procedure in conda environments. See above.
 
 ## Installation and update
 
