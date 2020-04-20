@@ -23,6 +23,7 @@ from builtins import object
 
 # standard python library
 import os
+import os.path as osp
 import subprocess as sproc
 import copy
 import zipfile
@@ -57,7 +58,6 @@ from wetb.prepost import prepost
 from wetb.dlc import high_level as dlc
 #from wetb.prepost.GenerateHydro import hydro_input
 from wetb.utils.envelope import compute_envelope
-#from os.path import join as os_path_join
 
 #def join_path(*args):
 #    return os_path_join(*args).replace("\\","/")
@@ -1792,7 +1792,7 @@ class PBS(object):
         self.verbose = verbose
         self.silent = silent
         self.pyenv = pyenv
-        self.pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
+        self.pyenv_cmd = "source /home/python/miniconda3/bin/activate"
         self.postpro_node_zipchunks = postpro_node_zipchunks
         self.postpro_node = postpro_node
         # Prelude is executed just before HAWC2 is
@@ -1804,25 +1804,23 @@ class PBS(object):
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh
         wineparam = (wine_arch, wine_prefix)
         if wine_arch==None or wine_prefix==None:
-            self.winebase = 'time '
-            self.wine = self.winebase
-            self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR'
+            self.winebase = "time "
         else:
-            self.winebase = 'time WINEARCH=%s WINEPREFIX=%s ' % wineparam
-            self.wine = self.winebase + 'wine'
-            self.winenumactl = self.winebase + 'numactl --physcpubind=$CPU_NR wine'
+            self.winebase = "time WINEARCH='%s' WINEPREFIX=\"%s\" " % wineparam
+        self.wine = self.winebase + 'wine'
+        self.winenumactl = self.winebase + "numactl --physcpubind=$CPU_NR wine"
 
         # in case you want to redirect stdout to /dev/nul, append as follows:
         # '> /dev/null 2>&1'
         self.exesingle = exesingle
         if exesingle is None:
-            self.exesingle = "{wine:} {hawc2_exe:} {fname_htc:}"
+            self.exesingle = "{wine:} '{hawc2_exe:}' '{fname_htc:}'"
         # in zipchunks mode we will output std out and err to a separate
         # pbs_out file, and that in addition to the pbs_out_zipchunks file
         self.exechunks = exechunks
         if exechunks is None:
-            self.exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
-            self.exechunks += "2>&1 | tee {fname_pbs_out:}"
+            self.exechunks = "({winenumactl:} '{hawc2_exe:}' '{fname_htc:}') "
+            self.exechunks += "2>&1 | tee '{fname_pbs_out:}'"
 
         # TODO: based on a certain host/architecture you can change these
         self.maxcpu = 1
@@ -1831,10 +1829,10 @@ class PBS(object):
         # determine at runtime if winefix has to be ran
         self.winefix = ''
         if wine_arch!=None or wine_prefix!=None:
-            self.winefix = '  _HOSTNAME_=`hostname`\n'
-            self.winefix += '  if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then\n'
-            self.winefix += '    WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
-            self.winefix += '  fi\n'
+            self.winefix = "  _HOSTNAME_=`hostname`\n"
+            self.winefix += "  if [[ ${_HOSTNAME_:0:1} == \"j\" ]] ; then\n"
+            self.winefix += "    WINEARCH='%s' WINEPREFIX=\"%s\" winefix\n" % wineparam
+            self.winefix += "  fi\n"
 
         # the output channels comes with a price tag. Each time step
         # will have a penelty depending on the number of output channels
@@ -2036,9 +2034,9 @@ class PBS(object):
                     jobid = tag_dict['[case_id]']
                 if self.pbs_fname_appendix and self.short_job_names:
                     # define the path for the new pbs script
-                    pbs_in_fname = '%s_%s.p' % (tag_dict['[case_id]'], jobid)
+                    pbs_in_fname = "%s_%s.p" % (tag_dict['[case_id]'], jobid)
                 else:
-                    pbs_in_fname = '%s.p' % (tag_dict['[case_id]'])
+                    pbs_in_fname = "%s.p" % (tag_dict['[case_id]'])
                 pbs_path = self.model_path + self.pbs_in_dir + pbs_in_fname
                 # Start a new pbs script, we only need the tag_dict here
                 self.starting(tag_dict, jobid)
@@ -2050,16 +2048,16 @@ class PBS(object):
             # browse to the current scratch directory
             self.pbs += "\n\n"
             # mark start of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n'
+            self.pbs += "# " + "="*78 + "\n"
             # evaluates to true if LAUNCH_PBS_MODE is NOT set
-            self.pbs += '# single PBS mode: one case per PBS job\n'
-            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+            self.pbs += "# single PBS mode: one case per PBS job\n"
+            self.pbs += "# evaluates to true if LAUNCH_PBS_MODE is NOT set\n"
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
             self.pbs += "  echo\n"
             self.pbs += "  echo 'Execute commands on scratch nodes'\n"
-            self.pbs += "  cd %s/$USER/$PBS_JOBID\n" % self.node_run_root
+            self.pbs += "  cd \"%s/$USER/$PBS_JOBID\"\n" % self.node_run_root
             self.pbs += "  # create unique dir for each CPU\n"
-            self.pbs += '  mkdir "%i"; cd "%i"\n' % (count1, count1)
+            self.pbs += "  mkdir '%i'; cd '%i'\n" % (count1, count1)
 
             # output the current scratch directory
             self.pbs += "  pwd\n"
@@ -2068,29 +2066,30 @@ class PBS(object):
             self.pbs += "  /usr/bin/unzip ../" + self.ModelZipFile + '\n'
             # create all directories, especially relevant if there are case
             # dependent sub directories that are not present in the ZIP file
-            self.pbs += "  mkdir -p " + self.htc_dir + '\n'
-            self.pbs += "  mkdir -p " + self.results_dir + '\n'
-            self.pbs += "  mkdir -p " + self.logs_dir + '\n'
+            self.pbs += "  mkdir -p '" + self.htc_dir + "'\n"
+            self.pbs += "  mkdir -p '" + self.results_dir + "'\n"
+            self.pbs += "  mkdir -p '" + self.logs_dir + "'\n"
             if self.TurbDirName is not None or self.TurbDirName.lower()!='none':
-                self.pbs += "  mkdir -p " + self.TurbDirName + '\n'
+                self.pbs += "  mkdir -p '" + self.TurbDirName + "'\n"
 
             if self.WakeDirName and self.WakeDirName != self.TurbDirName:
                 if str(self.WakeDirName).lower() != 'none':
-                    self.pbs += "  mkdir -p " + self.WakeDirName + '\n'
+                    self.pbs += "  mkdir -p '" + self.WakeDirName + "'\n"
 
             if self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
                 if str(self.MeanderDirName).lower() != 'none':
-                    self.pbs += "  mkdir -p " + self.MeanderDirName + '\n'
+                    self.pbs += "  mkdir -p '" + self.MeanderDirName + "'\n"
 
             if self.hydro_dir:
-                self.pbs += "  mkdir -p " + self.hydro_dir + '\n'
+                self.pbs += "  mkdir -p '" + self.hydro_dir + "'\n"
             # create the eigen analysis dir just in case that is necessary
             if self.eigenfreq_dir:
-                self.pbs += '  mkdir -p %s\n' % self.eigenfreq_dir
+                self.pbs += "  mkdir -p '%s'\n" % self.eigenfreq_dir
 
             # and copy the htc file to the node
-            self.pbs += "  cp -R $PBS_O_WORKDIR/" + self.htc_dir \
-                + case +" ./" + self.htc_dir + '\n'
+            # use double quotes here because we need to expand $PBS_O_WORKDIR
+            case_source = os.path.join('$PBS_O_WORKDIR', self.htc_dir, case)
+            self.pbs += "  cp -R \"%s\" '%s'\n" % (case_source, self.htc_dir)
 
             # if there is a turbulence file data base dir, copy from there
             if self.TurbDb:
@@ -2102,16 +2101,17 @@ class PBS(object):
             # names: turb_base_name_xxx_u.bin, turb_base_name_xxx_v.bin
             if self.turb_base_name is not None:
                 turb_src = os.path.join(turb_dir_src, self.turb_base_name)
-                self.pbs += "  cp -R %s*.bin %s\n" % (turb_src, self.TurbDirName)
+                # double quotes for expanding variables at run time
+                self.pbs += "  cp -R \"%s\"*.bin \"%s\"\n" % (turb_src, self.TurbDirName)
             # more generally, literally define the names of the boxes for u,v,w
             # components
             elif '[turb_fname_u]' in tag_dict:
                 turb_u = os.path.join(turb_dir_src, tag_dict['[turb_fname_u]'])
                 turb_v = os.path.join(turb_dir_src, tag_dict['[turb_fname_v]'])
                 turb_w = os.path.join(turb_dir_src, tag_dict['[turb_fname_w]'])
-                self.pbs += "  cp %s %s\n" % (turb_u, self.TurbDirName)
-                self.pbs += "  cp %s %s\n" % (turb_v, self.TurbDirName)
-                self.pbs += "  cp %s %s\n" % (turb_w, self.TurbDirName)
+                self.pbs += "  cp \"%s\" \"%s\"\n" % (turb_u, self.TurbDirName)
+                self.pbs += "  cp \"%s\" \"%s\"\n" % (turb_v, self.TurbDirName)
+                self.pbs += "  cp \"%s\" \"%s\"\n" % (turb_w, self.TurbDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.wakeDb and self.WakeDirName:
@@ -2120,7 +2120,7 @@ class PBS(object):
                 wake_dir_src = os.path.join('$PBS_O_WORKDIR', self.WakeDirName)
             if self.wake_base_name is not None:
                 wake_src = os.path.join(wake_dir_src, self.wake_base_name)
-                self.pbs += "  cp -R %s*.bin %s\n" % (wake_src, self.WakeDirName)
+                self.pbs += "  cp -R \"%s\"*.bin \"%s\"\n" % (wake_src, self.WakeDirName)
 
             # if there is a turbulence file data base dir, copy from there
             if self.meandDb and self.MeanderDirName:
@@ -2129,55 +2129,52 @@ class PBS(object):
                 meand_dir_src = os.path.join('$PBS_O_WORKDIR', self.MeanderDirName)
             if self.meand_base_name is not None:
                 meand_src = os.path.join(meand_dir_src, self.meand_base_name)
-                self.pbs += "  cp -R %s*.bin %s\n" % (meand_src, self.MeanderDirName)
+                self.pbs += "  cp -R \"%s\"*.bin \"%s\"\n" % (meand_src, self.MeanderDirName)
 
             # copy and rename input files with given versioned name to the
             # required non unique generic version
             for fname, fgen in zip(self.copyto_files, self.copyto_generic):
-                self.pbs += "  cp -R $PBS_O_WORKDIR/%s ./%s\n" % (fname, fgen)
+                fname_full = os.path.join('$PBS_O_WORKDIR', fname)
+                self.pbs += "  cp -R \"%s\" \"%s\"\n" % (fname_full, fgen)
 
             # only apply the wine fix in PBS mode
             self.pbs += self.winefix
             # TODO: activate python env, calculate post-processing
 #            self.pbs += 'echo `python -c "import wetb; print(wetb.__version__)"`\n'
             # mark end of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n\n'
+            self.pbs += "# " + "="*78 + "\n\n"
 
             # end of the file copying in PBS mode
             # mark start of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
-            self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
+            self.pbs += "# " + "-"*78 + "\n"
+            self.pbs += "# find+xargs mode: 1 PBS job, multiple cases\n"
             self.pbs += "else\n"
             # when in find+xargs mode, browse to the relevant CPU
-            self.pbs += '  # with find+xargs we first browse to CPU folder\n'
-            self.pbs += '  cd "$CPU_NR"\n'
+            self.pbs += "  # with find+xargs we first browse to CPU folder\n"
+            self.pbs += "  cd \"$CPU_NR\"\n"
             self.pbs += "fi\n"
             # mark end of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n\n'
+            self.pbs += "# " + "-"*78 + "\n\n"
 
-            self.pbs += 'echo ""\n'
+            self.pbs += "echo ''\n"
             # mark start of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n'
-            self.pbs += '# single PBS mode: one case per PBS job\n'
-            self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+            self.pbs += "# " + "="*78 + "\n"
+            self.pbs += "# single PBS mode: one case per PBS job\n"
+            self.pbs += "# evaluates to true if LAUNCH_PBS_MODE is NOT set\n"
             self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
 
-            self.pbs += '  echo "execute HAWC2, fork to background"\n'
+            self.pbs += "  echo 'execute HAWC2, fork to background'\n"
             # the hawc2 execution commands via wine, in PBS mode fork and wait
             # METHOD MORE GENERAL
             # case contains the htc file name extension, self.case doesn't
-            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            # we include a leading ./ to help HAWC2
+            fname_htc = os.path.join(self.htc_dir, case)
             fname_log = os.path.join(self.logs_dir, self.case)
             ext = '.err.out'
             fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
             execstr = self.exesingle.format(wine=self.wine, case=case,
                                             fname_htc=fname_htc,
-                                            hawc2_exe=hawc2_exe,
-                                            pbs_out_dir=self.pbs_out_dir,
-                                            logs_dir=self.logs_dir,
-                                            fname_log=fname_log,
-                                            fname_pbs_out=fname_pbs_out,
-                                            winenumactl=self.winenumactl)
+                                            hawc2_exe=hawc2_exe)
             self.pbs += self.prelude
             self.pbs += "  %s &\n" % execstr
             # # OLD METHOD
@@ -2188,24 +2185,24 @@ class PBS(object):
             # per PBS file, otherwise you have to wait for each job to finish
             # first and then run the post-processing for all those cases
             if self.maxcpu == 1:
-                self.pbs += '  wait\n'
+                self.pbs += "  wait\n"
                 if self.pyenv is not None and self.postpro_node:
-                    self.pbs += '  echo "POST-PROCESSING"\n'
-                    self.pbs += '  %s %s\n' % (self.pyenv_cmd, self.pyenv)
+                    self.pbs += "  echo 'POST-PROCESSING'\n"
+                    self.pbs += "  %s %s\n" % (self.pyenv_cmd, self.pyenv)
                     self.pbs += "  "
                     self.checklogs()
                     self.pbs += "  "
                     self.postprocessing()
-                    self.pbs += '  source deactivate\n'
+                    self.pbs += "  source deactivate\n"
             # mark end of single PBS mode
-            self.pbs += '# ' + '='*78 + '\n\n'
+            self.pbs += "# " + "="*78 + "\n\n"
             # mark start of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
-            self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
+            self.pbs += "# " + "-"*78 + "\n"
+            self.pbs += "# find+xargs mode: 1 PBS job, multiple cases\n"
             self.pbs += "else\n"
             # numactl --physcpubind=$CPU_NR
 
-            fname_htc = "./" + os.path.join(self.htc_dir, case)
+            fname_htc = os.path.join(self.htc_dir, case)
             fname_log = os.path.join(self.logs_dir, self.case)
             ext = '.err.out'
             fname_pbs_out = os.path.join(self.pbs_out_dir, self.case + ext)
@@ -2217,7 +2214,7 @@ class PBS(object):
                                             fname_log=fname_log,
                                             fname_pbs_out=fname_pbs_out,
                                             winenumactl=self.winenumactl)
-            self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
+            self.pbs += "  echo 'execute HAWC2, do not fork and wait'\n"
             self.pbs += "  %s\n" % execstr
 
             # param = (self.winenumactl, hawc2_exe, self.htc_dir+case,
@@ -2225,14 +2222,14 @@ class PBS(object):
             # self.pbs += '  echo "execute HAWC2, do not fork and wait"\n'
             # self.pbs += "  " + ("%s %s ./%s %s" % param).strip() + "\n"
             if self.pyenv is not None and self.postpro_node_zipchunks:
-                self.pbs += '  echo "POST-PROCESSING"\n'
+                self.pbs += "  echo 'POST-PROCESSING'\n"
                 self.pbs += "  "
                 self.checklogs()
                 self.pbs += "  "
                 self.postprocessing()
             self.pbs += "fi\n"
             # mark end of find+xargs mode
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += "# " + "-"*78 + "\n"
 
             #self.pbs += "wine get_mac_adresses" + '\n'
             # self.pbs += "cp -R ./*.mac  $PBS_O_WORKDIR/." + '\n'
@@ -2272,17 +2269,19 @@ class PBS(object):
         """
 
         # a new clean pbs script!
-        self.pbs = ''
+        self.pbs = ""
         self.pbs += "### Standard Output" + '\n'
 
         case_id = tag_dict['[case_id]']
 
         # PBS job name
         self.pbs += "#PBS -N %s\n" % (jobid)
-        self.pbs += "#PBS -o ./" + self.pbs_out_dir + case_id + ".out" + '\n'
+        pbs_path = os.path.join(self.pbs_out_dir, case_id + ".out")
+        self.pbs += "#PBS -o '%s'\n" % pbs_path
         # self.pbs += "#PBS -o ./pbs_out/" + jobid + ".out" + '\n'
         self.pbs += "### Standard Error" + '\n'
-        self.pbs += "#PBS -e ./" + self.pbs_out_dir + case_id + ".err" + '\n'
+        pbs_path = os.path.join(self.pbs_out_dir, case_id + ".err")
+        self.pbs += "#PBS -e '%s'\n" % pbs_path
         # self.pbs += "#PBS -e ./pbs_out/" + jobid + ".err" + '\n'
         self.pbs += '#PBS -W umask=0003\n'
         self.pbs += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
@@ -2321,7 +2320,7 @@ class PBS(object):
         # or otherwise for longer jobs: '#PBS -q workq'
         self.pbs += self.pbs_queue_command + '\n'
         # mark start of single PBS mode
-        self.pbs += '\n' + '# ' + '='*78 + '\n'
+        self.pbs += "\n" + "# " + "="*78 + "\n"
 
         # ignore all the file copying when running in xargs mode:
         # when varibale LAUNCH_PBS_MODE is set, file copying is ignored
@@ -2329,29 +2328,26 @@ class PBS(object):
         # we do this so the same launch script can be used either with the node
         # scheduler and the PBS system (for example when re-running cases)
         # evaluates to true if LAUNCH_PBS_MODE is NOT set
-        self.pbs += '# single PBS mode: one case per PBS job\n'
-        self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+        self.pbs += "# single PBS mode: one case per PBS job\n"
+        self.pbs += "# evaluates to true if LAUNCH_PBS_MODE is NOT set\n"
         self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
 
         self.pbs += "  ### Create scratch directory and copy data to it\n"
         # output the current directory
-        self.pbs += "  cd $PBS_O_WORKDIR" + '\n'
-        self.pbs += '  echo "current working dir (pwd):"\n'
+        self.pbs += "  cd \"$PBS_O_WORKDIR\"\n"
+        self.pbs += "  echo 'current working dir (pwd):'\n"
         self.pbs += "  pwd\n"
-        # The batch system on Gorm allows more than one job per node.
-        # Because of this the scratch directory name includes both the
-        # user name and the job ID, that is /scratch/$USER/$PBS_JOBID
-        # if not scratch, make the dir
-        if self.node_run_root != '/scratch':
-            self.pbs += '  mkdir -p %s/$USER\n' % self.node_run_root
-            self.pbs += '  mkdir -p %s/$USER/$PBS_JOBID\n' % self.node_run_root
+        # # in very special cases you might want the scratch directory be made
+        # if self.node_run_root != '/scratch':
+        #     self.pbs += '  mkdir -p %s/$USER\n' % self.node_run_root
+        #     self.pbs += '  mkdir -p %s/$USER/$PBS_JOBID\n' % self.node_run_root
 
         # copy the zip files to the scratch dir on the node
-        self.pbs += "  cp -R ./" + self.ModelZipFile + \
-            ' %s/$USER/$PBS_JOBID\n' % (self.node_run_root)
+        rpl = (self.ModelZipFile, self.node_run_root)
+        self.pbs += "  cp -R '%s' \"%s/$USER/$PBS_JOBID\"\n" % rpl
         self.pbs += "fi\n"
         # mark end of single PBS mode
-        self.pbs += '# ' + '='*78 + '\n'
+        self.pbs += "# " + "="*78 + "\n"
 
     def ending(self, pbs_path):
         """
@@ -2361,15 +2357,15 @@ class PBS(object):
         self.pbs += "\n\n"
         self.pbs += "### Epilogue\n"
         # mark start of single PBS mode
-        self.pbs += '# ' + "="*78 + "\n"
+        self.pbs += "# " + "="*78 + "\n"
         # evaluates to true if LAUNCH_PBS_MODE is NOT set
-        self.pbs += '# single PBS mode: one case per PBS job\n'
-        self.pbs += '# evaluates to true if LAUNCH_PBS_MODE is NOT set\n'
+        self.pbs += "# single PBS mode: one case per PBS job\n"
+        self.pbs += "# evaluates to true if LAUNCH_PBS_MODE is NOT set\n"
         self.pbs += "if [ -z ${LAUNCH_PBS_MODE+x} ] ; then\n"
         self.pbs += "  ### wait for jobs to finish\n"
         self.pbs += "  wait\n"
-        self.pbs += '  echo ""\n'
-        self.pbs += '  echo "Copy back from scratch directory"\n'
+        self.pbs += "  echo ''\n"
+        self.pbs += "  echo 'Copy back from scratch directory'\n"
         for i in range(1, self.maxcpu+1, 1):
 
             # navigate to the cpu dir on the node
@@ -2381,23 +2377,11 @@ class PBS(object):
             # for this mode is handled elsewhere
             if self.maxcpu == 1:
                 # mark start of find+xargs mode
-                self.pbs += '# ' + "-"*78 + "\n"
-                self.pbs += '# find+xargs mode: 1 PBS job, multiple cases\n'
-                self.pbs += 'else\n'
+                self.pbs += "# " + "-"*78 + "\n"
+                self.pbs += "# find+xargs mode: 1 PBS job, multiple cases\n"
+                self.pbs += "else\n"
                 self.copyback_all_files("find+xargs", None)
-                # mark end of find+xargs mode
-#                self.pbs += '# ' + "-"*78 + "\n"
-
-#            # and delete it all (but that is not allowed)
-#            self.pbs += 'cd ..\n'
-#            self.pbs += 'ls -lah\n'
-#            self.pbs += 'echo $PBS_JOBID\n'
-#            self.pbs += 'rm -r $PBS_JOBID\n'
-
-            # Delete the batch file at the end. However, is this possible since
-            # the batch file is still open at this point????
-            # self.pbs += "rm "
-        self.pbs += 'fi\n'
+        self.pbs += "fi\n"
 
         # base walltime on the longest simulation in the batch
         nr_time_steps = max(self.nr_time_steps)
@@ -2427,7 +2411,7 @@ class PBS(object):
         self.pbs += "exit\n"
 
         if self.verbose:
-            print('writing pbs script to path: ' + pbs_path)
+            print("writing pbs script to path: " + pbs_path)
 
         # and write the script to a file:
         write_file(pbs_path, self.pbs, 'w')
@@ -2439,20 +2423,22 @@ class PBS(object):
         or from CPU sub-directory back to main directory in find+xargs mode.
         """
         if mode=="find+xargs":
-            foper = "rsync -a --remove-source-files" # move files instead of copy
+            # we use --remove-source-files otherwise all the results will be
+            # here twice: in the main directory and in the cpu-sub directories
+            foper = "rsync -a --remove-source-files"
             dst = os.path.join('..', self.sim_id, '')
             # copy back to DB dir, and not the scratch dir root
-            dst_db = "$PBS_O_WORKDIR/"
-            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
-                                                  '$PBS_JOBID', '$CPU_NR', '')
+            dst_db = "$PBS_O_WORKDIR"
+            cd2model = "  cd \"%s\"\n" % os.path.join(self.node_run_root, '$USER',
+                                                      '$PBS_JOBID', '$CPU_NR', '')
             pbs_mode = False
         else:
             foper = "cp -R"
-            dst = "$PBS_O_WORKDIR/"
+            dst = "$PBS_O_WORKDIR"
             dst_db = dst
             pbs_mode = True
-            cd2model = "  cd %s\n" % os.path.join(self.node_run_root, '$USER',
-                                                  '$PBS_JOBID', '%i' % cpu_nr, '')
+            cd2model = "  cd \"%s\"\n" % os.path.join(self.node_run_root, '$USER',
+                                                      '$PBS_JOBID', '%i' % cpu_nr, '')
 
         # navigate to the cpu dir on the node
         # The batch system on Gorm/Jess allows more than one job per node.
@@ -2463,121 +2449,129 @@ class PBS(object):
         # create the log, res etc dirs in case they do not exist. Only relevant
         # for pbs_mode, they are created in advance in find+xargs
         if pbs_mode:
-            mk = '  mkdir -p'
-            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.results_dir))
-            self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.logs_dir))
+            mk = "  mkdir -p"
+            self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.results_dir))
+            self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.logs_dir))
             if self.animation_dir:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.animation_dir))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.animation_dir))
             if self.copyback_turb and self.TurbDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDb))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.TurbDb))
             elif self.copyback_turb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.TurbDirName))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.TurbDirName))
             if self.copyback_turb and self.wakeDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.wakeDb))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.wakeDb))
             elif self.WakeDirName and self.WakeDirName != self.TurbDirName:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.WakeDirName))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.WakeDirName))
             if self.copyback_turb and self.meandDb:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.meandDb))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.meandDb))
             elif self.MeanderDirName and self.MeanderDirName != self.TurbDirName:
-                self.pbs += "%s %s\n" % (mk, os.path.join(dst, self.MeanderDirName))
+                self.pbs += "%s \"%s\"\n" % (mk, os.path.join(dst, self.MeanderDirName))
 
         # and copy the results and log files frome the scratch to dst
         res_dst = os.path.join(dst, self.results_dir, ".")
-        self.pbs += "  %s %s. %s\n" % (foper, self.results_dir, res_dst)
+        # strict on the first path (single quote), allow expanding on the
+        # second path (contains variables)
+        self.pbs += "  %s '%s.' \"%s\"\n" % (foper, self.results_dir, res_dst)
         log_dst = os.path.join(dst, self.logs_dir, ".")
-        self.pbs += "  %s %s. %s\n" % (foper, self.logs_dir, log_dst)
+        self.pbs += "  %s '%s.' \"%s\"\n" % (foper, self.logs_dir, log_dst)
         # in zipchunks mode by default we also copy the time+std out/err to
         # an additional file that is in pbs_out for consistancy with the
         # pbs_mode approach
         if not pbs_mode:
             pbs_dst = os.path.join(dst, self.pbs_out_dir, ".")
-            self.pbs += "  %s %s. %s\n" % (foper, self.pbs_out_dir, pbs_dst)
+            self.pbs += "  %s '%s.' \"%s\"\n" % (foper, self.pbs_out_dir, pbs_dst)
         if self.animation_dir:
             ani_dst = os.path.join(dst, self.animation_dir, ".")
-            self.pbs += "  %s %s. %s\n" % (foper, self.animation_dir, ani_dst)
+            self.pbs += "  %s '%s.' \"%s\"\n" % (foper, self.animation_dir, ani_dst)
 
         if self.eigenfreq_dir:
             # just in case the eig dir has subdirs for the results, only
             # select the base path and cp -r will take care of the rest
             p1 = self.eigenfreq_dir.split('/')[0]
             p2 = os.path.join(dst, p1, ".")
-            self.pbs += "  cp -R %s/. %s\n" % (p1, p2)
+            self.pbs += "  cp -R '%s/.' \"%s\"\n" % (p1, p2)
             # for eigen analysis with floater, modes are in root
             eig_dir_sys = os.path.join(dst, self.eigenfreq_dir, 'system/', '.')
-            self.pbs += '  mkdir -p %s\n' % eig_dir_sys
-            self.pbs += "  cp -R mode* %s\n" % eig_dir_sys
-            self.pbs += "  %s mode* %s\n" % (foper, eig_dir_sys)
+            self.pbs += "  mkdir -p \"%s\"\n" % eig_dir_sys
+            self.pbs += "  cp -R mode* \"%s\"\n" % eig_dir_sys
+            self.pbs += "  %s mode* \"%s\"\n" % (foper, eig_dir_sys)
 
         # only copy the turbulence files back if they do not exist
         # for all *.bin files on the node
-        cmd = '  for i in `ls *.bin`; do  if [ -e %s$i ]; '
+        cmd = '  for i in `ls *.bin`; do  if [ -e "%s" ]; '
         cmd += 'then echo "$i exists no copyback"; else echo "$i copyback"; '
-        cmd += 'cp $i %s; fi; done\n'
+        cmd += 'cp "$i" "%s"; fi; done\n'
         # copy back turbulence file?
         # browse to the node turb dir
-        self.pbs += '\n  echo ""\n'
-        self.pbs += '  echo "COPY BACK TURB IF APPLICABLE"\n'
+        self.pbs += "\n  echo ''\n"
+        self.pbs += "  echo 'COPY BACK TURB IF APPLICABLE'\n"
         if self.copyback_turb and self.TurbDb:
-            self.pbs += '  cd %s\n' % self.TurbDirName
-            tmp = (os.path.join(dst_db, self.TurbDb, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.TurbDirName
+            tmp = (os.path.join(dst_db, self.TurbDb, '$i'),
+                   os.path.join(dst_db, self.TurbDb, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb:
-            self.pbs += '  cd %s\n' % self.TurbDirName
-            tmp = (os.path.join(dst, self.TurbDirName, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.TurbDirName
+            tmp = (os.path.join(dst, self.TurbDirName, '$i'),
+                   os.path.join(dst, self.TurbDirName, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
 
         if self.copyback_turb and self.wakeDb:
-            self.pbs += '  cd %s\n' % self.WakeDirName
-            tmp = (os.path.join(dst_db, self.wakeDb, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.WakeDirName
+            tmp = (os.path.join(dst_db, self.wakeDb, '$i'),
+                   os.path.join(dst_db, self.wakeDb, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb and self.WakeDirName:
-            self.pbs += '  cd %s\n' % self.WakeDirName
-            tmp = (os.path.join(dst, self.WakeDirName, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.WakeDirName
+            tmp = (os.path.join(dst, self.WakeDirName, '$i'),
+                   os.path.join(dst, self.WakeDirName, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
 
         if self.copyback_turb and self.meandDb:
-            self.pbs += '  cd %s\n' % self.MeanderDirName
-            tmp = (os.path.join(dst_db, self.meandDb, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.MeanderDirName
+            tmp = (os.path.join(dst_db, self.meandDb, '$i'),
+                   os.path.join(dst_db, self.meandDb, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
         elif self.copyback_turb and self.MeanderDirName:
-            self.pbs += '  cd %s\n' % self.MeanderDirName
-            tmp = (os.path.join(dst, self.MeanderDirName, ''),)*2
+            self.pbs += "  cd '%s'\n" % self.MeanderDirName
+            tmp = (os.path.join(dst, self.MeanderDirName, '$i'),
+                   os.path.join(dst, self.MeanderDirName, ''))
             self.pbs += cmd % tmp
             # and back to normal model root
             self.pbs += cd2model
 
-        self.pbs += '  echo "END COPY BACK TURB"\n'
-        self.pbs += '  echo ""\n\n'
+        self.pbs += "  echo 'END COPY BACK TURB'\n"
+        self.pbs += "  echo ''\n\n"
 
         # copy back any other kind of files, as specified in copyback_files
-        self.pbs += '  echo "COPYBACK [copyback_files]/[copyback_frename]"\n'
+        self.pbs += "  echo 'COPYBACK [copyback_files]/[copyback_frename]'\n"
         if len(self.copyback_frename) == 0:
             self.copyback_frename = self.copyback_files
         for fname, fnew in zip(self.copyback_files, self.copyback_frename):
             dst_fnew = os.path.join(dst, fnew)
-            self.pbs += "  %s %s %s\n" % (foper, fname, dst_fnew)
-        self.pbs += '  echo "END COPYBACK"\n'
-        self.pbs += '  echo ""\n'
+            self.pbs += "  %s '%s' \"%s\"\n" % (foper, fname, dst_fnew)
+        self.pbs += "  echo 'END COPYBACK'\n"
+        self.pbs += "  echo ''\n"
 
         if pbs_mode:
             # check what is left
-            self.pbs += '  echo ""\n'
-            self.pbs += '  echo "following files are on '
-            self.pbs += 'node/cpu %i (find .):"\n' % cpu_nr
-            self.pbs += '  find .\n'
-            self.pbs += '# ' + '='*78 + '\n'
+            self.pbs += "  echo ''\n"
+            self.pbs += "  echo 'following files are on "
+            self.pbs += "node/cpu %i (find .):'\n" % cpu_nr
+            self.pbs += "  find .\n"
+            self.pbs += "# " + "="*78 + "\n"
         else:
-            self.pbs += '# ' + '-'*78 + '\n'
+            self.pbs += "# " + "-"*78 + "\n"
 
     def checklogs(self):
         """
@@ -5258,7 +5252,8 @@ class MannTurb64(prepost.PBSScript):
         for comp in list('uvw'):
             src = '{}_{}.bin'.format(base_name, comp)
             dst2 = '{}{}.bin'.format(dst, comp)
-            self.coda += 'cp {} {}\n'.format(src, dst2)
+            # dst contains $PBS_O_WORKDIR, hence double quote
+            self.coda += "cp '{}' \"{}\"\n".format(src, dst2)
 
         # alfaeps, L, gamma, seed, nr_u, nr_v, nr_w, du, dv, dw high_freq_comp
         rpl = (float(param['[MannAlfaEpsilon]']),
@@ -5273,7 +5268,7 @@ class MannTurb64(prepost.PBSScript):
                float(param['[turb_dz]']),
                int(float(param['[high_freq_comp]'])))
         params = '%1.6f %1.6f %1.6f %i %i %i %i %1.4f %1.4f %1.4f %i' % rpl
-        self.execution = '%s %s %s' % (self.exe, base_name, params)
+        self.execution = "%s '%s' %s" % (self.exe, base_name, params)
         self.create(check_dirs=True)
 
     def gen_pbs(self, cases):
