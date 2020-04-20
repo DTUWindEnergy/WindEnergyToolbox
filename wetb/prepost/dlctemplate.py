@@ -540,7 +540,8 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     with open(fcsv.replace('.csv', '2.csv'), 'w') as f1:
         with open(fcsv) as f2:
             for line in f2.readlines():
-                if len(line.split(';'))==96:
+                # older versions had 95, columns, newer 103
+                if len(line.split(';'))==96 or len(line.split(';'))==104:
                     line = line.replace(';0.00000000000;nan;-0.0000;',
                                         '0.00000000000;nan;-0.0000;')
                 f1.write(line)
