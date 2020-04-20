@@ -509,6 +509,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         rpl = (sim_id, ii)
         fname = os.path.join(run_dir, chunks_dir, '%s_chnk_%05i' % rpl)
+
+        if pbs.find('rm -rf') > -1 or pbs.find('rm -fr') > -1:
+            raise UserWarning('Anything that looks like rm -rf is prohibited.')
+
         with open(fname+'.p', 'w') as f:
             f.write(pbs)
 

@@ -2413,6 +2413,9 @@ class PBS(object):
         if self.verbose:
             print("writing pbs script to path: " + pbs_path)
 
+        if self.pbs.find('rm -r') > -1 or self.pbs.find('rm -f') > -1:
+            raise UserWarning('Anything that looks like rm -rf is prohibited.')
+
         # and write the script to a file:
         write_file(pbs_path, self.pbs, 'w')
         # make the string empty again, for memory
