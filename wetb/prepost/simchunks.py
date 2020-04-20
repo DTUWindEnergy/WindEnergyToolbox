@@ -252,13 +252,13 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # create all necessary directories at CPU_NR dirs
         # browse to scratch directory
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
+        pbs += 'cd "%s"\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n\n'
         pbs += 'echo "create CPU directories on the scratch disk"\n'
-        pbs += 'mkdir -p %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += 'mkdir -p "%s"\n' % os.path.join(pbase, sim_id, '')
         for k in range(ppn):
-            pbs += 'mkdir -p %s\n' % os.path.join(pbase, '%i' % k, '')
+            pbs += 'mkdir -p "%s"\n' % os.path.join(pbase, '%i' % k, '')
 
         # =====================================================================
         # get the zip-chunk file from the PBS_O_WORKDIR
@@ -269,13 +269,13 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'pwd\n'
         pbs += 'echo "get the zip-chunk file from the PBS_O_WORKDIR"\n'
         # copy the relevant zip chunk file to the scratch main directory
-        rpl = (os.path.join('./', chunks_dir, jobid), os.path.join(pbase, ''))
-        pbs += 'cp %s.zip %s\n' % rpl
+        rpl = (os.path.join(chunks_dir, jobid), os.path.join(pbase, ''))
+        pbs += 'cp "%s.zip" "%s"\n' % rpl
 
         # =====================================================================
         # unzip to all cpu dirs
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
+        pbs += 'cd "%s"\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "unzip chunk, create dirs in cpu and sim_id folders"\n'
@@ -283,12 +283,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # contains files defined in [copyto_files]
         for k in list(range(ppn)) + [sim_id]:
             dst = os.path.join('%s' % k, '.')
-            pbs += '/usr/bin/unzip %s -d %s >> /dev/null\n' % (jobid+'.zip', dst)
+            pbs += '/usr/bin/unzip "%s" -d "%s" >> /dev/null\n' % (jobid+'.zip', dst)
 
         # =====================================================================
         # create all turb_db directories
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += 'cd "%s"\n' % os.path.join(pbase, sim_id, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "create turb_db directories"\n'
@@ -302,14 +302,14 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         turb_db_dirs = set(turb_db_dirs)
         # create all turb dirs
         for dirname in sorted(turb_db_dirs):
-            pbs += 'mkdir -p %s\n' % os.path.join(dirname, '')
+            pbs += 'mkdir -p "%s"\n' % os.path.join(dirname, '')
 
         # =====================================================================
         # copy required turbulence from db_dir to scratch/db_dirs
         # turb_db_dir might not be set, same for turb_base_name, for those
         # cases we do not need to copy anything from the database to the node
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd $PBS_O_WORKDIR\n'
+        pbs += 'cd "$PBS_O_WORKDIR"\n'
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         base_name_tags = ['[turb_base_name]', '[meander_base_name]',
@@ -343,12 +343,15 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             pbs += '# copy to scratch db directory for %s, %s\n' % (db, base_name)
             for k in sorted(turb_db_src.unique()):
                 dst = os.path.dirname(os.path.join(pbase, sim_id, k))
-                pbs += 'cp %s* %s\n' % (k, os.path.join(dst, '.'))
+                # globbing doesn't work in either single- or double-quotes.
+                # However, you can interpolate globbing with double-quoted strings
+                # https://unix.stackexchange.com/a/67761/163108
+                pbs += 'cp "%s"*.bin "%s"\n' % (k, os.path.join(dst, '.'))
 
         # =====================================================================
         # to be safe, create all turb dirs in the cpu dirs
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, '')
+        pbs += 'cd "%s"\n' % os.path.join(pbase, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "create turb directories in CPU dirs"\n'
@@ -362,12 +365,12 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         turb_dirs = sorted(set(turb_dirs))
         for k in list(range(ppn)):
             for dirname in turb_dirs:
-                pbs += 'mkdir -p %s\n' % os.path.join(str(k), dirname, '')
+                pbs += 'mkdir -p "%s"\n' % os.path.join(str(k), dirname, '')
 
         # =====================================================================
         # symlink everything from the turb_db_dir to the cpu/turb_dir
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id, '')
+        pbs += 'cd "%s"\n' % os.path.join(pbase, sim_id, '')
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "Link all turb files into CPU dirs"\n'
@@ -392,7 +395,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                 for k in list(range(ppn)):
                     turb_dir_abs = os.path.join(pbase, str(k), turb_dir, '')
                     rpl = (db_dir_abs, turb_dir_abs)
-                    pbs += 'find %s -iname "*.bin" -exec ln -s {} %s \\;\n' % rpl
+                    pbs += 'find "%s" -iname "*.bin" -exec ln -s {} "%s" \\;\n' % rpl
 
         # copy all from scratch/turb_db to cpu/turb
         # turb_dir_base = os.path.join(compath(list(turb_dirs)), '')
@@ -409,23 +412,23 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # finally we can run find+xargs!!!
         pbs += '\n'
         pbs += 'echo "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
+        pbs += 'cd "%s"\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "START RUNNING JOBS IN find+xargs MODE"\n'
         if wine_arch!=None or wine_prefix!=None:
-            pbs += 'WINEARCH=%s WINEPREFIX=%s winefix\n' % wineparam
+            pbs += 'WINEARCH="%s" WINEPREFIX="%s" winefix\n' % wineparam
         pbs += '# run all the PBS *.p files in find+xargs mode\n'
         pbs += 'echo "following cases will be run from following path:"\n'
         pbs += 'echo "%s"\n' % (os.path.join(sim_id, pbs_in_base))
         pbs += 'export LAUNCH_PBS_MODE=false\n'
         rpl = (cmd_find, os.path.join(sim_id, pbs_in_base))
-        pbs += "%s %s -type f -name '*.p' | sort -z\n" % rpl
+        pbs += "%s '%s' -type f -name '*.p' | sort -z\n" % rpl
         pbs += '\n'
         pbs += 'echo "number of files to be launched: "'
-        pbs += '`find %s -type f | wc -l`\n' % os.path.join(sim_id, pbs_in_base)
+        pbs += '`find "%s" -type f | wc -l`\n' % os.path.join(sim_id, pbs_in_base)
         rpl = (cmd_find, os.path.join(sim_id, pbs_in_base), cmd_xargs, ppn)
-        cmd = ("%s %s -type f -name '*.p' -print0 | sort -z | %s -0 -I{} "
+        cmd = ("%s '%s' -type f -name '*.p' -print0 | sort -z | %s -0 -I{} "
                "--process-slot-var=CPU_NR -n 1 -P %i sh {}\n" % rpl)
         pbs += cmd
         pbs += 'echo "END OF JOBS IN find+xargs MODE"\n'
@@ -434,10 +437,10 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         # move results back from the node sim_id dir to the origin
         pbs += '\n'
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += "echo 'total scratch disk usage:'\n"
-        pbs += 'du -hs %s\n' % pbase
-        pbs += 'cd %s\n' % os.path.join(pbase, sim_id)
-        pbs += "echo 'current working directory:'\n"
+        pbs += 'echo "total scratch disk usage:"\n'
+        pbs += 'du -hs "%s"\n' % pbase
+        pbs += 'cd "%s"\n' % os.path.join(pbase, sim_id)
+        pbs += 'echo "current working directory:"\n'
         pbs += 'pwd\n'
         pbs += 'echo "Results saved at sim_id directory:"\n'
         rpl = (os.path.join(pbs_in_base, '*'), os.path.join(htc_base, '*'))
@@ -447,39 +450,39 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             # compress all result files into an archive, first *.sel files
             # FIXME: why doesn this work with -name "*.sel" -o -name "*.dat"??
             pbs += '\necho "move results into compressed archive"\n'
-            pbs += 'find %s -name "*.sel" -print0 ' % res_base
+            pbs += 'find "%s" -name "*.sel" -print0 ' % res_base
             fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
             pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
             # now add the *.dat files to the archive
-            pbs += 'find %s -name "*.dat" -print0 ' % res_base
+            pbs += 'find "%s" -name "*.dat" -print0 ' % res_base
             fname = os.path.join(res_base, 'resfiles_chnk_%05i' % ii)
-            pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-            pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
+            pbs += '| xargs -0 tar --remove-files -rf "%s.tar"\n' % fname
+            pbs += 'xz -z2 -T %i "%s.tar"\n' % (ppn, fname)
 
             # compress all logfiles into an archive
             pbs += '\necho "move logfiles into compressed archive"\n'
-            pbs += 'find %s -name "*.log" -print0 ' % log_base
+            pbs += 'find "%s" -name "*.log" -print0 ' % log_base
             fname = os.path.join(log_base, 'logfiles_chnk_%05i' % ii)
-            pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-            pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
+            pbs += '| xargs -0 tar --remove-files -rf "%s.tar"\n' % fname
+            pbs += 'xz -z2 -T %i "%s.tar"\n' % (ppn, fname)
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move statsdel into compressed archive"\n'
-        pbs += 'find %s -name "*.csv" -print0 ' % res_base
+        pbs += 'find "%s" -name "*.csv" -print0 ' % res_base
         fname = os.path.join(post_dir_base, 'statsdel_chnk_%05i' % ii)
-        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-        pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
+        pbs += '| xargs -0 tar --remove-files -rf "%s.tar"\n' % fname
+        pbs += 'xz -z2 -T %i "%s.tar"\n' % (ppn, fname)
 
         # compress all post-processing results (saved as csv's) into an archive
         pbs += '\necho "move log analysis into compressed archive"\n'
-        pbs += 'find %s -name "*.csv" -print0 ' % log_base
+        pbs += 'find "%s" -name "*.csv" -print0 ' % log_base
         fname = os.path.join(post_dir_base, 'loganalysis_chnk_%05i' % ii)
-        pbs += '| xargs -0 tar --remove-files -rf %s.tar\n' % fname
-        pbs += 'xz -z2 -T %i %s.tar\n' % (ppn, fname)
+        pbs += '| xargs -0 tar --remove-files -rf "%s.tar"\n' % fname
+        pbs += 'xz -z2 -T %i "%s.tar"\n' % (ppn, fname)
 
         pbs += '\n'
         pbs += '\necho "%s"\n' % ('-'*70)
-        pbs += 'cd %s\n' % pbase
+        pbs += 'cd "%s"\n' % pbase
         pbs += "echo 'current working directory:'\n"
         pbs += 'pwd\n'
         pbs += 'echo "move results back from node scratch/sim_id to origin, '
@@ -487,8 +490,8 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 
         tmp = os.path.join(sim_id, '*')
         pbs += 'echo "copy from %s to $PBS_O_WORKDIR/"\n' % tmp
-        pbs += 'time rsync -au --remove-source-files %s $PBS_O_WORKDIR/ \\\n' % tmp
-        pbs += '    --exclude %s \\\n' % os.path.join(pbs_in_base, '*')
+        pbs += 'time rsync -au "%s" "$PBS_O_WORKDIR/" \\\n' % tmp
+        pbs += '    --exclude "%s" \\\n' % os.path.join(pbs_in_base, '*')
         pbs += '    --exclude *.htc\n'
         # when using -u, htc and pbs_in files should be ignored
 #        pbs += 'time cp -ru %s $PBS_O_WORKDIR/\n' % tmp
@@ -608,7 +611,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             print(fname)
         fname = os.path.join(post_dir, 'case_id-chunk-index')
         df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
-        df_ind.to_hdf(fname+'.h5', 'table', compression=9, complib='zlib')
+        df_ind.to_hdf(fname+'.h5', 'table', complevel=9, complib='zlib')
         df_ind.to_csv(fname+'.csv')
 
 
