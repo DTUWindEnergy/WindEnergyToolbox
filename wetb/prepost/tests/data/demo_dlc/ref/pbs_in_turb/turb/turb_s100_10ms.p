@@ -35,7 +35,7 @@ echo "------------------------------------------------------------------------"
 echo "EXECUTION"
 echo "------------------------------------------------------------------------"
 
-time WINEARCH=win64 WINEPREFIX=~/.wine wine mann_turb_x64.exe turb_s100_10ms 1.000000 29.400000 3.000000 100 8192 32 32 0.7812 6.5000 6.5000 1
+time WINEARCH=win64 WINEPREFIX=~/.wine wine mann_turb_x64.exe 'turb_s100_10ms' 1.000000 29.400000 3.000000 100 8192 32 32 0.7812 6.5000 6.5000 1
 ### wait for jobs to finish
 wait
 
@@ -45,9 +45,9 @@ echo "CODA"
 echo "------------------------------------------------------------------------"
 
 # COPY BACK FROM SCRATCH AND RENAME, remove _ at end
-cp turb_s100_10ms_u.bin $PBS_O_WORKDIR/../turb/turb_s100_10msu.bin
-cp turb_s100_10ms_v.bin $PBS_O_WORKDIR/../turb/turb_s100_10msv.bin
-cp turb_s100_10ms_w.bin $PBS_O_WORKDIR/../turb/turb_s100_10msw.bin
+cp 'turb_s100_10ms_u.bin' "$PBS_O_WORKDIR/../turb/turb_s100_10msu.bin"
+cp 'turb_s100_10ms_v.bin' "$PBS_O_WORKDIR/../turb/turb_s100_10msv.bin"
+cp 'turb_s100_10ms_w.bin' "$PBS_O_WORKDIR/../turb/turb_s100_10msw.bin"
 
 
 echo ""

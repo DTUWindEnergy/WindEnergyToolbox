@@ -35,7 +35,7 @@ echo "------------------------------------------------------------------------"
 echo "EXECUTION"
 echo "------------------------------------------------------------------------"
 
-time WINEARCH=win64 WINEPREFIX=~/.wine wine mann_turb_x64.exe meander_s101_11ms 11.000000 12.000000 13.000000 101 9 9 50 0.9990 0.9990 1.3300 1
+time WINEARCH=win64 WINEPREFIX=~/.wine wine mann_turb_x64.exe 'meander_s101_11ms' 11.000000 12.000000 13.000000 101 9 9 50 0.9990 0.9990 1.3300 1
 ### wait for jobs to finish
 wait
 
@@ -45,9 +45,9 @@ echo "CODA"
 echo "------------------------------------------------------------------------"
 
 # COPY BACK FROM SCRATCH AND RENAME, remove _ at end
-cp meander_s101_11ms_u.bin $PBS_O_WORKDIR/turb_meander/meander_s101_11msu.bin
-cp meander_s101_11ms_v.bin $PBS_O_WORKDIR/turb_meander/meander_s101_11msv.bin
-cp meander_s101_11ms_w.bin $PBS_O_WORKDIR/turb_meander/meander_s101_11msw.bin
+cp 'meander_s101_11ms_u.bin' "$PBS_O_WORKDIR/turb_meander/meander_s101_11msu.bin"
+cp 'meander_s101_11ms_v.bin' "$PBS_O_WORKDIR/turb_meander/meander_s101_11msv.bin"
+cp 'meander_s101_11ms_w.bin' "$PBS_O_WORKDIR/turb_meander/meander_s101_11msw.bin"
 
 
 echo ""
