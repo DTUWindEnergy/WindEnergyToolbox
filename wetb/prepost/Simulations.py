@@ -1205,7 +1205,6 @@ class HtcMaster(object):
 
         self.tags['[eigen_analysis]'] = False
 
-        self.tags['[pbs_queue_command]'] = '#PBS -q workq'
         # the express que has 2 thyra nodes with max walltime of 1h
 #        self.tags['[pbs_queue_command]'] = '#PBS -q xpresq'
         # walltime should have following format: hh:mm:ss
@@ -1756,10 +1755,10 @@ class PBS(object):
     such as the turbulence file and folder, htc folder and others
     """
 
-    def __init__(self, cases, qsub='time', silent=False, pyenv='wetb_py3',
+    def __init__(self, cases, qsub='time', silent=False, pyenv='py36-wetb',
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
                  m=[3,4,6,8,9,10,12], exesingle=None, prelude='',
-                 postpro_node_zipchunks=True, postpro_node=False,
+                 postpro_node_zipchunks=True, postpro_node=False, queue='workq',
                  exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
         """
         Define the settings here. This should be done outside, but how?
@@ -1854,6 +1853,12 @@ class PBS(object):
 #        self.node_run_root = '/dev/shm'
         self.node_run_root = '/scratch'
 
+        # only allow valid queues for jess
+        queues = ('windq', 'workq', 'fatq', 'windfatq', 'xpresq', 'xpresfatq')
+        if not queue in queues:
+            raise ValueError('Invalid queue name: %s' % queue)
+        self.pbs_queue_command = '#PBS -q %s' % queue
+
         self.cases = cases
 
         # location of the output messages .err and .out created by the node
@@ -1903,21 +1908,6 @@ class PBS(object):
         self.t0 = []
         # '[time_stop]' '[dt_sim]'
 
-        # REMARK: this i not realy consistent with how the result and log file
-        # dirs are allowed to change for each individual case...
-        # first check if the pbs_out_dir exists, this dir is considered to be
-        # the same for all cases present in cases
-        # self.tags['[run_dir]']
-        case0 = list(self.cases.keys())[0]
-        path = self.cases[case0]['[run_dir]'] + self.pbs_out_dir
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-        # create pbs_in base dir
-        path = self.cases[case0]['[run_dir]'] + self.pbs_in_dir
-        if not os.path.exists(path):
-            os.makedirs(path)
-
         # number the pbs jobs:
         count2 = self.pbs_start_number
         # initial cpu count is zero
@@ -1930,6 +1920,9 @@ class PBS(object):
 
             # get a shorter version for the current cases tag_dict:
             tag_dict = self.cases[case]
+
+            # sanitize paths from a list of predefined tags in tag_dict
+            self.sanitize_paths(case, tag_dict)
 
             # group all values loaded from the tag_dict here, to keep overview
             # the directories to SAVE the results/logs/turb files
@@ -1956,14 +1949,13 @@ class PBS(object):
             self.turb_base_name = tag_dict['[turb_base_name]']
             self.wake_base_name = tag_dict['[micro_base_name]']
             self.meand_base_name = tag_dict['[meander_base_name]']
-            self.pbs_queue_command = tag_dict['[pbs_queue_command]']
             self.walltime = tag_dict['[walltime]']
             self.dyn_walltime = tag_dict['[auto_walltime]']
             self.case_duration = tag_dict['[duration]']
 
             # create the pbs_out_dir if necesary
             try:
-                path = tag_dict['[run_dir]'] + tag_dict['[pbs_out_dir]']
+                path = os.path.join(tag_dict['[run_dir]'], tag_dict['[pbs_out_dir]'])
                 if not os.path.exists(path):
                     os.makedirs(path)
                 self.pbs_out_dir = tag_dict['[pbs_out_dir]']
@@ -1972,7 +1964,7 @@ class PBS(object):
 
             # create pbs_in subdirectories if necessary
             try:
-                path = tag_dict['[run_dir]'] + tag_dict['[pbs_in_dir]']
+                path = os.path.join(tag_dict['[run_dir]'], tag_dict['[pbs_in_dir]'])
                 if not os.path.exists(path):
                     os.makedirs(path)
                 self.pbs_in_dir = tag_dict['[pbs_in_dir]']
@@ -1988,6 +1980,10 @@ class PBS(object):
             try:
                 self.copyto_generic = tag_dict['[copyto_generic]']
                 self.copyto_files = tag_dict['[copyto_files]']
+                if not isinstance(self.copyto_generic, list):
+                    raise ValueError('[copyto_generic] should be a list')
+                if not isinstance(self.copyto_files, list):
+                    raise ValueError('[copyto_files] should be a list')
             except KeyError:
                 pass
 
@@ -2001,6 +1997,10 @@ class PBS(object):
             try:
                 self.copyto_generic = [tag_dict['[copyto_generic_f1]']]
                 self.copyto_files = [tag_dict['[copyto_f1]']]
+                if not isinstance(self.copyto_generic, list):
+                    raise ValueError('[copyto_generic] should be a list')
+                if not isinstance(self.copyto_files, list):
+                    raise ValueError('[copyto_files] should be a list')
             except KeyError:
                 pass
 
@@ -2037,7 +2037,8 @@ class PBS(object):
                     pbs_in_fname = "%s_%s.p" % (tag_dict['[case_id]'], jobid)
                 else:
                     pbs_in_fname = "%s.p" % (tag_dict['[case_id]'])
-                pbs_path = self.model_path + self.pbs_in_dir + pbs_in_fname
+                pbs_path = os.path.join(self.model_path, self.pbs_in_dir,
+                                        pbs_in_fname)
                 # Start a new pbs script, we only need the tag_dict here
                 self.starting(tag_dict, jobid)
                 ended = False
@@ -2634,6 +2635,53 @@ class PBS(object):
 
         # length will be zero if there are no failures
         return cases_fail
+
+    def sanitize_paths(self, case, tag_dict):
+        """Do some checks on the user defined paths
+        """
+        dirs = ['[hawc2_exe]', '[sim_id]', '[res_dir]', '[eigenfreq_dir]',
+                '[log_dir]', '[animation_dir]', '[turb_dir]', '[micro_dir]',
+                '[meander_dir]', '[model_zip]', '[htc_dir]', '[hydro_dir]',
+                '[mooring_dir]', '[turb_base_name]', '[case_id]'
+                '[micro_base_name]', '[meander_base_name]', '[pbs_out_dir]',
+                '[pbs_in_dir]']
+
+        # are allowed to have up to 2 ..
+        dirs_db = ['[turb_db_dir]', '[micro_db_dir]', '[meander_db_dir]']
+
+        dirlists = ['[copyto_generic]', '[copyto_files]', '[copyback_f1]',
+                    '[copyback_f1_rename]', '[copyto_generic_f1]',
+                    '[copyto_f1]', '[copyback_files]', '[copyback_frename]']
+
+        # is the only allowed absolute path
+        misc.path_sanitize(tag_dict['[run_dir]'], allowabs=True)
+
+        for pathtag in dirs:
+            if pathtag not in tag_dict:
+                continue
+            path = tag_dict[pathtag]
+            # Booleans are allowed
+            if isinstance(path, bool) or isinstance(path, type(None)):
+                path = str(path)
+            misc.path_sanitize(path)
+
+        for pathtag in dirs_db:
+            if pathtag not in tag_dict:
+                continue
+            path = tag_dict[pathtag]
+            # Booleans are allowed
+            if isinstance(path, bool) or isinstance(path, type(None)):
+                path = str(path)
+            misc.path_sanitize(path, allowdd=True)
+
+        for pathtag in dirlists:
+            if pathtag not in tag_dict:
+                continue
+            for path in tag_dict[pathtag]:
+                # Booleans are allowed
+                if isinstance(path, bool) or isinstance(path, type(None)):
+                    path = str(path)
+                misc.path_sanitize(path)
 
 
 # TODO: rewrite the error log analysis to something better. Take different

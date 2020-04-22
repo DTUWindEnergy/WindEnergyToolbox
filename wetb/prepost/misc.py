@@ -76,6 +76,51 @@ def path_split_dirs(path):
         dirs.pop(0)
     return dirs
 
+def path_sanitize(path, allowdd=False, allowabs=False):
+    """Raises a ValueError if not considered safe. A leading ../ is allowed
+    when allowdd=True.
+    """
+
+    if not isinstance(path, str):
+        raise ValueError('path_sanitize requires a string as input.')
+
+    keepcharacters = set(['/', '.', '_', '-'])
+
+    # in special cases we allow one leading ../
+    if allowdd and path[:3] == '../':
+        path = path[3:]
+    # in one special case allow absolute path
+    if allowabs and path[0] == '/':
+        path = path[1:]
+
+    if path == '':
+        raise ValueError('Invalid or unsafe path: "%s"' % path)
+
+    # no absolute paths
+    if path[0] == '/':
+        raise ValueError('Absolute paths not allowed: "%s"' % path)
+
+    # only alphanummerical characters (includes unicode)
+    for c in path:
+        if not c.isalnum() and c not in keepcharacters:
+            raise ValueError('Invalid or unsafe path: "%s"' % path)
+
+    # additional checks on sub-directories
+    items = path.split('/')
+    # trailing path leads to last element being emtpy
+    if path[-1] == '/':
+        items = items[:-1]
+
+    no_lt = set(['.', '-']) # characters not allowed leading/trailing a sub-dir
+    for item in items:
+        # require a sub-dir to be at least 2 characters or more
+        if len(item) < 2:
+            msg = 'Directories and filenames need to be longer than 1 character.'
+            raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
+        if item[0] in no_lt or item[-1] in no_lt:
+            msg = 'No leading/trailing . or - allowed.'
+            raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
+
 
 def print_both(f, text, end='\n'):
     """
@@ -1239,6 +1284,68 @@ class Tests(unittest.TestCase):
 
     def setUp(self):
         pass
+
+    def test_path_sanitize(self):
+
+        paths = ['./not/allowed/',
+                 '$not/$allowed/',
+                 ' forget/about/it',
+                 'forget/about/it ',
+                 '!are\you\n\\NUTS??',
+                 'don"t/dothis',
+                 'don\'t',
+                 'oh_look/a/ space'
+                 '/not/../at/all',
+                 '/not/at/all../',
+                 'you/think\\youneed\\backspaces',
+                 '../../for/db/dirs/this/is/notsafe',
+                 'auch/aa/wild/c*rd',
+                 'no/weird/-sub/dirs',
+                 'no/weird/sub-/dirs',
+                 'no/weird/sub./dirs',
+                 'no/weird/-sub-/dirs',
+                 '..nope/either8',
+                 '&',
+                 ]
+        for path in paths:
+            with self.assertRaises(ValueError):
+                path_sanitize(path)
+            with self.assertRaises(ValueError):
+                path_sanitize('/' + path)
+            with self.assertRaises(ValueError):
+                path_sanitize(path, allowdd=True)
+            with self.assertRaises(ValueError):
+                path_sanitize(path, allowabs=True)
+
+        # with allowdd active
+        pathsok = ['../for/db/dirs/this/is/safe',
+                   'what/aa/nice/path/',
+                   'whatanicepath',
+                   'ok/p-_/u_/in/this/case',
+                   'ev.en.this.__is/oo/kk---000/',
+                   ]
+        for path in pathsok:
+            path_sanitize(path, allowdd=True)
+            with self.assertRaises(ValueError):
+                path_sanitize('/' + path, allowdd=True)
+
+        # with allowabs active
+        pathsok = ['/for/db/dirs/this/is/safe',
+                   '/what/aa/nice/path/',
+                   '/whatanicepath',
+                   '/ok/p-_/u_/in/this/case',
+                   '/ev.en.this.__is/oo/kk---000/',
+                   ]
+        for path in pathsok:
+            path_sanitize(path, allowabs=True)
+            with self.assertRaises(ValueError):
+                path_sanitize('..' + path, allowabs=True)
+
+        with self.assertRaises(ValueError):
+            path_sanitize('../../for/db/dirs/this/is/notsafe', allowdd=True)
+
+        with self.assertRaises(ValueError):
+            path_sanitize('./for/db/dirs/this/is/notsafe', allowabs=True)
 
     def test_rebin1(self):
         hist = np.array([2,5,5,9,2,6])
