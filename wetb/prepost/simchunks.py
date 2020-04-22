@@ -40,7 +40,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
                           wine_arch='win32', wine_prefix='~/.wine32',
                           pyenv_cmd='source /home/python/miniconda3/bin/activate',
-                          pyenv='wetb_py3', prelude='', ppn_pbs=20):
+                          pyenv='py36-wetb', prelude='', ppn_pbs=20):
     """Group a large number of simulations htc and pbs launch scripts into
     different zip files so we can run them with find+xargs on various nodes.
     """

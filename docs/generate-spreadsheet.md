@@ -14,7 +14,7 @@ This tool comes handy in the following scenarios:
 * different parameters variations are required, e.g. different wind speed range or different number of turbulent seed.
 
 The generator of the cases uses an input spreadsheet where the cases are defined
-in a more compact way. 
+in a more compact way.
 The tool is based on the "tags" concept that is used for the generation of the htc files.
 
 Main spreadsheet
@@ -36,9 +36,9 @@ In each sheet the type of tag is defined in the line above the tag by typing one
 Functions (F) tags
 ------------------
 
-* Numbers can be converted to strings (for example when a tag refers to a file name) 
+* Numbers can be converted to strings (for example when a tag refers to a file name)
 by using double quotes ```"``` for Functions (F):
-    * ```"wdir_[wdir]deg_wsp_[wsp]ms"``` will result in the tags ``` [wdir]``` 
+    * ```"wdir_[wdir]deg_wsp_[wsp]ms"``` will result in the tags ``` [wdir]```
     and ```[wsp]```  being replaced with formatted text.
     * following formatting rules are used:
         * ```[wsp]```, ```[gridgustdelay]``` : ```02i```
@@ -62,11 +62,11 @@ Generate the files
 ------------------
 
 To generate the files defining the different DLC the following lines need to be executed:
-    
+
     export PATH=/home/python/miniconda3/bin:$PATH
-    source activate wetb_py3
-    python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLCs.py --folder=DLCs 
-    
+    source activate py36-wetb
+    python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLCs.py --folder=DLCs
+
 the first two lines activate the virtual environment. The third calls the routine *GenerateDLCs.py * that generates the files.
 The routine should be called from the folder *htc* where also the master spreadsheet *DLCs.xlsx* need to be located.
 The generated files are placed in the folder *DLCs*.

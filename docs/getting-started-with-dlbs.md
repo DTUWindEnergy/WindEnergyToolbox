@@ -61,11 +61,11 @@ do this when the turbulence box size changes (e.g., if the rotor size changes)
 or if you have a model that's never been simulated on mimer.
 2. Determine your set ID code. There are two scenarios:
     * No one else in your project has run simulations on mimer. In this case,
-    create a new set ID alpha code (e.g., "AA", "AB", etc.). 
+    create a new set ID alpha code (e.g., "AA", "AB", etc.).
     * Simulations for this project/turbine configuration already exist. In this
     case, use a pre-existing set ID alpha code and add one to the most recent
-    Set ID (e.g., if "AB0008" exists, your new folder should be "AB0009").  
-    
+    Set ID (e.g., if "AB0008" exists, your new folder should be "AB0009").
+
 ##### 3. Add proper log files for your Set ID folder.
 See the [house rules](docs/houserules-mimerhawc2sim.md) regarding log files.
 
@@ -86,7 +86,7 @@ structure similar to this:
 
 Your master htc file, stored in ```htc/_master/```, can take any desired naming
 convention, but it must have ```_master_``` in the name or future scripts will
-abort. ```htc/DLCs.xlsx``` is your master Excel file that will create the 
+abort. ```htc/DLCs.xlsx``` is your master Excel file that will create the
 subordinate Excel files in the coming steps.
 
 ##### 5. Create your subordinate Excel files.
@@ -94,7 +94,7 @@ From a terminal, change to your htc directory. Then run the following code:
 
 ```
 $ export PATH=/home/python/miniconda3/bin:$PATH
-$ source activate wetb_py3
+$ source activate py36-wetb
 $ python /home/MET/repositories/toolbox/WindEnergyToolbox/wetb/prepost/GenerateDLCs.py --folder=DLCs
 $ source deactivate
 ```
@@ -125,7 +125,7 @@ $ launch.py -n 100 -p pbs_in/
 ```
 
 There are many launch options available. You can read more about the options
-and querying the cluster configurations/status/etc. on 
+and querying the cluster configurations/status/etc. on
 [this page](docs/howto-make-dlcs.md), or you can use the ```launchy.py```
 help function to print available launch options:
 
@@ -135,7 +135,7 @@ $ launch.py --help
 
 ##### 8. Post-process results.
 
-The wetb function ```qsub-wrap.py``` can not only generate htc files but also 
+The wetb function ```qsub-wrap.py``` can not only generate htc files but also
 post-process results. For example, here is code to check the log files
 and calculate the statistics, the AEP and the lifetime equivalent loads
 (must be executed from the top-level Set ID folder):

@@ -278,7 +278,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
 
     if postpro_node or postpro_node_zipchunks:
 #        pyenv = 'py36-wetb'
-        pyenv = 'wetb_py3'
+        pyenv = 'py36-wetb'
     else:
         pyenv = None
 
@@ -289,7 +289,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         prelude = 'module load mpi/openmpi_1.6.5_intelv14.0.0\n'
 
     # if linux:
-    #     pyenv = 'wetb_py3'
+    #     pyenv = 'py36-wetb'
     #     pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
     #     exesingle = "{hawc2_exe:} {fname_htc:}"
     #     exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
