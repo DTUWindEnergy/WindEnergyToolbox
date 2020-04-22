@@ -218,8 +218,8 @@ cd "/scratch/$USER/$PBS_JOBID/"
 echo 'current working directory:'
 pwd
 echo "move results back from node scratch/sim_id to origin, but ignore htc, and pbs_in directories."
-echo "copy from remote/* to $PBS_O_WORKDIR/"
-time rsync -au "remote/*" "$PBS_O_WORKDIR/" \
+echo "copy from remote/ to $PBS_O_WORKDIR/"
+time rsync -au "remote/" "$PBS_O_WORKDIR/" \
     --exclude "pbs_in/dlc01_demos/*" \
     --exclude *.htc
 source deactivate

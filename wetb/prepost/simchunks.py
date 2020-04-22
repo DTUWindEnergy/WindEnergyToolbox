@@ -492,7 +492,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         pbs += 'echo "move results back from node scratch/sim_id to origin, '
         pbs += 'but ignore htc, and pbs_in directories."\n'
 
-        tmp = os.path.join(sim_id, '*')
+        tmp = os.path.join(sim_id, '') # make we have trailing /
         pbs += 'echo "copy from %s to $PBS_O_WORKDIR/"\n' % tmp
         pbs += 'time rsync -au "%s" "$PBS_O_WORKDIR/" \\\n' % tmp
         pbs += '    --exclude "%s" \\\n' % os.path.join(pbs_in_base, '*')
