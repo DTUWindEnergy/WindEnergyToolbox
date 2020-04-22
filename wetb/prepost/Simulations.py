@@ -1759,7 +1759,7 @@ class PBS(object):
                  pbs_fname_appendix=True, short_job_names=True, verbose=False,
                  m=[3,4,6,8,9,10,12], exesingle=None, prelude='',
                  postpro_node_zipchunks=True, postpro_node=False, queue='workq',
-                 exechunks=None, wine_arch='win32', wine_prefix='~/.wine32'):
+                 exechunks=None, wine_arch='win32', wine_prefix='.wine32'):
         """
         Define the settings here. This should be done outside, but how?
         In a text file, paramters list or first create the object and than set
@@ -1798,6 +1798,8 @@ class PBS(object):
         self.prelude = prelude
 
         self.m = m
+
+        wine_prefix = misc.sanitize_wine_prefix(wine_prefix)
 
         # run in 32-bit or 64-bit mode. Note this uses the same assumptions
         # on how to configure wine in toolbox/pbsutils/config-wine-hawc2.sh

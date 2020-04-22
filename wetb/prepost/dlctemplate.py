@@ -267,7 +267,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       runmethod=None, write_htc=True, zipchunks=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
-                      wine_arch='win32', wine_prefix='~/.wine32', ppn=17,
+                      wine_arch='win32', wine_prefix='.wine32', ppn=17,
                       m=[3,4,6,8,9,10,12], prelude='', linux=False):
     """
     Launch load cases defined in Excel files
@@ -623,7 +623,7 @@ def postpro_node_merge(tqdm=False, zipchunks=False):
     pd.DataFrame(chans).to_csv(fname)
 
 
-def prepare_failed(compress=False, wine_arch='win32', wine_prefix='~/.wine32',
+def prepare_failed(compress=False, wine_arch='win32', wine_prefix='.wine32',
                    prelude='', zipchunks=False):
 
     cc = sim.Cases(POST_DIR, sim_id, rem_failed=False)
@@ -743,14 +743,14 @@ if __name__ == '__main__':
     parser.add_argument('--wine_64bit', default=False, action='store_true',
                         dest='wine_64bit', help='Run wine in 64-bit mode. '
                         'Only works on Jess. Sets --wine_arch and '
-                        '--wine_prefix to win64 and ~/.wine respectively.')
+                        '--wine_prefix to win64 and .wine respectively.')
     parser.add_argument('--wine_arch', action='store', default='win32', type=str,
                         dest='wine_arch', help='Set to win32 for 32-bit, and '
                         'win64 for 64-bit. 64-bit only works on Jess. '
                         'Defaults to win32.')
-    parser.add_argument('--wine_prefix', action='store', default='~/.wine32',
+    parser.add_argument('--wine_prefix', action='store', default='.wine32',
                         type=str, dest='wine_prefix', help='WINEPREFIX: '
-                        'Directory used by wineserver. Default ~/.wine32')
+                        'Directory used by wineserver. Default .wine32')
     parser.add_argument('--linux', action='store_true', default=False,
                         dest='linux', help='Do not use wine. Implies that '
                         'wine_prefix and wine_arch is set to None.')
@@ -786,7 +786,7 @@ if __name__ == '__main__':
         = dlcdefs.configure_dirs(verbose=True)
 
     if opt.wine_64bit:
-        opt.wine_arch, opt.wine_prefix = ('win64', '~/.wine')
+        opt.wine_arch, opt.wine_prefix = ('win64', '.wine')
 
     if opt.gendlcs:
         DLB = GenerateDLCCases()

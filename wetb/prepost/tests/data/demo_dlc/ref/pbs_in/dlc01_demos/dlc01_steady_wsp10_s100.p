@@ -42,7 +42,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   cp -R "$PBS_O_WORKDIR/../turb/turb_s100_10ms"*.bin "turb/"
   _HOSTNAME_=`hostname`
   if [[ ${_HOSTNAME_:0:1} == "j" ]] ; then
-    WINEARCH='win32' WINEPREFIX="~/.wine32" winefix
+    WINEARCH='win32' WINEPREFIX="$HOME/.wine32" winefix
   fi
 # ==============================================================================
 
@@ -60,7 +60,7 @@ echo ''
 # evaluates to true if LAUNCH_PBS_MODE is NOT set
 if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
   echo 'execute HAWC2, fork to background'
-  time WINEARCH='win32' WINEPREFIX="~/.wine32" wine 'hawc2-latest' 'htc/dlc01_demos/dlc01_steady_wsp10_s100.htc' &
+  time WINEARCH='win32' WINEPREFIX="$HOME/.wine32" wine 'hawc2-latest' 'htc/dlc01_demos/dlc01_steady_wsp10_s100.htc' &
   wait
 # ==============================================================================
 
@@ -68,7 +68,7 @@ if [ -z ${LAUNCH_PBS_MODE+x} ] ; then
 # find+xargs mode: 1 PBS job, multiple cases
 else
   echo 'execute HAWC2, do not fork and wait'
-  (time WINEARCH='win32' WINEPREFIX="~/.wine32" numactl --physcpubind=$CPU_NR wine 'hawc2-latest' 'htc/dlc01_demos/dlc01_steady_wsp10_s100.htc') 2>&1 | tee 'pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err.out'
+  (time WINEARCH='win32' WINEPREFIX="$HOME/.wine32" numactl --physcpubind=$CPU_NR wine 'hawc2-latest' 'htc/dlc01_demos/dlc01_steady_wsp10_s100.htc') 2>&1 | tee 'pbs_out/dlc01_demos/dlc01_steady_wsp10_s100.err.out'
 fi
 # ------------------------------------------------------------------------------
 

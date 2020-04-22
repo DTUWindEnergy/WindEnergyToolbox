@@ -33,12 +33,13 @@ import pandas as pd
 #from tqdm import tqdm
 
 from wetb.prepost.Simulations import Cases
+from wetb.prepost import misc
 
 
 def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
                           nr_procs_series=9, queue='workq', compress=False,
                           walltime='24:00:00', chunks_dir='zip-chunks-jess',
-                          wine_arch='win32', wine_prefix='~/.wine32',
+                          wine_arch='win32', wine_prefix='.wine32',
                           pyenv_cmd='source /home/python/miniconda3/bin/activate',
                           pyenv='py36-wetb', prelude='', ppn_pbs=20):
     """Group a large number of simulations htc and pbs launch scripts into
@@ -178,7 +179,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
 # """
 
     def make_pbs_chunks(df, ii, sim_id, run_dir, model_zip, compress=False,
-                        wine_arch='win32', wine_prefix='~/.wine32'):
+                        wine_arch='win32', wine_prefix='.wine32'):
         """Create a PBS that:
             * copies all required files (zip chunk) to scratch disk
             * copies all required turbulence files to scratch disk
@@ -189,6 +190,9 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
         cmd_find = '/home/MET/sysalt/bin/find'
         cmd_xargs = '/home/MET/sysalt/bin/xargs'
         jobid = '%s_chnk_%05i' % (sim_id, ii)
+
+        # sanitize wine_prefix
+        wine_prefix = misc.sanitize_wine_prefix(wine_prefix)
 
         wineparam = (wine_arch, wine_prefix)
 

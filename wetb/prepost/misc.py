@@ -121,6 +121,23 @@ def path_sanitize(path, allowdd=False, allowabs=False):
             msg = 'No leading/trailing . or - allowed.'
             raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
 
+def sanitize_wine_prefix(wine_prefix):
+    """special case to sanitize
+    """
+
+    # sanitize wine_prefix
+    # for backwards compatibility
+    if wine_prefix[:2] == '~/':
+        wine_prefix = wine_prefix[2:]
+    # first character can also be a dot
+    if not wine_prefix[0].isalnum():
+        if wine_prefix[0]=='.':
+            pass
+        else:
+            raise ValueError('Invalid wine_prefix value: %s' % wine_prefix)
+    if not wine_prefix[1:].isalnum():
+        raise ValueError('Invalid wine_prefix value: %s' % wine_prefix)
+    return os.path.join('$HOME', wine_prefix)
 
 def print_both(f, text, end='\n'):
     """
@@ -1284,6 +1301,22 @@ class Tests(unittest.TestCase):
 
     def setUp(self):
         pass
+
+    def test_sanitize_wine_prefix(self):
+
+        wine_prefix = sanitize_wine_prefix('.wine32')
+        self.assertEqual(wine_prefix, '$HOME/.wine32')
+
+        wine_prefix = sanitize_wine_prefix('~/.wine32')
+        self.assertEqual(wine_prefix, '$HOME/.wine32')
+
+        wine_prefix = sanitize_wine_prefix('wine32')
+        self.assertEqual(wine_prefix, '$HOME/wine32')
+
+        notok = ['../wine', '/root/wine32', 'mnt/mimer/wine32', '.wine32/qq']
+        for wine_prefix in notok:
+            with self.assertRaises(ValueError):
+                sanitize_wine_prefix(wine_prefix)
 
     def test_path_sanitize(self):
 

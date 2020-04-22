@@ -183,7 +183,7 @@ cd "/scratch/$USER/$PBS_JOBID/"
 echo 'current working directory:'
 pwd
 echo "START RUNNING JOBS IN find+xargs MODE"
-WINEARCH="win32" WINEPREFIX="~/.wine32" winefix
+WINEARCH="win32" WINEPREFIX="$HOME/.wine32" winefix
 # run all the PBS *.p files in find+xargs mode
 echo "following cases will be run from following path:"
 echo "remote/pbs_in/dlc01_demos/"
