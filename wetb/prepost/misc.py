@@ -164,7 +164,7 @@ def sanitize_wine_prefix(wine_prefix):
             raise ValueError('Invalid wine_prefix value: %s' % wine_prefix)
     if not wine_prefix[1:].isalnum():
         raise ValueError('Invalid wine_prefix value: %s' % wine_prefix)
-    return os.path.join('$HOME', wine_prefix)
+    return os.path.join('$HOME', wine_prefix).replace("\\", "/")
 
 def print_both(f, text, end='\n'):
     """
