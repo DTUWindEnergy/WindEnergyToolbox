@@ -89,43 +89,14 @@ def path_sanitize(path, allowdd=False, allowabs=False):
     # in special cases we allow one leading ../
     if allowdd and path[:3] == '../':
         path = path[3:]
-    # in one special case allow absolute path
-    if allowabs and path[0] == '/':
-        path = path[1:]
 
-    if path == '':
-        raise ValueError('Invalid or unsafe path: "%s"' % path)
-
-    # no absolute paths
-    if path[0] == '/':
-        raise ValueError('Absolute paths not allowed: "%s"' % path)
-
-    # only alphanummerical characters (includes unicode)
-    for c in path:
-        if not c.isalnum() and c not in keepcharacters:
-            raise ValueError('Invalid or unsafe path: "%s"' % path)
-
-    # additional checks on sub-directories
-    items = path.split('/')
-    # trailing path leads to last element being emtpy
-    if path[-1] == '/':
-        items = items[:-1]
-
-    no_lt = set(['.', '-']) # characters not allowed leading/trailing a sub-dir
-    for item in items:
-        # require a sub-dir to be at least 2 characters or more
-        if len(item) < 2:
-            msg = 'Directories and filenames need to be longer than 1 character.'
-            raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
-        if item[0] in no_lt or item[-1] in no_lt:
-            msg = 'No leading/trailing . or - allowed.'
-            raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
     # no absolute paths if not allowabs
     if path[0] == '/' and not allowabs:
         raise ValueError('Absolute paths not allowed: "%s"' % path)
 
+    # no empty paths either
     if path == '':
-        raise ValueError('Invalid or unsafe path: "%s"' % path)
+        raise ValueError('Empty paths are not allowed')
 
     # only alphanummerical characters (includes unicode)
     if not all([c.isalnum() or c in keepcharacters for c in path]):
@@ -148,6 +119,7 @@ def path_sanitize(path, allowdd=False, allowabs=False):
         if item[0] in no_lt or item[-1] in no_lt:
             msg = 'No leading/trailing . or - allowed.'
             raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
+
 def sanitize_wine_prefix(wine_prefix):
     """special case to sanitize
     """
