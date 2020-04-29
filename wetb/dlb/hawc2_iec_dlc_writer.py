@@ -26,6 +26,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         htc.wind.windfield_rotations = wdir, 0, 0
 
     def set_shear(self, htc, shear, **_):
+        if isinstance(shear, str):
+            shear = eval(shear)  # convert str to dict (if via excel)
         shear_format, shear_arg = shear['profile']
         i_shear_format = ['log', 'power'].index(shear_format.lower()) + 2
         htc.wind.shear_format = i_shear_format, shear_arg
@@ -41,10 +43,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         htc.wind.tint = ti
 
     def set_seed(self, htc, seed, **kwargs):
-        #         if turbulence['type'] in ['NTM', 'ETM']:
-        #             tint, seed = turbulence['ti'], turbulence['seed']
-        #             htc.wind.tint = tint
-        if seed is None:
+        if seed is None or seed == "":
             htc.wind.turb_format = 0
         elif isinstance(seed, int):
             L, Gamma, nx, nyz = self.turbulence_defaults
@@ -52,17 +51,15 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             htc.add_mann_turbulence(L, 1, Gamma, seed, no_grid_points=(nx, nyz, nyz),
                                     box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'],
                                                    self.diameter, self.diameter))
-    #         if turbulence['type'] == 'ECD':
-    #             V_cg, theta_cg, T = [turbulence[k] for k in ['V_cg', 'theta_cg', 'T']]
-    #             htc.wind.turb_format = 0
-    #             htc.wind.iec_gust = 'ECD', V_cg, theta_cg, self.time_start, T
         else:
             raise NotImplementedError(seed)
 
     def set_Gust(self, htc, Gust, **kwargs):
         if str(Gust).lower() == 'nan':
             return
-        elif Gust['type'] == 'ECD':
+        if isinstance(Gust, str):
+            Gust = eval(Gust)
+        if Gust['type'] == 'ECD':
             V_cg, theta_cg, T = [Gust[k] for k in ['V_cg', 'theta_cg', 'T']]
             htc.wind.iec_gust = 'ECD', V_cg, theta_cg, self.time_start, T
         else:
@@ -71,7 +68,9 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def set_Fault(self, htc, Fault, **kwargs):
         if str(Fault).lower() == 'nan':
             return
-        elif Fault['type'] == 'GridLoss':
+        if isinstance(Fault, str):
+            Fault = eval(Fault)
+        if Fault['type'] == 'GridLoss':
             T = Fault['T']
             self.set_gridloss_time(htc, self.time_start + T)
         else:
@@ -90,5 +89,7 @@ if __name__ == '__main__':
     dlb = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)
     path = os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/'
     writer = HAWC2_IEC_DLC_Writer(path + 'htc/DTU_10MW_RWT.htc', 180)
-    p = writer.from_pandas(dlb, write_input_files=True)
-    # print(p['DLC12'])
+    p = writer.from_pandas(dlb['DLC14'])
+    print(p.contents)
+
+    p.write_all(out_dir='tmp')

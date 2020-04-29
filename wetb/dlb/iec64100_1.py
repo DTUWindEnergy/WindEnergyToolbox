@@ -8,7 +8,7 @@ import itertools
 """IEC refers to IEC61400-1(2005)
 
 Questions:
-dlc1.4 (hansen: 100s, no turb), why not NTM, NWP 600s and 6 seeds 
+dlc1.4 (hansen: 100s, no turb), why not NTM, NWP 600s and 6 seeds
 seed numbering and reuse???
 """
 
@@ -33,7 +33,6 @@ class DLC():
     @classmethod
     def getattr(cls, name):
         try:
-
             return getattr(cls, name)
         except AttributeError as e:
             d = {k.lower(): k for k in dir(cls)}
@@ -72,7 +71,8 @@ class DLC():
 
     def case_arg_lst_product(self, **kwargs):
         case_arg_lst = []
-        for dict_lst in itertools.product(*[m(self, **kwargs) for m in [DLC.WspWdir, self.Turb, self.Shear, self.Gust, self.Fault] if m is not None]):
+        for dict_lst in itertools.product(
+                *[m(self, **kwargs) for m in [DLC.WspWdir, self.Turb, self.Shear, self.Gust, self.Fault] if m is not None]):
             ids = {k: v for d in dict_lst for k, v in d.items() if '_id' in k}
             d = {k: v for d in dict_lst for k, v in d.items() if '_id' not in k}
             name = [self.Name, 'wsp%02d' % d['V_hub'], "wdir%03d" % (d['wdir'] % 360)]
@@ -97,7 +97,9 @@ class DLC():
                 for case_args in self.case_arg_lst_product(**default_kwargs):
                     case_args.update({k: v for k, v in default_kwargs.items() if k not in case_args})
                     case_dict_lst.append(case_args)
-        return pd.DataFrame(case_dict_lst)
+        cols = ['Name', 'Folder', 'V_hub', 'wdir', 'simulation_time']
+        cols += [k for k in case_args.keys() if k not in cols]
+        return pd.DataFrame(case_dict_lst, columns=cols)
 
     # ===============================================================================
     # General
@@ -185,56 +187,30 @@ class DLC():
 
 
 class DLB():
-    def __init__(self, dlc_definition_dict_lst, variables):
-        self.dlc_definition_dict_lst = dlc_definition_dict_lst
-        self.variables = variables
-
-        def isNone(v):
-            return str(v).lower().strip() in ['', 'none', 'nan']
-
-        def merge_dict(d1, d2):
-            d = d1.copy()
-            d.update(d2)
-            return d
-
-        self.dlc_dict = {}
-        self.dataframe_dict = {}
-
-        for dlc_dict in dlc_definition_dict_lst:
-            name = dlc_dict['Name']
-            if isNone(name):
-                continue
-
-            kwargs = {k: DLC.getattr(str(dlc_dict[k]))
-                      for k in ['Turb', 'Shear', 'Gust', 'Fault']}
-            kwargs['Description'] = dlc_dict['Description']
-            variables.update(dlc_dict)
-            dlc = DLC(variables=variables, **kwargs)
-            df = dlc.to_pandas()
-            df.loc[:, 'DLC'] = name
-            self.dataframe_dict[name] = df
-
-    def get_overview(self):
+    def __init__(self, dlc_definitions, variables):
         cols = ['Name', 'Description', 'WSP', 'Wdir', 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault', 'Time']
-        df_dlc = pd.DataFrame(
-            [{k: dlc_def[k] for k in cols} for dlc_def in self.dlc_definition_dict_lst], columns=cols)
-        variables = [('Vin', 'Cut-in wind speed'),
-                     ('Vout', 'Cut-out wind speed'),
-                     ('Vr', 'Rated wind speed'),
-                     ('D', 'Rotor diameter'),
-                     ('z_hub', 'Hub height'),
-                     ('Vstep', 'Wind speed distribution step'),
-                     ('iec_wt_class', 'IEC wind turbine class, e.g. 1A')]
-        df_vars = pd.DataFrame([{'Name': n, 'Value': self.variables[n], 'Description': d}
-                                for n, d in variables], columns=['Name', 'Value', 'Description'])
-        return {'DLC': df_dlc, 'Variables': df_vars}
+        self.dlcs = pd.DataFrame(dlc_definitions, columns=cols, index=[dlc['Name'] for dlc in dlc_definitions])
 
-    def to_excel_overview(self, filename):
+        var_name_desc = [('Vin', 'Cut-in wind speed'),
+                         ('Vout', 'Cut-out wind speed'),
+                         ('Vr', 'Rated wind speed'),
+                         ('D', 'Rotor diameter'),
+                         ('z_hub', 'Hub height'),
+                         ('Vstep', 'Wind speed distribution step'),
+                         ('iec_wt_class', 'IEC wind turbine class, e.g. 1A')]
+        self.variables = pd.DataFrame([{'Name': n, 'Value': variables[n], 'Description': d}
+                                       for n, d in var_name_desc], columns=['Name', 'Value', 'Description'],
+                                      index=[n for (n, d) in var_name_desc])
+
+    def keys(self):
+        return [n for n in self.dlcs['Name'] if not str(n).lower().strip() in ['', 'none', 'nan']]
+
+    def to_excel(self, filename):
         if os.path.dirname(filename) != "":
             os.makedirs(os.path.dirname(filename), exist_ok=True)
         writer = pd.ExcelWriter(filename)
-        for k, v in self.get_overview().items():
-            v.to_excel(writer, k, index=False)
+        self.dlcs.to_excel(writer, 'DLC', index=False)
+        self.variables.to_excel(writer, 'Variables', index=False)
         writer.save()
 
     @staticmethod
@@ -244,22 +220,32 @@ class DLB():
         df_vars.fillna('', inplace=True)
         variables = {name: value for name, value in zip(df_vars.index, df_vars.Value.values)}
 
-        dlb_def = pd.read_excel(filename, 'DLC', skiprows=[1], )
+        dlb_def = pd.read_excel(filename, 'DLC')
         dlb_def.columns = [c.strip() for c in dlb_def.columns]
         return DLB([row for _, row in dlb_def.iterrows() if row['Name'] is not np.nan], variables)
 
     def __getitem__(self, key):
-        return self.dataframe_dict[key]
+        dlc_definition = self.dlcs.loc[key]
+        kwargs = {k: DLC.getattr(str(dlc_definition[k]))
+                  for k in ['Turb', 'Shear', 'Gust', 'Fault']}
+        kwargs['Description'] = dlc_definition['Description']
+        variables = {v['Name']: v['Value'] for _, v in self.variables.iterrows()}
+        variables.update(dlc_definition)
+        dlc = DLC(variables=variables, **kwargs)
+        df = dlc.to_pandas()
+        name = dlc_definition['Name']
+        df.insert(0, 'DLC', name)
+        return df
 
     def to_pandas(self):
-        return pd.concat([df for df in self.dataframe_dict.values()], sort=False)
+        return pd.concat([self[dlc] for dlc in self.keys()], sort=False)
 
-    def to_excel(self, filename):
+    def cases_to_excel(self, filename):
         if os.path.dirname(filename) != "":
             os.makedirs(os.path.dirname(filename), exist_ok=True)
         writer = pd.ExcelWriter(filename)
-        for k, v in self.dataframe_dict.items():
-            v.to_excel(writer, k, index=False)
+        for k in self.keys():
+            self[k].to_excel(writer, k, index=False)
         writer.save()
 
 
@@ -273,7 +259,7 @@ class DTU_IEC64100_1_Ref_DLB(DLB):
         Name, Description, WSP, Wdir, Time = 'Name', 'Description', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
 
-        dlc_definition_dict_lst = [
+        dlc_definitions = [
             {Name: 'DLC12', Description: 'Normal production', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
                 Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Fault: None, Time: 600},
             {Name: 'DLC13', Description: 'Normal production with high turbulence', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
@@ -286,34 +272,50 @@ class DTU_IEC64100_1_Ref_DLB(DLB):
                 Turb: 'NTM', Seeds: 4, Shear: 'NWP', Gust: None, Fault: 'GridLoss10', Time: 100},
             {Name: 'DLC22y', Description: 'Abnormal yaw error', WSP: 'Vin:2:Vout', Wdir: '15:15:345',
                 Turb: 'NTM', Seeds: 1, Shear: 'NWP', Gust: None, Fault: None, Time: 600}
-
         ]
         variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
                      'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
-        DLB.__init__(self, dlc_definition_dict_lst, variables)
+        DLB.__init__(self, dlc_definitions, variables)
 
 
 def main():
     if __name__ == '__main__':
 
-        dlb = DTU_IEC64100_1_Ref_DLB('1A', 4, 10, 8, 180, 110)
-        print(dlb.get_overview())
-        print(dlb['DLC15'])
+        dlb = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A',
+                                     Vin=4, Vout=25, Vr=8,  # cut-in, cut_out and rated wind speed
+                                     D=180, z_hub=110)  # diameter and hub height
+        print(dlb.dlcs)
+        print(dlb.variables)
 
-        # save and load excel overview
-        dlb.to_excel_overview('overview.xlsx')
+        # save dlb definition to excel
+        dlb.to_excel('overview.xlsx')
+        # you can now modify definitions in overview.xlsx in Excel and
+        # load the modified dlb definition back into python
         dlb = DLB.from_excel('overview.xlsx')
 
+        print(dlb['DLC14'])
+
+        # save dlc14 as Excel spreadsheet
+        dlb['DLC14'].to_excel('dlc14.xlsx')
+        # you can no modify cases in dlc14.xlsx in Excel
+
         # save all cases to excel
-        dlb.to_excel('cases.xlsx')
+        dlb.cases_to_excel('cases.xlsx')
 
         # Save generate hawc2 input files
         from wetb.hawc2.tests import test_files
         from wetb.dlb.hawc2_iec_dlc_writer import HAWC2_IEC_DLC_Writer
         path = os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/'
         writer = HAWC2_IEC_DLC_Writer(path + 'htc/DTU_10MW_RWT.htc', diameter=180)
-        # set write_input_files to True to write the files
-        writer.from_pandas(dlb, write_input_files=False)
+
+        # load all cases
+        writer.from_pandas(dlb)
+        # load DLC14 only
+        writer.from_pandas(dlb['DLC14'])
+        # load modified DLC14.xlsx
+        writer.from_excel('dlc14.xlsx')
+
+        writer.write_all('tmp')
 
 
 main()

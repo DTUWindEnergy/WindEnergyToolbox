@@ -90,7 +90,7 @@ html_theme = 'sphinx_rtd_theme'
 #
 html_theme_options = {
     # TOC options
-    'navigation_depth': 2,  # only show 2 levels on left sidebar
+    #'navigation_depth': 2,  # only show 2 levels on left sidebar
     'collapse_navigation': False,  # don't allow sidebar to collapse
 }
 

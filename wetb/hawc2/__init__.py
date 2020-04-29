@@ -13,6 +13,7 @@ from .ae_file import AEFile
 from .at_time_file import AtTimeFile
 from .pc_file import PCFile
 from . import shear_file
-from .st_file import StFile 
+from .st_file import StFile
+from .hawc2_input_writer import HAWC2InputWriter
 
 __all__ = sorted([m for m in set(dir()) - set(d)])

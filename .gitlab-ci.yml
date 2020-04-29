@@ -9,7 +9,7 @@ test-3.4:
   - apt-get update
   - pip3 install pytest
   - pip3 install mock
-  - python3 -m pytest --cov=wetb
+  - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
   tags:
   - python
   

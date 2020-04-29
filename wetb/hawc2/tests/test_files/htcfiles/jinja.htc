@@ -1,0 +1,20 @@
+
+begin simulation;
+    time_stop	600;
+    {% if logfilename %}
+      logfile  {{logfilename}}
+    {% endif %}
+end simulation;
+;
+begin wind;
+    wsp	{{wsp}};
+    {%- for i in range(2) %}
+        wind_ramp_abs	{{begin_step+i*50}} {{begin_step+i*50+1}} 0 1;	wsp. after the step:  {{wsp+i+1}}
+    {%- endfor %}
+end wind;
+;
+begin output;
+    filename	./tmp;
+    general time;
+end output;
+exit;

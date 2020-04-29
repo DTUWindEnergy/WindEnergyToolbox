@@ -74,7 +74,7 @@ class HTCContents(object):
             return object.__getattribute__(self, *args, **kwargs)
         try:
             return object.__getattribute__(self, *args, **kwargs)
-        except:
+        except Exception:
             k = args[0]
             if k.endswith("__1"):
                 k = k[:-3]
@@ -84,12 +84,18 @@ class HTCContents(object):
         _3to2list1 = list(args)
         k, v, = _3to2list1[:1] + _3to2list1[1:]
         if k in dir(self):  # in ['section', 'filename', 'lines']:
+            if isinstance(self, HTCLine) and k == 'values':
+                args = k, list(v)
             return object.__setattr__(self, *args, **kwargs)
         if isinstance(v, str):
             v = [fmt_value(v) for v in v.split()]
         if not isinstance(v, HTCContents):
             if not isinstance(v, (list, tuple)):
                 v = [v]
+            if k in self.contents:
+                self.contents[k].values = v
+                return
+
             v = HTCLine(k, v, "")
         self.contents[k] = v
         v.parent = self
@@ -115,6 +121,20 @@ class HTCContents(object):
             return self[section]
         except KeyError:
             return default
+
+    def __call__(self, **kwargs):
+        """Allow accesing one of multiple subsections with same name, e.g. the main body where name=='shaft'
+        > htc.new_htc_structure.main_body(name='shaft')
+
+        or one of multiple lines with same name, e.g. the section in c2_def where value[0]==3
+        > htc.new_htc_structure.main_body.c2_def.sec(v0=3)
+        """
+        lst = [s for s in self.parent if s.name_ == self.name_ and (
+            all([k in s and s[k][0] == v for k, v in kwargs.items()]) or
+            (all([k[0] == 'v' for k in kwargs]) and all([s[int(k[1:])] == v for k, v in kwargs.items()]))
+        )]
+        assert len(lst) == 1
+        return lst[0]
 
     def keys(self):
         return list(self.contents.keys())
@@ -156,19 +176,25 @@ class HTCContents(object):
         if self.parent is None:
             return os.path.basename(self.filename)
         else:
-            return self.parent.location() + "/" + self.name_
+            name = [k for k in self.parent.keys() if self.parent[k] == self][0]
+            return self.parent.location() + "/" + name
 
-    def compare(self, other):
+    def compare(self, other, compare_order=False):
         my_keys = self.keys()
         other_keys = other.keys()
         s = ""
         while my_keys or other_keys:
             if my_keys:
                 if (my_keys[0] in other_keys):
-                    while other_keys[0] != my_keys[0]:
-                        s += "\n".join(["+ %s" % l for l in str(other[other_keys.pop(0)]).strip().split("\n")]) + "\n\n"
+                    if compare_order:
+                        other_i = 0
+                    else:
+                        other_i = other_keys.index(my_keys[0])
+                    while other_keys[other_i] != my_keys[0]:
+                        s += "\n".join(["+ %s" % l for l in str(other[other_keys.pop(other_i)]
+                                                                ).strip().split("\n")]) + "\n\n"
 
-                    s += self[my_keys.pop(0)].compare(other[other_keys.pop(0)])
+                    s += self[my_keys.pop(0)].compare(other[other_keys.pop(other_i)])
 
                 else:
                     s += "\n".join(["- %s" % l for l in str(self[my_keys.pop(0)]).strip().split("\n")]) + "\n\n"
@@ -235,14 +261,31 @@ class HTCSection(HTCContents):
         return s
 
     def get_subsection_by_name(self, name, field='name'):
+        return self.get_section(name, field)
+
+    def get_section(self, name, field='name'):
         lst = [s for s in self if field in s and s[field][0] == name]
         if len(lst) == 1:
             return lst[0]
+        elif len(lst) == 0:
+            raise ValueError("subsection with %s='%s' not found" % (field, name))
         else:
-            if len(lst) == 0:
-                raise ValueError("subsection '%s' not found" % name)
-            else:
-                raise NotImplementedError()
+            raise ValueError("Multiple subsection with %s='%s' not found" % (field, name))
+
+    def get_element(self, key, value):
+        """Return subsection where subsection.<key>==value or line where line.values[key]==value"""
+        if isinstance(key, int):
+            lst = [s for s in self if s.values[key] == value]
+        elif isinstance(key, str):
+            lst = [s for s in self if key in s and s[key][0] == name]
+        else:
+            raise ValueError("Key argument must be int or str")
+        if len(lst) == 1:
+            return lst[0]
+        elif len(lst) == 0:
+            raise ValueError("contents with '%s=%s' not found" % (key, value))
+        else:
+            raise ValueError("Multiple contents with '%s=%s' not found" % (key, value))
 
     def copy(self):
         copy = HTCSection(name=self.name_, begin_comments=self.begin_comments, end_comments=self.end_comments)
@@ -278,7 +321,7 @@ class HTCLine(HTCContents):
     def __getitem__(self, key):
         try:
             return self.values[key]
-        except:
+        except Exception:
             raise IndexError("Parameter %s does not exists for %s" % (key + 1, self.location()))
 
     def __setitem__(self, key, value):

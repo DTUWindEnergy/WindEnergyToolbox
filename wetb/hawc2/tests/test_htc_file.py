@@ -14,12 +14,7 @@ from future import standard_library
 standard_library.install_aliases()
 import os
 import unittest
-
-from datetime import datetime
 from wetb.hawc2.htc_file import HTCFile, HTCLine
-
-
-import numpy as np
 
 
 class TestHtcFile(unittest.TestCase):
@@ -182,7 +177,7 @@ class TestHtcFile(unittest.TestCase):
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
-        self.assertEqual(htcfile.wind.turb_format.comments, "")
+        self.assertEqual(htcfile.wind.turb_format.comments, "0=none, 1=mann,2=flex")
 
     def test_add_turb_export(self):
         htc = HTCFile()
@@ -360,15 +355,15 @@ end turb_export;"""
 - end section1;
 - ;
 
-+ begin section2;
-+ end section2;
-+ ;
-
 + alfa 2;
 - alfa 1;
 
 + sensor1 1;
-- sensor2 2;"""
+- sensor2 2;
+
++ begin section2;
++ end section2;
++ ;"""
         assert s.strip() == ref
 
     def test_pbs_file(self):
@@ -403,6 +398,20 @@ end turb_export;"""
         ti2.set = 3, 3
         assert tower2.timoschenko_input.set.values == [1, 2]
         assert tower2.timoschenko_input__2.set.values == [3, 3]
+
+    def test_location(self):
+        htc = HTCFile(self.testfilepath + "test.htc")
+        assert htc.new_htc_structure.main_body__3.location() == 'test.htc/new_htc_structure/main_body__3'
+
+    def test__call__(self):
+        htc = HTCFile(self.testfilepath + "test.htc")
+        assert htc.new_htc_structure.main_body(name='shaft').name.values[0] == 'shaft'
+        assert htc.new_htc_structure.main_body.c2_def.sec(v0=3).values[0] == 3
+
+    def test_jinja_tags(self):
+        htc = HTCFile(self.testfilepath + "jinja.htc",
+                      jinja_tags={'wsp': 12, 'log': None, 'begin_step': 100})
+        print(htc)
 
 
 if __name__ == "__main__":

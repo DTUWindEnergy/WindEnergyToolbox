@@ -21,6 +21,6 @@ License:
 
 Contents:
     .. toctree::
-        :maxdepth: 2
 
         fatigue_tools/fatigue
+        hawc2/hawc2

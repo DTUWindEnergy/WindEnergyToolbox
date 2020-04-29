@@ -14,6 +14,7 @@ from builtins import str
 from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
+import jinja2
 standard_library.install_aliases()
 from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
@@ -73,13 +74,14 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     """
 
     filename = None
+    jinja_tags = {}
     htc_inputfiles = []
     level = 0
     modelpath = "../"
     initial_comments = None
     _contents = None
 
-    def __init__(self, filename=None, modelpath=None):
+    def __init__(self, filename=None, modelpath=None, jinja_tags={}):
         """
         Parameters
         ---------
@@ -94,6 +96,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 pass
 
             self.filename = filename
+
+        self.jinja_tags = jinja_tags
         self.modelpath = modelpath or self.auto_detect_modelpath()
 
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
@@ -169,10 +173,13 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
     def readfilelines(self, filename):
         with self.open(self.unix_path(filename), encoding='cp1252') as fid:
-            lines = list(fid.readlines())
-        if lines[0].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
-            lines[0] = lines[0][3:]
-        return lines
+            txt = fid.read()
+        if txt[:10].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
+            txt = txt[3:]
+        if self.jinja_tags:
+            template = jinja2.Template(txt)
+            txt = template.render(**self.jinja_tags)
+        return txt.replace("\r", "").split("\n")
 
     def readlines(self, filename):
         self.htc_inputfiles.append(filename)
@@ -210,7 +217,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         else:
             self.filename = filename
         # exist_ok does not exist in Python27
-        if not os.path.exists(os.path.dirname(filename)):
+        if not os.path.exists(os.path.dirname(filename)) and os.path.dirname(filename) != "":
             os.makedirs(os.path.dirname(filename))  # , exist_ok=True)
         with self.open(filename, 'w', encoding='cp1252') as fid:
             fid.write(str(self))
@@ -279,7 +286,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         else:
             files = [os.path.abspath(str(f)).replace("\\", "/") for f in self.htc_inputfiles]
         if 'new_htc_structure' in self:
-            for mb in [self.new_htc_structure[mb] for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
+            for mb in [self.new_htc_structure[mb]
+                       for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
                 if "timoschenko_input" in mb:
                     files.append(mb.timoschenko_input.filename[0])
                 files.append(mb.get('external_bladedata_dll', [None, None, None])[2])
@@ -317,12 +325,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             if theta_min >= 90:
                 files.append(os.path.join(os.path.dirname(
                     dtu_we_controller.filename[0]), "wpdata.%d" % theta_min).replace("\\", "/"))
-        except:
+        except Exception:
             pass
 
         try:
             files.append(self.force.dll.dll[0])
-        except:
+        except Exception:
             pass
 
         return [f for f in set(files) if f]
@@ -384,7 +392,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 res.extend([res_filename + ".sel", res_filename + ".dat"])
         return res
 
-    def simulate(self, exe, skip_if_up_to_date=False):
+    def _simulate(self, exe, skip_if_up_to_date=False):
         self.contents  # load if not loaded
         if skip_if_up_to_date:
             from os.path import isfile, getmtime, isabs
@@ -403,10 +411,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         self.save()
         htcfile = os.path.relpath(self.filename, self.modelpath)
-        hawc2exe = exe
-        errorcode, stdout, stderr, cmd = pexec([hawc2exe, htcfile], self.modelpath)
+        assert os.path.isfile(exe), exe
+        return pexec([exe, htcfile], self.modelpath)
 
-        if "logfile" in self.simulation:
+    def simulate(self, exe, skip_if_up_to_date=False):
+        errorcode, stdout, stderr, cmd = self._simulate(exe, skip_if_up_to_date)
+        if 'simulation' in self.keys() and "logfile" in self.simulation:
             with self.open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
                 log = fid.read()
         else:
@@ -423,6 +433,14 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
                             (str(stdout), str(stderr), error_log, cmd))
         return str(stdout) + str(stderr), log
+
+    def simulate_hawc2stab2(self, exe):
+        errorcode, stdout, stderr, cmd = self._simulate(exe, skip_if_up_to_date=False)
+
+        if errorcode:
+            raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\ncmd:\n%s" %
+                            (str(stdout), str(stderr), cmd))
+        return str(stdout) + str(stderr)
 
     def deltat(self):
         return self.simulation.newmark.deltat[0]
@@ -512,4 +530,7 @@ if "__main__" == __name__:
     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
 
     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
+    f.set_time = 0, 1, .1
+    print(f.simulate(r"C:\mmpe\HAWC2\bin\HAWC2_12.8\hawc2mb.exe"))
+
     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
