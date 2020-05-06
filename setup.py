@@ -8,6 +8,7 @@ import os
 from git_utils import write_vers
 import sys
 from setuptools import setup, find_packages
+import warnings
 
 repo = os.path.dirname(__file__)
 try:
@@ -26,20 +27,26 @@ except Warning:
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-import numpy as np
+
 from distutils.extension import Extension
-from Cython.Distutils import build_ext
 
 
 def setup_package(build_ext_switch=True):
     if build_ext_switch:
+        import numpy as np
         ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm']),
                    ('wetb.signal.filters', ['cy_filters'])]
+        extlist = [Extension('%s.%s' % (module, n),
+                             [os.path.join(module.replace(".", "/"), n) + '.pyx'],
+                             include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
+        from Cython.Distutils import build_ext
+        build_requires = ['cython']
+        cmd_class = {'build_ext': build_ext}
     else:
-        ex_info = []
-    extlist = [Extension('%s.%s' % (module, n),
-                         [os.path.join(module.replace(".", "/"), n) + '.pyx'],
-                         include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
+        extlist = []
+        build_requires = []
+        cmd_class = {}
+
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
     sphinx = ['sphinx'] if needs_sphinx else []
     install_requires = ['future',
@@ -62,11 +69,11 @@ def setup_package(build_ext_switch=True):
                         'six',
                         'sshtunnel',
                         'click',
-                        'jinja2',]
-    build_requires = ['cython']
+                        'jinja2', ]
+
     setup(install_requires=install_requires,
           setup_requires=install_requires + build_requires + sphinx,
-          cmdclass={'build_ext': build_ext},
+          cmdclass=cmd_class,
           ext_modules=extlist,
           long_description=long_description,
           long_description_content_type="text/markdown",
@@ -78,7 +85,7 @@ def setup_package(build_ext_switch=True):
 if __name__ == "__main__":
     try:
         setup_package()
-    except:
+    except Exception:
         setup_package(build_ext_switch=False)
-        raise Warning(
-            "WETB installed, but building extensions failed (i.e. it falls back on the slower pure python implementions)")
+        warnings.warn("WETB installed, but building extensions failed (i.e. it falls back on the slower pure python implementions)",
+                      RuntimeWarning)
