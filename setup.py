@@ -68,7 +68,7 @@ def setup_package(build_ext_switch=True):
                         'psutil',
                         'six',
                         'sshtunnel',
-                        'click',
+                        'Click',
                         'jinja2', ]
 
     setup(install_requires=install_requires,
