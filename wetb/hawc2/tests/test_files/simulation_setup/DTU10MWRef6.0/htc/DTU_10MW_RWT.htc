@@ -264,7 +264,7 @@
     windfield_rotations	0 0 0;		yaw, tilt, rotation
     center_pos0	0 0 -119;		hub heigth
     shear_format	1 0.2;
-    turb_format	1;		0=none, 1=mann,2=flex
+    turb_format	0;		0=none, 1=mann,2=flex
     tower_shadow_method	0;		0=none, 1=potential flow, 2=jet
     scale_time_start	0;
     wind_ramp_factor	0 40 0.6 1;		; Steps ;
@@ -331,7 +331,7 @@
   end aero;		;-------------------------------------------------------------------------------------------------
   begin dll;		;
     begin type2_dll;
-      name	risoe_controller;
+      name	dtu_we_controller;
       filename	./control/dtu_we_controller.dll;
       dll_subroutine_init	init_regulation;
       dll_subroutine_update	update_regulation;

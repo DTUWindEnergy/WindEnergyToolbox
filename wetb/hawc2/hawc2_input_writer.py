@@ -191,7 +191,7 @@ def main():
 
         htc_template_fn = os.path.dirname(test_files.__file__) + \
             '/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc.j2'
-        writer = JinjaWriter(htc_template_fn)
+        writer = HAWC2InputWriter(htc_template_fn)
         writer.from_CVF(Constants, Variables, Functionals)
         print(writer.contents)
 

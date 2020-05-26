@@ -103,6 +103,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
             drive, p = os.path.splitdrive(os.path.join(os.path.dirname(str(self.filename)), self.modelpath))
             self.modelpath = os.path.join(drive, os.path.splitdrive(os.path.realpath(p))[1]).replace("\\", "/")
+        if self.modelpath != 'unknown' and self.modelpath[-1] != '/':
+            self.modelpath += "/"
 
             #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
@@ -129,7 +131,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         #     print(os.path.isfile(os.path.join(os.path.dirname(self.filename), "../", f)), f)
         if max(found) > 0:
             relpath = "../" * np.argmax(found)
-            return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath))
+            return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath)).replace("\\", "/")
         else:
             raise ValueError(
                 "Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file" % self.filename)
@@ -333,7 +335,18 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         except Exception:
             pass
 
-        return [f for f in set(files) if f]
+        def fix_path_case(f):
+            if os.path.isabs(f):
+                return self.unix_path(f)
+            elif self.modelpath != "unknown":
+                try:
+                    return "./" + os.path.relpath(self.unix_path(os.path.join(self.modelpath, f)),
+                                                  self.modelpath).replace("\\", "/")
+                except IOError:
+                    return f
+            else:
+                return f
+        return [fix_path_case(f) for f in set(files) if f]
 
     def output_files(self):
         self.contents  # load if not loaded
@@ -411,7 +424,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         self.save()
         htcfile = os.path.relpath(self.filename, self.modelpath)
-        assert os.path.isfile(exe), exe
+        assert any([os.path.isfile(os.path.join(f, exe)) for f in [''] + os.environ['PATH'].split(";")]), exe
         return pexec([exe, htcfile], self.modelpath)
 
     def simulate(self, exe, skip_if_up_to_date=False):
@@ -461,8 +474,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         for f in rest[1:].split("/"):
             f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
             if len(f_lst) > 1:
+                # use the case sensitive match
                 f_lst = [f_ for f_ in f_lst if f_ == f]
-            elif len(f_lst) == 0:
+            if len(f_lst) == 0:
                 raise IOError("'%s' not found in '%s'" % (f, ufn))
             else:  # one match found
                 ufn = os.path.join(ufn, f_lst[0])

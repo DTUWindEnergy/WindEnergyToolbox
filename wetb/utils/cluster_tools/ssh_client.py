@@ -108,7 +108,8 @@ class SSHClient(object):
     "A wrapper of paramiko.SSHClient"
     TIMEOUT = 4
 
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None, ui=UI()):
+    def __init__(self, host, username, password=None, port=22, key=None,
+                 passphrase=None, interactive_auth_handler=None, gateway=None, ui=UI()):
         self.host = host
         self.username = username
         self.password = password
@@ -230,7 +231,7 @@ class SSHClient(object):
                 elif hasattr(localfile, 'write'):
                     ret = self.sftp.putfo(remotefilepath, localfile, callback=callback)
                 break
-            except:
+            except Exception:
                 pass
             finally:
                 SSHClient.__exit__(self)
@@ -246,7 +247,7 @@ class SSHClient(object):
             callback = self.ui.progress_callback()
         try:
             SSHClient.__enter__(self)
-            self.execute("mkdir -p %s" % (os.path.dirname(filepath)))
+            self.execute('mkdir -p "%s"' % (os.path.dirname(filepath)))
             sftp = self.sftp
             if isinstance(localfile, (str, bytes, int)):
                 ret = sftp.put(localfile, filepath, callback=callback)
@@ -254,7 +255,7 @@ class SSHClient(object):
                 size = len(localfile.read())
                 localfile.seek(0)
                 ret = sftp.putfo(localfile, filepath, file_size=size, callback=callback)
-            self.execute('chmod %s %s' % (chmod, filepath))
+            self.execute('chmod %s "%s"' % (chmod, filepath))
         except Exception as e:
             print("upload failed ", str(e))
             raise e
@@ -282,11 +283,11 @@ class SSHClient(object):
             zipf.close()
             remote_zn = os.path.join(remotepath, zn).replace("\\", "/")
             with self:
-                self.execute("mkdir -p %s" % (remotepath))
+                self.execute('mkdir -p "%s"' % (remotepath))
 
                 self.upload(zn, remote_zn, callback=callback)
-                self.execute("unzip -o %s -d %s && rm %s" % (remote_zn, remotepath, remote_zn))
-        except:
+                self.execute('unzip -o "%s" -d "%s" && rm "%s"' % (remote_zn, remotepath, remote_zn))
+        except Exception:
             print("upload files failed", )
             traceback.print_exc()
             raise
@@ -302,29 +303,29 @@ class SSHClient(object):
             zn = 'tmp_%s_%04d.zip' % (id(self), self.counter)
 
         remote_zip = os.path.join(remote_path, zn).replace("\\", "/")
-        self.execute("cd %s && zip -r %s %s" % (remote_path, zn, " ".join(file_lst)))
+        self.execute('cd "%s" && zip -r "%s" "%s"' % (remote_path, zn, " ".join(file_lst)))
 
         local_zip = os.path.join(localpath, zn)
         if not os.path.isdir(localpath):
             os.makedirs(localpath)
         self.download(remote_zip, local_zip, callback=callback)
-        self.execute("rm -f %s" % remote_zip)
+        self.execute('rm -f "%s"' % remote_zip)
         with zipfile.ZipFile(local_zip, "r") as z:
             z.extractall(localpath)
         os.remove(local_zip)
 
     def close(self):
-        for x in ["_sftp", "client",  "tunnel"]:
+        for x in ["_sftp", "client", "tunnel"]:
             try:
                 getattr(self, x).close()
                 setattr(self, x, None)
-            except:
+            except Exception:
                 pass
         self.disconnect = False
 
     def file_exists(self, filename):
         _, out, _ = (self.execute(
-            '[ -f %s ] && echo "File exists" || echo "File does not exists"' % unix_path(filename)))
+            '[ -f "%s" ] && echo "File exists" || echo "File does not exists"' % unix_path(filename)))
         return out.strip() == "File exists"
 
     def isfile(self, filename):
@@ -332,7 +333,7 @@ class SSHClient(object):
 
     def folder_exists(self, folder):
         _, out, _ = (self.execute(
-            '[ -d %s ] && echo "Folder exists" || echo "Folder does not exists"' % unix_path(folder)))
+            '[ -d "%s" ] && echo "Folder exists" || echo "Folder does not exists"' % unix_path(folder)))
         return out.strip() == "Folder exists"
 
     def isdir(self, folder):
@@ -349,7 +350,7 @@ class SSHClient(object):
         if verbose:
             print("[%s]$ %s" % (cwd, command))
 
-        command = "cd %s && %s" % (cwd, command)
+        command = 'cd "%s" && %s' % (cwd, command)
         with self as ssh:
             if ssh is None:
                 exc_info = sys.exc_info()
@@ -397,9 +398,9 @@ class SSHClient(object):
         cwd = os.path.join(cwd, os.path.split(filepattern)[0]).replace("\\", "/")
         filepattern = os.path.split(filepattern)[1]
         if recursive:
-            _, out, _ = self.execute(r'find %s -type f -name "%s"' % (cwd, filepattern))
+            _, out, _ = self.execute(r'find "%s" -type f -name "%s"' % (cwd, filepattern))
         else:
-            _, out, _ = self.execute(r'find %s -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
+            _, out, _ = self.execute(r'find "%s" -maxdepth 1 -type f -name "%s"' % (cwd, filepattern))
         return [file for file in out.strip().split("\n") if file != ""]
 
     def listdir(self, folder):
@@ -426,7 +427,8 @@ class SSHClient(object):
 
 
 class SharedSSHClient(SSHClient):
-    def __init__(self, host, username, password=None, port=22, key=None, passphrase=None, interactive_auth_handler=None, gateway=None):
+    def __init__(self, host, username, password=None, port=22, key=None,
+                 passphrase=None, interactive_auth_handler=None, gateway=None):
         SSHClient.__init__(self, host, username, password=password, port=port, key=key,
                            passphrase=passphrase, interactive_auth_handler=interactive_auth_handler, gateway=gateway)
 

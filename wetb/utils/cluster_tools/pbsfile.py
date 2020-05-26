@@ -97,13 +97,14 @@ class PBSFile():
                             ppn=self.ppn,
                             commands=commands)
 
-    def save(self, model_path=None, filename=None):
-        model_path = model_path or self.workdir
+    def save(self, modelpath=None, filename=None):
+        modelpath = modelpath or self.workdir
         self.filename = filename or self.filename
-        filename = os.path.join(model_path, self.filename)
+        filename = os.path.join(modelpath, self.filename)
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', newline='\n') as fid:
             fid.write(str(self))
+        os.chmod(filename, 0o774)
 
 
 multirunner_template = Template("""echo "[make_dict]
@@ -111,9 +112,9 @@ multirunner_template = Template("""echo "[make_dict]
 
 for node in `cat $PBS_NODEFILE | sort | uniq`
 do
-     
+
      ssh -T $node << EOF &
-cd [workdir]
+cd "[workdir]"
 python -c "[start_jobs]
 "
 EOF
@@ -179,7 +180,7 @@ class PBSMultiRunner(PBSFile):
         import time
         with open('pbs.dict') as fid:
             pbs_info_lst = eval(fid.read())[platform.node()]
-        arg_lst = ['echo starting %s && mkdir -p %s && env PBS_JOBID=$PBS_JOBID %s &> %s && echo finished %s' %
+        arg_lst = ['echo starting %s && mkdir -p "%s" && env PBS_JOBID=$PBS_JOBID "%s" &> "%s" && echo finished %s' %
                    (f, os.path.dirname(o), f, o, f) for f, o, _ in pbs_info_lst]
         print(arg_lst[0])
         print('Starting %d jobs on %s' % (len(arg_lst), platform.node()))
