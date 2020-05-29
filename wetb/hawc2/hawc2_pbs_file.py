@@ -1,7 +1,7 @@
 from wetb.utils.cluster_tools.pbsfile import PBSFile, Template
 import os
 from wetb.utils.cluster_tools.os_path import pjoin, relpath, abspath,\
-    cluster_path
+    cluster_path, repl
 
 template = Template("""
 
@@ -11,27 +11,27 @@ template = Template("""
 echo copy input
 #===============================================================================
 
-cd [modelpath]
+cd "[modelpath]"
 (flock -x 200
 [copy_input_to_scratch]
 ) 200>/scratch/$USER/$PBS_JOBID/[modelname]/lock_file_model
-cd /scratch/$USER/$PBS_JOBID/[modelname]
+cd "/scratch/$USER/$PBS_JOBID/[modelname]"
 [copy_input_to_exe_dir]
 
 
 #===============================================================================
 echo Run HAWC2
 #===============================================================================
-cd /scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]
+cd "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]"
 [hawc2_cmd] [htc_file]
 
 #===============================================================================
 echo Copy output
 #===============================================================================
-cd /scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]
+cd "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]"
 [copy_output]
 
-rm -r /scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]
+rm -r "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]"
 
 echo Done
 """)
@@ -63,18 +63,21 @@ class HAWC2PBSFile(PBSFile):
         if not os.path.isabs(htc_file):
             htc_file = pjoin(exe_dir, htc_file)
         else:
-            htc_file = htc_file.replace("\\", "/")
+            htc_file = repl(htc_file)
 
         if htc_file not in input_files:
             input_files.append(htc_file)
         self.input_files = [abspath((pjoin(exe_dir, f), abspath(f))[os.path.isabs(f)])
                             for f in input_files]
+
         self.htc_file = relpath(htc_file, exe_dir)
 
         self.output_files = [abspath((pjoin(exe_dir, f), abspath(f))[os.path.isabs(f)])
                              for f in output_files]
 
         drive = os.path.splitdrive(exe_dir)[0]
+#         print()
+#         print("\n".join(self.output_files))
         common_prefix = os.path.commonprefix(self.input_files + self.output_files).rpartition("/")[0]
         p = abspath(pjoin(exe_dir,
                           relpath(common_prefix, exe_dir)))
@@ -85,7 +88,7 @@ class HAWC2PBSFile(PBSFile):
         PBSFile.__init__(self, self.modelpath, self.jobname, self.commands, queue, walltime=walltime)
 
     def commands(self):
-        rel_exe_dir = relpath(self.exe_dir, self.modelpath)
+        rel_exe_dir = relpath(abspath(self.exe_dir), abspath(self.modelpath))
         copy_input_to_scratch, copy_input_to_exe_dir = self.copy_input()
         return template(copy_hawc2=self.copy_hawc2(),
                         exe_dir=cluster_path(self.exe_dir),
@@ -100,16 +103,16 @@ class HAWC2PBSFile(PBSFile):
                         modelname=self.modelname)
 
     def copy_hawc2(self):
-        copy_hawc2 = Template("""#===============================================================================
+        copy_hawc2 = Template('''#===============================================================================
 echo copy hawc2 to scratch
 #===============================================================================
 (flock -x 200
-mkdir -p /scratch/$USER/$PBS_JOBID/hawc2/
-unzip -u -o -q [hawc2_path]/*.zip -d /scratch/$USER/$PBS_JOBID/hawc2/
-find [hawc2_path]/* ! -name *.zip -exec cp -u -t /scratch/$USER/$PBS_JOBID/hawc2/ {} +
-) 200>/scratch/$USER/$PBS_JOBID/lock_file_hawc2
-mkdir -p /scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]
-cp /scratch/$USER/$PBS_JOBID/hawc2/* /scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]""")
+mkdir -p "/scratch/$USER/$PBS_JOBID/hawc2/"
+unzip -u -o -q "[hawc2_path]/"*.zip -d "/scratch/$USER/$PBS_JOBID/hawc2/"
+find "[hawc2_path]/"* ! -name *.zip -exec cp -u -t "/scratch/$USER/$PBS_JOBID/hawc2/" {} +
+) 200>"/scratch/$USER/$PBS_JOBID/lock_file_hawc2"
+mkdir -p "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]"
+cp "/scratch/$USER/$PBS_JOBID/hawc2/"* "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]/[rel_exe_dir]"''')
         if self.hawc2_path is None:
             return ""
         else:
@@ -118,12 +121,12 @@ cp /scratch/$USER/$PBS_JOBID/hawc2/* /scratch/$USER/$PBS_JOBID/[modelname]/run_[
     def copy_input(self):
         rel_input_files = [relpath(f, self.modelpath) for f in self.input_files]
 
-        copy_input = "\n".join(["mkdir -p [TARGET]/%s && cp -u -r %s [TARGET]/%s" % (os.path.dirname(f), f, os.path.dirname(f))
+        copy_input = "\n".join(['mkdir -p "[TARGET]/%s" && cp -u -r "%s" "[TARGET]/%s"' % (os.path.dirname(f), f, os.path.dirname(f))
                                 for f in rel_input_files])
         return (copy_input.replace("[TARGET]", "/scratch/$USER/$PBS_JOBID/[modelname]"),
                 copy_input.replace("[TARGET]", "/scratch/$USER/$PBS_JOBID/[modelname]/run_[jobname]"))
 
     def copy_output(self):
         rel_output_files = [relpath(f, self.modelpath) for f in self.output_files]
-        return "\n".join(["mkdir -p [modelpath]/%s && cp -u -r %s [modelpath]/%s" % (os.path.dirname(f), f, os.path.dirname(f))
+        return "\n".join(['mkdir -p "[modelpath]/%s" && cp -u -r "%s" "[modelpath]/%s"' % (os.path.dirname(f), f, os.path.dirname(f))
                           for f in rel_output_files])

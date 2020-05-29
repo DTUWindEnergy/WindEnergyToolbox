@@ -22,7 +22,7 @@ def test_pbs_file_str():
     ref = """### Jobid
 #PBS -N test
 ### Standard Output
-#PBS -o /home/user/tmp/./stdout/test.out
+#PBS -o /home/user/tmp/stdout/test.out
 ### merge stderr into stdout
 #PBS -j oe
 #PBS -W umask=0003
@@ -31,8 +31,8 @@ def test_pbs_file_str():
 #PBS -l nodes=1:ppn=1
 ### Queue name
 #PBS -q workq
-cd /home/user/tmp
-mkdir -p stdout
+cd "/home/user/tmp"
+mkdir -p "stdout"
 if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 python -c "print('hello world')"
@@ -73,7 +73,7 @@ def test_pbs_multirunner():
     ref = r"""### Jobid
 #PBS -N pbs_multirunner
 ### Standard Output
-#PBS -o /home/user/tmp/./stdout/pbs_multirunner.out
+#PBS -o /home/user/tmp/stdout/pbs_multirunner.out
 ### merge stderr into stdout
 #PBS -j oe
 #PBS -W umask=0003
@@ -82,8 +82,8 @@ def test_pbs_multirunner():
 #PBS -l nodes=1:ppn=1
 ### Queue name
 #PBS -q workq
-cd /home/user/tmp
-mkdir -p stdout
+cd "/home/user/tmp"
+mkdir -p "stdout"
 if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 echo "import os

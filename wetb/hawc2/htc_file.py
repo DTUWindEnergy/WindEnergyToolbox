@@ -15,6 +15,7 @@ from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 import jinja2
+from wetb.utils.cluster_tools.os_path import fixcase, abspath, pjoin
 standard_library.install_aliases()
 from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
@@ -92,6 +93,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         """
 
         if filename is not None:
+            filename = fixcase(abspath(filename))
             with self.open(str(filename)):
                 pass
 
@@ -115,23 +117,22 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         #print (["../"*i for i in range(3)])
         import numpy as np
         input_files = HTCFile(self.filename, 'unknown').input_files()
-        if len(input_files) == 1:
+        if len(input_files) == 1:  # only input file is the htc file
             return "../"
         rel_input_files = [f for f in input_files if not os.path.isabs(f)]
 
         def isfile_case_insensitive(f):
             try:
-                self.unix_path(f)
-                return True
+                f = fixcase(f)  # raises exception if not existing
+                return os.path.isfile(f)
             except IOError:
                 return False
         found = ([np.sum([isfile_case_insensitive(os.path.join(os.path.dirname(self.filename), "../" * i, f))
                           for f in rel_input_files]) for i in range(4)])
-        # for f in self.input_files():
-        #     print(os.path.isfile(os.path.join(os.path.dirname(self.filename), "../", f)), f)
+
         if max(found) > 0:
             relpath = "../" * np.argmax(found)
-            return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath)).replace("\\", "/")
+            return abspath(pjoin(os.path.dirname(self.filename), relpath))
         else:
             raise ValueError(
                 "Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file" % self.filename)
@@ -184,7 +185,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         return txt.replace("\r", "").split("\n")
 
     def readlines(self, filename):
-        self.htc_inputfiles.append(filename)
+        if filename != self.filename:  # self.filename may be changed by set_name/save. Added it when needed instead
+            self.htc_inputfiles.append(filename)
         htc_lines = []
         lines = self.readfilelines(filename)
         for l in lines:
@@ -284,9 +286,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     def input_files(self):
         self.contents  # load if not loaded
         if self.modelpath == "unknown":
-            files = [str(f).replace("\\", "/") for f in self.htc_inputfiles]
+            files = [str(f).replace("\\", "/") for f in [self.filename] + self.htc_inputfiles]
         else:
-            files = [os.path.abspath(str(f)).replace("\\", "/") for f in self.htc_inputfiles]
+            files = [os.path.abspath(str(f)).replace("\\", "/") for f in [self.filename] + self.htc_inputfiles]
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb]
                        for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:

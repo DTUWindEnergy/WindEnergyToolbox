@@ -1,6 +1,6 @@
 import os
 import inspect
-from wetb.utils.cluster_tools.os_path import cluster_path, pjoin
+from wetb.utils.cluster_tools.os_path import cluster_path, pjoin, normpath
 
 
 class Template():
@@ -31,8 +31,8 @@ pbs_template = Template('''### Jobid
 #PBS -l nodes=[nodes]:ppn=[ppn]
 ### Queue name
 #PBS -q [queue]
-cd [workdir]
-mkdir -p stdout
+cd "[workdir]"
+mkdir -p "stdout"
 if [ -z "$PBS_JOBID" ]; then echo "Run using qsub"; exit ; fi
 pwd
 [commands]
@@ -60,7 +60,7 @@ class PBSFile():
         self.nodes = nodes
         self.ppn = ppn
         self.merge_std = merge_std
-        self.stdout_filename = pjoin(workdir, './stdout/%s.out' % jobname)
+        self.stdout_filename = normpath(pjoin(workdir, './stdout/%s.out' % jobname))
         self.filename = "pbs_in/%s.in" % self.jobname
 
     @property
@@ -82,7 +82,7 @@ class PBSFile():
         if self.merge_std:
             stderr = "### merge stderr into stdout\n#PBS -j oe"
         else:
-            stderr = "### Standard Error\n#PBS -e ./err/[jobname].err"
+            stderr = '### Standard Error\n#PBS -e "./err/[jobname].err"'
         if callable(self.commands):
             commands = self.commands()
         else:
