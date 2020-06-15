@@ -6,5 +6,5 @@ HAWC2 tools
     :caption: HAWC2
 
     InputFileWriting_nb
-	RunningSimulations_nb
-	RunningSimulationsJess_nb
+    RunningSimulations_nb
+    RunningSimulationsJess_nb
