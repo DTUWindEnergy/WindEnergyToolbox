@@ -213,6 +213,14 @@ class HTCSection(HTCContents):
         self.end_comments = end_comments.strip(" \t")
         self.contents = OrderedDict()
 
+    @property
+    def section_name(self):
+        return self.name_
+
+    @section_name.setter
+    def section_name(self, value):
+        self.name_ = value
+
     def add_line(self, name, values, comments=""):
         line = HTCLine(name, values, comments)
         self._add_contents(line)
