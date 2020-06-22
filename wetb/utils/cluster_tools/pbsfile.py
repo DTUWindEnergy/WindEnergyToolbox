@@ -125,7 +125,7 @@ wait
 
 class PBSMultiRunner(PBSFile):
     def __init__(self, workdir, queue='workq', walltime='01:00:00', nodes=1, ppn=1, merge_std=True, pbsfiles=None,
-                 jobname=None):
+                 jobname='pbs_multirunner'):
         if pbsfiles:
             def fmt(pbsfile):
                 if isinstance(pbsfile, PBSFile):
@@ -138,8 +138,6 @@ class PBSMultiRunner(PBSFile):
         commands = multirunner_template(make_dict=self.get_src(self.make_dict),
                                         start_jobs=self.get_src(self.start_jobs),
                                         workdir=cluster_path(workdir)).replace("self.ppn", str(ppn))
-        if jobname is None:
-            jobname = 'pbs_multirunner'
         PBSFile.__init__(self, workdir, jobname, commands, queue, walltime=walltime,
                          nodes=nodes, ppn=ppn, merge_std=merge_std)
         self.filename = "%s.%s" % (self.jobname, ("lst", "all")[pbsfiles is None])
