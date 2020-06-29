@@ -122,7 +122,7 @@ class ReadHawc2(object):
         # read sensor file used if results are saved in FLEX format
         DirName = os.path.dirname(self.FileName + ".int")
         try:
-            fid = opent(DirName + r"\sensor ", 'r')
+            fid = opent(os.path.join(DirName, r"sensor"),'r')
         except IOError:
             print("can't finde sensor file for FLEX format")
             return
