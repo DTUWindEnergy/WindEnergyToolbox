@@ -1,10 +1,15 @@
 image: dtuwindenergy/wetb
 
+
+
 test-3.4:
   stage:  
     test
 #  except:
 #    - test_pypi
+  before_script:
+  - git submodule sync --recursive
+  - git submodule update --init --recursive
   script:
   - apt-get update
   - pip3 install pytest
