@@ -1568,7 +1568,7 @@ class LoadResults(ReadHawc2):
         for chi, chan in zip(delchis, delchans):
             signal = self.sig[i0:i1,chi]
             eq = self.calc_fatigue(signal, no_bins=no_bins, neq=neq, m=m)
-            statsdel.loc[chan][m_cols] = eq
+            statsdel.loc[chan, m_cols] = eq
 
         return statsdel
 

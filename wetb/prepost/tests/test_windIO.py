@@ -297,6 +297,12 @@ class TestsLoadResults(unittest.TestCase):
         for col in colref:
             np.testing.assert_array_equal(df1[col].values, df2[col].values)
 
+    def test_df_stats(self):
+        """
+        """
+        res = windIO.LoadResults(self.respath, self.fascii)
+        df_stats = res.statsdel_df()
+
 
 class TestUserWind(unittest.TestCase):
 
