@@ -1,0 +1,28 @@
+# identifiers for HawcStab2 modes of DTU10MW B0002 with HS2 2-15
+# mode_number ; description
+     1        ;
+     2        ; 1st Tower FA
+     3        ; 1st Tower SS
+     4        ; 1st BF B whirling
+     5        ; 1st BF collective
+     6        ; 1st BF F whirling # with yawing
+     7        ; 1st BE B whirling
+     8        ; 1st BE F whirling
+     9        ; 2nd BF B whirling # with yawing
+    10        ; 2nd BF F whirling
+    11        ; 2nd BF collective
+    12        ; 1st shaft / BE collective
+    13        ; 2nd Tower FA
+    14        ; 2nd Tower SS
+    15        ; Tower torsion
+    16        ; 16
+    17        ; 17
+    18        ; 18
+    19        ; 19
+    20        ; 20
+    21        ; 21
+    22        ; 22
+    23        ; 23
+    24        ; 24
+    25        ; 25
+
