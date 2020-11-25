@@ -57,6 +57,8 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
     """
 
     cols_extra = ['[run_dir]', '[res_dir]', '[wdir]', '[DLC]', '[Case folder]']
+    min_itemsize={'channel':100, '[run_dir]':100, '[res_dir]':100, '[DLC]':10,
+                  '[Case folder]':100}
 
     # map the run_dir to the same order as the post_dirs, labels
     run_dirs = []
@@ -116,19 +118,27 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
             if ii == 0:
                 # and save somewhere so we can add the second data frame on
                 # disc
-                df_stats.to_hdf(fmerged, 'table', mode='w', format='table',
-                                complevel=9, complib='blosc')
+                store = pd.HDFStore(fmerged, mode='w', complevel=9, complib='zlib')
+                store.append('table', df_stats, min_itemsize=min_itemsize)
+                print(store.get_storer('table').table.description)
+                # df_stats.to_hdf(fmerged, 'table', mode='w', format='table',
+                #                 complevel=9, complib='blosc')
                 print('%s merged stats written to: %s' % (sim_id, fpath))
             else:
                 # instead of doing a concat in memory, add to the hdf store
-                df_stats.to_hdf(fmerged, 'table', mode='r+', format='table',
-                                complevel=9, complib='blosc', append=True)
+                store.append('table', df_stats)
+                # will fail if there are longer string columns compared to ii=0
+                # df_stats.to_hdf(fmerged, 'table', mode='r+', format='table',
+                #                 complevel=9, complib='blosc', append=True)
                 print('%s merging stats into:      %s' % (sim_id, fpath))
 #                df_stats = pd.concat([df_stats, df_stats2], ignore_index=True)
 #                df_stats2 = None
             # we might run into memory issues
             del df_stats, _, cc
             gc.collect()
+
+        store.close()
+
         # and load the reduced combined set
         print('loading merged stats:            %s' % fmerged)
         df_stats = pd.read_hdf(fmerged, 'table')
@@ -321,13 +331,13 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
             # figure file name will be the first channel
             if isinstance(ch_names, list):
                 ch_name = ch_names[0]
-                fname_base = ch_names[0]#.replace(' ', '_')
+                fname_base = ch_names[0].replace('/', '_')
                 df_chan = gr_dlc[gr_dlc.channel.isin(ch_names)]
             else:
                 ch_name = ch_names
                 ch_names = [ch_names]
                 df_chan = gr_dlc[gr_dlc.channel == ch_names]
-                fname_base = ch_names#.replace(' ', '_')
+                fname_base = ch_names.replace('/', '_')
 
             # if not, than we are missing a channel description, or the channel
             # is simply not available in the given result set
