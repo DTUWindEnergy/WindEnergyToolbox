@@ -73,7 +73,9 @@ class Simulation(object):
     status = QUEUED
 
     def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
-        self.modelpath = os.path.abspath(modelpath) + "/"
+        self.modelpath = os.path.abspath(modelpath).replace("\\", "/")
+        if self.modelpath[-1] != '/':
+            self.modelpath += "/"
         if os.path.isabs(htcfilename):
             htcfilename = os.path.relpath(htcfilename, modelpath)
         if htcfilename.startswith("input/"):
@@ -127,9 +129,6 @@ class Simulation(object):
         self.logFile.clear()
         self.last_status = self.status
         self.errors = []
-        self.non_blocking_simulation_thread = Thread(
-            target=lambda: self.simulate_distributed(raise_simulation_errors=False))
-        self.updateSimStatusThread = UpdateSimStatusThread(self)
         from wetb.hawc2.simulation_resources import LocalSimulationHost
         self.host = LocalSimulationHost(self)
         self.stdout = ""
@@ -139,8 +138,11 @@ class Simulation(object):
         """Start non blocking distributed simulation"""
         self.is_simulating = True
         if update_interval > 0:
+            self.updateSimStatusThread = UpdateSimStatusThread(self)
             self.updateSimStatusThread.interval = update_interval
             self.updateSimStatusThread.start()
+        self.non_blocking_simulation_thread = Thread(
+            target=lambda: self.simulate_distributed(raise_simulation_errors=False))
         self.non_blocking_simulation_thread.start()
 
     def wait(self):
@@ -334,32 +336,32 @@ class Simulation(object):
 
     def simulate_distributed(self, raise_simulation_errors=True):
         try:
-            tmpdirname = tempfile.TemporaryDirectory(prefix="h2launcher_%s_" % os.path.basename(self.filename)).name
-            self.tmp_modelpath = tmpdirname + "/"
-            self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath)) + "/"
-            self.prepare_simulation()
-            try:
-                self.simulate()
-            except Warning as e:
-                print("simulation failed", str(self))
-                print("Trying to finish")
-                raise
-            finally:
+            with tempfile.TemporaryDirectory(prefix="h2launcher_%s_" % os.path.basename(self.filename)) as tmpdirname:
+                self.tmp_modelpath = tmpdirname + "/"
+                self.tmp_exepath = os.path.join(self.tmp_modelpath, os.path.relpath(self.exepath, self.modelpath)) + "/"
+                self.prepare_simulation()
                 try:
-                    if self.status != ABORTED:
-                        self.finish_simulation()
-                except Exception:
-                    print("finish_simulation failed", str(self))
+                    self.simulate()
+                except Warning as e:
+                    print("simulation failed", str(self))
+                    print("Trying to finish")
                     raise
                 finally:
-                    def remove_readonly(fn, path, excinfo):
-                        try:
-                            os.chmod(path, stat.S_IWRITE)
-                            fn(path)
-                        except Exception as exc:
-                            print("Skipped:", path, "because:\n", exc)
-
-                    shutil.rmtree(tmpdirname, onerror=remove_readonly)
+                    try:
+                        if self.status != ABORTED:
+                            self.finish_simulation()
+                    except Exception:
+                        print("finish_simulation failed", str(self))
+                        raise
+#                     finally:
+#                         def remove_readonly(fn, path, excinfo):
+#                             try:
+#                                 os.chmod(path, stat.S_IWRITE)
+#                                 fn(path)
+#                             except Exception as exc:
+#                                 print("Skipped:", path, "because:\n", exc)
+#
+#                         shutil.rmtree(tmpdirname, onerror=remove_readonly)
 
         except Exception as e:
             self.status = ERROR
@@ -373,7 +375,8 @@ class Simulation(object):
         def confirm_add_additional_file(folder, file):
             if os.path.isfile(os.path.join(self.modelpath, folder, file)):
                 filename = fmt_path(os.path.join(folder, file))
-                if self.get_confirmation("File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
+                if self.get_confirmation(
+                        "File missing", "'%s' seems to be missing in the temporary working directory. \n\nDo you want to add it to additional_files.txt" % filename):
                     self.add_additional_input_file(filename)
                     self.show_message(
                         "'%s' is now added to additional_files.txt.\n\nPlease restart the simulation" % filename)

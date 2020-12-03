@@ -28,3 +28,4 @@ tests/temp.htc
 /docs/build
 /docs/source_old
 .ipynb_checkpoints
+/.pytest_cache/

@@ -6,7 +6,7 @@ import mock
 import pytest
 import matplotlib.pyplot as plt
 import sys
-import examples
+from examples import examples
 from tests.run_main import run_module_main
 
 

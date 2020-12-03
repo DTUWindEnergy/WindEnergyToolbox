@@ -91,8 +91,8 @@ class DLCHighLevel(object):
         self.shape_k = shape_k
 
         # Variables
-        df_vars = pd.read_excel(self.filename, sheet_name='Variables',
-                                index_col='Name')
+
+        df_vars = pd.read_excel(self.filename, 'Variables', index_col='Name')
         df_vars.fillna('', inplace=True)
         for name, value in zip(df_vars.index, df_vars.Value.values):
             setattr(self, name.lower(), value)
@@ -103,7 +103,7 @@ class DLCHighLevel(object):
         self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
 
         # DLC sheet
-        self.dlc_df = pd.read_excel(self.filename, sheet_name='DLC', skiprows=[1])
+        self.dlc_df = pd.read_excel(self.filename, 'DLC', skiprows=[1])
         # empty strings are now nans, convert back to empty strings
         self.dlc_df.fillna('', inplace=True)
         # force headers to lower case
@@ -135,7 +135,7 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        self.sensor_df = pd.read_excel(self.filename, sheet_name='Sensors')
+        self.sensor_df = pd.read_excel(self.filename, 'Sensors')
         # empty strings are now nans, convert back to empty strings
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
@@ -146,7 +146,8 @@ class DLCHighLevel(object):
         self.sensor_df = self.sensor_df[self.sensor_df.name != ""]
         assert not any(self.sensor_df['name'].duplicated()), "Duplicate sensor names: %s" % ",".join(
             self.sensor_df['name'][self.sensor_df['name'].duplicated()].values)
-        for k in ['description', 'unit', 'statistic', 'ultimate', 'fatigue', 'm', 'neql', 'extremeload', 'bearingdamage', 'mindistance', 'maxdistance']:
+        for k in ['description', 'unit', 'statistic', 'ultimate', 'fatigue', 'm',
+                  'neql', 'extremeload', 'bearingdamage', 'mindistance', 'maxdistance']:
             if k not in self.sensor_df.keys():
                 self.sensor_df[k] = ""
         for _, row in self.sensor_df[self.sensor_df['fatigue'] != ""].iterrows():
@@ -165,7 +166,8 @@ class DLCHighLevel(object):
         if sensors != []:
             sensors = np.atleast_1d(sensors)
             empty_column = pd.DataFrame([""] * len(self.sensor_df.name))[0]
-            return self.sensor_df[functools.reduce(np.logical_or, [((self.sensor_df.get(f, empty_column).values != "") | (self.sensor_df.name == f)) for f in sensors])]
+            return self.sensor_df[functools.reduce(
+                np.logical_or, [((self.sensor_df.get(f, empty_column).values != "") | (self.sensor_df.name == f)) for f in sensors])]
         else:
             return self.sensor_df
 
@@ -327,7 +329,8 @@ class DLCHighLevel(object):
             def tag_prop_lst(dist_lst):
                 if len(dist_lst) == 0:
                     return [[]]
-                return [[(fmt(tag), prop)] + tl for tl in tag_prop_lst(dist_lst[1:]) for tag, prop in dist_lst[0].items()]
+                return [[(fmt(tag), prop)] + tl for tl in tag_prop_lst(dist_lst[1:])
+                        for tag, prop in dist_lst[0].items()]
 
             def files_from_tags(self, f_dict, tags):
                 if len(tags) == 0:
@@ -338,7 +341,7 @@ class DLCHighLevel(object):
                     if self.dist_value_keys[-len(tags)][1] == "wdir":
                         try:
                             return files_from_tags(self, f_dict[tags[0] % 360], tags[1:])
-                        except:
+                        except Exception:
                             pass
                     raise
 
@@ -366,12 +369,15 @@ class DLCHighLevel(object):
 
     @cache_function
     def psf(self):
-        return {dlc: float((psf, 1)[psf == ""]) for dlc, psf in zip(self.dlc_df['dlc'], self.dlc_df['psf']) if dlc != ""}
+        return {dlc: float((psf, 1)[psf == ""])
+                for dlc, psf in zip(self.dlc_df['dlc'], self.dlc_df['psf']) if dlc != ""}
 
 
 if __name__ == "__main__":
-    dlc_hl = DLCHighLevel(r'X:\DTU10MW\Q0010\DLC_post_betas1.xlsx')
-    #print (DLCHighLevelInputFile(r'C:\mmpe\Projects\DLC.xlsx').sensor_info(0, 0, 1)['Name'])
-    #print (dlc_dict()['64'])
-    #print (dlc_hl.fatigue_distribution()['64'])
-    print(dlc_hl.file_hour_lst(r"X:\DTU10MW/Q0010/res/"))
+    #     dlc_hl = DLCHighLevel(r'X:\DTU10MW\Q0010\DLC_post_betas1.xlsx')
+    #     #print (DLCHighLevelInputFile(r'C:\mmpe\Projects\DLC.xlsx').sensor_info(0, 0, 1)['Name'])
+    #     #print (dlc_dict()['64'])
+    #     #print (dlc_hl.fatigue_distribution()['64'])
+    #     print(dlc_hl.file_hour_lst(r"X:\DTU10MW/Q0010/res/"))
+    dlc = DLCHighLevel(r'C:\Users\mmpe\Downloads\Post Processing v7 - FATIGUE.xlsx', fail_on_resfile_not_found=False)
+    print(dlc.file_hour_lst())

@@ -93,8 +93,11 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         """
 
         if filename is not None:
-            filename = fixcase(abspath(filename))
-            with self.open(str(filename)):
+            try:
+                filename = fixcase(abspath(filename))
+                with self.open(str(filename)):
+                    pass
+            except Exception:
                 pass
 
             self.filename = filename
@@ -431,7 +434,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
     def simulate(self, exe, skip_if_up_to_date=False):
         errorcode, stdout, stderr, cmd = self._simulate(exe, skip_if_up_to_date)
-        if 'simulation' in self.keys() and "logfile" in self.simulation:
+        if ('simulation' in self.keys() and "logfile" in self.simulation and
+                os.path.isfile(os.path.join(self.modelpath, self.simulation.logfile[0]))):
             with self.open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
                 log = fid.read()
         else:
@@ -543,10 +547,11 @@ class SSH_HTCFile(HTCFile):
 
 if "__main__" == __name__:
     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc", "../")
-    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
-
-    f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
-    f.set_time = 0, 1, .1
-    print(f.simulate(r"C:\mmpe\HAWC2\bin\HAWC2_12.8\hawc2mb.exe"))
-
-    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
+    print(f.input_files())
+#     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
+#
+#     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
+#     f.set_time = 0, 1, .1
+#     print(f.simulate(r"C:\mmpe\HAWC2\bin\HAWC2_12.8\hawc2mb.exe"))
+#
+#     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
