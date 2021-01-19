@@ -814,6 +814,13 @@ class LoadResults(ReadHawc2):
 #                    'azimuth', 'flap_nr'])
         df_dict = {col: [] for col in self.cols}
         df_dict['unique_ch_name'] = []
+        
+        # -----------------------------------------------------------------
+        # REGEXes
+        # -----------------------------------------------------------------
+        
+        # ESYS output: ESYS line3 SENSOR           66
+        prog = re.compile(r'ESYS (\w+) SENSOR\s*(\d*)')
 
         # scan through all channels and see which can be converted
         # to sensible unified name
@@ -1348,6 +1355,20 @@ class LoadResults(ReadHawc2):
                 channelinfo['coord'] = 'met'
 
                 tag = 'wind_wake-wake_pos_%s_%s' % (comp, wake_nr)
+            
+            # ESYS line1 SENSOR            1
+            elif self.ch_details[ch, 2][:4] == 'ESYS':
+                # body = re.findall(regex, self.ch_details[ch, 2])
+                body, outnr = prog.match(self.ch_details[ch, 2]).groups()
+                
+                channelinfo = {}
+                channelinfo['output_type'] = 'esys'
+                channelinfo['sensortype'] = 'esys'
+                channelinfo['io_nr'] = int(outnr)
+                channelinfo['units'] = self.ch_details[ch, 1].strip()
+                channelinfo['chi'] = ch
+
+                tag = 'esys-%s-%s' % (body, outnr)
 
             # -----------------------------------------------------------------
             # If all this fails, just combine channel name and description

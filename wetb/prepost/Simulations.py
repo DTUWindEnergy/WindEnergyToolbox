@@ -2281,30 +2281,10 @@ class PBS(object):
         """
 
         # a new clean pbs script!
-        self.pbs = ""
-        self.pbs += "### Standard Output" + '\n'
 
         case_id = tag_dict['[case_id]']
-
-        # PBS job name
-        self.pbs += "#PBS -N %s\n" % (jobid)
-        pbs_path = os.path.join(self.pbs_out_dir, case_id + ".out")
-        self.pbs += "#PBS -o '%s'\n" % pbs_path
-        # self.pbs += "#PBS -o ./pbs_out/" + jobid + ".out" + '\n'
-        self.pbs += "### Standard Error" + '\n'
-        pbs_path = os.path.join(self.pbs_out_dir, case_id + ".err")
-        self.pbs += "#PBS -e '%s'\n" % pbs_path
-        # self.pbs += "#PBS -e ./pbs_out/" + jobid + ".err" + '\n'
-        self.pbs += '#PBS -W umask=0003\n'
-        self.pbs += "### Maximum wallclock time format HOURS:MINUTES:SECONDS\n"
-#        self.pbs += "#PBS -l walltime=" + self.walltime + '\n'
-        self.pbs += "#PBS -l walltime=[walltime]\n"
-        if self.qsub == 'time':
-            self.pbs += "#PBS -a [start_time]" + '\n'
-        elif self.qsub == 'depend':
-            # set job dependencies, job_id refers to PBS job_id, which is only
-            # assigned to a job at the moment it gets qsubbed into the que
-            self.pbs += "[nodeps]PBS -W depend=afterany:[job_id]\n"
+        std_out = os.path.join(self.pbs_out_dir, case_id + ".out")
+        std_err = os.path.join(self.pbs_out_dir, case_id + ".err")
 
 #        if self.que_jobdeps:
 #            self.pbs += "#PBS -W depend=afterany:%s\n" % jobid_dep
@@ -2321,16 +2301,47 @@ class PBS(object):
             # Number of nodes and cpus per node (ppn)
             lnodes = int(math.ceil(len(self.cases)/float(self.maxcpu)))
             lnodes = 1
-            self.pbs += "#PBS -l nodes=%i:ppn=%i\n" % (lnodes, self.maxcpu)
+            ppn = self.maxcpu
         else:
-            self.pbs += "#PBS -l nodes=1:ppn=1\n"
+            ppn = 1
+            lnodes = 1
             # Number of nodes and cpus per node (ppn)
 
-        self.pbs += "### Queue name" + '\n'
-        # queue names for Thyra are as follows:
-        # short walltime queue (shorter than an hour): '#PBS -q xpresq'
-        # or otherwise for longer jobs: '#PBS -q workq'
-        self.pbs += self.pbs_queue_command + '\n'
+        header_jess = """### Standard Output
+#PBS -N {jobid}
+#PBS -o '{std_out}'
+### Standard Error
+#PBS -e '{std_err}'
+#PBS -W umask=0003
+### Maximum wallclock time format HOURS:MINUTES:SECONDS
+#PBS -l walltime=[walltime]
+#PBS -l nodes={lnodes}:ppn={ppn}
+### Queue name
+{pbs_queue_command}
+"""
+
+        header_sophia = """#!/bin/bash
+#==============================================================================
+# ONLY RELEVANT/USED FOR/BY SLURM ON SOPHIA
+#==============================================================================
+#SBATCH --job-name={jobid}
+#SBATCH --output={std_out}
+#SBATCH --error={std_err}
+#SBATCH --nodes={lnodes}
+#SBATCH --ntasks=4
+#SBATCH --time=[walltime]
+#==============================================================================
+"""
+
+        self.pbs = header_jess.format(jobid=jobid, std_out=std_out,
+                                      std_err=std_err, ppn=ppn,
+                                      pbs_queue_command=self.pbs_queue_command,
+                                      lnodes=lnodes)
+        # self.pbs += header_sophia.format(jobid=jobid, std_out=std_out,
+        #                               std_err=std_err, ppn=ppn,
+        #                               pbs_queue_command=self.pbs_queue_command,
+        #                               lnodes=lnodes)
+
         # mark start of single PBS mode
         self.pbs += "\n" + "# " + "="*78 + "\n"
 
