@@ -53,7 +53,7 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     ----------
     spatial_resolution : int, float or array_like
         Distance between samples in meters
-        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points, 
+        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points,
         Nx is number of points and Lx is box length in meters
         - For time series: Sample frequency / U
     u : array_like
@@ -91,11 +91,11 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
         assert u.shape == w.shape
 
     if 1 and len(u.shape) == 2:
-        assert np.abs(np.mean(u, 0)).max() < 1
-        if v is not None:
-            assert np.abs(np.mean(v, 0)).max() < 1
-        if w is not None:
-            assert np.abs(np.mean(w, 0)).max() < 1
+        #         assert np.abs(np.mean(u, 0)).max() < 2
+        #         if v is not None:
+        #             assert np.abs(np.mean(v, 0)).max() < 1
+        #         if w is not None:
+        #             assert np.abs(np.mean(w, 0)).max() < 1
         if isinstance(k, float):
             k = np.repeat(k, u.shape[1])
         else:
@@ -146,13 +146,11 @@ def spectra_from_time_series(sample_frq, Uvw_lst):
         assert np.abs(np.nanmean(v, 0)).max() < 1, "Max absolute mean of v is %f" % np.abs(np.nanmean(v, 0)).max()
     if w is not None:
         assert np.abs(np.nanmean(w, 0)).max() < 1
-    k1_vec = np.array([np.linspace(0, k_ / 2, U.shape[0] / 2)[1:] for k_ in k]).T
+    k1_vec = np.array([np.linspace(0, k_ / 2, U.shape[0] // 2)[1:] for k_ in k]).T
     u = U - np.nanmean(U, 0)
     u, v, w = detrend_wsp(u, v, w)
 
     return [k1_vec] + [spectrum(x1, x2, k=k) for x1, x2 in [(u, u), (v, v), (w, w), (w, u)]]
-
-
 
 
 def bin_spectrum(x, y, bin_size, min_bin_count=2):
@@ -194,7 +192,8 @@ def detrend_wsp(u, v=None, w=None):
         t = np.arange(dwsp.shape[0])
         A = np.vstack([t, np.ones(len(t))]).T
         for i in range(dwsp.shape[1]):
-            trend, offset = np.linalg.lstsq(A, dwsp[:, i], rcond=None)[0]
+            m = ~np.isnan(dwsp[:, i])
+            trend, offset = np.linalg.lstsq(A[:m.sum()], dwsp[:, i][m], rcond=None)[0]
             dwsp[:, i] = dwsp[:, i] - t * trend + t[-1] / 2 * trend
         return dwsp.reshape(wsp.shape)
     return [_detrend(wsp) for wsp in [u, v, w]]

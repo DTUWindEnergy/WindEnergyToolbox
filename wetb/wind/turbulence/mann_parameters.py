@@ -87,7 +87,8 @@ def _local_error(x, k1, uu, vv, ww=None, uw=None):
     return val
 
 
-def fit_mann_model_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2, min_bin_count=2, start_vals_for_optimisation=(0.01, 50, 3.3), plt=False):
+def fit_mann_model_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2,
+                           min_bin_count=2, start_vals_for_optimisation=(0.01, 50, 3.3), plt=False):
     """Fit a mann model to the spectra
 
     Bins the spectra, into logarithmic sized bins and find the mann model parameters,
@@ -140,7 +141,7 @@ def fit_mann_model_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2,
 #         plot_spectra(k1, uu, vv, ww, uw, plt=plt)
 #         plot_mann_spectra(*x, plt=plt)
         ae, L, G = x
-        plot_fit(ae, L, G, k1, uu, vv, ww, uw,  log10_bin_size=log10_bin_size, plt=plt)
+        plot_fit(ae, L, G, k1, uu, vv, ww, uw, log10_bin_size=log10_bin_size, plt=plt)
         plt.title('ae:%.3f, L:%.1f, G:%.2f' % tuple(x))
         plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
         plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
@@ -192,7 +193,7 @@ def residual(ae, L, G, k1, uu, vv=None, ww=None, uw=None, log10_bin_size=.2):
     return np.sqrt(((bk1 * (sp_meas - sp_fit)) ** 2).mean(1))
 
 
-def var2ae(variance, L, G):
+def var2ae(variance, L, G, U, T=600, sample_frq=10, plt=False):
     """Fit alpha-epsilon to match variance of time series
 
     Parameters
@@ -203,14 +204,22 @@ def var2ae(variance, L, G):
         Length scale of Mann model
     G : int or float
         Gamma of Mann model
+    U : int or float
+        Mean wind speed
+    T: int or float
+        Length [s] of signal, from which the variance is calculated
+    sample_frq: int or float
+        Sample frequency [Hz] of signal from which the variance is calculated
 
     Returns
     -------
     ae : float
-        Alpha epsilon^(2/3) of Mann model that makes the energy of the model equal to the varians of u
+        Alpha epsilon^(2/3) of Mann model that makes the energy of the model in the
+        frequency range [1/length, sample_frq] equal to the variance of u
     """
 
-    k1 = np.logspace(1, 10, 1000) / 100000000
+    k_low, k_high = 2 * np.pi / (U * np.array([T, 1 / sample_frq]))
+    k1 = 10 ** (np.linspace(np.log10(k_low), np.log10(k_high), 1000))
 
     def get_var(uu):
         return np.trapz(2 * uu[:], k1[:])
@@ -218,6 +227,14 @@ def var2ae(variance, L, G):
     v1 = get_var(get_mann_model_spectra(0.1, L, G, k1)[0])
     v2 = get_var(get_mann_model_spectra(0.2, L, G, k1)[0])
     ae = (variance - v1) / (v2 - v1) * .1 + .1
+    if plt is not False:
+        if not hasattr(plt, 'plot'):
+            import matplotlib.pyplot as plt
+        muu = get_mann_model_spectra(ae, L, G, k1)[0]
+        plt.semilogx(k1, k1 * muu, label='ae:%.3f, L:%.1f, G:%.2f' % (ae, L, G))
+        plt.legend()
+        plt.xlabel('Wavenumber $k_{1}$ [$m^{-1}$]')
+        plt.ylabel(r'Spectral density $k_{1} F(k_{1})/U^{2} [m^2/s^2]$')
     return ae
 
 
@@ -227,8 +244,8 @@ def fit_ae(spatial_resolution, u, L, G, plt=False):
     Parameters
     ----------
     spatial_resolution : int, float or array_like
-        Distance between samples in meters
-        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points, 
+        Number of points pr meterDistance between samples in meters
+        - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points,
         Nx is number of points and Lx is box length in meters
         - For time series: Sample frequency / U
     u : array-like
@@ -271,7 +288,7 @@ def fit_ae(spatial_resolution, u, L, G, plt=False):
         if not hasattr(plt, 'plot'):
             import matplotlib.pyplot as plt
         plt.semilogx(k1, k1 * uu, 'b-', label='uu')
-        k1_lb, uu_lb = logbin_spectra(*spectra(sf, u), min_bin_count=1)[:2]
+        k1_lb, uu_lb = logbin_spectra(*spectra(spatial_resolution, u), min_bin_count=1)[:2]
 
         plt.semilogx(k1_lb, k1_lb * uu_lb, 'r--', label='uu_logbin')
         muu = get_mann_model_spectra(ae, L, G, k1)[0]
@@ -329,11 +346,11 @@ if __name__ == "__main__":
     plt.plot(u)
     plt.plot(detrend_wsp(u)[0])
     plt.show()
-    print(fit_ae(sf, detrend_wsp(u)[0], L,  G, plt))
-    print(var2ae(detrend_wsp(u)[0].var(), L,  G,))
+    print(fit_ae(sf, detrend_wsp(u)[0], L, G, plt))
+    print(var2ae(detrend_wsp(u)[0].var(), L, G,))
     print()
-    print(fit_ae(sf, u[:21000], L,  G))
-    print(var2ae(u[:21000].var(), L,  G,))
+    print(fit_ae(sf, u[:21000], L, G))
+    print(var2ae(u[:21000].var(), L, G,))
 
 
 #     """Example of fitting Mann parameters to a "series" of a turbulence box"""
