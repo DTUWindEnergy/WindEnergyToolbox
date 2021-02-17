@@ -10,13 +10,14 @@ from __future__ import absolute_import
 from future import standard_library
 from wetb.hawc2.ae_file import AEFile
 standard_library.install_aliases()
+
 import os
 import unittest
-from wetb.hawc2.pc_file import PCFile
-
+import tempfile
 
 import numpy as np
 
+from wetb.hawc2.pc_file import PCFile
 
 
 class TestPCFile(unittest.TestCase):
@@ -32,6 +33,22 @@ class TestPCFile(unittest.TestCase):
         self.assertEqual(pc.CL(thickness, 10), 1.358)
         self.assertEqual(pc.CD(thickness, 10), 0.0255)
         self.assertEqual(pc.CM(thickness, 10), -0.1103)
+
+    def test_write_PCFile(self):
+        """Round trip loading and saving a pc file
+        """
+        pc1 = PCFile(self.testfilepath + "NREL_5MW_pc.txt")
+        with tempfile.NamedTemporaryFile(delete=True, mode='w') as fid:
+            pc1.save(fid.name)
+            pc2 = PCFile(pc1.filename)
+            self.assertEqual(str(pc1), str(pc2))
+
+        tc1, pcs1 = pc1.pc_sets[1]
+        tc2, pcs2 = pc2.pc_sets[1]
+        np.testing.assert_array_almost_equal(tc1, tc2)
+        for pc1, pc2 in zip(pcs1, pcs2):
+            np.testing.assert_array_almost_equal(pc1, pc2)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -43,9 +43,9 @@ Both Python2 and Python3 are supported.
 - [Hawc2io](wetb/hawc2/Hawc2io.py): Read binary, ascii and flex result files
 - [sel_file](wetb/hawc2/sel_file.py): Read/write *.sel (sensor list) files
 - [htc_file](wetb/hawc2/htc_file.py): Read/write/manipulate htc files
-- [ae_file](wetb/hawc2/ae_file.py): Read AE (aerodynamic blade layout) files
-- [pc_file](wetb/hawc2/pc_file.py): Read PC (profile coefficient) files
-- [st_file](wetb/hawc2/st_file.py): Read ST (structural properties) files
+- [ae_file](wetb/hawc2/ae_file.py): Read/write/manipulate AE (aerodynamic blade layout) files
+- [pc_file](wetb/hawc2/pc_file.py): Read/write/manipulate PC (profile coefficient) files
+- [st_file](wetb/hawc2/st_file.py): Read/write/manipulate ST (structural properties) files
 - [shear_file](wetb/hawc2/shear_file.py): Create user defined shear file
 - [at_time_file](wetb/hawc2/at_time_file.py): Read at output_at_time files
 - [log_file](wetb/hawc2/log_file.py): Read and interpret log files
