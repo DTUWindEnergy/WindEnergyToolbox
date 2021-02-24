@@ -63,59 +63,46 @@ For all platforms we recommend that you download and install the Anaconda -
 a professional grade, full blown scientific Python distribution.
 
 
-### Installing Anaconda, activate root environment
+### Installing Miniconda
 
-* Download and install Anaconda (Python 3.5 version, 64 bit installer is
-recommended) from <https://www.continuum.io/downloads>
+* Download and install Anaconda (Python 3.8 version, 64 bit installer is
+recommended) from <https://docs.conda.io/en/latest/miniconda.html>.
 
-> Note: The Python 2.7 or Python 3.5 choice of Anaconda only affects the
-root environment. You can always create additional environments using other
-Python versions, see below.
+You should now be able to find a `Anaconda Powershell (Miniconda)` or
+`Anaconda Prompt (Miniconda)` application launcher. This will drop you in a 
+terminal alike application, saying something like this:
 
-* Update the root Anaconda environment (type in a terminal):
+```
+(base) C:\Users\>
+```
+
+and where `(base)` refers to your base Miniconda installation environment. 
+You can keep the base environment updated as follows (type in a terminal):
 
 ```
 >> conda update --all
 ```
 
-* Activate the Anaconda root environment in a terminal as follows:
-
-```
->> activate
-```
-
-and your terminal will do something like:
-```
-C:\Users\> activate
-(root) C:\Users\>
-```
-note that the name of the environment is now a prefix before the current path.
-
-use ```deactivate``` to deactivate the environment.
-
 
 ### Optionally, create other independent Anaconda environments
 
 By using environments you can manage different Python installations with
-different versions on your system. Creating environments is as easy as:
+different versions on your system independently. Creating environments is as easy as:
 
 ```
->> conda create -n py27 python=2.7
->> conda create -n py34 python=3.4
->> conda create -n py35 python=3.5
+>> conda create -n py39 python=3.9
 ```
 
-These environments can be activated as follows:
+Where `-n py39` refers any user defined name that describes what is the environment
+used for. These environments can then be activated as follows:
 
 ```
->> activate py27
->> activate py34
->> activate py35
+>> conda activate py35
 ```
 
-The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/env/py35/
+The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/env/py39/
 
-use ```deactivate``` to deactivate the environment.
+use ```conda deactivate``` to deactivate the environment.
 
 
 ## Install/build dependencies
