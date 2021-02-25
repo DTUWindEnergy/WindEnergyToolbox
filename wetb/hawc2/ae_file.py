@@ -102,7 +102,9 @@ class AEFile(object):
 
     def save(self, filename):
         if not os.path.isdir(os.path.dirname(filename)):
-            os.makedirs(os.path.dirname(filename))
+            # fails if dirname is empty string
+            if len(os.path.dirname(filename)) > 0:
+                os.makedirs(os.path.dirname(filename))
         with open(filename, 'w') as fid:
             fid.write(str(self))
 
