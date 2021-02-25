@@ -18,7 +18,8 @@ import numpy as np
 
 
 stc = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
-
+fpm = 'r m x_cg y_cg ri_x ri_y pitch x_e y_e K_11 K_12 K_13 K_14 K_15 K_16 K_22'
+fpm += ' K_23 K_24 K_25 K_26 K_33 K_34 K_35 K_36 K_44 K_45 K_46 K_55 K_56 K_66'
 
 class StFile(object):
     """Read HAWC2 St (beam element structural data) file
@@ -71,8 +72,6 @@ class StFile(object):
     8.722924514652648e+17
     """
 
-    cols = stc.split()
-
     def __init__(self, filename=None):
 
         # in case the user wants to create a new non-existing st file
@@ -94,8 +93,16 @@ class StFile(object):
                 set_lines = set_txt.split("\n")
                 set_nr, no_rows = map(int, set_lines[0].split()[:2])
                 assert set_nr not in set_data_dict
-                set_data_dict[set_nr] = np.array([set_lines[i].split() for i in range(1, no_rows + 1)], dtype=np.float)
+                linelst = [set_lines[i].split() for i in range(1, no_rows + 1)]
+                set_data_dict[set_nr] = np.array(linelst, dtype=np.float)
             self.main_data_sets[mset_nr] = set_data_dict
+
+        if len(linelst[0])==len(stc.split()):
+            self.cols = stc.split()
+        elif len(linelst[0])==len(fpm.split()):
+            self.cols = fpm.split()
+        else:
+            raise TypeError('wrong number of columns in st file')
 
         for i, name in enumerate(self.cols):
             setattr(self, name, lambda radius=None, mset=1, set=1,
@@ -152,6 +159,11 @@ class StFile(object):
         length : float
             eleement length
         """
+
+        # not supported for FPM format
+        if len(self.cols)==30:
+            return
+
         K = np.zeros((13, 13))
         "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
         ES1, ES2, EMOD, GMOD, IX, IY, IZ, KX, KY, A = [getattr(self, n)(radius, mset_nr, set_nr)
@@ -210,6 +222,11 @@ class StFile(object):
         return K
 
     def shape_function_ori(self, radius, mset_nr, set_nr, length, z):
+
+        # not supported for FPM format
+        if len(self.cols)==30:
+            return
+
         XSC, YSC, EMOD, GMOD, IX, IY, IZ, KX, KY, AREA = [getattr(self, n)(radius, mset_nr, set_nr)
                                                           for n in "x_sh,y_sh,E,G,I_x,I_y,I_p,k_x,k_y,A".split(",")]
 
