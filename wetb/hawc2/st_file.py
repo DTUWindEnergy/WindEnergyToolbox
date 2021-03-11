@@ -132,12 +132,25 @@ class StFile(object):
     def save(self, filename, precision='%15.07e', encoding='utf-8'):
         """Save all data defined in main_data_sets to st file.
         """
+
+        # when creating empty st object, cols is not set yet
+        if not hasattr(self, 'cols'):
+            if self.main_data_sets[1][1].shape[1]==19:
+                self.cols = stc.split()
+            elif self.main_data_sets[1][1].shape[1]==30:
+                self.cols = fpm.split()
+            else:
+                c = self.main_data_sets[1][1].shape[1]
+                raise TypeError(f'St input needs 19 (iso) or 30 (aniso/fpm) cols, not {c}')
+
         colwidth = len(precision % 1)
         sep = '=' * colwidth * len(self.cols) + '\n'
         colhead = ''.join([k.center(colwidth) for k in self.cols]) + '\n'
 
         nsets = len(self.main_data_sets)
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # fails if dirname is empty string
+        if len(os.path.dirname(filename)) > 0:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', encoding=encoding) as fid:
             fid.write('%i ; number of sets, Nset\n' % nsets)
             for mset, set_data_dict in self.main_data_sets.items():
