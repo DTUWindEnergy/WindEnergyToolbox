@@ -14,9 +14,7 @@ from __future__ import absolute_import
 from numpy import (floor, arctan, pi, log, log10, sin, cos, tan, e, arcsin,
                    arccos)
 import pandas as pd
-from openpyxl import Workbook 
 from openpyxl import load_workbook
-import xlrd
 from argparse import ArgumentParser
 import os
 
@@ -101,6 +99,8 @@ class GeneralDLC(object):
                     counter = floor(irow/len_wsp) + 1
                     value = '%4.4i' % (1000*counter + row[i_wsp] + 1)
                 elif variables_order[icol] == '[wave_seed]':
+                    # FIXME: shouldn't we also have unique wave seeds??
+                    # that is not the case with this implementation
                     value = '%4.4i' % (100*(row[i_wsp]+1) + row[i_wave_seed] + 1)
 #                    value = '%4.4i' % (1000*counter + row[i_wsp] + 101)
 #                    value = '%4.4i' % (irow+1)
@@ -219,29 +219,32 @@ class GenerateDLCCases(GeneralDLC):
 
     def execute(self, filename='DLCs.xlsx', folder='', isheets=None):
 
-        book = load_workbook(filename, data_only=True) 
+        book = load_workbook(filename, data_only=True)
+
+        # Read all the initialization constants and functions of the main sheet
+        # The main sheet is assumed to be the first one (i=0)
+        general_constants = {}
+        general_functions = {}
+        sheet = book.worksheets[0]
+        # note that sheet.cell(i,j) is using 1-based indexing (row nr 1)
+        # first column is just for readability
+        for colnr in range(2, sheet.max_column+1):
+            if sheet.cell(10, colnr).value != None:
+                general_constants[str(sheet.cell(10, colnr).value)] = \
+                    sheet.cell(11, colnr).value
+            if sheet.cell(14, colnr).value != None:
+                general_functions[str(sheet.cell(14, colnr).value)] = \
+                    sheet.cell(15, colnr).value
 
         if isheets is None:
-            isheets = list(range(1,len(book.sheetnames))) 
+            # refer to sheet number, so 1-based indexing
+            isheets = list(range(1,len(book.sheetnames)))
 
         # Loop through all the sheets. Each sheet correspond to a DLC.
         for isheet in isheets:
 
-            # Read all the initialization constants and functions in the
-            # first sheet
-            general_constants = {}
-            general_functions = {}
-            sheet = book.worksheets[0]
-            for i in range(2, sheet.max_column+1):
-                if sheet.cell(10, i).value != None:
-                    general_constants[str(sheet.cell(10, i).value)] = \
-                        sheet.cell(11, i).value
-                if sheet.cell(14, i).value != None:
-                    general_functions[str(sheet.cell(14, i).value)] = \
-                        sheet.cell(15, i).value
-
             sheet = book.worksheets[isheet]
-        
+
             print('Sheet #%i' % isheet, book.sheetnames[isheet])
             # Read the actual sheet.
             constants = {}
@@ -265,23 +268,21 @@ class GenerateDLCCases(GeneralDLC):
                             formulas[tag] = str(sheet.cell(3, i).value)
             dlc = {}
 
-            general_constants = self.remove_from_dict(variables,
-                                                      general_constants)
-            general_constants = self.remove_from_dict(constants,
-                                                      general_constants)
-            general_functions = self.remove_from_dict(formulas,
-                                                      general_functions)
+            # make copies of the general constants and functions since remove
+            # will otherwise remove them for the following sheets as well
+            sheet_gen_con = self.remove_from_dict(variables, general_constants.copy())
+            sheet_gen_con = self.remove_from_dict(constants, sheet_gen_con)
+            sheet_gen_fun = self.remove_from_dict(formulas, general_functions.copy())
 
             self.add_variables_tag(dlc, variables, variables_order)
-            self.add_constants_tag(dlc, general_constants)
+            self.add_constants_tag(dlc, sheet_gen_con)
             self.add_constants_tag(dlc, constants)
             self.add_formulas(dlc, formulas)
-            self.add_formulas(dlc, general_functions)
+            self.add_formulas(dlc, sheet_gen_fun)
             # TODO: before eval, check if all tags in formula's are present
             self.eval_formulas(dlc)
             df = pd.DataFrame(dlc)
-            if not os.path.exists(folder):
-                os.makedirs(folder)
+            os.makedirs(folder, exist_ok=True)
             df.to_excel(os.path.join(folder, book.sheetnames[isheet]+'.xlsx'), index=False)
 
 

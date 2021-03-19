@@ -61,7 +61,6 @@ def setup_package(build_ext_switch=True):
                         'pandas',
                         'matplotlib',
                         'cython',
-                        'xlrd',
                         'coverage',
                         'xlwt',
                         'openpyxl',

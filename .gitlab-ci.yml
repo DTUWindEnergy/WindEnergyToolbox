@@ -3,7 +3,7 @@ image: dtuwindenergy/wetb
 
 
 test-3.4:
-  stage:  
+  stage:
     test
 #  except:
 #    - test_pypi
@@ -17,7 +17,8 @@ test-3.4:
   - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
   tags:
   - python
-  
+
+
 # ===== build documentation =====
 pages:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
@@ -34,14 +35,14 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
     - public
   only:  # only run for these branches
   - master
-  - /^test_doc.*/ 
+  - /^test_doc.*/
   tags:  # only runners with this tag can do the job [3]
   - python
 
 
   # ===== BUILD WHEELS AND UPLOAD TO PYPI =====
 pypi_linux:
-  stage:  
+  stage:
     deploy
   only:
     - tags
@@ -55,12 +56,12 @@ pypi_linux:
     - python3 -c 'from git_utils import rename_dist_file; rename_dist_file()'
     - twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
     #- twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD # for testing purposes
-  tags:  
+  tags:
     - python
 
 
 pypi_windows:
-  stage:  
+  stage:
     deploy
   only:
     - tags
@@ -69,6 +70,6 @@ pypi_windows:
     - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py bdist_wheel
     - twine upload dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD%
     #- twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD% # for testing purposes
-  tags:  
+  tags:
     - CPAV_old
 
