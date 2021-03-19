@@ -14,6 +14,8 @@ from __future__ import absolute_import
 from numpy import (floor, arctan, pi, log, log10, sin, cos, tan, e, arcsin,
                    arccos)
 import pandas as pd
+from openpyxl import Workbook 
+from openpyxl import load_workbook
 import xlrd
 from argparse import ArgumentParser
 import os
@@ -120,7 +122,6 @@ class GeneralDLC(object):
 
     def sort_formulas(self, formulas):
         # sort formulas based on their dependency
-
         keys_list = sorted(formulas)
         for i in range(len(keys_list)):
             for ikey, key in enumerate(keys_list):
@@ -218,10 +219,10 @@ class GenerateDLCCases(GeneralDLC):
 
     def execute(self, filename='DLCs.xlsx', folder='', isheets=None):
 
-        book = xlrd.open_workbook(filename)
+        book = load_workbook(filename, data_only=True) 
 
         if isheets is None:
-            isheets = list(range(1, book.nsheets))
+            isheets = list(range(1,len(book.sheetnames))) 
 
         # Loop through all the sheets. Each sheet correspond to a DLC.
         for isheet in isheets:
@@ -230,40 +231,38 @@ class GenerateDLCCases(GeneralDLC):
             # first sheet
             general_constants = {}
             general_functions = {}
-            sheet = book.sheets()[0]
-            for i in range(1, sheet.ncols):
-                if sheet.cell_value(9, i) != '':
-                    general_constants[str(sheet.cell_value(9, i))] = \
-                        sheet.cell_value(10, i)
-                if sheet.cell_value(13, i) != '':
-                    general_functions[str(sheet.cell_value(13, i))] = \
-                        sheet.cell_value(14, i)
+            sheet = book.worksheets[0]
+            for i in range(2, sheet.max_column+1):
+                if sheet.cell(10, i).value != None:
+                    general_constants[str(sheet.cell(10, i).value)] = \
+                        sheet.cell(11, i).value
+                if sheet.cell(14, i).value != None:
+                    general_functions[str(sheet.cell(14, i).value)] = \
+                        sheet.cell(15, i).value
 
-            sheet = book.sheets()[isheet]
-
-            print('Sheet #%i' % isheet, sheet.name)
-
+            sheet = book.worksheets[isheet]
+        
+            print('Sheet #%i' % isheet, book.sheetnames[isheet])
             # Read the actual sheet.
             constants = {}
             variables = {}
             formulas = {}
             variables_order = []
             # Loop through the columns
-            for i in range(sheet.ncols):
-                if sheet.cell_value(1, i) is not None:
-                    tag = str(sheet.cell_value(1, i))
+            for i in range(1,sheet.max_column+1):
+                if sheet.cell(1, i).value is not None:
+                    tag = str(sheet.cell(1+1, i).value)
                     if len(tag) > 0:
                         # FIXME: only works if [wsp] is defined as variable
                         # and [seed] tags are present
-                        if sheet.cell_value(0, i) == 'C':
-                            constants[tag] = sheet.cell_value(2, i)
-                        if sheet.cell_value(0, i) == 'V':
+                        if sheet.cell(1, i).value == 'C':
+                            constants[tag] = sheet.cell(3, i).value
+                        if sheet.cell(1, i).value == 'V':
                             variables_order.append(tag)
                             variables[tag] = \
-                                [sheet.cell_value(j, i) for j in range(2, sheet.nrows)]
-                        if sheet.cell_value(0, i) == 'F':
-                            formulas[tag] = str(sheet.cell_value(2, i))
-
+                                [sheet.cell(j, i).value for j in range(3, sheet.max_row+1) if sheet.cell(j, i).value != None]
+                        if sheet.cell(1, i).value == 'F':
+                            formulas[tag] = str(sheet.cell(3, i).value)
             dlc = {}
 
             general_constants = self.remove_from_dict(variables,
@@ -283,7 +282,7 @@ class GenerateDLCCases(GeneralDLC):
             df = pd.DataFrame(dlc)
             if not os.path.exists(folder):
                 os.makedirs(folder)
-            df.to_excel(os.path.join(folder, sheet.name+'.xlsx'), index=False)
+            df.to_excel(os.path.join(folder, book.sheetnames[isheet]+'.xlsx'), index=False)
 
 
 if __name__ == '__main__':
