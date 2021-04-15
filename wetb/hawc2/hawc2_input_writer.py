@@ -115,7 +115,7 @@ class HAWC2InputWriter(object):
                 if hasattr(self, 'set_%s' % k):
                     getattr(self, 'set_%s' % k)(htc, **kwargs)
 
-            htc.save(out_fn)
+        htc.save(out_fn)
 
     def write_all(self, out_dir):
         '''
@@ -139,6 +139,8 @@ class HAWC2InputWriter(object):
 
                 self.write(path / (row.Name + '.htc'), **row.to_dict())
 
+    def set_Name(self, htc, Name, **kwargs):
+        htc.set_name(Name, subfolder=kwargs.get('Folder', ''))
 
 class JinjaWriter(HAWC2InputWriter):
     """
