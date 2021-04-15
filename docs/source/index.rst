@@ -26,3 +26,4 @@ Contents:
         installation
         fatigue_tools/fatigue
         hawc2/hawc2
+        api_reference
