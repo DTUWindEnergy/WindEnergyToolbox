@@ -18,8 +18,7 @@ Both Python2 and Python3 are supported.
 
 # Installation
 
-- [Simple user](docs/install.md)
-- [Developer/contributor](docs/developer-guide.md)
+See documentation.
 
 # Documentation
 
