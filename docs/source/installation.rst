@@ -17,22 +17,27 @@ Normal user
 --------------------------------
 
 You must first have installed a C++ compiler before you can use these
-commands.
+commands. See section above.
 
-We recommend using the Anaconda Python distribution for easy
-installation and maintenance of Python packages.
+* Quick install::
 
-* Install the most recent, stable version of the code::
-  
     pip install wetb
+
+* Install a specific version on PyPI::
+
+   pip install wetb==0.0.21
 
 * Update an installation to the most recent version::
 
     pip install --upgrade wetb
 
-* Install a specific version on PyPI::
-
-   pip install wetb==0.0.21
+**NOTE**. Dependency conflicts can arise if you do not install
+``wetb`` into a clean environment. In particular, your installation
+might break if ``wetb`` is installed using ``pip``, and then later
+packages are installed using ``conda``. (See more details at
+`this article <https://www.anaconda.com/blog/using-pip-in-a-conda-environment>`_.
+We therefore recommend that you install ``wetb`` in a clean
+environment.
 
 
 Advanced user
