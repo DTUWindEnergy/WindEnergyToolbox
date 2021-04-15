@@ -1,8 +1,5 @@
-'''
-Created on 17/07/2014
-
-@author: MMPE
-'''
+"""Test wetb.hawc2.pc_file
+"""
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -27,6 +24,7 @@ class TestPCFile(unittest.TestCase):
         self.testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 
     def test_PCFile_ae(self):
+        """Verify correct values in values of object loaded from pc file"""
         pc = PCFile(self.testfilepath + "NREL_5MW_pc.txt")
         ae = AEFile(self.testfilepath + "NREL_5MW_ae.txt")
         thickness = ae.thickness(36)
@@ -35,11 +33,11 @@ class TestPCFile(unittest.TestCase):
         self.assertEqual(pc.CM(thickness, 10), -0.1103)
 
     def test_write_PCFile(self):
-        """Round trip loading and saving a pc file
+        """Round-trip loading and saving a pc file
         """
-        pc1 = PCFile(self.testfilepath + "NREL_5MW_pc.txt")
-        with tempfile.NamedTemporaryFile(delete=True, mode='w') as fid:
-            pc1.save(fid.name)
+        pc1 = PCFile(self.testfilepath + 'NREL_5MW_pc.txt')
+        with tempfile.TemporaryDirectory() as tdir:
+            pc1.save(tdir + '/test_pc.txt')
             pc2 = PCFile(pc1.filename)
             self.assertEqual(str(pc1), str(pc2))
 
@@ -50,6 +48,6 @@ class TestPCFile(unittest.TestCase):
             np.testing.assert_array_almost_equal(pc1, pc2)
 
 
+
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
