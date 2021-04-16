@@ -21,6 +21,7 @@ wetb/prepost/tests/data/demo_dlc/remote*
 wetb/*/*/*.c
 .cache/
 tests/temp.htc
+**/tmp/*
 
 /wetb/fatigue_tools/rainflowcounting/compile.py
 /docs/api
