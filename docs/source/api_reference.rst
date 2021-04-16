@@ -1,6 +1,6 @@
-.. _api_guide:
+.. _api_reference:
 
-API Guide
+API Reference
 ===========================
 
 Here is information on wetb's most useful functionalities.
