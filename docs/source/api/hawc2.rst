@@ -4,6 +4,9 @@
 HAWC2 Module
 ----------------------
 
+The `wetb.hawc2` module contains many functions that are useful in
+the writing and running of htc files.
+
 .. autoclass:: wetb.hawc2.hawc2_input_writer.HAWC2InputWriter
    :members: from_pandas, from_excel, from_CVF, write, write_all
     

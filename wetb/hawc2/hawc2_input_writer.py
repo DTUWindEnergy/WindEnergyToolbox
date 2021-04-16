@@ -20,20 +20,20 @@ class HAWC2InputWriter(object):
         Path to base htc file from which the other htc files are created.
 
     Notes
-    ------
-    You can load the dlc keywords and parameters using the `from_` methods presented
-    below. Any methods of the form `set_<tag>`(htc, **kwargs), where `<tag>` is one
+    -----
+    You can load the dlc keywords and parameters using the ``from_`` methods presented
+    below. Any methods of the form ``set_<tag>(htc, **kwargs)``, where ``<tag>`` is one
     of one of the keywords in the dlc, will be called when writing htc files.
 
-    You can write the htc files using the `write` or `write_all` methods presented below.
-    The `Name` tag must be defined when writing htc files.
+    You can write the htc files using the ``write`` or ``write_all`` methods presented below.
+    The ``Name`` tag must be defined when writing htc files.
 
     Necessary/protected tags
-    -------------------------
-    Name : str
-        The name of the htc file (without extension) for each simulation. This will
-        be used in a `set_Name` call to the htc file, which will overwrite the
-        `simulation.logfile` and `output.filename` lines.
+    ------------------------
+        * **Name (str)**. The name of the htc file (without extension) for each
+          simulation. This will be used in a ``set_Name`` call to the htc file,
+          which will overwrite the ``simulation.logfile`` and
+          ``output.filename`` lines.
     """
 
     def __init__(self, base_htc_file, **kwargs):
@@ -125,10 +125,10 @@ class HAWC2InputWriter(object):
     
         Notes
         -----
-        This function is called during the `write` and `write_all` methods, thereby
+        This function is called during the ``write`` and ``write_all`` methods, thereby
         overwriting the logfile and output filename. If you would like to specify a
-        subfolder within the `htc` and `res` directories where your simulations should
-        be placed, pass in the 'Folder' keyword into `kwargs`.
+        subfolder within the ``htc`` and ``res`` directories where your simulations should
+        be placed, pass in the 'Folder' keyword into ``kwargs``.
 
         Parameters
         ----------
@@ -139,7 +139,7 @@ class HAWC2InputWriter(object):
             extension).
         **kwargs
             Keyword arguments. Must include keyword 'Name'. May optionally include
-            'Folder' to define a subfolder in your `htc` and `res` directories where
+            'Folder' to define a subfolder in your ``htc`` and ``res`` directories where
             files will be stored.
         """
         htc.set_name(kwargs['Name'], subfolder=kwargs.get('Folder', ''))
@@ -150,7 +150,7 @@ class HAWC2InputWriter(object):
         Notes
         -----
         This function works both with the tagless and jinja file-writing systems. Any
-        methods of the form `set_<tag>` are called during file writing.
+        methods of the form ``set_<tag>`` are called during file writing.
 
         Parameters
         ----------
@@ -177,7 +177,7 @@ class HAWC2InputWriter(object):
         Notes
         -----
         This function works both with the tagless and jinja file-writing systems. Any
-        methods of the form `set_<tag>` are called during each htc write. DLC contents
+        methods of the form ``set_<tag>`` are called during each htc write. DLC contents
         must contain a 'Name' column.
 
         Parameters
