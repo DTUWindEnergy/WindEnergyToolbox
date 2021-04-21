@@ -32,22 +32,34 @@ regex_units = re.compile('(\\[.*?\\])')
 
 def ReadFileHAWCStab2Header(fname):
     """
-    Read a file with a weird HAWCStab2 header that starts with a #, and
-    includes the column number and units between square brackets.
+    Read a file with a weird HAWCStab2 header that starts with a # (or not),
+    and includes the column number and units between square brackets. Can also
+    strip away the first integer number on the header line (e.g. .opt files).
     """
 
-    def get_lines(fname):
+    def get_lines():
         # get the line that contains the header/column names and the first
         # line that holds the data
-        with open(fname) as f:
-            line_header = f.readline()
+        line_header = f.readline()
+        seek_data = f.tell()
+        line_data = f.readline()
+        # the opt file has a number of data points as the first element
+        nrl = line_header.split()[0]
+        try:
+            int(nrl)
+            # replace with empty text to no destroy the nice line-up of
+            # the header with the data columns, assumed later
+            line_header = line_header.replace(nrl, ' '*len(nrl))
+        except ValueError:
+            pass
+        # sometimes there are more header lines. The header is always on the
+        # last of the lines marked with #
+        while line_data[:2].strip() == '#':
+            line_header = line_data
+            seek_data = f.tell()
             line_data = f.readline()
-            # sometimes there are more header lines. The header is always on the
-            # last of the lines marked with #
-            while line_data[:2].strip() == '#':
-                line_header = line_data
-                line_data = f.readline()
-        return line_header, line_data
+
+        return line_header, line_data, seek_data
 
     def get_col_widths(line):
         # it is very annoying that various files can have various column widths
@@ -67,28 +79,38 @@ def ReadFileHAWCStab2Header(fname):
         ci[1:] = ci[1:] - 1
         columns = []
         for i in range(len(ci)-1):
-            # also lose the index in the header
-            colname = line[ci[i]:ci[i+1]][:-2].replace('#', '').strip()
+            # also lose the index in the header, if there is one
+            try:
+                int(line.split()[-1])
+                colname = line[ci[i]:ci[i+1]][:-2].replace('#', '').strip()
+            except ValueError:
+                colname = line[ci[i]:ci[i+1]].replace('#', '').strip()
             columns.append(colname)
         return columns
 
-    line_header, line_data = get_lines(fname)
-    colwidths = get_col_widths(line_data)
-    columns = get_col_names(line_header, colwidths)
-    # gradients have duplicate columns: set for with wake updated
-    # and another with frozen wake assumption, append _fw to the columns
-    # used to indicate frozen wake gradients
-    if 'dQ/dt [kNm/deg]' in columns:
-        i1 = columns.index('dQ/dt [kNm/deg]')
-        if i1 > -1:
-            i2 = columns.index('dQ/dt [kNm/deg]', i1+1)
-        if i2 > i1:
-            for i in range(i2, len(columns)):
-                columns[i] = columns[i].replace(' [', '_fw [')
+    with open(fname) as f:
+        line_header, line_data, seek_data = get_lines()
+        colwidths = get_col_widths(line_data)
+        columns = get_col_names(line_header, colwidths)
 
-    df = pd.read_fwf(fname, widths=colwidths, comment='#', header=None,
-                     names=columns)
-    units = regex_units.findall(''.join(columns))
+        # TODO: strip units from column names, units as dict with col:unit
+        units = regex_units.findall(''.join(columns))
+
+        # gradients have duplicate columns: set for with wake updated
+        # and another with frozen wake assumption, append _fw to the columns
+        # used to indicate frozen wake gradients
+        if 'dQ/dt [kNm/deg]' in columns:
+            i1 = columns.index('dQ/dt [kNm/deg]')
+            if i1 > -1:
+                i2 = columns.index('dQ/dt [kNm/deg]', i1+1)
+            if i2 > i1:
+                for i in range(i2, len(columns)):
+                    columns[i] = columns[i].replace(' [', '_fw [')
+
+        # we are at the second data line, go back to the start of the data
+        f.seek(seek_data)
+        df = pd.read_fwf(f, widths=colwidths, comment='#', header=None,
+                         names=columns)
 
     return df, units
 
