@@ -92,20 +92,23 @@ def ReadFileHAWCStab2Header(fname):
         line_header, line_data, seek_data = get_lines()
         colwidths = get_col_widths(line_data)
         columns = get_col_names(line_header, colwidths)
-
-        # TODO: strip units from column names, units as dict with col:unit
         units = regex_units.findall(''.join(columns))
+        # strip units from the column name, units is dictionary
+        columns = [k.split('[')[0].strip() for k in columns]
+        units = {col:unit for col, unit in zip(columns, units)}
 
         # gradients have duplicate columns: set for with wake updated
         # and another with frozen wake assumption, append _fw to the columns
         # used to indicate frozen wake gradients
-        if 'dQ/dt [kNm/deg]' in columns:
-            i1 = columns.index('dQ/dt [kNm/deg]')
+        # the doubles occur at the end and are the following:
+        # 'dQ/dt', 'dQ/dV', 'dQ/dO', 'dT/dt', 'dT/dV', 'dT/dO'
+        if 'dQ/dt' in columns:
+            i1 = columns.index('dQ/dt')
             if i1 > -1:
-                i2 = columns.index('dQ/dt [kNm/deg]', i1+1)
+                i2 = columns.index('dQ/dt', i1+1)
             if i2 > i1:
                 for i in range(i2, len(columns)):
-                    columns[i] = columns[i].replace(' [', '_fw [')
+                    columns[i] = columns[i] + '_fw'
 
         # we are at the second data line, go back to the start of the data
         f.seek(seek_data)
@@ -554,7 +557,7 @@ def read_cmb_all(f_cmb, f_pwr=None, f_modid=None, f_save=None, ps=[1,3,6]):
     if f_pwr is not None:
         df_perf, units = hs2.load_pwr_df(f_pwr)
         nr_perf = df_perf.shape[0]
-        if nr_oper != nr_perf or not np.allclose(wind, df_perf['V [m/s]'].values):
+        if nr_oper != nr_perf or not np.allclose(wind, df_perf['V'].values):
             raise UserWarning('pwr and cmb files must have same operating points')
 
     # strip characters if there is a comment after the description

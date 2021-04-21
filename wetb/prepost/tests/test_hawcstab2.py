@@ -215,12 +215,12 @@ class Tests(unittest.TestCase):
         f_pwr = pjoin(base, 'data/dtu10mw_v1.pwr')
         f_cmb = pjoin(base, 'data/campbell_diagram.cmb')
         dfp, dff, dfd = read_cmb_all(f_cmb, f_pwr=f_pwr)
-        cmb = PlotCampbell(dfp['V [m/s]'].values, dff, dfd)
+        cmb = PlotCampbell(dfp['V'].values, dff, dfd)
 
         fig, axes = subplots(nrows=2, ncols=1, figsize=(8,10))
         ax = axes[0,0]
         ax = cmb.plot_freq(ax, col='k', mark='^', ls='-', modes='all')
-        ax = plot_add_ps(ax, dfp['V [m/s]'], dfp['Speed [rpm]'], ps=[1,3,6])
+        ax = plot_add_ps(ax, dfp['V'], dfp['Speed'], ps=[1,3,6])
         ax = axes[1,0]
         ax = cmb.plot_damp(ax, col='k', mark='^', ls='-', modes=10)
 
