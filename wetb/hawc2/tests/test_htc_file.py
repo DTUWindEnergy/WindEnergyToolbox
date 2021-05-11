@@ -13,6 +13,7 @@ from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 import os
+import tempfile
 import unittest
 from wetb.hawc2.htc_file import HTCFile, HTCLine
 
@@ -343,6 +344,7 @@ end turb_export;"""
         assert htc.output__1.name_ == "output"
 
     def test_compare(self):
+        """check that the compare function works as expected"""
         htc = HTCFile(self.testfilepath + "test_cmp1.htc", "../")
         s = htc.compare(self.testfilepath + 'test_cmp2.htc')
         ref = """- begin subsection1;
@@ -412,6 +414,21 @@ end turb_export;"""
         htc = HTCFile(self.testfilepath + "jinja.htc",
                       jinja_tags={'wsp': 12, 'log': None, 'begin_step': 100})
         print(htc)
+
+    def test_backslash_remains(self):
+        """verify that backslash in relative paths are maintained on load and save.
+        """
+        logpath = '.\\logfiles\\dlc12_iec61400-1ed3\\dlc12_wsp10_wdir000_s1004.log'
+        htc = HTCFile(self.testfilepath + 'test.htc')
+        htc.simulation.logfile = logpath
+        log1 = htc.simulation.logfile.str_values()
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tmppath = tmpdirname + '/tmp.htc'
+            htc.save(tmppath)
+            htc2 = HTCFile(tmppath, modelpath=tmpdirname)
+            log2 = htc2.simulation.logfile.str_values()
+        assert log1 == logpath
+        assert log2 == logpath
 
 
 if __name__ == "__main__":

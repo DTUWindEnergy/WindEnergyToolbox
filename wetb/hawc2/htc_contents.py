@@ -42,7 +42,8 @@ def fmt_value(v):
             return int(float(v))
         return float(v)
     except ValueError:
-        return v.replace("\\", "/")
+        # return v.replace("\\", "/")
+        return v
 
 
 c = 0

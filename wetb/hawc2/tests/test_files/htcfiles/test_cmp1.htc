@@ -19,7 +19,7 @@ begin section1
 end section1
 ;
 begin output_at_time aero 15;
-  filename ./res\rotor_check_inipos;
+  filename ./res/rotor_check_inipos;
   alfa 2;
   sensor1 1
 end output_at_time;
