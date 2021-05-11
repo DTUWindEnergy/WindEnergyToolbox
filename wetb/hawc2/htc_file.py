@@ -23,8 +23,9 @@ from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
 import os
 
 
-# def fmt_path(path):
-#     return path.lower().replace("\\", "/")
+def fmt_path(path):
+    """used in cluset_simulation and simulation"""
+    return path.lower().replace("\\", "/")
 
 
 class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
