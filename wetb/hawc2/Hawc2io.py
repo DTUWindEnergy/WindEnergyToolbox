@@ -198,7 +198,7 @@ class ReadHawc2(object):
         if not ChVec:
             ChVec = range(0, self.NrCh)
         temp = np.loadtxt(self.FileName + '.dat', usecols=ChVec)
-        return temp
+        return temp.reshape((temp.shape[0], len(ChVec)))
 ################################################################################
 # Read results in FLEX format
 
