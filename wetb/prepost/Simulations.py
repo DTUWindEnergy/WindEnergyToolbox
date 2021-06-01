@@ -23,7 +23,6 @@ from builtins import object
 
 # standard python library
 import os
-import os.path as osp
 import subprocess as sproc
 import copy
 import zipfile
@@ -32,7 +31,6 @@ import datetime
 import math
 import pickle
 import re
-import io
 # what is actually the difference between warnings and logging.warn?
 # for which context is which better?
 import warnings
@@ -43,10 +41,8 @@ from time import time
 #import threading
 #from multiprocessing import Pool
 
-# numpy and scipy only used in HtcMaster._all_in_one_blade_tag
 import numpy as np
 import scipy
-import scipy.interpolate as interpolate
 #import matplotlib.pyplot as plt
 import pandas as pd
 import tables as tbl
@@ -1441,150 +1437,6 @@ class HtcMaster(object):
         #dst  = model_dir_server + self.tags['[htc_dir]']
         #dst += self.tags['[model_zip]']
         #shutil.copy2(src, dst)
-
-    def _sweep_tags(self):
-        """
-        The original way with all tags in the htc file for each blade node
-        """
-        # set the correct sweep cruve, these values are used
-        a = self.tags['[sweep_amp]']
-        b = self.tags['[sweep_exp]']
-        z0 = self.tags['[sweep_curve_z0]']
-        ze = self.tags['[sweep_curve_ze]']
-        nr = self.tags['[nr_nodes_blade]']
-        # format for the x values in the htc file
-        ff = ' 1.03f'
-        for zz in range(nr):
-            it_nosweep = '[x'+str(zz+1)+'-nosweep]'
-            item = '[x'+str(zz+1)+']'
-            z = self.tags['[z'+str(zz+1)+']']
-            if z >= z0:
-                curve = eval(self.tags['[sweep_curve_def]'])
-                # new swept position = original + sweep curve
-                self.tags[item]=format(self.tags[it_nosweep]+curve,ff)
-            else:
-                self.tags[item]=format(self.tags[it_nosweep], ff)
-
-    def _staircase_windramp(self, nr_steps, wind_step, ramptime, septime):
-        """Create a stair case wind ramp
-
-
-        """
-
-        pass
-
-    def _all_in_one_blade_tag(self, radius_new=None):
-        """
-        Create htc input based on a HAWTOPT blade result file
-
-        Automatically get the number of nodes correct in master.tags based
-        on the number of blade nodes
-
-        WARNING: initial x position of the half chord point is assumed to be
-        zero
-
-        zaxis_fact : int, default=1.0 --> is member of default tags
-            Factor for the htc z-axis coordinates. The htc z axis is mapped to
-            the HAWTOPT radius. If the blade radius develops in negative z
-            direction, set to -1
-
-        Parameters
-        ----------
-
-        radius_new : ndarray(n), default=False
-            z coordinates of the nodes. If False, a linear distribution is
-            used and the tag [nr--of-nodes-per-blade] sets the number of nodes
-
-
-        """
-        # TODO: implement support for x position to be other than zero
-
-        # TODO: This is not a good place, should live somewhere else. Or
-        # reconsider inputs etc so there is more freedom in changing the
-        # location of the nodes, set initial x position of the blade etc
-
-        # and save under tag [blade_htc_node_input] in htc input format
-
-        nr_nodes = self.tags['[nr_nodes_blade]']
-
-        blade = self.tags['[blade_hawtopt]']
-        # in the htc file, blade root =0 and not blade hub radius
-        blade[:,0] = blade[:,0] - blade[0,0]
-
-        if type(radius_new).__name__ == 'NoneType':
-            # interpolate to the specified number of nodes
-            radius_new = np.linspace(blade[0,0], blade[-1,0], nr_nodes)
-
-        # Data checks on radius_new
-        elif not type(radius_new).__name__ == 'ndarray':
-            raise ValueError('radius_new has to be either NoneType or ndarray')
-        else:
-            if not len(radius_new.shape) == 1:
-                raise ValueError('radius_new has to be 1D')
-            elif not len(radius_new) == nr_nodes:
-                msg = 'radius_new has to have ' + str(nr_nodes) + ' elements'
-                raise ValueError(msg)
-
-        # save the nodal positions in the tag cloud
-        self.tags['[blade_nodes_z_positions]'] = radius_new
-
-        # make sure that radius_hr is just slightly smaller than radius low res
-        radius_new[-1] = blade[-1,0]-0.00000001
-        twist_new = interpolate.griddata(blade[:,0], blade[:,2], radius_new)
-        # blade_new is the htc node input part:
-        # sec 1   x     y     z   twist;
-        blade_new = scipy.zeros((len(radius_new),4))
-        blade_new[:,2] = radius_new*self.tags['[zaxis_fact]']
-        # twist angle remains the same in either case (standard/ojf rotation)
-        blade_new[:,3] = twist_new*-1.
-
-        # set the correct sweep cruve, these values are used
-        a = self.tags['[sweep_amp]']
-        b = self.tags['[sweep_exp]']
-        z0 = self.tags['[sweep_curve_z0]']
-        ze = self.tags['[sweep_curve_ze]']
-        tmp = 'nsec ' + str(nr_nodes) + ';'
-        for k in range(nr_nodes):
-            tmp += '\n'
-            i = k+1
-            z = blade_new[k,2]
-            y = blade_new[k,1]
-            twist = blade_new[k,3]
-            # x position, sweeping?
-            if z >= z0:
-                x = eval(self.tags['[sweep_curve_def]'])
-            else:
-                x = 0.0
-
-            # the node number
-            tmp += '        sec ' + format(i, '2.0f')
-            tmp += format(x, ' 11.03f')
-            tmp += format(y, ' 11.03f')
-            tmp += format(z, ' 11.03f')
-            tmp += format(twist, ' 11.03f')
-            tmp += ' ;'
-
-        self.tags['[blade_htc_node_input]'] = tmp
-
-        # and create the ae file
-        #5	Blade Radius [m] 	Chord[m]  T/C[%]  Set no. of pc file
-        #1 25 some comments
-        #0.000     0.100    21.000   1
-        nr_points = blade.shape[0]
-        tmp2 = '1  Blade Radius [m] Chord [m] T/C [%] pc file set nr\n'
-        tmp2 += '1  %i auto generated by _all_in_one_blade_tag()' % nr_points
-
-        for k in range(nr_points):
-            tmp2 += '\n'
-            tmp2 += '%9.3f %9.3f %9.3f' % (blade[k,0], blade[k,1], blade[k,3])
-            tmp2 += ' %4i' % (k+1)
-        # end with newline
-        tmp2 += '\n'
-
-        # TODO: finish writing file, implement proper handling of hawtopt path
-        # and save the file
-        #if self.tags['aefile']
-        #write_file(file_path, tmp2, 'w')
 
     def loadmaster(self):
         """

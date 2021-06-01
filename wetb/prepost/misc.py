@@ -75,6 +75,7 @@ def path_split_dirs(path):
         dirs.pop(0)
     return dirs
 
+
 def path_sanitize(path, allowdd=False, allowabs=False):
     """Raises a ValueError if not considered safe. A leading ../ is allowed
     when allowdd=True.
@@ -119,6 +120,7 @@ def path_sanitize(path, allowdd=False, allowabs=False):
             msg = 'No leading/trailing . or - allowed.'
             raise ValueError('Invalid or unsafe path: "%s". %s' % (path, msg))
 
+
 def sanitize_wine_prefix(wine_prefix):
     """special case to sanitize
     """
@@ -137,13 +139,6 @@ def sanitize_wine_prefix(wine_prefix):
         raise ValueError('Invalid wine_prefix value: %s' % wine_prefix)
     return os.path.join('$HOME', wine_prefix).replace("\\", "/")
 
-def print_both(f, text, end='\n'):
-    """
-    Print both to a file and the console
-    """
-    print(text)
-    if isinstance(f, file):
-        f.write(text + end)
 
 def unique(s):
     """
@@ -217,6 +212,7 @@ def unique(s):
             u.append(x)
     return u
 
+
 def CoeffDeter(obs, model):
     """
     Coefficient of determination
@@ -268,6 +264,7 @@ def calc_sample_rate(time, rel_error=1e-4):
 #        raise AssertionError
     return 1/deltas.mean()
 
+
 def findIntersection(fun1, fun2, x0):
     """
     Find Intersection points of two functions
@@ -296,6 +293,7 @@ def findIntersection(fun1, fun2, x0):
 
     """
     return sp.optimize.fsolve(lambda x : fun1(x) - fun2(x), x0)
+
 
 # TODO: replace this with some of the pyrain functions
 def find0(array, xi=0, yi=1, verbose=False, zerovalue=0.0):
@@ -409,6 +407,7 @@ def find0(array, xi=0, yi=1, verbose=False, zerovalue=0.0):
 
     return y0, y0i
 
+
 def remove_items(list, value):
     """Remove items from list
     The given list wil be returned withouth the items equal to value.
@@ -427,6 +426,7 @@ def remove_items(list, value):
             del list[k]
 
     return list
+
 
 class DictDB(object):
     """
@@ -535,6 +535,7 @@ class DictDB(object):
             if alltrue:
                 self.dict_sel[row] = self.dict_db[row]
 
+
 class DictDiff(object):
     """
     Calculate the difference between two dictionaries as:
@@ -576,6 +577,7 @@ class DictDiff(object):
     def unchanged(self):
         t=set(o for o in self.intersect if self.past_d[o] == self.current_d[o])
         return t
+
 
 def fit_exp(time, data, checkplot=True, method='linear', func=None, C0=0.0):
     """
@@ -622,6 +624,7 @@ def fit_exp(time, data, checkplot=True, method='linear', func=None, C0=0.0):
         plt.grid()
 
     return fit, A, K, C
+
 
 def curve_fit_exp(time, data, checkplot=True, weights=None):
     """
@@ -681,6 +684,7 @@ def curve_fit_exp(time, data, checkplot=True, weights=None):
 
     return
 
+
 def readlines_try_encodings(fname):
     """Read text file in binary and try to encode with a few common encodings.
     Return the first succesful attempt.
@@ -721,21 +725,6 @@ def readlines_try_encodings(fname):
             break
     return lines
 
-def to_lower_case(proot):
-    """
-    Rename all the files in the subfolders of proot to lower case, and
-    also the subfolder name when it the folder name starts with DLC
-    """
-    # find all dlc defintions in the subfolders
-    for root, dirs, files in os.walk(proot):
-        for fname in files:
-            orig = os.path.join(root, fname)
-            rename = os.path.join(root, fname.lower())
-            os.rename(orig, rename)
-        base = root.split(os.path.sep)[-1]
-        if base[:3] == 'DLC':
-            new = root.replace(base, base.lower())
-            os.rename(root, new)
 
 def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
                      pinclude=None, silent=False):
@@ -802,21 +791,6 @@ def read_excel_files(proot, fext='xlsx', pignore=None, sheet=0,
 
     return df_list
 
-def convert_xlsx2csv(fpath, sheet='Sheet1', fext='xlsx'):
-    """
-    Convert xlsx load case definitions to csv so we can track them with git
-    """
-
-    for root, dirs, files in os.walk(fpath):
-        for file_name in files:
-            if not file_name.split('.')[-1] == fext:
-                continue
-            fxlsx = os.path.join(root, file_name)
-            print(fxlsx)
-            xl = pd.ExcelFile(fxlsx)
-            df = xl.parse(sheet)
-            fcsv = fxlsx.replace(fext, 'csv')
-            df.to_csv(fcsv, sep=';')
 
 def check_df_dict(df_dict):
     """
