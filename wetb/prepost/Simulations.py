@@ -1608,16 +1608,7 @@ class HtcMaster(object):
         if not self.silent:
             print('loading master: ' + fpath)
 
-        encodings = ['utf-8', 'cp1252', 'latin-1', 'windows-1250']
-        for e in encodings:
-            try:
-                with io.open(fpath, 'r', encoding=e) as f:
-                    lines = f.readlines()
-            except UnicodeDecodeError:
-                print('unicode error with %s , trying different encoding' % e)
-            else:
-                print('opening the file with encoding:  %s ' % e)
-                break
+        lines = misc.readlines_try_encodings(fpath)
 
         # regex for finding all tags in a line
         regex = re.compile('(\\[.*?\\])')

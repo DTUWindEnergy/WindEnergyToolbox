@@ -20,8 +20,7 @@ standard_library.install_aliases()
 from builtins import object
 
 import os
-import sys
-import shutil
+import io
 import unittest
 import pickle
 import re
@@ -682,54 +681,45 @@ def curve_fit_exp(time, data, checkplot=True, weights=None):
 
     return
 
-def convert_to_utf8(filename):
-    # gather the encodings you think that the file may be
-    # encoded inside a tuple
-    encodings = ('windows-1253', 'iso-8859-7', 'macgreek')
+def readlines_try_encodings(fname):
+    """Read text file in binary and try to encode with a few common encodings.
+    Return the first succesful attempt.
 
-    # try to open the file and exit if some IOError occurs
-    try:
-        f = open(filename, 'r').read()
-    except Exception:
-        sys.exit(1)
+    Parameters
+    ----------
+    fname : str
+        Path to file to be read.
 
-    # now start iterating in our encodings tuple and try to
-    # decode the file
+    Returns
+    -------
+    lines : list of str
+        Returns same as open(fname).readlines().
+    """
+
+    # some potentially common encoding formats
+    encodings = ('utf-8', 'cp1252', 'iso-8859-1', 'latin-1', 'cp1250',
+                 'cp1251', 'cp1253', 'iso-8859-2', 'iso-8859-7', 'macgreek')
+
+    # open the file and read entire object in as bytes, we do this to avoid
+    # re-opening and reading the file for each encoding we try
+    with open(fname, 'rb') as fid:
+        fbytes = fid.read()
+
     for enc in encodings:
+        # convert to a file object
+        fid = io.BytesIO(fbytes)
         try:
-            # try to decode the file with the first encoding
-            # from the tuple.
-            # if it succeeds then it will reach break, so we
-            # will be out of the loop (something we want on
-            # success).
-            # the data variable will hold our decoded text
-            data = f.decode(enc)
+            # we want to mimic the standard readlines behaviour
+            text_wrapper = io.TextIOWrapper(fid, encoding=enc)
+            lines = text_wrapper.readlines()
+        except UnicodeDecodeError:
+            print('encoding with', enc, 'does not work for:', fname)
+            print('unicode error with %s , trying different encoding' % enc)
+            pass
+        else:
+            # print('opening the file with encoding:  %s ' % enc)
             break
-        except Exception:
-            # if the first encoding fail, then with the continue
-            # keyword will start again with the second encoding
-            # from the tuple an so on.... until it succeeds.
-            # if for some reason it reaches the last encoding of
-            # our tuple without success, then exit the program.
-            if enc == encodings[-1]:
-                sys.exit(1)
-            continue
-
-    # now get the absolute path of our filename and append .bak
-    # to the end of it (for our backup file)
-    fpath = os.path.abspath(filename)
-    newfilename = fpath + '.bak'
-    # and make our backup file with shutil
-    shutil.copy(filename, newfilename)
-
-    # and at last convert it to utf-8
-    f = open(filename, 'w')
-    try:
-        f.write(data.encode('utf-8'))
-    except Exception(e):
-        print(e)
-    finally:
-        f.close()
+    return lines
 
 def to_lower_case(proot):
     """

@@ -150,9 +150,8 @@ class LogFile(object):
     def readlog(self, fname, case=None, save_iter=False):
         """
         """
-        # open the current log file
-        with open(fname, 'r') as f:
-            lines = f.readlines()
+        # be cautious and try a few encodings when reading the file
+        lines = misc.readlines_try_encodings(fname)
 
         # keep track of the messages allready found in this file
         tempLog = []

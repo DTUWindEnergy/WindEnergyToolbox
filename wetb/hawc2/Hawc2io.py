@@ -42,6 +42,7 @@ import numpy as np
 import os
 
 from wetb import gtsdf
+from wetb.prepost import misc
 
 # FIXME: numpy doesn't like io.open binary fid in PY27, why is that? As a hack
 # workaround, use opent for PY23 compatibility when handling text files,
@@ -83,9 +84,10 @@ class ReadHawc2(object):
         # read *.sel hawc2 output file for result info
         if self.FileName.lower().endswith('.sel'):
             self.FileName = self.FileName[:-4]
-        fid = opent(self.FileName + '.sel', 'r')
-        Lines = fid.readlines()
-        fid.close()
+        # fid = opent(self.FileName + '.sel', 'r')
+        # Lines = fid.readlines()
+        # fid.close()
+        Lines = misc.readlines_try_encodings(self.FileName + '.sel')
         # findes general result info (number of scans, number of channels,
         # simulation time and file format)
         temp = Lines[8].split()
@@ -122,12 +124,10 @@ class ReadHawc2(object):
         # read sensor file used if results are saved in FLEX format
         DirName = os.path.dirname(self.FileName + ".int")
         try:
-            fid = opent(os.path.join(DirName, r"sensor"),'r')
+            Lines = misc.readlines_try_encodings(os.path.join(DirName, r"sensor"))
         except IOError:
             print("can't finde sensor file for FLEX format")
             return
-        Lines = fid.readlines()
-        fid.close()
         # reads channel info (name, unit and description)
         self.NrCh = 0
         Name = []
