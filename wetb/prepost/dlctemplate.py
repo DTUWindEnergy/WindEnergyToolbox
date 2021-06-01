@@ -376,7 +376,7 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                               prelude=prelude, ppn_pbs=20)
 
     df = sim.Cases(cases).cases2df()
-    df.to_excel(os.path.join(POST_DIR, sim_id + '.xls'))
+    df.to_excel(os.path.join(POST_DIR, sim_id + '.xlsx'))
 
 
 def post_launch(sim_id, statistics=True, rem_failed=True, check_logs=True,
