@@ -1,8 +1,6 @@
 '''
 Created on 20/01/2014
 
-@author: MMPE
-
 See documentation of HTCFile below
 
 '''
@@ -178,7 +176,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         self._contents = value
 
     def readfilelines(self, filename):
-        with self.open(self.unix_path(filename), encoding='cp1252') as fid:
+        with self.open(self.unix_path(os.path.abspath(filename.replace('\\','/'))), encoding='cp1252') as fid:
             txt = fid.read()
         if txt[:10].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             txt = txt[3:]
@@ -198,7 +196,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
                 if self.modelpath == 'unknown':
                     p = os.path.dirname(self.filename)
-                    lu = [os.path.isfile(os.path.join(p, "../" * i, filename)) for i in range(4)].index(True)
+                    lu = [os.path.isfile(os.path.abspath(os.path.join(p, "../" * i, filename.replace("\\","/")))) for i in range(4)].index(True)
                     filename = os.path.join(p, "../" * lu, filename)
                 else:
                     filename = os.path.join(self.modelpath, filename)
