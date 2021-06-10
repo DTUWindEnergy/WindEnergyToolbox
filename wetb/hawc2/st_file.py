@@ -93,7 +93,14 @@ class StFile(object):
                 set_lines = set_txt.split("\n")
                 set_nr, no_rows = map(int, set_lines[0].split()[:2])
                 assert set_nr not in set_data_dict
-                linelst = [set_lines[i].split() for i in range(1, no_rows + 1)]
+                try:
+                    # HAWC2 will ignore everything after the 19th element,
+                    # some users have placed comments here after a ;
+                    linelst = [set_lines[i].split(';')[0].split() for i in range(1, no_rows + 1)]
+                except Exception as e:
+                    print('it went wrong at (set/subset):', mset_nr, set_nr,
+                          'with', no_rows, 'rows')
+                    raise e
                 set_data_dict[set_nr] = np.array(linelst, dtype=float)
             self.main_data_sets[mset_nr] = set_data_dict
 
