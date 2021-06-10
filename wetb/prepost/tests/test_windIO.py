@@ -208,7 +208,7 @@ class TestsLoadResults(unittest.TestCase):
         exp = [[38, 'global-blade2-elem-019-zrel-1.00-State pos-z', 'm'],
                [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
                [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
-               [415, 'Cl-1-54.82', 'deg'],
+               [415, 'Cl-1-55.7', 'deg'],
                [421, 'qwerty-is-azerty', 'is'],
                [422, 'wind_wake-wake_pos_x_1', 'm'],
                [423, 'wind_wake-wake_pos_y_2', 'm'],
@@ -252,20 +252,20 @@ class TestsLoadResults(unittest.TestCase):
 
         fname = os.path.join(self.respath, self.f3_chant.replace('.sel',
                                                                  '.ch_df.csv'))
-        # when changing the tests, update the reference, check, and commit
-        # but keep the same column ordering to not make the diffs to big
-#        cols = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',
-#                'component', 'coord', 'direction', 'dll', 'flap_nr', 'io',
-#                'io_nr', 'output_type', 'pos', 'radius', 'sensortag',
-#                'sensortype', 'unique_ch_name', 'units', ]
-#        df1[cols].to_csv(fname)
-#        df1.to_excel(fname.replace('.csv', '.xlsx'))
+        # # when changing the tests, update the reference, check, and commit
+        # # but keep the same column ordering to not make the diffs to big
+        # cols = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',
+        #         'component', 'coord', 'direction', 'dll', 'flap_nr', 'io',
+        #         'io_nr', 'output_type', 'pos', 'radius','radius_actual', 'sensortag',
+        #         'sensortype', 'unique_ch_name', 'units', ]
+        # df1[cols].to_csv(fname)
+        # df1.to_excel(fname.replace('.csv', '.xlsx'))
 
         # FIXME: read_csv for older pandas versions fails on reading the
         # mixed str/tuple column. Ignore the pos column for now
         colref = ['azimuth', 'bearing_name', 'blade_nr', 'bodyname',
                   'component', 'coord', 'direction', 'dll', 'flap_nr', 'io',
-                  'io_nr', 'output_type', 'radius', 'sensortag',
+                  'io_nr', 'output_type', 'radius', 'radius_actual', 'sensortag',
                   'sensortype', 'unique_ch_name', 'units'] # 'pos',
         # keep_default_na: leave empyt strings as empty strings and not nan's
         # you can't have nice things: usecols in combination with index_col
@@ -276,7 +276,8 @@ class TestsLoadResults(unittest.TestCase):
 
         # for the comparison we need to have the columns with empty/number
         # mixed data types in a consistent data type
-        for col in ['azimuth', 'radius', 'blade_nr', 'io_nr', 'flap_nr', 'dll']:
+        for col in ['azimuth', 'radius', 'blade_nr', 'io_nr', 'flap_nr',
+                    'dll', 'radius_actual']:
             df1.loc[df1[col]=='', col] = np.nan
             df1[col] = df1[col].astype(np.float32)
             df2.loc[df2[col]=='', col] = np.nan

@@ -546,7 +546,8 @@ class LoadResults(ReadHawc2):
     cols = set(['bearing_name', 'sensortag', 'bodyname', 'chi', 'component',
                 'pos', 'coord', 'sensortype', 'radius', 'blade_nr', 'units',
                 'output_type', 'io_nr', 'io', 'dll', 'azimuth', 'flap_nr',
-                'direction', 'wake_source_nr', 'center', 's', 'srel'])
+                'direction', 'wake_source_nr', 'center', 's', 'srel',
+                'radius_actual'])
 
     # start with reading the .sel file, containing the info regarding
     # how to read the binary file and the channel information
@@ -1076,22 +1077,32 @@ class LoadResults(ReadHawc2):
             # AERO CL, CD, CM, VREL, ALFA, LIFT, DRAG, etc
             # Cl, R=  0.5     deg      Cl of blade  1 at radius   0.49
             # Azi  1          deg      Azimuth of blade  1
+            #
+            # ch_details[ch, 2]:
+            # Angle of attack of blade   1 at radius   8.59 FOLLOWD BY USER LABEL
+            #
             # NOTE THAT RADIUS FROM ch_details[ch, 0] REFERS TO THE RADIUS
             # YOU ASKED FOR, AND ch_details[ch, 2] IS WHAT YOU GET, which is
             # still based on a mean radius (deflections change the game)
             elif self.ch_details[ch, 0].split(',')[0] in ch_aero:
                 sensortype = self.ch_details[ch, 0].split(',')[0]
-                # Blade number is identified as the first integer in the string
-                blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
-                blade_nr = int(blade_nr)
+
                 # sometimes the units for aero sensors are wrong!
                 units = self.ch_details[ch, 1]
                 # there is no label option
 
-                # radius what you get
-                # radius = dscr_list[-1]
-                # radius what you asked for, identified as the last float in the string
+                # Blade number is identified as the first integer in the string
+                # blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
+                # blade_nr = int(blade_nr)
+
+                # actual radius
+                rq = r'\.*of blade\s*(\d) at radius\s*([-+]?\d*\.\d+|\d+)'
                 s = self.ch_details[ch, 2]
+                blade_nr, radius_actual = re.findall(rq, s)[0]
+                blade_nr = int(blade_nr)
+
+                # radius what you asked for, identified as the last float in the string
+                s = self.ch_details[ch, 0]
                 radius = float(re.findall(r"[-+]?\d*\.\d+|\d+", s)[-1])
 
                 # and tag it
@@ -1100,6 +1111,7 @@ class LoadResults(ReadHawc2):
                 channelinfo = {}
                 channelinfo['sensortype'] = sensortype
                 channelinfo['radius'] = float(radius)
+                channelinfo['radius_actual'] = float(radius_actual)
                 channelinfo['blade_nr'] = blade_nr
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
