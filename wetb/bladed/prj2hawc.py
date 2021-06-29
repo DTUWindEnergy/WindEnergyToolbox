@@ -430,8 +430,8 @@ class Convert2Hawc(ReadBladedProject):
         starr[:,2] = 0.0 # no cg offset
         starr[:,3] = 0.0 # no cg offset
         # radius of gyration
-        starr[:,4] = np.sqrt(I_m/A) #ri_x
-        starr[:,5] = np.sqrt(I_m/A) #ri_y
+        starr[:,4] = np.sqrt(I_m/m) # ri_x = (I_m/m)**0.5 = (I_g/A)**0.5
+        starr[:,5] = np.sqrt(I_m/m) # ri_y = (I_m/m)**0.5 = (I_g/A)**0.5
         # shear center
         starr[:,6] = 0.0 # no shear center offset
         starr[:,7] = 0.0 # no shear center offset
