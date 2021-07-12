@@ -820,6 +820,14 @@ if __name__ == '__main__':
         prepare_failed(zipchunks=opt.zipchunks, compress=opt.compress,
                        wine_arch=opt.wine_arch, wine_prefix=opt.wine_prefix)
     if opt.dlcplot:
+
+        # simply plot all channels
+        # fname = os.path.join(POST_DIR, '%s_unique-channel-names.csv' % sim_id)
+        # df = pd.read_csv(fname, header=0, names=['c1', 'c2'])
+        # plot_chans = {}
+        # for i, k in enumerate(df['c2'].values.tolist()):
+        #     plot_chans['i=%i' % i] = [k]
+
         plot_chans = {}
         plot_chans['$B1_{flap}$'] = ['setbeta-bladenr-1-flapnr-1']
         plot_chans['$B2_{flap}$'] = ['setbeta-bladenr-2-flapnr-1']
