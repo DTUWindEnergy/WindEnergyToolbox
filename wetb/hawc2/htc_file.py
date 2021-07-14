@@ -196,7 +196,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
                 if self.modelpath == 'unknown':
                     p = os.path.dirname(self.filename)
-                    lu = [os.path.isfile(os.path.abspath(os.path.join(p, "../" * i, filename.replace("\\","/")))) for i in range(4)].index(True)
+                    lu = [os.path.isfile(os.path.abspath(os.path.join(p, "../" * i, filename.replace("\\", "/"))))
+                          for i in range(4)].index(True)
                     filename = os.path.join(p, "../" * lu, filename)
                 else:
                     filename = os.path.join(self.modelpath, filename)
@@ -444,8 +445,10 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             error_lines = [i for i, l in enumerate(log_lines) if 'error' in l.lower()]
             if error_lines:
                 import numpy as np
-                line_i = sorted(np.unique(np.r_[np.array([error_lines + i for i in np.arange(-3, 4)]).flatten(),
-                                                np.arange(-5, 0) + len(log_lines)]))
+                line_i = np.r_[np.array([error_lines + i for i in np.arange(-3, 4)]).flatten(),
+                               np.arange(-5, 0) + len(log_lines)]
+                line_i = sorted(np.unique(np.maximum(np.minimum(line_i, len(log_lines) - 1, 0))))
+
                 lines = ["%04d %s" % (i, log_lines[i]) for i in line_i]
                 for jump in np.where(np.diff(line_i) > 1)[0]:
                     lines.insert(jump, "...")
