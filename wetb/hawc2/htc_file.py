@@ -176,7 +176,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         self._contents = value
 
     def readfilelines(self, filename):
-        with self.open(self.unix_path(os.path.abspath(filename.replace('\\','/'))), encoding='cp1252') as fid:
+        with self.open(self.unix_path(os.path.abspath(filename.replace('\\', '/'))), encoding='cp1252') as fid:
             txt = fid.read()
         if txt[:10].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             txt = txt[3:]
@@ -443,12 +443,18 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             log_lines = log.split("\n")
             error_lines = [i for i, l in enumerate(log_lines) if 'error' in l.lower()]
             if error_lines:
-                i = error_lines[0]
-                error_log = "\n".join(log_lines[i - 3:i + 3])
+                import numpy as np
+                line_i = sorted(np.unique(np.r_[np.array([error_lines + i for i in np.arange(-3, 4)]).flatten(),
+                                                np.arange(-5, 0) + len(log_lines)]))
+                lines = ["%04d %s" % (i, log_lines[i]) for i in line_i]
+                for jump in np.where(np.diff(line_i) > 1)[0]:
+                    lines.insert(jump, "...")
+
+                error_log = "\n".join(lines)
             else:
                 error_log = log
-            raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
-                            (str(stdout), str(stderr), error_log, cmd))
+            raise Exception("\nError code: %s\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
+                            (errorcode, str(stdout), str(stderr), error_log, cmd))
         return str(stdout) + str(stderr), log
 
     def simulate_hawc2stab2(self, exe):
