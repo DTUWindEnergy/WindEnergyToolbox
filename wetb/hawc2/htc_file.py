@@ -447,7 +447,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 import numpy as np
                 line_i = np.r_[np.array([error_lines + i for i in np.arange(-3, 4)]).flatten(),
                                np.arange(-5, 0) + len(log_lines)]
-                line_i = sorted(np.unique(np.maximum(np.minimum(line_i, len(log_lines) - 1, 0))))
+                line_i = sorted(np.unique(np.maximum(np.minimum(line_i, len(log_lines) - 1), 0)))
 
                 lines = ["%04d %s" % (i, log_lines[i]) for i in line_i]
                 for jump in np.where(np.diff(line_i) > 1)[0]:
