@@ -1864,7 +1864,7 @@ def ReadEigenBody(fname, debug=False):
     return pd.DataFrame(df_dict)
 
 
-def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
+def ReadEigenStructure(fname, debug=False, max_modes=500):
     """
     Read HAWC2 structure eigenalysis result file
     ============================================
@@ -1915,7 +1915,7 @@ def ReadEigenStructure(file_path, file_name, debug=False, max_modes=500):
     # 8 Mode nr:  1:   3.58673E+00    3.58688E+00    5.81231E+00
     #   Mode nr:294:   0.00000E+00    6.72419E+09    6.28319E+02
 
-    FILE = opent(os.path.join(file_path, file_name))
+    FILE = opent(fname)
     lines = FILE.readlines()
     FILE.close()
 
