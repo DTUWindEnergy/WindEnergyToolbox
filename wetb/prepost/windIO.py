@@ -1864,7 +1864,7 @@ def ReadEigenBody(fname, debug=False):
     return pd.DataFrame(df_dict)
 
 
-def ReadEigenStructure(fname, debug=False, max_modes=500):
+def ReadEigenStructure(fname, debug=False):
     """
     Read HAWC2 structure eigenalysis result file
     ============================================
@@ -1924,25 +1924,27 @@ def ReadEigenStructure(fname, debug=False, max_modes=500):
     # we now the number of modes by having the number of lines
     nrofmodes = len(lines) - header_lines
 
-    modes_arr = np.ndarray((3, nrofmodes))
+    df = pd.DataFrame(np.ndarray((nrofmodes, 3)), dtype=np.float64,
+                      columns=['Fd_hz', 'Fn_hz', 'log_decr_pct'])
 
     for i, line in enumerate(lines):
-        if i > max_modes:
-            # cut off the unused rest
-            modes_arr = modes_arr[:, :i]
-            break
+        # if i > max_modes:
+        #     # cut off the unused rest
+        #     df.iloc[:,i] = modes_arr[:, :i]
+        #     break
 
         # ignore the header
         if i < header_lines:
             continue
 
-        # split up mode nr from the rest
-        parts = line.split(':')
-        # modenr = int(parts[1])
+        # split up mode nr from the rest, remove line ending
+        parts = line[:-1].split(':')
+        #modenr = int(parts[1])
         # get fd, fn and damping, but remove all empty items on the list
-        modes_arr[:, i-header_lines]=misc.remove_items(parts[2].split(' '), '')
+        # also cut off line
+        df.iloc[i-header_lines,:]=np.float64(misc.remove_items(parts[2].split(' '), ''))
 
-    return modes_arr
+    return df
 
 
 class UserWind(object):
