@@ -70,8 +70,7 @@ def setup_package(build_ext_switch=True):
                         'Click',
                         'jinja2', ]
 
-    setup(install_requires=install_requires,
-          setup_requires=install_requires + build_requires + sphinx,
+    setup(install_requires=install_requires+ build_requires + sphinx,
           cmdclass=cmd_class,
           ext_modules=extlist,
           long_description=long_description,
