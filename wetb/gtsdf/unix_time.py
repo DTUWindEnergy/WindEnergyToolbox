@@ -13,7 +13,7 @@ timestamp0 = datetime.utcfromtimestamp(0)
 def to_unix(dateTime):
     try:
         return (dateTime - timestamp0).total_seconds()
-    except:
+    except Exception:
         if hasattr(dateTime, "__len__"):
             return [(dt - timestamp0).total_seconds() for dt in dateTime]
         raise
@@ -34,9 +34,9 @@ def from_unix(sec):
             return datetime.utcfromtimestamp(0)
         return datetime.utcfromtimestamp(sec)
     else:
-        sec = np.array(sec).astype(np.float)
-        us = np.atleast_1d((sec * 1000000 % 1000000).astype(np.int))
-        sec = sec.astype(np.int)
+        sec = np.array(sec).astype(float)
+        us = np.atleast_1d((sec * 1000000 % 1000000).astype(int))
+        sec = sec.astype(int)
         S = np.atleast_1d(sec % 60)
         M = np.atleast_1d(sec % 3600 // 60)
         H = np.atleast_1d(sec % 86400 // 3600)

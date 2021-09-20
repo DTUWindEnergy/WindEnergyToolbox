@@ -62,7 +62,7 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
     >>> ampl, mean = rainflow_windap(signal)
     """
     check_signal(signal)
-    #type <double> is required by <find_extreme> and <rainflow>
+    # type <double> is required by <find_extreme> and <rainflow>
     signal = signal.astype(np.double)
     if np.all(np.isnan(signal)):
         return None
@@ -77,11 +77,11 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
         # If possible the module is compiled using cython otherwise the python implementation is used
 
 
-        #Convert to list of local minima/maxima where difference > thresshold
+        # Convert to list of local minima/maxima where difference > thresshold
         sig_ext = peak_trough.peak_trough(signal, thresshold)
 
 
-        #rainflow count
+        # rainflow count
         ampl_mean = pair_range.pair_range_amplitude_mean(sig_ext)
 
         ampl_mean = np.array(ampl_mean)
@@ -126,7 +126,7 @@ def rainflow_astm(signal):
 
     # Import find extremes and rainflow.
     # If possible the module is compiled using cython otherwise the python implementation is used
-    
+
     from wetb.fatigue_tools.rainflowcounting.rainflowcount_astm import find_extremes, rainflowcount
 
     # Remove points which is not local minimum/maximum

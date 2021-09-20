@@ -7,7 +7,8 @@ import struct
 import numpy as np
 import os
 
-def load(filename, name_stop=8, dtype=np.float):
+
+def load(filename, name_stop=8, dtype=float):
     """
     Parameters
     ----------
@@ -15,10 +16,10 @@ def load(filename, name_stop=8, dtype=np.float):
     - name_stop : int or str
         if int: Number of characters for name
         if str: name-description delimiter, e.g. " "
-    - dtype    
+    - dtype
     """
     if isinstance(filename, str):
-        fid = open(filename,'rb')
+        fid = open(filename, 'rb')
     elif hasattr(filename, "name"):
         fid = filename
         filename = fid.name
@@ -26,11 +27,11 @@ def load(filename, name_stop=8, dtype=np.float):
         _ = struct.unpack('i', fid.read(4))
         _ = struct.unpack('i', fid.read(4))
         title = fid.read(60).strip()
-     
+
         _ = struct.unpack('i', fid.read(4))
         _ = struct.unpack('i', fid.read(4))
         no_sensors = struct.unpack('i', fid.read(4))[0]
-     
+
         sensor_numbers = [struct.unpack('i', fid.read(4))[0] for _ in range(no_sensors)]
         _ = struct.unpack('i', fid.read(4))
         _ = struct.unpack('i', fid.read(4))
@@ -38,9 +39,9 @@ def load(filename, name_stop=8, dtype=np.float):
         time_step = struct.unpack('f', fid.read(4))[0]
         scale_factors = np.array([struct.unpack('f', fid.read(4))[0] for _ in range(no_sensors)], dtype=np.double)
         data = np.fromstring(fid.read(), 'int16').astype(dtype)
-    finally: 
+    finally:
         fid.close()
- 
+
 #     if title.isalnum():
 #         self.set_info(title, "", self.filename)
 #     else:
@@ -48,36 +49,36 @@ def load(filename, name_stop=8, dtype=np.float):
     try:
         data = data.reshape(len(data) // no_sensors, no_sensors)
     except ValueError:
-        raise ValueError("The number of data values (%d) is not divisible by the number of sensors (%d)" % (len(data), no_sensors))
- 
+        raise ValueError(
+            "The number of data values (%d) is not divisible by the number of sensors (%d)" %
+            (len(data), no_sensors))
+
     for i in range(data.shape[1]):
         data[:, i] *= scale_factors[i]
     no_scans = data.shape[0]
-     
- 
+
     # Load sensor file if exists
-    
-    
+
     sensor_filename = os.path.join(os.path.dirname(filename), "sensor")
-    sensor_info = {info[0]:info[1:] for info in read_sensor_info(sensor_filename, name_stop) }
+    sensor_info = {info[0]: info[1:] for info in read_sensor_info(sensor_filename, name_stop)}
 
     # set gain and offset for "Time"
     gains = []
     offsets = []
     names, units, descriptions = [], [], []
-    
+
     for sensor_nr in sensor_numbers:
- 
-        name, unit, description, gain, offset = sensor_info.get(sensor_nr, ["Attribute %d"%sensor_nr, '-','',1,0])
-        if sensor_nr==1 and name=="Time" and unit=="s":
-            data = data[:,1:]
+
+        name, unit, description, gain, offset = sensor_info.get(sensor_nr, ["Attribute %d" % sensor_nr, '-', '', 1, 0])
+        if sensor_nr == 1 and name == "Time" and unit == "s":
+            data = data[:, 1:]
             continue
         names.append(name)
         units.append(unit)
         descriptions.append(description)
         gains.append(gain)
         offsets.append(offset)
-    
+
     time = np.arange(time_start, time_start + data.shape[0] * time_step, time_step).reshape((no_scans, 1))
     #data = np.concatenate((time, data), axis=1)
     #gains = np.r_[1,gains]
@@ -86,10 +87,10 @@ def load(filename, name_stop=8, dtype=np.float):
     # self[:]+=self.offsets
     info = {"name": title,
             "description": filename,
-            "attribute_names": names, 
-            "attribute_units": units, 
+            "attribute_names": names,
+            "attribute_units": units,
             "attribute_descriptions": descriptions}
-    return time, data, info 
+    return time, data, info
 
 
 def read_sensor_info(sensor_file, name_stop=8):
@@ -99,7 +100,7 @@ def read_sensor_info(sensor_file, name_stop=8):
     - sensor_file
     - name_stop : int or str
         if int: Number of characters for name
-        if str: name-description delimiter, e.g. " "    
+        if str: name-description delimiter, e.g. " "
     """
 
     if hasattr(sensor_file, 'readlines'):
@@ -116,15 +117,14 @@ def read_sensor_info(sensor_file, name_stop=8):
         gain = float(line[1])
         offset = float(line[2])
         unit = line[5]
-        if isinstance(name_stop,int):
+        if isinstance(name_stop, int):
             name_desc = " ".join(line[6:])
             name = name_desc[:name_stop].strip()
             description = name_desc[name_stop:].strip()
-        elif isinstance(name_stop,str):
+        elif isinstance(name_stop, str):
             name_desc = (" ".join(line[6:])).split(name_stop)
             name = name_desc[0].strip()
             description = name_stop.join(name_desc[1:]).strip()
-            
 
         sensor_info.append((nr, name, unit, description, gain, offset))
     return sensor_info
@@ -135,7 +135,7 @@ def read_sensor_info(sensor_file, name_stop=8):
 #     f = open(filename, 'wb')
 #     time_att = ds.basis_attribute()
 #     sensors = [s for s in ds.attributes() if s is not time_att]
-#     
+#
 #     if isinstance(ds, FLEX4Dataset):
 #         data = ds[:]  # (ds[:]-ds.offsets)/ds.gains
 #     else:
@@ -152,7 +152,7 @@ def read_sensor_info(sensor_file, name_stop=8):
 #     f.write(struct.pack('ii', 0, 0))  # 2x empty int
 #     time = ds.basis_attribute()
 #     f.write(struct.pack('ff', time[0], time[1] - time[0]))  # start time and time step
-# 
+#
 #     scale_factors = np.max(np.abs(data), 0) / 32000
 #     f.write(struct.pack('f' * len(scale_factors), *scale_factors))
 #     # avoid dividing by zero
@@ -162,13 +162,13 @@ def read_sensor_info(sensor_file, name_stop=8):
 #     data = np.round(data.flatten()).astype(np.int16)
 #     f.write(struct.pack('h' * len(data), *data.tolist()))
 #     f.close()
-# 
+#
 #     # write sensor file
 #     f = open(os.path.join(os.path.dirname(filename), 'sensor'), 'w')
 #     f.write("Sensor list for %s\n" % filename)
 #     f.write(" No   forst  offset  korr. c  Volt    Unit   Navn    Beskrivelse------------\n")
 #     sensorlineformat = "%3s  %.3f   %.3f      1.00     0.00 %7s %-8s %s\n"
-# 
+#
 #     if isinstance(ds, FLEX4Dataset):
 #         gains = np.r_[ds.gains[1:], np.ones(ds.shape[1] - len(ds.gains))]
 #         offsets = np.r_[ds.offsets[1:], np.zeros(ds.shape[1] - len(ds.offsets))]

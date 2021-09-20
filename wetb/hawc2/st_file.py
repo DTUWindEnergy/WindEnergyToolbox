@@ -94,7 +94,7 @@ class StFile(object):
                 set_nr, no_rows = map(int, set_lines[0].split()[:2])
                 assert set_nr not in set_data_dict
                 linelst = [set_lines[i].split() for i in range(1, no_rows + 1)]
-                set_data_dict[set_nr] = np.array(linelst, dtype=np.float)
+                set_data_dict[set_nr] = np.array(linelst, dtype=float)
             self.main_data_sets[mset_nr] = set_data_dict
 
         if len(linelst[0])==len(stc.split()):

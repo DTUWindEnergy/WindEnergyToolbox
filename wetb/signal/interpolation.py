@@ -43,8 +43,8 @@ def interpolate(x, xp, yp, max_xp_step=None, max_dydxp=None, cyclic_range=None, 
     [359,nan,0,175,350]
     """
 
-    xp = np.array(xp, dtype=np.float)
-    yp = np.array(yp, dtype=np.float)
+    xp = np.array(xp, dtype=float)
+    yp = np.array(yp, dtype=float)
     assert xp.shape[0] == yp.shape[0], "xp and yp must have same length (%d!=%d)" % (xp.shape[0], yp.shape[0])
     non_nan = ~(np.isnan(xp) & np.isnan(yp))
     yp = yp[non_nan]

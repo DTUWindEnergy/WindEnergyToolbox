@@ -39,7 +39,7 @@ class TestSubsetMean(unittest.TestCase):
         self.assertEqual(p[1], data[2501:5000, 0].mean())
 
     def test_non_nan_index_trigger(self):
-        sensor = np.arange(18).astype(np.float)
+        sensor = np.arange(18).astype(float)
         sensor[[5, 11]] = np.nan
         triggers = non_nan_index_trigger(sensor, 3)
         for i1, i2 in triggers:
@@ -48,7 +48,7 @@ class TestSubsetMean(unittest.TestCase):
 
 
     def test_subset_mean_trigger_tuple(self):
-        sensor = np.arange(18).astype(np.float)
+        sensor = np.arange(18).astype(float)
         triggers = non_nan_index_trigger(sensor, 3)
         np.testing.assert_array_equal(subset_mean(sensor, triggers), [ 1., 4., 7., 10., 13., 16])
 
@@ -58,7 +58,7 @@ class TestSubsetMean(unittest.TestCase):
         np.testing.assert_array_equal(subset_mean(sensor, triggers), [ 2, 5, 8, 11, 14])
 
         #nan in the middle, noneq step and len
-        sensor = np.arange(18).astype(np.float)
+        sensor = np.arange(18).astype(float)
         sensor[[5, 11]] = np.nan
         triggers = non_nan_index_trigger(sensor, 3)
 

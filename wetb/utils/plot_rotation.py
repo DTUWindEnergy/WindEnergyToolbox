@@ -58,7 +58,7 @@ def set_aspect_equal():
 
 
 def vs_array(s, shape):
-    arr = np.array(s.strip().replace("D", "E").split("\n"), dtype=np.float)
+    arr = np.array(s.strip().replace("D", "E").split("\n"), dtype=float)
     if len(np.atleast_1d(shape)) == 2:
         arr = arr.reshape(shape[::-1]).T
     return arr

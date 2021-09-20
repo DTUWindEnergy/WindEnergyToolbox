@@ -48,7 +48,7 @@ class Test_gsdf(unittest.TestCase):
         fn = tmp_path + "test_compress2stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
         del info['dtype']
-        gtsdf.save(tmp_path + "test_compress2stat2.hdf5", data, time=time, dtype=np.float, **info)
+        gtsdf.save(tmp_path + "test_compress2stat2.hdf5", data, time=time, dtype=float, **info)
         gtsdf.compress2statistics(fn)
         self.assertLess(os.path.getsize(fn) * 50, os.path.getsize(tfp + 'test.hdf5'))
 

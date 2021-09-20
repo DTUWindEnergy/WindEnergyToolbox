@@ -142,9 +142,9 @@ def abvrel2xyz_old(alpha, beta, vrel):
     z : array_like
         Wind component in beta plane (positive for negative beta)
     """
-    alpha = np.array(alpha, dtype=np.float)
-    beta = np.array(beta, dtype=np.float)
-    vrel = np.array(vrel, dtype=np.float)
+    alpha = np.array(alpha, dtype=float)
+    beta = np.array(beta, dtype=float)
+    vrel = np.array(vrel, dtype=float)
 
     sign_vsx = -((np.abs(beta) > np.pi / 2) * 2 - 1)  # +1 for |beta| < 90, -1 for |beta|>90
     sign_vsy = np.sign(alpha)  # + for alpha > 0
@@ -198,9 +198,9 @@ def abvrel2xyz(alpha, beta, vrel):
     z : array_like
         Wind component in beta plane (positive for negative beta)
     """
-    alpha = np.array(alpha, dtype=np.float)
-    beta = np.array(beta, dtype=np.float)
-    vrel = np.array(vrel, dtype=np.float)
+    alpha = np.array(alpha, dtype=float)
+    beta = np.array(beta, dtype=float)
+    vrel = np.array(vrel, dtype=float)
 
     sign_vsx = ((np.abs(beta) > np.pi / 2) * 2 - 1)  # -1 for |beta| < 90, +1 for |beta|>90
     sign_vsy = -np.sign(alpha)  # - for alpha > 0

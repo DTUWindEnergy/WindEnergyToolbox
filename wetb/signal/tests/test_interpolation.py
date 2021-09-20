@@ -27,10 +27,10 @@ class TestInterpolation(unittest.TestCase):
 
 
     def test_interpolate2(self):
-        x = np.arange(0, 100, 5, dtype=np.float)
-        xp = np.arange(0, 100, 10, dtype=np.float)
+        x = np.arange(0, 100, 5, dtype=float)
+        xp = np.arange(0, 100, 10, dtype=float)
         xp = np.r_[xp[:3], xp[5:]]
-        yp = np.arange(10, dtype=np.float)
+        yp = np.arange(10, dtype=float)
         yp[7:8] = np.nan
         yp = np.r_[yp[:3], yp[5:]]
 

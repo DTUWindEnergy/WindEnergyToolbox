@@ -53,7 +53,7 @@ def transformation_matrix(angles, xyz):
         n = 1
     else:
         n = len(angles)
-    m = np.zeros(n * 9, np.float)
+    m = np.zeros(n * 9, float)
     cosx = np.cos(angles)
     sinx = np.sin(angles)
     m[indexes[xyz][0]::9] = 1
@@ -89,7 +89,7 @@ def rotmat(angles, xyz):
         n = 1
     else:
         n = len(angles)
-    m = np.zeros(n * 9, np.float)
+    m = np.zeros(n * 9, float)
     cosx = np.cos(angles)
     sinx = np.sin(angles)
     m[indexes[xyz][0]::9] = 1
@@ -168,7 +168,7 @@ def dots(rotmats, v):
     else:
         if m.shape[0] != v.shape[1]:
             raise Exception("m must have same dimension as v has number of columns")
-        res = np.zeros_like(v, dtype=np.float)
+        res = np.zeros_like(v, dtype=float)
         for i in range(v.shape[1]):
             res[:, i] = np.dot(m[i], v[:, i])
         return res
@@ -197,7 +197,7 @@ def rotate(rotmats, v):
         if v.shape[0] != rotmats.shape[0]:
             raise Exception("V and rotmats must have same first dimension")
         v = v.T
-        v_rot = np.zeros_like(v, dtype=np.float)
+        v_rot = np.zeros_like(v, dtype=float)
         for i in range(n):
             v_rot[:, i] = np.dot(rotmats[i], v[:, i])
         return v_rot.T
@@ -264,11 +264,11 @@ def _rotate(v, angle, rotfunc):
     if len(v.shape) == 1:
         assert angle.shape[0] == 1
         assert v.shape[0] == 3
-        return np.array(rotfunc(v[0], v[1], v[2], cos, sin), dtype=np.float).T
+        return np.array(rotfunc(v[0], v[1], v[2], cos, sin), dtype=float).T
     else:
         assert angle.shape[0] == 1 or angle.shape[0] == v.shape[0]
         assert v.shape[1] == 3
-        return np.array(rotfunc(v[:, 0], v[:, 1], v[:, 2], cos, sin), dtype=np.float).T
+        return np.array(rotfunc(v[:, 0], v[:, 1], v[:, 2], cos, sin), dtype=float).T
 
 
 #=======================================================================================================================

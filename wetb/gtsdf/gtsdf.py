@@ -453,7 +453,7 @@ def _add_statistic_data(file, stat_data, statistics=['min', 'mean', 'max', 'std'
     f = h5py.File(file, "a")
     stat_grp = f.create_group("Statistic")
     stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
-    stat_grp.create_dataset("statistic_data", data=stat_data.astype(np.float))
+    stat_grp.create_dataset("statistic_data", data=stat_data.astype(float))
     f.close()
 
 

@@ -64,7 +64,7 @@ def load_ascii_output(filename):
 
         # Data, up to end of file or empty line (potential comment line at the end)
         data = np.array([l.strip().split() for l in takewhile(
-            lambda x: len(x.strip()) > 0, f.readlines())]).astype(np.float)
+            lambda x: len(x.strip()) > 0, f.readlines())]).astype(float)
         return data, info
 
 
