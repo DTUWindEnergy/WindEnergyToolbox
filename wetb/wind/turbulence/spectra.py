@@ -102,13 +102,13 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
             assert u.shape[1] == k.shape[0]
         k1_vec = np.array([np.linspace(0, k_ / 2, len(u) // 2)[1:] for k_ in k]).T
     else:
-        assert np.abs(np.mean(u)) < 1
+        #assert np.abs(np.mean(u)) < 1
         if v is not None:
             assert np.abs(np.mean(v)) < 1
         if w is not None:
             assert np.abs(np.mean(w)) < 1
         assert isinstance(k, float)
-        k1_vec = np.linspace(0, k / 2, len(u) / 2)[1:]
+        k1_vec = np.linspace(0, k / 2, int(len(u) / 2))[1:]
     if detrend:
         u, v, w = detrend_wsp(u, v, w)
 

@@ -66,10 +66,8 @@ def get_mann_model_spectra(ae, L, G, k1):
     xq = np.log10(L * k1)
     yq = (np.zeros_like(xq) + G)
     f = L ** (5 / 3) * ae
-    uu = f * RBS1.ev(yq, xq)
-    vv = f * RBS2.ev(yq, xq)
-    ww = f * RBS3.ev(yq, xq)
-    uw = f * RBS4.ev(yq, xq)
+    m = (yq >= 0) & (yq <= 5) & (xq >= -3) & (xq <= 3)
+    uu, vv, ww, uw = [f * np.where(m, RBS.ev(yq, xq), np.nan) for RBS in [RBS1, RBS2, RBS3, RBS4]]
     return uu, vv, ww, uw
 
 
@@ -238,6 +236,15 @@ def var2ae(variance, L, G, U, T=600, sample_frq=10, plt=False):
     return ae
 
 
+def ae2ti(ae23, L, G, U, T=600, sample_frq=10):
+    k_low, k_high = 2 * np.pi / (U * np.array([T, 1 / sample_frq]))
+    k1 = 10 ** (np.linspace(np.log10(k_low), np.log10(k_high), 1000))
+
+    uu = get_mann_model_spectra(ae23, L, G, k1)[0]
+    var = np.trapz(2 * uu[:], k1[:])
+    return np.sqrt(var) / U
+
+
 def fit_ae(spatial_resolution, u, L, G, plt=False):
     """Fit alpha-epsilon to match variance of time series
 
@@ -310,7 +317,7 @@ def plot_fit(ae, L, G, k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_si
 def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv', 'ww', 'uw']):
     if plt is None:
         import matplotlib.pyplot as plt
-    mf = 10 ** (np.linspace(-4, 1, 1000))
+    mf = 10 ** (np.linspace(-4, 3, 1000000))
     muu, mvv, mww, muw = get_mann_model_spectra(ae, L, G, mf)
     plt.title("ae: %.3f, L: %.2f, G:%.2f" % (ae, L, G))
     if 'uu' in spectra:

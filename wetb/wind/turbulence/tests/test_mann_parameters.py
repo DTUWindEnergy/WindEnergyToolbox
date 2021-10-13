@@ -17,7 +17,7 @@ from wetb.wind.turbulence.spectra import spectra_from_time_series, spectra,\
     plot_spectra, logbin_spectra
 import warnings
 from wetb.wind.turbulence import mann_turbulence
-from wetb.wind.turbulence.mann_parameters import var2ae, fit_ae
+from wetb.wind.turbulence.mann_parameters import var2ae, fit_ae, ae2ti
 from numpy import spacing
 
 
@@ -156,6 +156,16 @@ class TestMannTurbulence(unittest.TestCase):
     def test_fit_ae2var(self):
         u = mann_turbulence.load(get_test_file("h2a8192_8_8_16384_32_32_0.15_10_3.3u.dat"), (8192, 8, 8))
         self.assertAlmostEqual(fit_ae(spatial_resolution=2, u=u, L=10, G=3.3), .15, delta=.02)
+
+    def test_ae2ti(self):
+        u = mann_turbulence.load(get_test_file("h2a8192_8_8_16384_32_32_0.15_10_3.3u.dat"), (8192, 8, 8))
+        dx = 2
+        U = 10
+        dt = dx / U
+        T = 16384 / U
+        ae23 = var2ae(variance=u.var(), L=10, G=3.3, U=U, T=T, sample_frq=1 / dt)
+        ti = u.std() / U
+        self.assertAlmostEqual(ae2ti(ae23, L=10, G=3.3, U=U, T=T, sample_frq=1 / dt), ti)
 
 
 if __name__ == "__main__":
