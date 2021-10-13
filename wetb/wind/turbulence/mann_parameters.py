@@ -317,6 +317,7 @@ def plot_fit(ae, L, G, k1, uu, vv=None, ww=None, uw=None, mean_u=1, log10_bin_si
 def plot_mann_spectra(ae, L, G, style='-', u_ref=1, plt=None, spectra=['uu', 'vv', 'ww', 'uw']):
     if plt is None:
         import matplotlib.pyplot as plt
+    mf = 10 ** (np.linspace(-4, 3, 1000))
     mf = 10 ** (np.linspace(-4, 3, 1000000))
     muu, mvv, mww, muw = get_mann_model_spectra(ae, L, G, mf)
     plt.title("ae: %.3f, L: %.2f, G:%.2f" % (ae, L, G))
