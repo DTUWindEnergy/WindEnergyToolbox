@@ -1223,23 +1223,33 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1]
 
                 # but remove the comma
-                x = items_ch2[-2][:-1]
-                y = items_ch2[-1]
-
+                z = items_ch2.index('x,y=')
+                x = items_ch2[z+1][:-1]
+                if x[-1] != '*':
+                    y = items_ch2[z+2]
                 # and tag it
-                tag = 'watersurface-global-%s-%s' % (x, y)
-                # save all info in the dict
-                channelinfo = {}
-                channelinfo['coord'] = 'global'
-                channelinfo['pos'] = (float(x), float(y))
-                channelinfo['units'] = units
-                channelinfo['chi'] = ch
+                    tag = 'watersurface-global-%s-%s' % (x, y)
+                    # save all info in the dict
+                    channelinfo = {}
+                    channelinfo['coord'] = 'global'
+                    channelinfo['pos'] = (float(x), float(y))
+                    channelinfo['units'] = units
+                    channelinfo['chi'] = ch
+                else:
+                    tag = 'watersurface-global-far-from-origin'
+                    # save all info in the dict
+                    channelinfo = {}
+                    channelinfo['coord'] = 'global'
+                    #channelinfo['pos'] = (float(x), float(y))
+                    channelinfo['units'] = units
+                    channelinfo['chi'] = ch       
 
             # -----------------------------------------------------------------
-            # WIND SPEED
+           # WIND SPEED
             # WSP gl. coo.,Vx
             # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
-            elif self.ch_details[ch, 0].startswith('WSP gl.'):
+            elif (self.ch_details[ch, 0].startswith('WSP gl.')
+            and len(self.ch_details[ch, 2].split('pos'))> 1):
                 units = self.ch_details[ch, 1]
                 direction = self.ch_details[ch, 0].split(',')[1]
                 tmp = self.ch_details[ch, 2].split('pos')[1]
@@ -1258,6 +1268,33 @@ class LoadResults(ReadHawc2):
                 channelinfo = {}
                 channelinfo['coord'] = 'global'
                 channelinfo['pos'] = (float(x), float(y), float(z))
+                channelinfo['units'] = units
+                channelinfo['chi'] = ch
+                channelinfo['sensortag'] = sensortag
+                # FIXME: direction is the same as component, right?
+                channelinfo['direction'] = direction
+                channelinfo['sensortype'] = 'wsp-global'
+
+            # -----------------------------------------------------------------
+            # WIND SPEED at body output
+            # WSP gl. coo.,Vx
+            # Global wind speed Vx, at body body_name  LABEL
+            elif (self.ch_details[ch, 0].startswith('WSP gl.')
+            and len(self.ch_details[ch, 2].split('body'))> 1):
+                units = self.ch_details[ch, 1]
+                direction = self.ch_details[ch, 0].split(',')[1]
+                tmp = self.ch_details[ch, 2].split('body')[1].split('  ')
+                sensortag = ''
+                if len(tmp) == 2:
+                    z, sensortag = tmp
+                elif len(tmp) == 1:
+                    z = tmp[0]
+
+                # and tag it
+                tag = 'windspeed-global-%s at body %s' % (direction,z)
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['coord'] = 'global'
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
