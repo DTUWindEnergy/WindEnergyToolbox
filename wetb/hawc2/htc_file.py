@@ -438,7 +438,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             with self.open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
                 log = fid.read()
         else:
-            log = stderr
+            log = "%s\n%s" % (str(stdout), str(stderr))
 
         if errorcode or 'Elapsed time' not in log:
             log_lines = log.split("\n")
