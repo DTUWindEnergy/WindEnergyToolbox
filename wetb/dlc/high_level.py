@@ -188,7 +188,7 @@ class DLCHighLevel(object):
 
     def distribution(self, value_key, dist_key, row):
         values = self.dlc_df[value_key][row]
-        if ":" in values:
+        if ":" in str(values):
             start, step, stop = [float(eval(v, globals(), self.__dict__)) for v in values.lower().split(":")]
             values = np.arange(start, stop + step, step)
         else:
