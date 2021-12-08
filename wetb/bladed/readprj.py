@@ -18,6 +18,8 @@ from lxml import objectify#, etree)
 from wetb.prepost import misc
 # from wetb.hawc2 import (HTCFile, AEFile, PCFile, StFile)
 
+_DTYPE = np.float64
+
 
 # TODO: this dictionary utility could go to a dict sub-class in misc?
 def find_next_unique_key(d, key):
@@ -210,10 +212,10 @@ class ReadBladedProject:
         # not matter at all since very little model data is actually considered
         data_arr = np.array(data)
         try:
-            data_arr = data_arr.astype(np.int32)
+            data_arr = data_arr.astype(np.int64)
         except ValueError:
             try:
-                data_arr = data_arr.astype(np.float32)
+                data_arr = data_arr.astype(_DTYPE)
             except ValueError:
                 pass
 
@@ -240,8 +242,9 @@ class ReadBladedProject:
         keysm = ['CM_X', 'CM_Y', 'MASS', 'SINER', 'RGRATIO', 'BETA_M']
 
         # self.bd['BSTIFFMB'].keys(), but only those relevant
-        keyss = ['EIFLAP', 'EIEDGE', 'BETA_S', 'GJ', 'CS_X', 'CS_Y', 'GAFLAP',
-                 'GAEDGE']
+        # keyss = ['EIFLAP', 'EIEDGE', 'BETA_S', 'GJ', 'CS_X', 'CS_Y', 'GAFLAP',
+        #          'GAEDGE']
+        keyss = ['EIFLAP', 'EIEDGE', 'BETA_S']
 
         mkeys = ['BGEOMMB', 'BMASSMB', 'BSTIFFMB']
         for mkey, keys in zip(mkeys, [keysg, keysm, keyss]):

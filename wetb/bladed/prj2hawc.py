@@ -5,9 +5,9 @@ Created on Wed Jun 23 11:20:28 2021
 
 @author: dave
 """
-
 import os
 from os.path import join as pjoin
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -15,16 +15,22 @@ import pandas as pd
 # from wetb.prepost import misc
 from wetb.hawc2 import (HTCFile, AEFile, PCFile, StFile)
 
-from readprj import ReadBladedProject
+from wetb.bladed.readprj import ReadBladedProject, _DTYPE
+
 
 
 # TODO: move to misc?
-def get_circular_inertia(d1, t, m):
+def get_circular_inertia(d1, t, rho):
+    """ d1:     outer diameter in meters
+        t:      thickness in meters
+        rho:    density
+    """
     d2 = d1 - 2*t
-    A = np.pi/4*(d1**2-d2**2)
-    I_g = np.pi/64*(d1**4-d2**4)
-    I_m = I_g/A*m
-    return A,I_g,I_m
+    A = np.pi / 4 * (d1**2 - d2**2)
+    m = rho * A
+    I_g = np.pi / 64 * (d1**4 - d2**4)
+    I_m = I_g / A * m
+    return m, A, I_g, I_m
 
 
 # TODO: move to HTCFile?
@@ -109,32 +115,33 @@ class Convert2Hawc(ReadBladedProject):
 
         # initiate PCFile objects
         pc = PCFile()
-        tc_arr = np.ndarray((nsets), dtype=np.float32)
+        tc_arr = np.ndarray((nsets), dtype=_DTYPE)
         pc_lst = []
 
         for i, ka in enumerate(key_app):
 
             # and assure cm is around quarter chord point
-            assert self.get_key('ADAT', 'XA')[0,0]==25
-
-            # prj.get_key('ADAT', f'SETNAME{ka}')
-            # prj.get_key('ADAT', f'SETNB{ka}')
-            # prj.get_key('ADAT', f'COMMENTS{ka}')
-            # prj.get_key('ADAT', f'DATE{ka}')
-            # prj.get_key('ADAT', f'REYN{ka}')
-            # prj.get_key('ADAT', f'DEPL{ka}')
-            # prj.get_key('ADAT', f'NALPHA{ka}')
-            # prj.get_key('ADAT', f'NVALS{ka}')
+            # assert self.get_key('ADAT', 'XA')[0,0]==25
+            if self.get_key('ADAT', 'XA')[0, 0] != 25:
+                warnings.warn('Cm not calculated at 1/4 chord!', stacklevel=1)
 
             tc_arr[i] = self.get_key('ADAT', f'THICK{ka}')
-            shape = (self.get_key('ADAT', f'NALPHA{ka}')[0,0], 4)
-            pcs = np.ndarray(shape, dtype=np.float32)
-            pcs[:,0] = self.get_key('ADAT', f'ALPHA{ka}')[0,:]
-            pcs[:,1] = self.get_key('ADAT', f'CL{ka}')[0,:]
-            pcs[:,2] = self.get_key('ADAT', f'CD{ka}')[0,:]
-            pcs[:,3] = self.get_key('ADAT', f'CM{ka}')[0,:]
+            
+            # add special logic for cylinders -- dynstall dies otherwise
+            if np.isclose(tc_arr[i], 100):
+                pcs = np.array([[-180, 0, 0.6, 0],
+                                [180, 0, 0.6, 0]])
+            
+            else:
+                shape = (self.get_key('ADAT', f'NALPHA{ka}')[0,0], 4)
+                pcs = np.ndarray(shape, dtype=_DTYPE)
+                pcs[:,0] = self.get_key('ADAT', f'ALPHA{ka}')[0,:]
+                pcs[:,1] = self.get_key('ADAT', f'CL{ka}')[0,:]
+                pcs[:,2] = self.get_key('ADAT', f'CD{ka}')[0,:]
+                pcs[:,3] = self.get_key('ADAT', f'CM{ka}')[0,:]
+            
             pc_lst.append(pcs)
-
+            
         # in BGEOM the airfoil number is referred to and not the thickness
         # sort properly on thickness
         isort = tc_arr.argsort()
@@ -277,11 +284,11 @@ class Convert2Hawc(ReadBladedProject):
         eiflap = self.get_key('BSTIFFMB', 'EIFLAP')[0,0::2]
         eiedge = self.get_key('BSTIFFMB', 'EIEDGE')[0,0::2]
         beta_s = self.get_key('BSTIFFMB', 'BETA_S')[0,0::2]
-        gj = self.get_key('BSTIFFMB', 'GJ')[0,0::2]
-        cs_x = self.get_key('BSTIFFMB', 'CS_X')[0,0::2]
-        cs_y = self.get_key('BSTIFFMB', 'CS_Y')[0,0::2]
-        gaflap = self.get_key('BSTIFFMB', 'GAFLAP')[0,0::2]
-        gaedge = self.get_key('BSTIFFMB', 'GAEDGE')[0,0::2]
+        # gj = self.get_key('BSTIFFMB', 'GJ')[0,0::2]
+        # cs_x = self.get_key('BSTIFFMB', 'CS_X')[0,0::2]
+        # cs_y = self.get_key('BSTIFFMB', 'CS_Y')[0,0::2]
+        # gaflap = self.get_key('BSTIFFMB', 'GAFLAP')[0,0::2]
+        # gaedge = self.get_key('BSTIFFMB', 'GAEDGE')[0,0::2]
         # FIXME: DEF_BETA_S probably says what the frame of reference is
         # assume 0 means "default is off"
         # self.get_key('BMASSMB', 'DEF_BETA_S')[0,0::2]
@@ -308,12 +315,18 @@ class Convert2Hawc(ReadBladedProject):
         # in BLADED rgratio = y/x, but in HAWC2 it x=y so we swap them
 
         # just choose E, G so the rest follows
-        E, G = 1e10, 1e09
+        E = 1e10
+        G = 1e17  # rigid in torsion, shear
         # however, we don't know EA (probably because stiff?), so assume A is
         # a full box based on chord length and maximum airfoil thickness
         # this will make the extensional stiffness EA quite large, but the user
         # would still end up with a physical meaningful value
-        A = chord*chord*thickness/100
+        A = np.ones_like(dist)  # assume A is unity
+        J = np.ones_like(dist)  # dummy value for J
+        gx = 0.5 * A  # shear factor, dummy of 0.5
+        gy = 0.5 * A  # shear factor, dummy of 0.5
+        sc_x = ea_x.copy()  # assume shear center collocated with elastic center
+        sc_y = ea_x.copy()  # assume shear center collocated with elastic center
 
         starr = np.ndarray((len(dist),19))
         starr[:,0] = dist
@@ -324,17 +337,17 @@ class Convert2Hawc(ReadBladedProject):
         starr[:,4] = ri_x
         starr[:,5] = ri_y
         # shear center
-        starr[:,6] = (50-cs_y)*0.01*chord
-        starr[:,7] = cs_x*0.01*chord
+        starr[:,6] = sc_x
+        starr[:,7] = sc_y
         # E, G: choose
         starr[:,8] = E
         starr[:,9] = G
         starr[:,10] = eiflap/E
         starr[:,11] = eiedge/E
-        starr[:,12] = gj/G
+        starr[:,12] = J
         # shear factor
-        starr[:,13] = gaflap/(G*A)
-        starr[:,14] = gaedge/(G*A)
+        starr[:,13] = gx
+        starr[:,14] = gy
         starr[:,15] = A
         starr[:,16] = -1*(beta_s - twist) # structural pitch
         starr[:,17] = ea_x
@@ -344,6 +357,25 @@ class Convert2Hawc(ReadBladedProject):
         st.main_data_sets = {1:{1:starr}}
         # st.cols = wetb.hawc2.st_file.stc.split()
         return st
+
+    def get_flange_masses(self):
+        """Get locations, masses of tower flanges.
+        Return nodes and z-offsets (tower coordinate system) for each flange.
+        """
+        
+        tower_stations = self.get_key('TGEOM', 'TJ')[0]
+        flange_zs = self.get_key('TMASS', 'HTPM')[0]
+        flange_ms = self.get_key('TMASS', 'MTPM')[0]
+        
+        nodes= []
+        off_zs = []
+        for flange_z, flange_m in zip(flange_zs, flange_ms):
+            node = np.argmax(flange_z < tower_stations)
+            off_z = -(flange_z - tower_stations[node - 1])
+            nodes.append(node)
+            off_zs.append(off_z)
+        
+        return flange_zs, flange_ms, nodes, off_zs
 
     def get_tower_c2_def_st(self):
         """Ignores nodes that are not at the centerline
@@ -357,76 +389,52 @@ class Convert2Hawc(ReadBladedProject):
 
         """
 
-        t_n_e = int(self.get_key('TGEOM', 'NTE'))
-        t_n_n = int(self.get_key('TGEOM', 'NTS'))
-        t_el_mat = self.get_key('TGEOM', 'ELSTNS')
-        t_n_coord = self.get_key('TGEOM', 'TCLOCAL')
-        # tdiam = self.get_key('TGEOM', 'SEAL')
-        # tdiam = self.get_key('TGEOM', 'HYDRO')
-        towmgt = self.get_key('TGEOM', 'TOWMGT')
-        # MATERIAL, NOMATS
-        material = self.get_key('TMASS', 'MATERIAL')[0,0::2]
-        nomats = self.get_key('TMASS', 'NOMATS')
-
-        # Index of tower nodes (nodes at zero x-y positions)
-        t_a = np.where((abs(t_n_coord[:,0])+abs(t_n_coord[:,1])) == 0)[0]
-        t_nodes = t_n_coord[t_a]
-        # sort index according to z position of the nodes
-        n_ind = t_a[np.argsort(t_nodes[:,2])]
-        t_nodes = t_n_coord[n_ind]
-        # Index for tower elemetns
-        # Elemet indexes which does not contain both tower nodes
-        ind_not = [i for i,j in enumerate(t_el_mat) if not (j[0]-1) in n_ind
-                   or not (j[1]-1) in n_ind]
-        # The elemetn indexes excluding the ind_not
-        ind_init = np.array([i for i in range(t_el_mat.shape[0]) if not i in ind_not])
-        sort_el = []
-        for i in n_ind[:-1]:
-            sort_el.append(np.where(t_el_mat[ind_init][:,0] == i+1)[0][0])
-        ind_el = ind_init[sort_el]
-
-        # safe all c2_def positions in one array
+        # save all c2_def positions in one array
+        tower_stations = self.get_key('TGEOM', 'TJ')  # tower stations [m]
+        t_nodes = np.zeros((tower_stations.size, 3))
+        t_nodes[:, 2] = tower_stations
         c2_arr = np.zeros((t_nodes.shape[0],4))
         c2_arr[:,0:2] = t_nodes[:,:-1].copy()
         c2_arr[:,2] = -t_nodes[:,-1] + t_nodes[0,-1] # It is minus for HAWC2 model
         c2_arr[:,3] = 0.0
-        # element properties
-        t_d =  self.get_key('TGEOM', 'TDIAM')[ind_el]
-        material = self.get_key('TMASS', 'MATERIAL')[0,0::2][ind_el]
-        t_thick = self.get_key('TMASS', 'WALLTHICK')[ind_el]
-        towmgt = self.get_key('TGEOM', 'TOWMGT')[ind_el]
-        # Mass
-        t_m = self.get_key('TMASS', 'TOWM')[ind_el]
-        t_p_m = self.get_key('TMASS', 'TOWPMI')[ind_el] # point mass for elements and nodes
-        t_flood = self.get_key('TMASS', 'FLOODED')[ind_el]
+                
         # material props from prj file
+        material = self.get_key('TMASS', 'MATERIAL')[0]
         name_mat = np.unique(material)
         mat_prop = {}
         for i in name_mat:
             mat_prop[i] = self.get_key('TMASS', "%s"%i) # rho, E, G
+            if mat_prop[i][0][0] <= 0:
+                warnings.warn('Tower density is not positive! Setting to 8050.')
+                mat_prop[i][0][0] = 8050
+            if mat_prop[i][0][1] <= 0:
+                warnings.warn('Tower E is not positive! Setting to 2.1E+18.')
+                mat_prop[i][0][1] = 2.1E18
+            if mat_prop[i][0][2] <= 0:
+                warnings.warn('Tower G is not positive! Setting to 7.93E17.')
+                mat_prop[i][0][2] = 7.93E17
+        t_mat = np.array([mat_prop[i][0] for i in material])  # tower material array [nstn x 3]
+        
+        # dimensions from TMASS
+        t_diam = self.get_key('TGEOM', 'TDIAM')  # tower diameter [m]
+        t_thick = self.get_key('TMASS', 'WALLTHICK')  # wall thickness [mm]
+        
+        # get the inertial values
+        d1 = t_diam.copy()  # outer diameter [m]
+        t = t_thick.copy() * 1e-3  # thickness [m]
+        rho = t_mat[:, 0]  # density [kg/m3]
+        m, A, I_g, I_m = get_circular_inertia(d1, t, rho)
+        
+        # compare calculated mass to TOWM
+        t_m = self.get_key('TMASS', 'TOWM')
+        np.testing.assert_allclose(m, t_m, atol=0.1)
+               
 
-        t_mat = np.array([mat_prop[i][0] for i in material])
-
-        if np.sum(t_thick[1:,0] - t_thick[:-1,1]) > 1e-9:
-            print('Diameters are not continous along the tower')
-        if (name_mat.shape[0] > 1):
-            print('There are %i materials in tower!' %name_mat.shape[0])
-        d = np.zeros(t_d.shape[0]+1)
-        t = np.zeros(t_thick.shape[0]+1)
-        mat = np.zeros((t_mat.shape[0]+1,t_mat.shape[1]))
-        d[1:] = t_d[:,1]
-        t[1:] = t_thick[:,1]
-        mat[1:,:] = t_mat.copy()
-        d[0] = t_d[0,1]
-        t[0] = t_thick[0,1]
-        mat[0,:] = t_mat[0,:].copy()
-
-        A,I_g,I_m = get_circular_inertia(d,t,mat[:,0])
         # FIXME: MAYBE ANOTHER FIX FOR DIFFERENT MATERIALS
         # return c2_arr
-        starr = np.zeros((c2_arr.shape[0],19))
+        starr = np.zeros((c2_arr.shape[0], 19))
         starr[:,0] = -c2_arr[:,2] #
-        starr[:,1] = A*mat[:,0]
+        starr[:,1] = m
         starr[:,2] = 0.0 # no cg offset
         starr[:,3] = 0.0 # no cg offset
         # radius of gyration
@@ -436,8 +444,8 @@ class Convert2Hawc(ReadBladedProject):
         starr[:,6] = 0.0 # no shear center offset
         starr[:,7] = 0.0 # no shear center offset
         # E, G: choose
-        starr[:,8] = mat[:,1]
-        starr[:,9] = mat[:,2]
+        starr[:,8] = t_mat[:, 1]
+        starr[:,9] = t_mat[:, 2]
         starr[:,10] = I_g
         starr[:,11] = I_g
         starr[:,12] = I_g*2
@@ -484,7 +492,7 @@ class Convert2Hawc(ReadBladedProject):
 
         return cmass_hub, root
 
-    def get_drivertain(self, len_shaft):
+    def get_drivetrain(self, len_shaft):
 
         # TODO: brake
         # MSTART BRAKE
@@ -495,7 +503,7 @@ class Convert2Hawc(ReadBladedProject):
         gratio = self.get_key('DTRAIN', 'GRATIO')[0,0]
         # The additional inertia of the high speed shaft may also be specified
         # along with the inertia of the gearbox which is referred to the HSS.
-        gbxinert = self.get_key('DTRAIN', 'GBXINERT')[0,0] # gearbox inertia
+        # gbxinert = self.get_key('DTRAIN', 'GBXINERT')[0,0] # gearbox inertia
         # FIXME: brake position?
         bpos = self.get_key('DTRAIN', 'BPOS')[0,0]
         # LSS seems to have a DOF indicator in LSSDOF, and has 6 elements
@@ -540,7 +548,7 @@ class Convert2Hawc(ReadBladedProject):
         st.main_data_sets = {1:{1:starr}}
 
         # FIXME: INERTIATOCLUTCH??
-        inertiatoclutch = self.get_key('DTRAIN', 'INERTIATOCLUTCH')
+        # inertiatoclutch = self.get_key('DTRAIN', 'INERTIATOCLUTCH')
 
         # FIXME: what is the location of these inertia's?
         # FIXME: what is the mass? It seems the mass is put elsewhere?
@@ -549,12 +557,11 @@ class Convert2Hawc(ReadBladedProject):
         # cmass_gen = {'x':x, 'y':y, 'z':z, 'm':nacmas,
         #              'Ixx':Ixx, 'Iyy':Iyy, 'Izz':Izz}
 
-        cmass_lss = {'x':0, 'y':0, 'z':0, 'm':0,'Ixx':0, 'Iyy':0, 'Izz':ginert}
         # convert HSS inertia to LSS
-        cmass_hss = {'x':0, 'y':0, 'z':0, 'm':0,'Ixx':0, 'Iyy':0,
-                     'Izz':gbxinert*gratio*gratio}
+        gen_iner_lss = ginert * gratio * gratio
+        cmass_gen = {'x':0, 'y':0, 'z':0, 'm':0,'Ixx':0, 'Iyy':0, 'Izz':gen_iner_lss}
 
-        return cmass_lss, cmass_hss, st
+        return cmass_gen, st
 
     def get_nacelle(self):
 
@@ -620,22 +627,23 @@ class Convert2Hawc(ReadBladedProject):
         Iyy = iroll
         Izz = iyaw
 
-        cmass_nacelle = {'x':x, 'y':y, 'z':z, 'm':nacmas,
-                         'Ixx':Ixx, 'Iyy':Iyy, 'Izz':Izz}
+        cmass_nacelle = {'x': x, 'y': y, 'z': z, 'm': nacmas,
+                         'Ixx': Ixx, 'Iyy': Iyy, 'Izz': Izz}
 
         return cmass_nacelle, len_shaft, len_towertop
 
     def get_towershadow_drag(self):
-        # TODO: tower shadow and tower aerodrag
+        """Get the aerodrag values"""
 
-        # MSTART TOWSDW
-        # TSMODEL	x
-        # TDCORR	 x
-        # MAXDEF	 x.x
-        # WIDTH	 x
-        # LREF	 x.x
+        tstart, tend = self.get_key('TGEOM', 'TJ')[0][[0, -1]]
+        dbottom, dtop = self.get_key('TGEOM', 'TDIAM')[0][[0, -1]]
 
-        return
+        aerodrag = np.zeros((2, 3))
+        aerodrag[:, 0] = [tstart, tend]  # tower bottom and top
+        aerodrag[:, 1] = 0.6  # constant 0.6 drag for entire tower
+        aerodrag[:, 2] = [dbottom, dtop]  # tower bottom and top
+
+        return aerodrag
 
     def get_control(self):
 
@@ -678,18 +686,26 @@ class Convert2Hawc(ReadBladedProject):
 
         return
 
-    def convert(self, fname_htc):
+    def convert(self, fname_tmpl, fname_htc, modelpath=None, save=True):
 
         fname_prj = os.path.basename(fname_htc).replace('.htc', '')
 
         # for convenience, we start from an htc template that otherwise has the
         # right structure, but has only 2 nodes for each body.
         # assume it is in the same folder as where the HTC will be written to
-        basepath = os.path.dirname(fname_htc)
-        htc = HTCFile(pjoin(basepath, 'template.htc'))
+        basepath = os.path.dirname(modelpath)
+        htc = HTCFile(fname_tmpl, modelpath=modelpath)
 
-        # prj = self.PRJ_to_HAWC(pjoin(version, fname_prj))
-        # plot_bladed(prj)
+        # add the relevant body/struc commands
+        htc.new_htc_structure.add_line(' ', [],
+                                       comments='struct_inertia_output_file_name ' +
+                                       f'bodyeig/{fname_prj}_struc_inertia.dat;')
+        htc.new_htc_structure.add_line(' ', [],
+                                       comments='structure_eigenanalysis_file_name ' +
+                                       f'bodyeig/{fname_prj}_struc_eig.dat;')
+        htc.new_htc_structure.add_line(' ', [],
+                                       comments='body_eigenanalysis_file_name ' +
+                                       f'bodyeig/{fname_prj}_body_eig.dat;')
 
         # cone = prj.get_key('RCON', 'CONE')
         # Lateral offset: the horizontal offset between the shaft and tower axes.
@@ -704,7 +720,7 @@ class Convert2Hawc(ReadBladedProject):
         # extract blade geometry, and add to c2_def section in the htc file
         c2_blade = self.get_blade_c2_def()
         htc = add_c2_arr_htc(htc, c2_blade, 'blade1')
-
+        
         # -------------------------------------------------------------------------
         # NACELLE
         cmass_nacelle, len_shaft, len_towertop = self.get_nacelle()
@@ -729,20 +745,20 @@ class Convert2Hawc(ReadBladedProject):
         htc = add_c2_arr_htc(htc, c2_s, 'shaft')
 
         # -------------------------------------------------------------------------
-        # generator and gearbox inertia's, shaft torsional flexibility
-        cmass_lss, cmass_hss, st_shaft = self.get_drivertain(len_shaft)
-        st_shaft.save(pjoin(basepath, f'{fname_prj}_shaft.st'))
+        # generator's, shaft torsional flexibility
+        cmass_gen, st_shaft = self.get_drivetrain(len_shaft)
+        st_shaft.save(pjoin(basepath, f'data/{fname_prj}_shaft.st'))
 
         shaft = htc['new_htc_structure'].get_subsection_by_name('shaft')
         # LSS inertia
-        values = [v for k,v in cmass_lss.items()]
-        cmass = shaft.add_line('concentrated_mass', [2] + values)
-        key = cmass.location().split('/')[-1]
-        shaft[key].comments = 'inertia LSS'
+        # values = [v for k,v in cmass_lss.items()]
+        # cmass = shaft.add_line('concentrated_mass', [2] + values)
+        # key = cmass.location().split('/')[-1]
+        # shaft[key].comments = 'inertia LSS'
         # Inertia of the HSS is already expressed wrt LSS
-        values = [v for k,v in cmass_hss.items()]
-        cmass = shaft.add_line('concentrated_mass', [2] + values)
-        gratio = self.get_key('DTRAIN', 'GRATIO')[0,0]
+        values = [v for k,v in cmass_gen.items()]
+        cmass = shaft.add_line('concentrated_mass', [1] + values)
+        gratio = self.get_key('DTRAIN', 'GRATIO')[0, 0]
         key = cmass.location().split('/')[-1]
         shaft[key].comments = f'inertia HSS, expressed in LSS, GBR={gratio}'
 
@@ -773,13 +789,37 @@ class Convert2Hawc(ReadBladedProject):
         values = [v for k,v in cmass_hub.items()]
         cmass = shaft.add_line('concentrated_mass', [2] + values)
         key = cmass.location().split('/')[-1]
-        shaft[key].comments = 'Hub inertia and mass'
+        shaft[key].comments = 'Hub mass and inertia'
 
         # -------------------------------------------------------------------------
-        # hub lenght
+        # hub length
         c2_hub = np.zeros((2,4))
         c2_hub[1,2] = hublen
         htc = add_c2_arr_htc(htc, c2_hub, 'hub1')
+
+        # -------------------------------------------------------------------------
+        # aerodrag and tower shadow
+        
+        # tower aerodrag
+        twr_aerodrag = self.get_towershadow_drag()
+        htc.aerodrag.aerodrag_element.sec__1.values = twr_aerodrag[0, :]
+        htc.aerodrag.aerodrag_element.sec__2.values = twr_aerodrag[1, :]
+        
+        # tower shadow
+        htc.wind.tower_shadow_potential_2.radius__1.values = [twr_aerodrag[0, 0],
+                                                              twr_aerodrag[0, 2]/2]
+        htc.wind.tower_shadow_potential_2.radius__2.values = [twr_aerodrag[1, 0],
+                                                              twr_aerodrag[1, 2]/2]
+        
+        # nacelle aerodrag
+        htc.aerodrag.aerodrag_element__2.sec__1.values = [0, 0.8, 5]
+        htc.aerodrag.aerodrag_element__2.sec__2.values = [len_shaft, 0.8, 5]
+
+        # -------------------------------------------------------------------------
+        # aero settings
+        
+        htc.aero.induction_method.values = [1]
+        htc.aero.aerosections.values = [20]
 
         # -------------------------------------------------------------------------
         # TOWER ST FILE and C2_DEF section
@@ -788,11 +828,75 @@ class Convert2Hawc(ReadBladedProject):
         # TODO: compare between TGEOM/TMASS and TSTIFF approaches, it seems that
         # the shear stiffness is not the same, see check_tower()
         c2_tow, st = self.get_tower_c2_def_st()
-        st.save(pjoin(basepath, f'{fname_prj}_tower.st'))
+        st.save(pjoin(basepath, f'data/{fname_prj}_tower.st'))
         htc = add_c2_arr_htc(htc, c2_tow, 'tower')
+        
+        # add tower-flange point masses
+        tower = htc['new_htc_structure'].get_subsection_by_name('tower')
+        flange_zs, masses, nodes, off_zs = self.get_flange_masses()
+        for flange_z, mass, node, off_z in zip(flange_zs, masses, nodes, off_zs):
+            cmass = tower.add_line('concentrated_mass', [node, 0, 0, off_z, mass, 0, 0, 0])
+            key = cmass.location().split('/')[-1]
+            tower[key].comments = f'Flange mass, {mass} kg at {flange_z} m'
 
         # hub height
         htc.wind.center_pos0.values = [0, 0, -self.get_key('RCON', 'HEIGHT')[0,0]]
+
+        # -------------------------------------------------------------------------
+        # set damping in tower and blades
+        
+        blade = htc['new_htc_structure'].get_subsection_by_name('blade1')
+        tower.damping_posdef = [0, 0, 0, 1.686E-3, 1.686E-3, 1e-1]
+        blade.damping_posdef = [0, 0, 0, 9.8e-4, 1.5e-3, 1e-3]
+
+        # -------------------------------------------------------------------------
+        # convergence limits
+        
+        htc.simulation.convergence_limits = [100, 1, 1e-7]
+
+        # -------------------------------------------------------------------------
+        # CONTROLLER
+        
+        htc.continue_in_file = './htc/md70_control.htc'
+
+        # -------------------------------------------------------------------------
+        # update output channles
+        
+        sensors = htc.output.sensors
+        nbodies_tower = tower.c2_def.nsec.values[0] - 1
+        nbodies_blade = blade.c2_def.nsec.values[0] - 1
+        for i, s in enumerate(sensors):
+            if 'tower yaw bearing' in str(s):
+                s.values[1:3] = [nbodies_tower, 2]
+            elif '50% local' in str(s):
+                s.values[1] = nbodies_blade // 2
+            elif 'Tower top' in str(s):
+                s.values[2:4] = [nbodies_tower, 1.0]
+            elif 'tip pos' in str(s):
+                s.values[2:4] = [nbodies_blade, 1.0]
+        
+        output = htc.output
+        output.add_line(' ', [], comments='DLL CHANNELS')
+        dlls = {1: [[1, 'Generator contactor [int]'],
+                    [2, 'Demanded blade 1 pitch [rad]'],
+                    [3, 'Demanded blade 2 pitch [rad]'],
+                    [4, 'Demanded blade 3 pitch [rad]'],
+                    [5, 'Collective demanded pit [rad]'],
+                    [6, 'Collective demanded pit rate [rad/s]'],
+                    [7, 'Demanded generator torque [Nm]'],
+                    [8, 'Safety system to activate [int]']],
+                2: [[1, 'Mgen LSS [Nm]'],
+                    [2, 'Pelec    [W]'],
+                    [3, 'Mframe   [Nm]'],
+                    [4, 'Mgen HSS [Nm]'],
+                    [8, 'Grid flag [0=run/1=stop]']]
+                }
+        for k, v in dlls.items():
+            [output.add_line('dll inpvec',
+                             [k, i, '#', s])
+             for (i, s) in v]
+        output.add_line(' ', [], comments='GENERAL')
+
 
         # -------------------------------------------------------------------------
         # set all file names correct
@@ -811,37 +915,33 @@ class Convert2Hawc(ReadBladedProject):
 
         htc['aero'].ae_filename.values[0] = f'data/{fname_prj}.ae'
         htc['aero'].pc_filename.values[0] = f'data/{fname_prj}.pc'
-
+        htc.simulation.logfile = f'log/{fname_prj}.log'
+        htc.output.filename = f'res/{fname_prj}'
+        
         # -------------------------------------------------------------------------
-        # SAVE HTC FILE
-        htc.save(pjoin(basepath, f'{fname_htc}'))
-
-        # -------------------------------------------------------------------------
-        # other data files
-
-        # Blade st file
+        # make other files
+        
         st = self.get_blade_st()
-        st.save(pjoin(basepath, f'{fname_prj}_blade.st'))
+        pc = self.get_pc()
+        ae = self.get_ae()        
 
-        # extract profile coefficients and save to pc file
-        pc = self.get_pc(setname_filter='cleanVG')
-        pc.save(pjoin(basepath, f'{fname_prj}.pc'))
-
-        # extract aerodynamic layout, and safe to ae file
-        ae = self.get_ae()
-        ae.save(pjoin(basepath, f'{fname_prj}.ae'))
-
-        # # BLADE c2_def
-        # c2_def = htc['new_htc_structure'].get_subsection_by_name('blade1')['c2_def']
-        # # iterate over all nsec lines, but ignore the line that gives the number of points
-        # for i, sec in enumerate(c2_def.keys()[1:]):
-        #     c2_arr[i,:] = c2_def[sec].values[1:]
-
-        # curvedlength = np.zeros(len(c2_arr[:,2]))
-        # for i in range(1,len(c2_arr[:,2])):
-        #     curvedlength[i]=curvedlength[i-1]+np.linalg.norm(c2_arr[i,0:3]-c2_arr[i-1,0:3])
-
-        # c2_arr = np.zeros((len(c2_def.keys())-1,4))
-        # # iterate over all nsec lines, but ignore the line that gives the number of points
-        # for i, sec in enumerate(c2_def.keys()[1:]):
-        #     c2_arr[i,:] = c2_def[sec].values[1:]
+        # save files if requested
+        if save:
+            
+            # -------------------------------------------------------------------------
+            # htc files
+            htc.save(pjoin(basepath, f'{fname_htc}'))
+    
+            # -------------------------------------------------------------------------
+            # other data files
+    
+            # Blade st file
+            st.save(pjoin(basepath, f'data/{fname_prj}_blade.st'))
+    
+            # extract profile coefficients and save to pc file
+            pc.save(pjoin(basepath, f'data/{fname_prj}.pc'))
+    
+            # extract aerodynamic layout, and safe to ae file
+            ae.save(pjoin(basepath, f'data/{fname_prj}.ae'))
+        
+        return htc, st, pc, ae
