@@ -888,7 +888,7 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             #   0    1      2        3       4  5     6     7 and up
             # Force  Fx Mbdy:blade nodenr:   2 coo: blade  TAG TEXT
-            elif self.ch_details[ch, 2].startswith('Force'):
+            elif self.ch_details[ch, 2].startswith('Force  F'):
                 coord = items_ch2[6]
                 bodyname = items_ch2[2].replace('Mbdy:', '')
                 nodenr = '%03i' % int(items_ch2[4])
@@ -913,6 +913,43 @@ class LoadResults(ReadHawc2):
                 channelinfo['pos'] = pos
                 channelinfo['sensortype'] = sensortype
                 channelinfo['component'] = component
+                channelinfo['chi'] = ch
+                channelinfo['sensortag'] = sensortag
+                channelinfo['units'] = self.ch_details[ch, 1]
+
+            # -----------------------------------------------------------------
+            #        0    1      2        3       4    5     6     7    8           9 and up
+            # Force_intp  Fz Mbdy:blade1 s=  11.87[m] s/S=   0.95 coo: local_aero center:default
+            # Moment_intp  Mx Mbdy:blade1 s=  11.87[m] s/S=   0.95 coo: local_aero center:default
+            elif items_ch2[0].endswith('_intp'):
+
+                sensortype = 'forcemomentvec_interp'
+
+                coord = items_ch2[8]
+                bodyname = items_ch2[2].replace('Mbdy:', '')
+                s = items_ch2[4].replace('[m]', '')
+                srel = items_ch2[6]
+                center = items_ch2[9].split(':')[1]
+                component = items_ch2[1]
+
+                if len(items_ch2) > 9:
+                    sensortag = ' '.join(items_ch2[10:])
+                else:
+                    sensortag = ''
+
+                # and tag it
+                pos = 's-%s' % (s)
+                tag = f'{sensortype}-{bodyname}-{center}-{coord}-{s}-{component}'
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['coord'] = coord
+                channelinfo['bodyname'] = bodyname
+                channelinfo['s'] = float(s)
+                channelinfo['srel'] = float(srel)
+                channelinfo['sensortype'] = sensortype
+                # channelinfo['output_type'] = output_type
+                channelinfo['component'] = component
+                channelinfo['center'] = center
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
                 channelinfo['units'] = self.ch_details[ch, 1]
