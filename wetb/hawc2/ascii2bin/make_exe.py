@@ -3,9 +3,6 @@ Created on 06/09/2013
 
 @author: Mads M. Pedersen (mmpe@dtu.dk)
 '''
-from __future__ import division, print_function, absolute_import, unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 
 
 if __name__=="__main__":

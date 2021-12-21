@@ -6,21 +6,6 @@ Created on Tue Nov  1 15:16:34 2011
 __author__ = "David Verelst <dave@dtu.dk>"
 __license__ = "GPL-2+"
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import dict
-from io import open
-from builtins import zip
-from builtins import range
-from builtins import str
-from builtins import int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-
 # standard python library
 import os
 import subprocess as sproc

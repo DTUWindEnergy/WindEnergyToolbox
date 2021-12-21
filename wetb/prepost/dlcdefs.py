@@ -4,14 +4,6 @@ Created on Wed Nov  5 14:01:25 2014
 
 @author: dave
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from builtins import str
-from future.utils import viewitems
-from future import standard_library
-standard_library.install_aliases()
 
 import os
 import unittest
@@ -407,13 +399,13 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
 
     if not silent:
         k = 0
-        for dlc, df in viewitems(dict_dfs):
+        for dlc, df in dict_dfs.items():
             k += len(df)
         print('in which a total of %i cases are defined.' % k)
 
     opt_tags = []
 
-    for (dlc, df) in sorted(viewitems(dict_dfs)):
+    for (dlc, df) in sorted(dict_dfs.items()):
         # replace ';' with False, and Nan(='') with True
         # this is more easy when testing for the presence of stuff compared
         # to checking if a value is either True/False or ''/';'

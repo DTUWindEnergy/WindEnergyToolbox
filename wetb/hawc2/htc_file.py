@@ -4,17 +4,10 @@ Created on 20/01/2014
 See documentation of HTCFile below
 
 '''
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from builtins import str
-from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 import jinja2
 from wetb.utils.cluster_tools.os_path import fixcase, abspath, pjoin
-standard_library.install_aliases()
 from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
 from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions

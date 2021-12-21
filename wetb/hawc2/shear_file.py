@@ -3,15 +3,7 @@ Created on 24/04/2014
 
 @author: MMPE
 '''
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import range
-from io import open
-from future import standard_library
 from wetb.hawc2.htc_file import HTCFile
-standard_library.install_aliases()
 import numpy as np
 import os
 

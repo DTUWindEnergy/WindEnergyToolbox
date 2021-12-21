@@ -3,22 +3,16 @@ Created on 05/11/2015
 
 @author: MMPE
 '''
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import os
 import unittest
 
-from future import standard_library
 import mock
 
 from wetb.hawc2 import ae_file
 from wetb.hawc2.ae_file import AEFile
 import numpy as np
 
-standard_library.install_aliases()
 
 testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/')  # test file path
 

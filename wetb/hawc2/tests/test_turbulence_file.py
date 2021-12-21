@@ -3,13 +3,7 @@ Created on 17/07/2014
 
 @author: MMPE
 '''
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
 from wetb.hawc2.turbulence_file import TurbulenceFile
-standard_library.install_aliases()
 import os
 import unittest
 from wetb.hawc2.pc_file import PCFile

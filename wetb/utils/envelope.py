@@ -6,19 +6,6 @@ Created on Tue Feb 13 12:58:25 2018
 @author: dave
 """
 
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import dict
-from io import open
-from builtins import zip
-from builtins import range
-from builtins import str
-from builtins import int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 
 import numpy as np
 import scipy

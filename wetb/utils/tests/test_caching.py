@@ -3,14 +3,8 @@ Created on 08/11/2013
 
 @author: mmpe
 '''
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
 from collections import OrderedDict
 import os
-standard_library.install_aliases()
 import multiprocessing
 import time
 import unittest

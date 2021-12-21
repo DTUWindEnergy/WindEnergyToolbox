@@ -13,13 +13,6 @@ from cy_rainflowcount import find_extremes,rainflow
 ext = find_extremes(np.array([-2,0,1,0,-3,0,5,0,-1,0,3,0,-4,0,4,0,-2]).astype(np.double))
 print rainflow(ext)
 '''
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import range
-from future import standard_library
-standard_library.install_aliases()
 
 import numpy as np
 

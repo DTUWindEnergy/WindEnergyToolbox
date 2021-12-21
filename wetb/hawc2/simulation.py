@@ -1,11 +1,5 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
-from builtins import str
 import glob
-from io import open
 import json
 import os
 import re
@@ -13,7 +7,6 @@ import sys
 from threading import Thread
 import time
 
-from future import standard_library
 from wetb.hawc2 import log_file
 from wetb.hawc2.htc_file import HTCFile, fmt_path
 from wetb.hawc2.log_file import LogFile
@@ -22,7 +15,6 @@ import stat
 import shutil
 
 
-standard_library.install_aliases()
 
 QUEUED = "queued"  # until start
 PREPARING = "Copy to host"  # during prepare simulation

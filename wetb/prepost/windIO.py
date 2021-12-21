@@ -4,19 +4,6 @@ Created on Thu Apr  3 19:53:59 2014
 
 @author: dave
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import dict
-from io import open as opent
-from builtins import range
-from builtins import str
-from builtins import int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-
 __author__ = 'David Verelst'
 __license__ = 'GPL'
 __version__ = '0.5'

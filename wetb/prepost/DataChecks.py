@@ -4,15 +4,6 @@ Created on Mon Mar  5 16:00:02 2012
 
 @author: dave
 """
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
-
-
-
 
 # time and data should be 1 dimensional arrays
 def array_1d(array):
