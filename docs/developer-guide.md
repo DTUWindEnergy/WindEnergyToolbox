@@ -128,7 +128,7 @@ use ```conda deactivate``` to deactivate the environment.
 - [pytables](http://www.pytables.org/)
 - [pytest](https://pypi.python.org/pypi/pytest)
 - [pytest-cov](https://pypi.python.org/pypi/pytest-cov/)
-- six, [future](http://python-future.org/index.html)
+- six
 - nose, sphinx, blosc, pbr, psutil, coverage, setuptools_scm
 - [parimeko](http://www.paramiko.org/)
 - [sshtunnel](https://github.com/pahaz/sshtunnel)
@@ -145,7 +145,7 @@ manager (Linux/Mac).
 Install the necessary Python dependencies using the conda package manager:
 
 ```
->> conda install setuptools_scm future h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
+>> conda install setuptools_scm mock h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
 >> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc click jinja2
 >> conda install -c conda-forge sshtunnel --no-deps
 ```
