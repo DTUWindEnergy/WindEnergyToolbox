@@ -72,7 +72,12 @@ class Simulation(object):
     is_done = False
     status = QUEUED
 
-    def __init__(self, modelpath, htcfilename, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
+    def __init__(self, modelpath, htcfile, hawc2exe="HAWC2MB.exe", copy_turbulence=True):
+        if isinstance(htcfile, HTCFile):
+            htcfilename = htcfile.filename
+        else:
+            htcfilename = htcfile
+
         self.modelpath = os.path.abspath(modelpath).replace("\\", "/")
         if self.modelpath[-1] != '/':
             self.modelpath += "/"
@@ -103,7 +108,10 @@ class Simulation(object):
         self.folder = os.path.dirname(htcfilename)
 
         self.filename = os.path.basename(htcfilename)
-        self.htcFile = HTCFile(os.path.join(self.exepath, htcfilename), self.exepath)
+        if isinstance(htcfile, HTCFile):
+            self.htcFile = htcfile
+        else:
+            self.htcFile = HTCFile(os.path.join(self.exepath, htcfilename), self.exepath)
         self.time_stop = self.htcFile.simulation.time_stop[0]
         self.hawc2exe = hawc2exe
         self.copy_turbulence = copy_turbulence
@@ -247,7 +255,7 @@ class Simulation(object):
                 self.errors = (list(set([l for l in self.host.stdout.split(
                     "\n") if 'error' in l.lower() and not 'rms error' in l])))
             self.status = ERROR
-        if 'HAWC2MB version:' not in self.host.stdout and 'Build information for HAWC2MB.exe (GIT)' not in self.host.stdout:
+        if 'HAWC2MB version:' not in self.host.stdout and 'Build information for HAWC2MB' not in self.host.stdout:
             self.errors.append(self.host.stdout)
             self.status = ERROR
 
