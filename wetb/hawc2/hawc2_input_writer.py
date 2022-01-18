@@ -95,7 +95,7 @@ class HAWC2InputWriter(object):
             (content, list) pairs for which all combinations of the listed values are
             generated in the htc files. E.g., {'wsp': [4, 6, 8]}.
         functionals : dict of functions
-            (content, function) pairs for which the content is dependent on the 
+            (content, function) pairs for which the content is dependent on the
             constants and variables contents. E.g., {'Name': lambda x: 'wsp' + str(x['wsp'])}.
 
         Returns
@@ -122,7 +122,7 @@ class HAWC2InputWriter(object):
 
     def set_Name(self, htc, **kwargs):
         """Update the filename in simulation and output blocks of an htc file.
-    
+
         Notes
         -----
         This function is called during the `write` and `write_all` methods, thereby
@@ -135,7 +135,7 @@ class HAWC2InputWriter(object):
         htc : wetb.hawc2.htc_file.HTCFile
             The htc file object to be modified.
         name : str
-            The filename to be used in the logfile and simulation file (without 
+            The filename to be used in the logfile and simulation file (without
             extension).
         **kwargs
             Keyword arguments. Must include keyword 'Name'. May optionally include
@@ -207,11 +207,14 @@ class HAWC2InputWriter(object):
 
 
 class JinjaWriter(HAWC2InputWriter):
-    """DEPRECATED!!!
-    Subclass of the HAWC2InputWriter object. Generates htc files using contents compatible with jinja2.
-    """
-    warnings.warn('The JinjaWriter is deprecated! Please switch to the HAWC2InputWriter',
-                  DeprecationWarning)
+    def __init__(self, base_htc_file, **kwargs):
+        """DEPRECATED!!!
+        Subclass of the HAWC2InputWriter object. Generates htc files using contents compatible with jinja2.
+        """
+        warnings.warn('The JinjaWriter is deprecated! Please switch to the HAWC2InputWriter',
+                      DeprecationWarning)
+        HAWC2InputWriter.__init__(self, base_htc_file, **kwargs)
+
     def write(self, out_fn, **kwargs):
         params = pd.Series(kwargs)
         with open(self.base_htc_file) as f:
