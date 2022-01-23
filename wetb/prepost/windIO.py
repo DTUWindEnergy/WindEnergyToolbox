@@ -814,12 +814,8 @@ class LoadResults(ReadHawc2):
         # to sensible unified name
         for ch in range(self.Nch):
 
-            items_ch0 = self.ch_details[ch, 0].split(' ')
-            items_ch0 = misc.remove_items(items_ch0, '')
-
-            items_ch2 = self.ch_details[ch, 2].split(' ')
-            # remove empty values in the list
-            items_ch2 = misc.remove_items(items_ch2, '')
+            items_ch0 = self.ch_details[ch, 0].split()
+            items_ch2 = self.ch_details[ch, 2].split()
 
             dll = False
 
@@ -1272,27 +1268,37 @@ class LoadResults(ReadHawc2):
 
             # -----------------------------------------------------------------
             # WIND SPEED
-            # WSP gl. coo.,Vx
-            # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
-            elif self.ch_details[ch, 0].startswith('WSP gl.'):
+            elif self.ch_details[ch, 2].startswith('Free wind speed'):
                 units = self.ch_details[ch, 1]
                 direction = self.ch_details[ch, 0].split(',')[1]
-                tmp = self.ch_details[ch, 2].split('pos')[1]
-                x, y, z = tmp.split(',')
-                x, y, z = x.strip(), y.strip(), z.strip()
-                tmp = z.split('  ')
-                sensortag = ''
-                if len(tmp) == 2:
-                    z, sensortag = tmp
-                elif len(tmp) == 1:
-                    z = tmp[0]
+                # WSP gl. coo.,Vx
+                # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
+                if self.ch_details[ch, 2].startswith('Free '):
+                    tmp = self.ch_details[ch, 2].split('pos')[1]
+                    x, y, z = tmp.split(',')
+                    x, y, z = x.strip(), y.strip(), z.strip()
+                    tmp = z.split('  ')
+                    sensortag = ''
+                    if len(tmp) == 2:
+                        z, sensortag = tmp
+                    elif len(tmp) == 1:
+                        z = tmp[0]
+                    pos = (float(x), float(y), float(z))
+                    posstr = '%s-%s-%s' % (x, y, z)
+                    coord = 'global'
+                else:
+                    pos = items_ch2[6]
+                    posstr = pos
+                    coord = items_ch2[0].lower()
+                    if len(items_ch2) > 6:
+                        sensortag = ' '.join(items_ch2[7:])
 
                 # and tag it
-                tag = 'windspeed-global-%s-%s-%s-%s' % (direction, x, y, z)
+                tag = 'windspeed-%s-%s-%s' % (coord, direction, posstr)
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['coord'] = 'global'
-                channelinfo['pos'] = (float(x), float(y), float(z))
+                channelinfo['pos'] = pos
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
@@ -1307,7 +1313,7 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1].strip()
                 tmp = self.ch_details[ch, 0].split(' ')[1].strip()
                 direction = tmp.replace(',', '')
-                coord = self.ch_details[ch, 2].split(',')[1].strip()
+                coord = self.ch_details[ch, 2].split(',')[1].split()[0]
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
                 blade_nr = int(blade_nr)

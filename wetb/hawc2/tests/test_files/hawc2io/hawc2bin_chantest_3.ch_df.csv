@@ -149,9 +149,9 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 147,,,1,,,,,,,,,,,96.5,96.45,,Tors_e,Tors_e-1-96.5,deg
 148,,,1,,,,,,,,,,,98.5,98.47,,Tors_e,Tors_e-1-98.5,deg
 149,,,1,,,,,,,,,,,100.1,100.11,,Tors_e,Tors_e-1-100.1,deg
-150,,,1,,,global coo.,Vx,,,,,,,73.21,,,wsp-blade,wsp-blade-Vx-1-73.21-global coo.,m/s
-151,,,1,,,global coo.,Vy,,,,,,,73.21,,,wsp-blade,wsp-blade-Vy-1-73.21-global coo.,m/s
-152,,,1,,,global coo.,Vz,,,,,,,73.21,,,wsp-blade,wsp-blade-Vz-1-73.21-global coo.,m/s
+150,,,1,,,global,Vx,,,,,,,73.21,,,wsp-blade,wsp-blade-Vx-1-73.21-global,m/s
+151,,,1,,,global,Vy,,,,,,,73.21,,,wsp-blade,wsp-blade-Vy-1-73.21-global,m/s
+152,,,1,,,global,Vz,,,,,,,73.21,,,wsp-blade,wsp-blade-Vz-1-73.21-global,m/s
 153,,,1,,,,,,,,,,,73.2,73.21,,Alfa,Alfa-1-73.2,deg
 154,,,2,,,,,,,,,,,73.2,73.21,,Alfa,Alfa-2-73.2,deg
 155,,,3,,,,,,,,,,,73.2,73.21,,Alfa,Alfa-3-73.2,deg
@@ -175,9 +175,9 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 173,,,,,,,,2,,inpvec,7,,,,,resulting eff,dll-io,DLL-2-inpvec-7,-
 174,,,,,,,,2,,inpvec,8,,,,,grid flag,dll-io,DLL-2-inpvec-8,-
 175,,,,,,,,5,,inpvec,1,,,,,bltip tow min d [m],dll-io,DLL-5-inpvec-1,-
-176,,,1,,,global coo.,Vx,,,,,,,64.3,,,wsp-blade,wsp-blade-Vx-1-64.3-global coo.,m/s
-177,,,1,,,global coo.,Vy,,,,,,,64.3,,,wsp-blade,wsp-blade-Vy-1-64.3-global coo.,m/s
-178,,,1,,,global coo.,Vz,,,,,,,64.3,,,wsp-blade,wsp-blade-Vz-1-64.3-global coo.,m/s
+176,,,1,,,global,Vx,,,,,,,64.3,,,wsp-blade,wsp-blade-Vx-1-64.3-global,m/s
+177,,,1,,,global,Vy,,,,,,,64.3,,,wsp-blade,wsp-blade-Vy-1-64.3-global,m/s
+178,,,1,,,global,Vz,,,,,,,64.3,,,wsp-blade,wsp-blade-Vz-1-64.3-global,m/s
 179,,,1,,Fx,RP coo.,,,,,,,,0.0,,,intfrc,aero-RP coo.-blade-1-intfrc-Fx-r-0.0,kN
 180,,,1,,Fy,RP coo.,,,,,,,,0.0,,,intfrc,aero-RP coo.-blade-1-intfrc-Fy-r-0.0,kN
 181,,,1,,Mx,RP coo.,,,,,,,,0.0,,,intmom,aero-RP coo.-blade-1-intmom-Mx-r-0.0,kNm
@@ -211,12 +211,12 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 209,,,1,,Vy,RP. coo.,,,,,,,,42.07,,,induction,induc-RP. coo.-blade-1-Vy-r-42.1,m/s
 210,,,1,,Vx,RP. coo.,,,,,,,,29.79,,,induction,induc-RP. coo.-blade-1-Vx-r-29.8,m/s
 211,,,1,,Vy,RP. coo.,,,,,,,,29.79,,,induction,induc-RP. coo.-blade-1-Vy-r-29.8,m/s
-212,,,1,,,RP coo.,Vy,,,,,,,88.17,,,wsp-blade,wsp-blade-Vy-1-88.17-RP coo.,m/s
-213,,,1,,,RP coo.,Vy,,,,,,,64.3,,,wsp-blade,wsp-blade-Vy-1-64.3-RP coo.,m/s
-214,,,1,,,RP coo.,Vy,,,,,,,42.07,,,wsp-blade,wsp-blade-Vy-1-42.07-RP coo.,m/s
-215,,,1,,,RP coo.,Vy,,,,,,,29.79,,,wsp-blade,wsp-blade-Vy-1-29.79-RP coo.,m/s
-216,,,1,,,RP coo.,Vy,,,,,,,0.92,,,wsp-blade,wsp-blade-Vy-1-0.92-RP coo.,m/s
-217,,,1,,,RP coo.,Vy,,,,,,,0.1,,,wsp-blade,wsp-blade-Vy-1-0.1-RP coo.,m/s
+212,,,1,,,RP,Vy,,,,,,,88.17,,,wsp-blade,wsp-blade-Vy-1-88.17-RP,m/s
+213,,,1,,,RP,Vy,,,,,,,64.3,,,wsp-blade,wsp-blade-Vy-1-64.3-RP,m/s
+214,,,1,,,RP,Vy,,,,,,,42.07,,,wsp-blade,wsp-blade-Vy-1-42.07-RP,m/s
+215,,,1,,,RP,Vy,,,,,,,29.79,,,wsp-blade,wsp-blade-Vy-1-29.79-RP,m/s
+216,,,1,,,RP,Vy,,,,,,,0.92,,,wsp-blade,wsp-blade-Vy-1-0.92-RP,m/s
+217,,,1,,,RP,Vy,,,,,,,0.1,,,wsp-blade,wsp-blade-Vy-1-0.1-RP,m/s
 218,,,1,,x,global coo.,,,,,,,,88.17,,,pos,aero-global coo.-blade-1-pos-x-r-88.2,m
 219,,,1,,y,global coo.,,,,,,,,88.17,,,pos,aero-global coo.-blade-1-pos-y-r-88.2,m
 220,,,1,,z,global coo.,,,,,,,,88.17,,,pos,aero-global coo.-blade-1-pos-z-r-88.2,m
@@ -287,7 +287,7 @@ chi,azimuth,bearing_name,blade_nr,bodyname,component,coord,direction,dll,flap_nr
 285,22.5,,,,,,,,,,,,,24.32,,,am_grid,am_grid-azi-22.50-r-24.32,-
 286,45.0,,,,,,,,,,,,,24.32,,,am_grid,am_grid-azi-45.00-r-24.32,-
 287,90.0,,,,,,,,,,,,,24.32,,,am_grid,am_grid-azi-90.00-r-24.32,-
-288,,,1,,,RP coo.,Vy,,,,,,,24.11,,,wsp-blade,wsp-blade-Vy-1-24.11-RP coo.,m/s
+288,,,1,,,RP,Vy,,,,,,,24.11,,,wsp-blade,wsp-blade-Vy-1-24.11-RP,m/s
 289,,,,,,,,,,,,,,,,,aero,aero-induc_a_norm,m/s
 290,,,1,,tz,RP.co,,,,,,,,90.17,,,rot,aero-RP.co-blade-1-rot-tz-r-90.2,deg
 291,,,2,,tz,RP.co,,,,,,,,90.17,,,rot,aero-RP.co-blade-2-rot-tz-r-90.2,deg

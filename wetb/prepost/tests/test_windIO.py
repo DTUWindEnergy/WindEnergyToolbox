@@ -224,7 +224,8 @@ class TestsLoadResults(unittest.TestCase):
         self.assertFalse(hasattr(res, 'sig'))
         np.testing.assert_array_equal(res.ch_df.index.values, np.arange(0,217))
         df = res.ch_df
-        self.assertEqual(4, len(df[df['sensortype']=='wsp-global']))
+        self.assertEqual(13, len(df[df['sensortype']=='wsp-global']))
+        self.assertEqual(3, len(df[df['sensortype']=='wsp-blade']))
         self.assertEqual(2, len(df[df['sensortype']=='harmonic']))
         self.assertEqual(2, len(df[df['blade_nr']==3]))
 
@@ -289,7 +290,14 @@ class TestsLoadResults(unittest.TestCase):
         # pd.testing.assert_frame_equal(df1, df2)
         # ...but there is no testing.assert_frame_equal in pandas 0.14
         for col in colref:
-            np.testing.assert_array_equal(df1[col].values, df2[col].values)
+            # ignore nan values for float cols
+            if df1[col].dtype == np.dtype('float32'):
+                sel = ~np.isnan(df1[col].values)
+                np.testing.assert_array_equal(df1[col].values[sel],
+                                              df2[col].values[sel])
+            else:
+                np.testing.assert_array_equal(df1[col].values,
+                                              df2[col].values)
 
     def test_df_stats(self):
         """
