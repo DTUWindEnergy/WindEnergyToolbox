@@ -59,7 +59,7 @@ class TestGenerateInputs(Template):
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='pbs',
                                pbs_turb=True, zipchunks=True, ppn=17,
                                postpro_node_zipchunks=False,
-                               postpro_node=False)
+                               postpro_node=False, update_model_data=True)
 
         def cmp_dir(dir1, dir2):
             lst1, lst2 = map(os.listdir, (dir1, dir2))

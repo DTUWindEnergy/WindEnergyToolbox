@@ -256,7 +256,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
                       wine_arch='win32', wine_prefix='.wine32', ppn=17,
-                      m=[3,4,6,8,9,10,12], prelude='', linux=False):
+                      m=[3,4,6,8,9,10,12], prelude='', linux=False,
+                      update_model_data=False):
     """
     Launch load cases defined in Excel files
     """
@@ -341,7 +342,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                m=[3,4,6,8,9,10,12], postpro_node=postpro_node,
                                exechunks=None, exesingle=None, prelude=prelude,
                                postpro_node_zipchunks=postpro_node_zipchunks,
-                               wine_arch=wine_arch, wine_prefix=wine_prefix)
+                               wine_arch=wine_arch, wine_prefix=wine_prefix,
+                               update_model_data=update_model_data)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
