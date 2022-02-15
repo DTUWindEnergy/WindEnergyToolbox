@@ -37,7 +37,8 @@ def make_fig(nrows=1, ncols=1, figsize=(12,8), dpi=120):
     return subplots(nrows=nrows, ncols=ncols, figsize=figsize, dpi=dpi)
 
 
-def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={}):
+def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={},
+             gridspec_kw={}):
     """
 
     Equivalent function of pyplot.subplots(). The difference is that this one
@@ -57,14 +58,20 @@ def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={}):
     """
 
     fig = Figure(figsize=figsize, dpi=dpi)
-    canvas = FigCanvas(fig)
-    fig.set_canvas(canvas)
-    axes = np.ndarray((nrows, ncols), dtype=np.object)
-    plt_nr = 1
-    for row in range(nrows):
-        for col in range(ncols):
-            axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr, **subplot_kw)
-            plt_nr += 1
+    axes = fig.subplots(nrows=nrows, ncols=ncols,
+                        subplot_kw=subplot_kw, gridspec_kw=gridspec_kw)
+    try:
+        axes = axes.reshape((nrows,ncols))
+    except AttributeError:
+        pass
+    # canvas = FigCanvas(fig)
+    # fig.set_canvas(canvas)
+    # axes = np.ndarray((nrows, ncols), dtype=object)
+    # plt_nr = 1
+    # for row in range(nrows):
+    #     for col in range(ncols):
+    #         axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr, **subplot_kw)
+    #         plt_nr += 1
     return fig, axes
 
 
@@ -199,6 +206,14 @@ def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, min_p=0, col_line='k',
 
     period : boolean, default=False
         If True, the period instead of the frequency is given in the text
+
+    min_h : float
+        The threshold in the rainflowfilter (default 0.05*range(S(:))).
+        A zero value will return all the peaks of S.
+
+    min_p : float, 0..1
+        Only the peaks that are higher than min_p*max(max(S))
+        min_p*(the largest peak in S) are returned (default  0).
     """
     i_fn_max = np.abs(freqs - fn_max).argmin()
     # ignore everything above fn_max
@@ -301,7 +316,11 @@ def psd(ax, time, sig, nfft=None, res_param=250, f0=0, f1=None, nr_peaks=10,
         nfft = len(sig)
 
     # calculate the PSD
-    Pxx, freqs = mpl.mlab.psd(sig, NFFT=nfft, Fs=sps)
+
+    Pxx, freqs = mpl.mlab.psd(sig, NFFT=nfft, Fs=sps) # window=None
+    # for clean signals (steps, sinus) use another window
+    # for stochastic signal, the default window Hanning is good
+    # in Scipy you can provide strings for the different windows, not so in mlab
 
     i0 = np.abs(freqs - f0).argmin()
     i1 = np.abs(freqs - f1).argmin()
