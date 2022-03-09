@@ -3,13 +3,6 @@ Created on 05/11/2015
 
 @author: MMPE
 '''
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
-
 import unittest
 import os
 import filecmp
@@ -66,7 +59,7 @@ class TestGenerateInputs(Template):
         tmpl.launch_dlcs_excel('remote', silent=True, runmethod='pbs',
                                pbs_turb=True, zipchunks=True, ppn=17,
                                postpro_node_zipchunks=False,
-                               postpro_node=False)
+                               postpro_node=False, update_model_data=True)
 
         def cmp_dir(dir1, dir2):
             lst1, lst2 = map(os.listdir, (dir1, dir2))

@@ -4,20 +4,8 @@ Created on Thu Sep 18 13:00:25 2014
 
 @author: dave
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from builtins import dict
-from builtins import str
-from builtins import range
-from future import standard_library
-standard_library.install_aliases()
-
 import os
-import socket
 from argparse import ArgumentParser
-from sys import platform
 
 import numpy as np
 import pandas as pd
@@ -33,18 +21,18 @@ plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
 plt.rc('ytick', labelsize=10)
 plt.rc('axes', labelsize=12)
-# on Gorm tex printing doesn't work
-if socket.gethostname()[:2] in ['g-', 'je', 'j-']:
-    RUNMETHOD = 'pbs'
-else:
-    plt.rc('text', usetex=True)
-    # set runmethod based on the platform host
-    if platform in ["linux", "linux2", "darwin"]:
-        RUNMETHOD = 'linux-script'
-    elif platform == "win32":
-        RUNMETHOD = 'windows-script'
-    else:
-        RUNMETHOD = 'none'
+# plt.rc('text', usetex=True)
+
+# import socket
+# from sys import platform
+# set runmethod based on the platform host
+# if platform in ["linux", "linux2", "darwin"]:
+#     RUNMETHOD = 'linux-script'
+# elif platform == "win32":
+#     RUNMETHOD = 'windows-script'
+# else:
+#     RUNMETHOD = 'none'
+RUNMETHOD = 'none'
 plt.rc('legend', fontsize=11)
 plt.rc('legend', numpoints=1)
 plt.rc('legend', borderaxespad=0)
@@ -268,7 +256,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                       walltime='04:00:00', postpro_node=False, compress=False,
                       dlcs_dir='htc/DLCs', postpro_node_zipchunks=True,
                       wine_arch='win32', wine_prefix='.wine32', ppn=17,
-                      m=[3,4,6,8,9,10,12], prelude='', linux=False):
+                      m=[3,4,6,8,9,10,12], prelude='', linux=False,
+                      update_model_data=False):
     """
     Launch load cases defined in Excel files
     """
@@ -353,7 +342,8 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
                                m=[3,4,6,8,9,10,12], postpro_node=postpro_node,
                                exechunks=None, exesingle=None, prelude=prelude,
                                postpro_node_zipchunks=postpro_node_zipchunks,
-                               wine_arch=wine_arch, wine_prefix=wine_prefix)
+                               wine_arch=wine_arch, wine_prefix=wine_prefix,
+                               update_model_data=update_model_data)
 
     if pbs_turb:
         # to avoid confusing HAWC2 simulations and Mann64 generator PBS files,
@@ -850,14 +840,12 @@ if __name__ == '__main__':
         plot_chans['$B123_{pitch}$'] = chans
 
         plot_chans['RPM'] = ['bearing-shaft_rot-angle_speed-rpm']
-        plot_chans['$P_e$'] = ['DLL-2-inpvec-2']
+        plot_chans['$P_e$'] = ['DLL-generator_servo-inpvec-2']
         plot_chans['$P_{mech}$'] = ['stats-shaft-power']
         plot_chans['$B3 U_y$'] = ['global-blade3-elem-018-zrel-1.00-State pos-y']
         plot_chans['$M_x T_B$'] = ['tower-tower-node-001-momentvec-x']
         plot_chans['$M_y T_B$'] = ['tower-tower-node-001-momentvec-y']
         plot_chans['$M_z T_B$'] = ['tower-tower-node-001-momentvec-z']
-        plot_chans['TC blade to tower'] = ['DLL-5-inpvec-2']
-        plot_chans['TC tower to blade'] = ['DLL-5-inpvec-3']
         plot_chans['$M_z T_T$'] = ['tower-tower-node-008-momentvec-z']
         plot_chans['$M_y Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-y']
         plot_chans['$M_x Shaft_{MB}$'] = ['shaft-shaft-node-004-momentvec-x']

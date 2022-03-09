@@ -3,15 +3,6 @@ Created on 17/07/2014
 
 @author: MMPE
 '''
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from io import open
-from builtins import str
-from builtins import zip
-from future import standard_library
-standard_library.install_aliases()
 import os
 import unittest
 from wetb.hawc2.htc_file import HTCFile, HTCLine
@@ -378,8 +369,8 @@ end turb_export;"""
         assert os.path.relpath(htc.modelpath, self.testfilepath) == os.path.relpath(
             "../simulation_setup/DTU10MWRef6.0_IOS/input")
         from wetb.hawc2.hawc2_pbs_file import JESS_WINE32_HAWC2MB
-        print(htc.pbs_file(r"R:\HAWC2_tests\v12.6_mmpe3\hawc2\win32",
-                           JESS_WINE32_HAWC2MB, input_files=["./input/*"], output_files=['./output/*']))
+        # print(htc.pbs_file(r"R:\HAWC2_tests\v12.6_mmpe3\hawc2\win32",
+        #                    JESS_WINE32_HAWC2MB, input_files=["./input/*"], output_files=['./output/*']))
 
     def test_htc_file_Path_object(self):
         from pathlib import Path
@@ -410,8 +401,14 @@ end turb_export;"""
 
     def test_jinja_tags(self):
         htc = HTCFile(self.testfilepath + "jinja.htc",
-                      jinja_tags={'wsp': 12, 'log': None, 'begin_step': 100})
-        print(htc)
+                      jinja_tags={'wsp': 12, 'logfilename': None, 'begin_step': 100})
+        assert htc.wind.wsp[0] == 12
+        assert 'logfile' not in htc.simulation
+        assert htc.wind.wind_ramp_abs.values == [100, 101, 0, 1]
+        assert htc.wind.wind_ramp_abs__2.values == [150, 151, 0, 1]
+        htc = HTCFile(self.testfilepath + "jinja.htc",
+                      jinja_tags={'wsp': 12, 'logfilename': 'test.log', 'begin_step': 100})
+        assert htc.simulation.logfile[0] == 'test.log'
 
 
 if __name__ == "__main__":

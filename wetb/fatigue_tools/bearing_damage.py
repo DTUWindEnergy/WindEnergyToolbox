@@ -3,13 +3,6 @@ Created on 13/10/2014
 
 @author: MMPE
 '''
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import zip
-from future import standard_library
-standard_library.install_aliases()
 
 def bearing_damage(angle_moment_lst, m=3, thresshold=0.1):
     """Function ported from Matlab.

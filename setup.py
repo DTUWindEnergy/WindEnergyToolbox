@@ -49,7 +49,7 @@ def setup_package(build_ext_switch=True):
 
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
     sphinx = ['sphinx'] if needs_sphinx else []
-    install_requires = ['future',
+    install_requires = ['mock',
                         'h5py',
                         'tables',
                         'pytest',

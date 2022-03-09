@@ -4,17 +4,10 @@ Created on 20/01/2014
 See documentation of HTCFile below
 
 '''
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-from builtins import str
-from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 import jinja2
 from wetb.utils.cluster_tools.os_path import fixcase, abspath, pjoin
-standard_library.install_aliases()
 from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
 from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
@@ -78,7 +71,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     level = 0
     modelpath = "../"
     initial_comments = None
-    _contents = None
 
     def __init__(self, filename=None, modelpath=None, jinja_tags={}):
         """
@@ -89,7 +81,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         modelpath : str
             Model path relative to htc file
         """
-
         if filename is not None:
             try:
                 filename = fixcase(abspath(filename))
@@ -109,7 +100,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if self.modelpath != 'unknown' and self.modelpath[-1] != '/':
             self.modelpath += "/"
 
-            #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
+        self.load()
 
     def auto_detect_modelpath(self):
         if self.filename is None:
@@ -138,11 +129,10 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             raise ValueError(
                 "Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file" % self.filename)
 
-    def _load(self):
-        self.reset()
+    def load(self):
+        self.contents = OrderedDict()
         self.initial_comments = []
         self.htc_inputfiles = []
-        self.contents = OrderedDict()
         if self.filename is None:
             lines = self.empty_htc.split("\n")
         else:
@@ -161,19 +151,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 if line.name_ == "exit":
                     break
                 self._add_contents(line)
-
-    def reset(self):
-        self._contents = None
-
-    @property
-    def contents(self):
-        if self._contents is None:
-            self._load()
-        return self._contents
-
-    @contents.setter
-    def contents(self, value):
-        self._contents = value
 
     def readfilelines(self, filename):
         with self.open(self.unix_path(os.path.abspath(filename.replace('\\', '/'))), encoding='cp1252') as fid:
@@ -243,11 +220,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 self.simulation.animation = os.path.join(fmt_folder(
                     'animation', subfolder), "%s.dat" % name).replace("\\", "/")
             if 'visualization' in self.simulation:
-                self.simulation.visualization = os.path.join(fmt_folder(
-                    'visualization', subfolder), "%s.hdf5" % name).replace("\\", "/")
+                f = os.path.join(fmt_folder('visualization', subfolder), "%s.hdf5" % name).replace("\\", "/")
+                self.simulation.visualization[0] = f
         elif 'test_structure' in self and 'logfile' in self.test_structure:  # hawc2aero
             self.test_structure.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
-        self.output.filename = os.path.join(fmt_folder('res', subfolder), "%s" % name).replace("\\", "/")
+        if 'output' in self:
+            self.output.filename = os.path.join(fmt_folder('res', subfolder), "%s" % name).replace("\\", "/")
 
     def set_time(self, start=None, stop=None, step=None):
         self.contents  # load if not loaded

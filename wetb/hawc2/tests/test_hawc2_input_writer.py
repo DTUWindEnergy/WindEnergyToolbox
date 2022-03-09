@@ -32,7 +32,7 @@ def test_hawc2_writer_frompath(tmp_path):
 def test_hawc2_writer_noname_error(h2writer, tmp_path):
     """Should throw error if set_name is called without name"""
     wsp_lst = [4, 6, 8]
-    df = pd.DataFrame({'wind.wsp': wsp_lst, 'Folder': ['tmp']*3})
+    df = pd.DataFrame({'wind.wsp': wsp_lst, 'Folder': ['tmp'] * 3})
     h2writer.from_pandas(df)
     with pytest.raises(KeyError):  # keyerror in write_all
         h2writer.write_all(tmp_path)
@@ -41,7 +41,7 @@ def test_hawc2_writer_noname_error(h2writer, tmp_path):
 def test_pandas2htc_dottag(h2writer, tmp_path):
     """Load dlc from dict + pandas dataframe (wind speed tag with dot, name), write htc"""
     wsp_lst = [4, 6, 8]
-    df = pd.DataFrame({'wind.wsp': wsp_lst, 'Name': ['c1', 'c2', 'c3'], 'Folder': ['tmp']*3})
+    df = pd.DataFrame({'wind.wsp': wsp_lst, 'Name': ['c1', 'c2', 'c3'], 'Folder': ['tmp'] * 3})
     h2writer.from_pandas(df)
     h2writer.write_all(tmp_path)
     for i, wsp in enumerate(wsp_lst, 1):
@@ -58,7 +58,7 @@ def test_excel2htc(h2writer, tmp_path):
     excel_path = os.path.dirname(test_files.__file__) + '/htc_input_table.xlsx'
     for i in range(2):
         h2writer.from_excel(excel_path if i else Path(excel_path))
-        print(h2writer.contents)
+        # print(h2writer.contents)
         h2writer.write_all(tmp_path)
         for i, wsp in enumerate([4, 6], 1):
             htc = HTCFile(tmp_path / ('tmp/a%d.htc' % i), modelpath=tmp_path.as_posix())
@@ -92,7 +92,7 @@ def test_CVF2pandas(h2writer):
     """Load dlc with constants, variables, functions format"""
     constants = {'simulation.time_stop': 100}
     variables = {'wind.wsp': [4, 6, 8],
-                  'wind.tint': [0.1, 0.15, 0.2]}
+                 'wind.tint': [0.1, 0.15, 0.2]}
     functions = {'Name': lambda x: 'sim_wsp' + str(x['wind.wsp']) + '_ti' + str(x['wind.tint'])}
 
     h2writer.from_CVF(constants, variables, functions)

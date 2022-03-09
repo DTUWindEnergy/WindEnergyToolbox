@@ -1,12 +1,6 @@
 """Test wetb.hawc2.pc_file
 """
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
 from wetb.hawc2.ae_file import AEFile
-standard_library.install_aliases()
 
 import os
 import unittest

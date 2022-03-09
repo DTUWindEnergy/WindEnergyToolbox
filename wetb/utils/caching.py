@@ -3,15 +3,9 @@ Created on 07/02/2014
 
 @author: MMPE
 '''
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
 import sys
 from collections import OrderedDict
 import os
-standard_library.install_aliases()
 import inspect
 import numpy as np
 def set_cache_property(obj, name, get_func, set_func=None):

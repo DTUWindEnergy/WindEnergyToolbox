@@ -4,11 +4,6 @@ Created on Fri Nov 20 10:11:06 2015
 
 @author: tlbl
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-
 # arctan and pi are required because they are in the formulas that are
 # evaluated
 from numpy import (floor, arctan, pi, log, log10, sin, cos, tan, e, arcsin,

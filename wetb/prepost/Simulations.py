@@ -6,21 +6,6 @@ Created on Tue Nov  1 15:16:34 2011
 __author__ = "David Verelst <dave@dtu.dk>"
 __license__ = "GPL-2+"
 """
-
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import dict
-from io import open
-from builtins import zip
-from builtins import range
-from builtins import str
-from builtins import int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-
 # standard python library
 import os
 import subprocess as sproc
@@ -562,7 +547,7 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
                 update_cases=False, ignore_non_unique=False,
                 run_only_new=False, windows_nr_cpus=2,
                 pbs_fname_appendix=True, short_job_names=True, qsub='',
-                update_model_data=True, maxcpu=1, pyenv='py36-wetb',
+                update_model_data=False, maxcpu=1, pyenv='py36-wetb',
                 m=[3,4,6,8,9,10,12], postpro_node_zipchunks=True,
                 postpro_node=False, exesingle=None, exechunks=None,
                 wine_arch='win32', wine_prefix='~/.wine32', prelude='',
@@ -638,10 +623,9 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
         line is added, and when launching the job this dependency needs to
         specified.
 
-    update_model_data : default=True
+    update_model_data : default=False
         If set to False, the zip file will not be created, and the data files
-        are not copied to the run_dir. Use this when only updating the htc
-        files.
+        are not copied to the run_dir.
 
     Returns
     -------
@@ -726,7 +710,8 @@ def prepare_launch(iter_dict, opt_tags, master, variable_tag_func,
             # returns a dictionary with all the tags used for this
             # specific case
             htc = master.createcase(write_htc=write_htc)
-            master.create_run_dir()
+            if update_model_data:
+                master.create_run_dir()
             #htc=master.createcase_check(cases_repo,write_htc=write_htc)
 
             # make sure the current cases is unique!

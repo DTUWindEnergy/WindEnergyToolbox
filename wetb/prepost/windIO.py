@@ -4,19 +4,6 @@ Created on Thu Apr  3 19:53:59 2014
 
 @author: dave
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import dict
-from io import open as opent
-from builtins import range
-from builtins import str
-from builtins import int
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-
 __author__ = 'David Verelst'
 __license__ = 'GPL'
 __version__ = '0.5'
@@ -827,12 +814,8 @@ class LoadResults(ReadHawc2):
         # to sensible unified name
         for ch in range(self.Nch):
 
-            items_ch0 = self.ch_details[ch, 0].split(' ')
-            items_ch0 = misc.remove_items(items_ch0, '')
-
-            items_ch2 = self.ch_details[ch, 2].split(' ')
-            # remove empty values in the list
-            items_ch2 = misc.remove_items(items_ch2, '')
+            items_ch0 = self.ch_details[ch, 0].split()
+            items_ch2 = self.ch_details[ch, 2].split()
 
             dll = False
 
@@ -888,7 +871,7 @@ class LoadResults(ReadHawc2):
             # -----------------------------------------------------------------
             #   0    1      2        3       4  5     6     7 and up
             # Force  Fx Mbdy:blade nodenr:   2 coo: blade  TAG TEXT
-            elif self.ch_details[ch, 2].startswith('Force'):
+            elif self.ch_details[ch, 2].startswith('Force  F'):
                 coord = items_ch2[6]
                 bodyname = items_ch2[2].replace('Mbdy:', '')
                 nodenr = '%03i' % int(items_ch2[4])
@@ -913,6 +896,43 @@ class LoadResults(ReadHawc2):
                 channelinfo['pos'] = pos
                 channelinfo['sensortype'] = sensortype
                 channelinfo['component'] = component
+                channelinfo['chi'] = ch
+                channelinfo['sensortag'] = sensortag
+                channelinfo['units'] = self.ch_details[ch, 1]
+
+            # -----------------------------------------------------------------
+            #        0    1      2        3       4    5     6     7    8           9 and up
+            # Force_intp  Fz Mbdy:blade1 s=  11.87[m] s/S=   0.95 coo: local_aero center:default
+            # Moment_intp  Mx Mbdy:blade1 s=  11.87[m] s/S=   0.95 coo: local_aero center:default
+            elif items_ch2[0].endswith('_intp'):
+
+                sensortype = 'forcemomentvec_interp'
+
+                coord = items_ch2[8]
+                bodyname = items_ch2[2].replace('Mbdy:', '')
+                s = items_ch2[4].replace('[m]', '')
+                srel = items_ch2[6]
+                center = items_ch2[9].split(':')[1]
+                component = items_ch2[1]
+
+                if len(items_ch2) > 9:
+                    sensortag = ' '.join(items_ch2[10:])
+                else:
+                    sensortag = ''
+
+                # and tag it
+                pos = 's-%s' % (s)
+                tag = f'{sensortype}-{bodyname}-{center}-{coord}-{s}-{component}'
+                # save all info in the dict
+                channelinfo = {}
+                channelinfo['coord'] = coord
+                channelinfo['bodyname'] = bodyname
+                channelinfo['s'] = float(s)
+                channelinfo['srel'] = float(srel)
+                channelinfo['sensortype'] = sensortype
+                # channelinfo['output_type'] = output_type
+                channelinfo['component'] = component
+                channelinfo['center'] = center
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
                 channelinfo['units'] = self.ch_details[ch, 1]
@@ -1248,27 +1268,37 @@ class LoadResults(ReadHawc2):
 
             # -----------------------------------------------------------------
             # WIND SPEED
-            # WSP gl. coo.,Vx
-            # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
-            elif self.ch_details[ch, 0].startswith('WSP gl.'):
+            elif self.ch_details[ch, 2].startswith('Free wind speed'):
                 units = self.ch_details[ch, 1]
                 direction = self.ch_details[ch, 0].split(',')[1]
-                tmp = self.ch_details[ch, 2].split('pos')[1]
-                x, y, z = tmp.split(',')
-                x, y, z = x.strip(), y.strip(), z.strip()
-                tmp = z.split('  ')
-                sensortag = ''
-                if len(tmp) == 2:
-                    z, sensortag = tmp
-                elif len(tmp) == 1:
-                    z = tmp[0]
+                # WSP gl. coo.,Vx
+                # Free wind speed Vx, gl. coo, of gl. pos    0.00,   0.00,  -6.00  LABEL
+                if self.ch_details[ch, 2].startswith('Free '):
+                    tmp = self.ch_details[ch, 2].split('pos')[1]
+                    x, y, z = tmp.split(',')
+                    x, y, z = x.strip(), y.strip(), z.strip()
+                    tmp = z.split('  ')
+                    sensortag = ''
+                    if len(tmp) == 2:
+                        z, sensortag = tmp
+                    elif len(tmp) == 1:
+                        z = tmp[0]
+                    pos = (float(x), float(y), float(z))
+                    posstr = '%s-%s-%s' % (x, y, z)
+                    coord = 'global'
+                else:
+                    pos = items_ch2[6]
+                    posstr = pos
+                    coord = items_ch2[0].lower()
+                    if len(items_ch2) > 6:
+                        sensortag = ' '.join(items_ch2[7:])
 
                 # and tag it
-                tag = 'windspeed-global-%s-%s-%s-%s' % (direction, x, y, z)
+                tag = 'windspeed-%s-%s-%s' % (coord, direction, posstr)
                 # save all info in the dict
                 channelinfo = {}
                 channelinfo['coord'] = 'global'
-                channelinfo['pos'] = (float(x), float(y), float(z))
+                channelinfo['pos'] = pos
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
                 channelinfo['sensortag'] = sensortag
@@ -1283,7 +1313,7 @@ class LoadResults(ReadHawc2):
                 units = self.ch_details[ch, 1].strip()
                 tmp = self.ch_details[ch, 0].split(' ')[1].strip()
                 direction = tmp.replace(',', '')
-                coord = self.ch_details[ch, 2].split(',')[1].strip()
+                coord = self.ch_details[ch, 2].split(',')[1].split()[0]
                 # Blade number is identified as the first integer in the string
                 blade_nr = re.search(r'\d+', self.ch_details[ch, 2]).group()
                 blade_nr = int(blade_nr)
@@ -1779,7 +1809,7 @@ def ReadOutputAtTime(fname):
 #    data.index.names = cols
 
     # because the formatting is really weird, we need to sanatize it a bit
-    with opent(fname, 'r') as f:
+    with open(fname, 'r') as f:
         # read the header from line 3
         for k in range(7):
             line = f.readline()
@@ -1817,7 +1847,7 @@ def ReadEigenBody(fname, debug=False):
     # Body data for body number : 3 with the name :nacelle
     # Results:         fd [Hz]       fn [Hz]       log.decr [%]
     # Mode nr:  1:   1.45388E-21    1.74896E-03    6.28319E+02
-    FILE = opent(fname)
+    FILE = open(fname)
     lines = FILE.readlines()
     FILE.close()
 
@@ -1915,7 +1945,7 @@ def ReadEigenStructure(fname, debug=False):
     # 8 Mode nr:  1:   3.58673E+00    3.58688E+00    5.81231E+00
     #   Mode nr:294:   0.00000E+00    6.72419E+09    6.28319E+02
 
-    FILE = opent(fname)
+    FILE = open(fname)
     lines = FILE.readlines()
     FILE.close()
 
@@ -2162,7 +2192,7 @@ class UserWind(object):
         u_comp, v_comp, w_comp, v_coord, w_coord, phi_deg
         """
         # read the header
-        with opent(fname) as f:
+        with open(fname) as f:
             for i, line in enumerate(f.readlines()):
                 if line.strip()[0] != '#':
                     nr_v, nr_w = misc.remove_items(line.split('#')[0].split(), '')
@@ -2519,7 +2549,7 @@ class Bladed(object):
             windows so Western-European windows encoding is a safe bet.
         """
 
-        with codecs.opent(fname, 'r', enc) as f:
+        with codecs.open(fname, 'r', enc) as f:
             lines = f.readlines()
         nrl = len(lines)
         if chans is None and iters is None:

@@ -4,20 +4,6 @@ Created on Wed Nov 23 11:22:50 2011
 
 @author: dave
 """
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from builtins import range
-from builtins import int
-from builtins import dict
-from builtins import round
-from future import standard_library
-standard_library.install_aliases()
-
-
-
-
 # external libraries
 import numpy as np
 
@@ -51,7 +37,8 @@ def make_fig(nrows=1, ncols=1, figsize=(12,8), dpi=120):
     return subplots(nrows=nrows, ncols=ncols, figsize=figsize, dpi=dpi)
 
 
-def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={}):
+def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={},
+             gridspec_kw={}):
     """
 
     Equivalent function of pyplot.subplots(). The difference is that this one
@@ -71,14 +58,20 @@ def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0, subplot_kw={}):
     """
 
     fig = Figure(figsize=figsize, dpi=dpi)
-    canvas = FigCanvas(fig)
-    fig.set_canvas(canvas)
-    axes = np.ndarray((nrows, ncols), dtype=np.object)
-    plt_nr = 1
-    for row in range(nrows):
-        for col in range(ncols):
-            axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr, **subplot_kw)
-            plt_nr += 1
+    axes = fig.subplots(nrows=nrows, ncols=ncols,
+                        subplot_kw=subplot_kw, gridspec_kw=gridspec_kw)
+    try:
+        axes = axes.reshape((nrows,ncols))
+    except AttributeError:
+        pass
+    # canvas = FigCanvas(fig)
+    # fig.set_canvas(canvas)
+    # axes = np.ndarray((nrows, ncols), dtype=object)
+    # plt_nr = 1
+    # for row in range(nrows):
+    #     for col in range(ncols):
+    #         axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr, **subplot_kw)
+    #         plt_nr += 1
     return fig, axes
 
 
@@ -202,11 +195,25 @@ def p4psd(ax, rpm_mean, fmax=10, y_pos_rel=0.25, color='g', ls='--', ps=None,
     return ax
 
 
-def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, col_line='k',
+def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, min_p=0, col_line='k',
           ypos_mean=0.14, col_text='w', ypos_delta=0.06, bbox_alpha=0.5,
-          verbose=False):
+          verbose=False, format_text='%2.2f', period=False):
     """
     indicate the peaks
+
+    Parameters
+    ----------
+
+    period : boolean, default=False
+        If True, the period instead of the frequency is given in the text
+
+    min_h : float
+        The threshold in the rainflowfilter (default 0.05*range(S(:))).
+        A zero value will return all the peaks of S.
+
+    min_p : float, 0..1
+        Only the peaks that are higher than min_p*max(max(S))
+        min_p*(the largest peak in S) are returned (default  0).
     """
     i_fn_max = np.abs(freqs - fn_max).argmin()
     # ignore everything above fn_max
@@ -214,7 +221,7 @@ def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, col_line='k',
     Pxx = Pxx[:i_fn_max]
     Pxx_log = 10.*np.log10(Pxx)
     try:
-        pi = wafo.misc.findpeaks(Pxx_log, n=len(Pxx), min_h=min_h)
+        pi = wafo.misc.findpeaks(Pxx_log, n=len(Pxx), min_h=min_h, min_p=min_p)
         if verbose:
             print('len Pxx', len(Pxx_log), 'nr of peaks:', len(pi))
     except Exception as e:
@@ -239,8 +246,6 @@ def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, col_line='k',
 #        Pxx_peak = Pxx_log[ii]
         # take the average frequency and plot vertical line
         ax.axvline(x=freq_peak, linewidth=1, color=col_line, alpha=0.6)
-        # and the value in a text box
-        textbox = '%2.2f' % freq_peak
         if switch:
             # locate at the min value (down the plot), but a little
             # lower so it does not interfere with the plot itself
@@ -259,6 +264,10 @@ def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, col_line='k',
 #        print textbox
 #        print yrange_plot
         xrel = freq_peak/fn_max
+        # and the value in a text box
+        if period:
+            freq_peak = 1/freq_peak
+        textbox = format_text % freq_peak
         ax.text(xrel, text_ypos, textbox, fontsize=10, transform=ax.transAxes,
                  va='bottom', color=col_text, bbox=dict(boxstyle="round",
                  ec=col_line, fc=col_line, alpha=bbox_alpha,))
@@ -292,8 +301,8 @@ def match_yticks(ax1, ax2, nr_ticks_forced=None, extend=False):
 
 
 def psd(ax, time, sig, nfft=None, res_param=250, f0=0, f1=None, nr_peaks=10,
-        min_h=15, mark_peaks=False, col='r-', label=None, alpha=1.0,
-        ypos_peaks=0.9, ypos_peaks_delta=0.12):
+        min_h=15, min_p=0, mark_peaks=False, col='r-', label=None, alpha=1.0,
+        ypos_peaks=0.9, ypos_peaks_delta=0.12, format_text='%2.2f', period=False):
     """Only plot the psd on a given axis and optionally mark the peaks.
     """
 
@@ -307,7 +316,11 @@ def psd(ax, time, sig, nfft=None, res_param=250, f0=0, f1=None, nr_peaks=10,
         nfft = len(sig)
 
     # calculate the PSD
-    Pxx, freqs = mpl.mlab.psd(sig, NFFT=nfft, Fs=sps)
+
+    Pxx, freqs = mpl.mlab.psd(sig, NFFT=nfft, Fs=sps) # window=None
+    # for clean signals (steps, sinus) use another window
+    # for stochastic signal, the default window Hanning is good
+    # in Scipy you can provide strings for the different windows, not so in mlab
 
     i0 = np.abs(freqs - f0).argmin()
     i1 = np.abs(freqs - f1).argmin()
@@ -315,9 +328,9 @@ def psd(ax, time, sig, nfft=None, res_param=250, f0=0, f1=None, nr_peaks=10,
     # plotting psd, marking peaks
     ax.plot(freqs[i0:i1], Pxx[i0:i1], col, label=label, alpha=alpha)
     if mark_peaks:
-        ax = peaks(ax, freqs[i0:i1], Pxx[i0:i1], fn_max=f1,
-                   nr_peaks=nr_peaks, col_line=col[:1],
-                   ypos_delta=ypos_peaks_delta, bbox_alpha=0.5,
+        ax = peaks(ax, freqs[i0:i1], Pxx[i0:i1], fn_max=f1, min_p=min_p,
+                   nr_peaks=nr_peaks, col_line=col[:1], format_text=format_text,
+                   ypos_delta=ypos_peaks_delta, bbox_alpha=0.5, period=period,
                    ypos_mean=ypos_peaks, min_h=min_h, col_text='w')
 
     return ax

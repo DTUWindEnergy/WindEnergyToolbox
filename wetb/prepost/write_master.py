@@ -19,11 +19,6 @@ Command line options
 
 Author: Jenni Rinker, rink@dtu.dk
 """
-from __future__ import print_function
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import absolute_import
-
 from   argparse import ArgumentParser
 import numpy as np
 import os
