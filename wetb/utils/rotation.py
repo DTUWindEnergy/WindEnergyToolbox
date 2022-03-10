@@ -357,7 +357,7 @@ def quaternion2axis_angle(quaternion, deg=False):
 
 
 def quaternion2matrix(quaternion):
-    q = quaternion / norm(quaternion)
+    q = quaternion / np.linalg.norm(quaternion, axis=0)
     qw, qx, qy, qz = q
     sqw, sqx, sqy, sqz = q**2
 
