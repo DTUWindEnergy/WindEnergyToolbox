@@ -194,6 +194,13 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         return "".join(self.initial_comments + [c.__str__(1) for c in self] + ["exit;"])
 
     def save(self, filename=None):
+        """Saves the htc object to an htc file.
+
+        Args:
+            filename (str, optional): Specifies the filename of the htc file to be saved. 
+            If the value is none, the filename attribute of the object will be used as the filename. 
+            Defaults to None.
+        """
         self.contents  # load if not loaded
         if filename is None:
             filename = self.filename
@@ -206,6 +213,17 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             fid.write(str(self))
 
     def set_name(self, name, subfolder=''):
+        """Sets the base filename of the simulation files. 
+
+        Args:
+            name (str): Specifies name of the log file, dat file (for animation), hdf5 file (for visualization) and htc file.
+            subfolder (str, optional): Specifies the name of a subfolder to place the files in. 
+                If the value is an empty string, no subfolders will be created. 
+                Defaults to ''.
+
+        Returns:
+            None
+        """
         # if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
         self.contents  # load if not loaded
 
