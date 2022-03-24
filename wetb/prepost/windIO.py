@@ -19,6 +19,7 @@ import re as re
 
 import numpy as np
 import scipy as sp
+import scipy.io as sio
 import scipy.integrate as integrate
 import pandas as pd
 
@@ -1725,6 +1726,49 @@ class LoadResults(ReadHawc2):
 
         return np.array(zvals), np.array(yvals)
 
+    def add_channel(self, data, name, units, description='', options=None):
+        """Add a channel to self.sig and self.ch_df such that self.statsdel_df
+        also calculates the statistics for this channel.
+
+        Parameters
+        ----------
+
+        data : np.ndarray(n, 1)
+            Array containing the new channel. Should be of shape (n, 1). If not
+            it will be reshaped to (len(data),1).
+
+        name : str
+            Unique name of the new channel
+
+        units : str
+            Channel units
+
+        description : str, default=''
+            channel description
+        """
+        # valid keys for self.res.ch_df
+        # add = {'radius':np.nan, 'bearing_name':'', 'azimuth':np.nan, 'coord':'',
+        #       'sensortype':'', 'io_nr':np.nan, 'wake_source_nr':np.nan,
+        #       'dll':'', 'direction':'', 'blade_nr':np.nan, 'bodyname':'',
+        #       'pos':'', 'flap_nr':'', 'sensortag':'', 'component':'', 'units':'',
+        #       'io':'', 'unique_ch_name':'new_channel'}
+
+        add = {k:'' for k in self.ch_df.columns}
+        if options is not None:
+            add.update(options)
+        add['unique_ch_name'] = name
+        row = [add[k] for k in self.ch_df.columns]
+
+        # add the meta-data to ch_df and ch_details
+        self.ch_df.loc[len(self.ch_df)] = row
+        cols = [[name, units, description]]
+        self.ch_details = np.append(self.ch_details, cols, axis=0)
+
+        # and add to the results array
+        if data.shape != (len(data),1):
+            data = data.reshape(len(data),1)
+        self.sig = np.append(self.sig, data, axis=1)
+
     def save_chan_names(self, fname):
         """Save unique channel names to text file.
         """
@@ -1789,6 +1833,16 @@ class LoadResults(ReadHawc2):
         self.sig
         self.ch_details
         self.ch_dict
+
+    def save_matlab(self, fname):
+        """Save output in Matlab format.
+        """
+        # all channels
+        details = np.zeros((self.sig.shape[1],4), dtype=np.object)
+        for i in range(self.sig.shape[1]):
+            details[i,0:3] = self.ch_details[i,:]
+            details[i,3] = self.ch_df.loc[i,'unique_ch_name']
+        sio.savemat(fname, {'sig':self.sig, 'description':details})
 
 
 def ReadOutputAtTime(fname):
