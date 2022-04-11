@@ -1,8 +1,9 @@
-image: dtuwindenergy/wetb
+#image: dtuwindenergy/wetb
 
 
 
 test-3.4:
+  image: dtuwindenergy/wetb
   stage:
     test
 #  except:
@@ -21,10 +22,11 @@ test-3.4:
 
 # ===== build documentation =====
 pages:  # "pages" is a job specifically for GitLab pages [1]
+  image: python:slim
   stage:  # build, test, deploy defined by default [2]
     deploy
-  before_script:  # update wetb
-  - pip install . --upgrade
+  before_script:  # install wetb in its current form
+  - pip install -e .
   script:  # use sphinx to build docs, move to public page
   - apt-get update
   - pip install sphinx --upgrade
