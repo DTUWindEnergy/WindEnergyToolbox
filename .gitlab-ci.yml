@@ -24,8 +24,7 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
     deploy
   before_script:  # update wetb
-  - git submodule sync --recursive
-  - git submodule update --init --recursive
+  - pip install . --upgrade
   script:  # use sphinx to build docs, move to public page
   - apt-get update
   - pip install sphinx --upgrade
