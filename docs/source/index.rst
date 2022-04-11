@@ -26,5 +26,6 @@ Contents:
         installation
         fatigue_tools/fatigue
         hawc2/hawc2
+        file_io/file_io
         bladed/bladed2hawc
 
