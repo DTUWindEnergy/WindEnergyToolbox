@@ -69,9 +69,9 @@ class data_manager(ABC):
 
         # TODO: Re-structure code with specific Sophia __call__ to remove reference to Sophia in __init__
         # Check if already on Sophia
-        if 'hpc' in socket.gethostname():
-            print(f"Running on Sophia no download required")
-            data_path = self.source
+        if 'hpc' in socket.gethostname() and self.platform == 'sophia':
+            data_path = f"{self.source}{self.name}"
+            print(f"Running on Sophia no download required, data_path set to: {data_path}")
         else:
             # Call main function
             data_path = self.__call__()
