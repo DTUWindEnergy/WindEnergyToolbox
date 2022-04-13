@@ -68,7 +68,8 @@ def setup_package(build_ext_switch=True):
                         'six',
                         'sshtunnel',
                         'Click',
-                        'jinja2', ]
+                        'jinja2',
+                        'tqdm', ]
 
     setup(install_requires=install_requires,
           setup_requires=install_requires + build_requires + sphinx,
