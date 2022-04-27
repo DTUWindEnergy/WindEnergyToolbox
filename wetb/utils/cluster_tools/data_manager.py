@@ -137,6 +137,11 @@ class data_manager(ABC):
         if not self.platform == 'zenodo':
             raise ValueError("get_metadata_zenodo can only be called with platform = 'Zenodo'")
         api_url = 'https://zenodo.org/api/records/'
+
+        if 'sandbox' in self.platform_options:
+            if self.platform_options['sandbox']:
+                api_url = 'https://sandbox.zenodo.org/api/records/'
+                print('Zenodo api changed to sandbox mode, use for testing')
         if 'zenodo' in self.source:
             recordID = self.source.split('.')[-1]
         else:
