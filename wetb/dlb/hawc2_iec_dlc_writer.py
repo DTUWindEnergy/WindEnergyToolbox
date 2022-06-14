@@ -1,6 +1,7 @@
+import os
+import warnings
 from wetb.hawc2.hawc2_input_writer import HAWC2InputWriter
 from wetb.hawc2.tests import test_files
-import os
 from wetb.dlb.iec64100_1 import DTU_IEC64100_1_Ref_DLB
 
 """
@@ -81,7 +82,10 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
 
     def set_gridloss_time(self, htc, t):
         gen_servo = htc.dll.get_subsection_by_name('generator_servo', 'name')
-        assert gen_servo.init.constant__7.comments == "Time for grid loss [s]"
+        if 'time for grid loss' not in gen_servo.init.constant__7.comments.lower():
+            warnings.warn('Assuming constant 7 in generator_servo DLL is time for grid loss!'
+                          ' Please verify your htc file is correct. Disable warning by '
+                          + 'placing "time for grid loss" in constant 7 comment.')
         gen_servo.init.constant__7 = 7, t
 
 
