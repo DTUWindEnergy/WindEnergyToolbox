@@ -78,7 +78,7 @@ def setup_package(build_ext_switch=True):
           long_description_content_type="text/markdown",
           version=version,
           packages=find_packages(),
-          package_data={'wetb': ['wetb/wind/turbulence/mann_spectra_data.npy']},
+          package_data={'wetb': ['wind/turbulence/mann_spectra_data.npy']},
           )
 
 
