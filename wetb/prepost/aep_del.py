@@ -104,7 +104,7 @@ def aep_del(df_stats, resdir):
     assert nr_seeds == seeds_min
 
     # yaw error probabilities
-    for yaw, dist in yawdist.tiems():
+    for yaw, dist in yawdist.items():
         df_pivot.loc[df_pivot['yaw']==yaw, 'hour_weight'] = dist/nr_seeds
     df_pivot['hours_dist'] = 0
 
