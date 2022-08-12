@@ -276,19 +276,6 @@ def launch_dlcs_excel(sim_id, silent=False, verbose=False, pbs_turb=False,
         wine_prefix = None
         prelude = 'module load mpi/openmpi_1.6.5_intelv14.0.0\n'
 
-    # if linux:
-    #     pyenv = 'py36-wetb'
-    #     pyenv_cmd = 'source /home/python/miniconda3/bin/activate'
-    #     exesingle = "{hawc2_exe:} {fname_htc:}"
-    #     exechunks = "({winenumactl:} {hawc2_exe:} {fname_htc:}) "
-    #     exechunks += "2>&1 | tee {fname_pbs_out:}"
-    # else:
-    #     pyenv = ''
-    #     pyenv_cmd = 'source /home/ozgo/bin/activate_hawc2cfd.sh'
-    #     exesingle = "time {hawc2_exe:} {fname_htc:}"
-    #     exechunks = "(time numactl --physcpubind=$CPU_NR {hawc2_exe:} {fname_htc:}) "
-    #     exechunks += "2>&1 | tee {fname_pbs_out:}"
-
     # see if a htc/DLCs dir exists
     # Load all DLC definitions and make some assumptions on tags that are not
     # defined

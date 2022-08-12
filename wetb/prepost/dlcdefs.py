@@ -124,34 +124,6 @@ def variable_tag_func(master, case_id_short=False):
     return master
 
 
-def vartag_dlcs(master):
-
-    mt = master.tags
-
-    dlc_case = mt['[Case folder]']
-    mt['[data_dir]'] = 'data/'
-    mt['[res_dir]'] = 'res/%s/' % dlc_case
-    mt['[log_dir]'] = 'logfiles/%s/' % dlc_case
-    mt['[htc_dir]'] = 'htc/%s/' % dlc_case
-    mt['[case_id]'] = mt['[Case id.]']
-    mt['[time_stop]'] = mt['[time stop]']
-    mt['[turb_base_name]'] = mt['[Turb base name]']
-    mt['[DLC]'] = mt['[Case id.]'].split('_')[0][3:]
-    mt['[pbs_out_dir]'] = 'pbs_out/%s/' % dlc_case
-    mt['[pbs_in_dir]'] = 'pbs_in/%s/' % dlc_case
-    mt['[iter_dir]'] = 'iter/%s/' % dlc_case
-    if mt['[eigen_analysis]']:
-        rpl = (dlc_case, mt['[Case id.]'])
-        mt['[eigenfreq_dir]'] = 'res_eigen/%s/%s/' % rpl
-    mt['[duration]'] = str(float(mt['[time_stop]']) - float(mt['[t0]']))
-    # replace nan with empty
-    for ii, jj in mt.items():
-        if jj == 'nan':
-            mt[ii] = ''
-
-    return master
-
-
 def vartag_excel_stabcon(master):
     """Variable tag function type that generates a hydro input file for the
     wave kinematics dll if [hydro input name] is defined properly.
