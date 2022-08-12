@@ -1250,20 +1250,29 @@ class LoadResults(ReadHawc2):
             # Free wind speed Vdir_hor, gl. coo, of gl. pos  0.00,  0.00, -2.31
 
             # -----------------------------------------------------------------
-            # WATER SURFACE gl. coo, at gl. coo, x,y=   0.00,   0.00
+            # Water surface gl. coo, at gl. coo, x,y=   0.00,   0.00
+            # Water vel., x-dir, at gl. coo, x,y,z=   0.00,   0.00,   1.00
             elif self.ch_details[ch, 2].startswith('Water'):
                 units = self.ch_details[ch, 1]
-
-                # but remove the comma
-                x = items_ch2[-2][:-1]
-                y = items_ch2[-1]
-
-                # and tag it
-                tag = 'watersurface-global-%s-%s' % (x, y)
-                # save all info in the dict
                 channelinfo = {}
+
+                # surface, vel or acc?
+                if items_ch2[1]=='surface':
+                    # but remove the comma
+                    x = items_ch2[-2][:-1]
+                    y = items_ch2[-1]
+                    # and tag it
+                    tag = 'watersurface-global-%s-%s' % (x, y)
+                    channelinfo['pos'] = (float(x), float(y))
+                else:
+                    # but remove the comma
+                    x = items_ch2[-3][:-1]
+                    y = items_ch2[-2][:-1]
+                    z = items_ch2[-1]
+                    tag = f'{items_ch0[0]}-{x}-{y}-{z}'
+
+                # save all info in the dict
                 channelinfo['coord'] = 'global'
-                channelinfo['pos'] = (float(x), float(y))
                 channelinfo['units'] = units
                 channelinfo['chi'] = ch
 
@@ -2029,6 +2038,31 @@ def ReadEigenStructure(fname, debug=False):
         df.iloc[i-header_lines,:]=np.float64(misc.remove_items(parts[2].split(' '), ''))
 
     return df
+
+
+def ReadStructInertia(fname):
+
+    with open(fname) as f:
+        lines = f.readlines()
+
+    marks = []
+    for i, line in enumerate(lines):
+        if line.startswith('_________') > 0:
+            marks.append(i)
+
+    header = ['body_name'] + lines[7].split()[2:]
+    data = lines[9:marks[4]]
+    bodies = {i:[] for i in header}
+    for row in data:
+        row_els = row[:-1].split()
+        for colname, col  in zip(header, row_els):
+            bodies[colname].append(col)
+
+    bodies = pd.DataFrame(bodies)
+    for k in header[1:]:
+        bodies[k] = bodies[k].astype(float)
+
+    return bodies
 
 
 class UserWind(object):
