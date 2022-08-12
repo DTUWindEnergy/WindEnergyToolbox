@@ -634,7 +634,7 @@ def plot_pwr(figname, fnames, labels=[], figsize=(11,7.15), dpi=120):
 
     print('saving figure: %s ... ' % figname, end='')
     figpath = os.path.dirname(figname)
-    if not os.path.exists(figpath):
+    if len(figpath)>0 and not os.path.exists(figpath):
         os.makedirs(figpath)
     fig.savefig(figname)
     fig.clear()
