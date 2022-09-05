@@ -317,7 +317,38 @@ def axis2matrix(axis, deg=False):
     #asym = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
     # return c * np.eye(3, 3) + s * asym + (1 - c) * xyz[np.newaxis] * xyz[:, np.newaxis]
 
+def axis2quaternion(axis):
 
+    axis = np.asarray(axis)
+    q = np.zeros([axis.shape[0], 4])
+
+    if len(axis.shape) > 1:
+        yaw = axis[:,2]
+        pitch = axis[:,1]
+        roll = axis[:,0]
+    else:
+        yaw = axis[2]
+        pitch = axis[1]
+        roll = axis[0]
+
+    cy = np.cos(yaw * 0.5)
+    sy = np.sin(yaw * 0.5)
+    cp = np.cos(pitch * 0.5)
+    sp = np.sin(pitch * 0.5)
+    cr = np.cos(roll * 0.5)
+    sr = np.sin(roll * 0.5)
+
+    qw = cr * cp * cy + sr * sp * sy
+    qx = sr * cp * cy - cr * sp * sy
+    qy = cr * sp * cy + sr * cp * sy
+    qz = cr * cp * sy - sr * sp * cy
+
+    q[:, 0] = qw
+    q[:, 1] = qx
+    q[:, 2] = qy
+    q[:, 3] = qz
+
+    return q
 #=======================================================================================================================
 # # axis_angle to ...
 #=======================================================================================================================
