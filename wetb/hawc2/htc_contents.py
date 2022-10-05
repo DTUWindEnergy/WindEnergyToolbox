@@ -228,7 +228,7 @@ class HTCSection(HTCContents):
     @staticmethod
     def from_lines(lines):
         line, begin_comments = parse_next_line(lines)
-        name = line[6:].lower()
+        name = line[6:].lower().strip()
         if name == "output":
             section = HTCOutputSection(name, begin_comments)
         elif name.startswith("output_at_time"):
