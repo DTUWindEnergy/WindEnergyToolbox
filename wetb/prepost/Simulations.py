@@ -1519,7 +1519,11 @@ class HtcMaster(object):
             # case sensitive tag names
 #            htc = htc.replace(str(k), str(value))
             # tag names are case insensitive
-            htc = re.sub(re.escape(str(k)), str(value), htc, flags=re.IGNORECASE)
+            try:
+                htc = re.sub(re.escape(str(k)), str(value), htc, flags=re.IGNORECASE)
+            except re.error:
+                print('ignore replace tag, value: ', k, value)
+            # htc = re.sub(str(k), str(value), htc, flags=re.IGNORECASE)
 
         # and save the the case htc file:
         cname = self.tags['[case_id]'] + '.htc'
