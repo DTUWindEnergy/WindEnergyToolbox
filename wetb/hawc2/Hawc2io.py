@@ -210,6 +210,7 @@ class ReadHawc2(object):
         self.Freq = self.NrSc / self.Time
         self.FileFormat = 'GTSDF'
         self.gtsdf_description = info['description']
+        self.gtsdf_dtype = info['dtype']
         data = np.hstack([self.Time[:, np.newaxis], data])
         return data
 ################################################################################
@@ -247,7 +248,7 @@ class ReadHawc2(object):
             for i in ChVec:
                 try:
                     I1.append(self.Iknown.index(i))
-                except:
+                except Exception:
                     self.Iknown.append(i)
                     I2.append(i)
                     I1.append(len(I1))

@@ -55,7 +55,6 @@ class LocalSimulationHost(SimulationHost):
         if resource is None:
             resource = LocalResource(1)
         self.resource = resource
-        self.simulationThread = SimulationThread(self.sim)
 
     def get_datetime(self):
         return datetime.now()
@@ -86,19 +85,25 @@ class LocalSimulationHost(SimulationHost):
         if not os.path.exists(stdout_folder):
             os.makedirs(stdout_folder)  # , exist_ok=True)
         self.logFile.filename = os.path.join(self.tmp_exepath, self.log_filename)
-        self.simulationThread.modelpath = self.tmp_modelpath
-        self.simulationThread.exepath = self.tmp_exepath
 
-    def _simulate(self):
+    def _simulate(self, cancel_event=None):
         # must be called through simulation object
         self.returncode, self.stdout = 1, "Simulation failed"
+        self.simulationThread = SimulationThread(self.sim)
         self.simulationThread.start()
         self.sim.set_id(self.sim.simulation_id, "Localhost(pid:%d)" %
                         self.simulationThread.process.pid, self.tmp_modelpath)
+        if cancel_event is not None:
+            while self.simulationThread.is_alive():
+                if cancel_event.isSet():
+                    self.simulationThread.stop()
+                    break
+                time.sleep(0.1)
         self.simulationThread.join()
         self.returncode, self.stdout = self.simulationThread.res
         self.logFile.update_status()
         self.errors.extend(list(set(self.logFile.errors)))
+        self.simulationThread = None
 
     def _finish_simulation(self, output_files):
         missing_result_files = []
@@ -292,6 +297,8 @@ class PBSClusterSimulationHost(SimulationHost):
     def _prepare_simulation(self, input_files):
         with self.ssh:
             self.ssh.execute(["mkdir -p .hawc2launcher/%s" % self.simulation_id], verbose=False)
+            self.simulationThread.modelpath = self.tmp_modelpath
+            self.simulationThread.exepath = self.tmp_exepath
             self.ssh.execute("mkdir -p %s%s" % (self.tmp_exepath, os.path.dirname(self.log_filename)))
             self.ssh.upload_files(self.modelpath, self.tmp_modelpath, file_lst=[os.path.relpath(
                 f, self.modelpath) for f in input_files], callback=self.sim.progress_callback("Copy to host"))
@@ -407,7 +414,8 @@ class PBSClusterSimulationHost(SimulationHost):
 
     def pbsjobfile(self, ios=False):
         cp_back = ""
-        for folder in set([fmt_path(os.path.dirname(os.path.relpath(f))) for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
+        for folder in set([fmt_path(os.path.dirname(os.path.relpath(f)))
+                           for f in self.htcFile.output_files() + self.htcFile.turbulence_files()]):
             if folder == '':
                 continue
             cp_back += "mkdir -p $PBS_O_WORKDIR/%s/. \n" % folder

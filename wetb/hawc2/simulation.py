@@ -15,7 +15,6 @@ import stat
 import shutil
 
 
-
 QUEUED = "queued"  # until start
 PREPARING = "Copy to host"  # during prepare simulation
 INITIALIZING = "Initializing"  # when starting
@@ -231,14 +230,14 @@ class Simulation(object):
 #
 #        self.host._prepare_simulation()
 
-    def simulate(self):
+    def simulate(self, cancel_event=None):
         # starts blocking simulation
 
         self.is_simulating = True
         self.errors = []
         self.status = INITIALIZING
         self.logFile.clear()
-        self.host._simulate()
+        self.host._simulate(cancel_event=cancel_event)
         self.returncode, self.stdout = self.host.returncode, self.host.stdout
         if self.host.returncode or 'error' in self.host.stdout.lower():
             if self.status == ABORTED:
