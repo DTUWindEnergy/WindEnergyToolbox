@@ -32,20 +32,20 @@ from distutils.extension import Extension
 
 
 def setup_package(build_ext_switch=True):
-    if build_ext_switch:
-        import numpy as np
-        ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm']),
-                   ('wetb.signal.filters', ['cy_filters'])]
-        extlist = [Extension('%s.%s' % (module, n),
-                             [os.path.join(module.replace(".", "/"), n) + '.pyx'],
-                             include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
-        from Cython.Distutils import build_ext
-        build_requires = ['cython']
-        cmd_class = {'build_ext': build_ext}
-    else:
-        extlist = []
-        build_requires = []
-        cmd_class = {}
+    # if build_ext_switch:
+    #     import numpy as np
+    #     ex_info = [('wetb.fatigue_tools.rainflowcounting', ['pair_range', 'peak_trough', 'rainflowcount_astm']),
+    #                ('wetb.signal.filters', ['cy_filters'])]
+    #     extlist = [Extension('%s.%s' % (module, n),
+    #                          [os.path.join(module.replace(".", "/"), n) + '.pyx'],
+    #                          include_dirs=[np.get_include()]) for module, names in ex_info for n in names]
+    #     from Cython.Distutils import build_ext
+    #     build_requires = ['cython']
+    #     cmd_class = {'build_ext': build_ext}
+    # else:
+    extlist = []
+    build_requires = []
+    cmd_class = {}
 
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
     sphinx = ['sphinx'] if needs_sphinx else []
@@ -60,7 +60,6 @@ def setup_package(build_ext_switch=True):
                         'scipy',
                         'pandas',
                         'matplotlib',
-                        'cython',
                         'coverage',
                         'xlwt',
                         'openpyxl',
