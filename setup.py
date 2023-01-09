@@ -51,7 +51,7 @@ def setup_package(build_ext_switch=True):
     sphinx = ['sphinx'] if needs_sphinx else []
     install_requires = ['mock',
                         'h5py',
-                        'tables',
+                        #'tables', # Has blosc2 as requirement, fails unless C compiler is present on win32
                         'pytest',
                         'pytest-cov',
                         #                        'blosc', # gives an error - has to be pre-installed
