@@ -68,8 +68,15 @@ def setup_package(build_ext_switch=True):
                         'sshtunnel',
                         'Click',
                         'jinja2', ]
+    extras_require={
+          'prepost': [
+              'tables',  # requires blosc2 and may not install on 32 bit systems without a C compiler
+              'cython',
+          ]
+    }
 
     setup(install_requires=install_requires,
+          extras_require=extras_require,
           setup_requires=install_requires + build_requires + sphinx,
           cmdclass=cmd_class,
           ext_modules=extlist,
