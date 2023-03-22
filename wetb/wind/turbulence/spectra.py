@@ -52,7 +52,7 @@ def spectra(spatial_resolution, u, v=None, w=None, detrend=True):
     Parameters
     ----------
     spatial_resolution : int, float or array_like
-        Distance between samples in meters
+        Sample points per meter
         - For turbulence boxes: 1/dx = Nx/Lx where dx is distance between points,
         Nx is number of points and Lx is box length in meters
         - For time series: Sample frequency / U
@@ -176,10 +176,10 @@ def logbin_spectra(k1, uu, vv=None, ww=None, uw=None, log10_bin_size=0.2, min_bi
     return tuple([logbin_spectrum(k1, xx, log10_bin_size, min_bin_count) for xx in [k1, uu, vv, ww, uw]])
 
 
-def plot_spectrum(spacial_frq, u, plt=None):
+def plot_spectrum(spatial_resolution, u, plt=None):
     if plt is None:
         import matplotlib.pyplot as plt
-    k1, uu = logbin_spectra(*spectra(spacial_frq, u))[:2]
+    k1, uu = logbin_spectra(*spectra(spatial_resolution, u))[:2]
 
     plt.semilogx(k1, k1 * uu, 'b-')
 
