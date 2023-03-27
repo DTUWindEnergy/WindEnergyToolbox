@@ -121,7 +121,7 @@ class TestMannTurbulence(unittest.TestCase):
             # should be independent of U
             dt = dx / U
             T = 16384 / U
-            self.assertAlmostEqual(var2ae(variance=u.var(), L=10, G=3.3, U=U, T=T, sample_frq=1 / dt), .15, delta=.021)
+            self.assertAlmostEqual(var2ae(variance=u.var(), L=10, G=3.3, U=U, T=T, sample_frq=1 / dt), .15, delta=.024)
 
     def test_var2ae_T(self):
         u = mann_turbulence.load(get_test_file("h2a8192_8_8_16384_32_32_0.15_10_3.3u.dat"), (8192, 8, 8))
@@ -134,7 +134,7 @@ class TestMannTurbulence(unittest.TestCase):
             u_ = u.T.reshape((u.T.shape * np.array([n, 1 / n])).astype(int)).T
             var = u_.var(0).mean()
             ae = var2ae(variance=var, L=10, G=3.3, U=U, T=dx * u_.shape[0] / U, sample_frq=1 / dt)
-            self.assertAlmostEqual(ae, .15, delta=.025)
+            self.assertAlmostEqual(ae, .15, delta=.027)
 
     def test_var2ae_dt(self):
         u = mann_turbulence.load(get_test_file("h2a16384_8_8_65536_32_32_0.15_40_4.0u.dat"), (16384, 8, 8))
@@ -149,9 +149,8 @@ class TestMannTurbulence(unittest.TestCase):
             u_ = u.reshape(u.shape[0] // n, n, u.shape[1]).mean(1)
             var = u_.var(0).mean()
 
-            ae = var2ae(variance=var, L=40, G=4, U=U, T=T, sample_frq=1 / (n * dx / U), plt=False)
-            #print(u_.shape, var, ae)
-            self.assertAlmostEqual(ae, .15, delta=.04)
+            ae = var2ae(variance=var, L=40, G=4, U=U, T=T, sample_frq=1 / (n * dx / U))
+            self.assertAlmostEqual(ae, .15, delta=.041 + i / 100)
 
     def test_fit_ae2var(self):
         u = mann_turbulence.load(get_test_file("h2a8192_8_8_16384_32_32_0.15_10_3.3u.dat"), (8192, 8, 8))

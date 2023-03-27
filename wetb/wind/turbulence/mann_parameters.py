@@ -216,7 +216,7 @@ def var2ae(variance, L, G, U, T=600, sample_frq=10, plt=False):
         frequency range [1/length, sample_frq] equal to the variance of u
     """
 
-    k_low, k_high = 2 * np.pi / (U * np.array([T, 1 / sample_frq]))
+    k_low, k_high = 2 * np.pi / (U * np.array([T, 2 / sample_frq]))
     k1 = 10 ** (np.linspace(np.log10(k_low), np.log10(k_high), 1000))
 
     def get_var(uu):
@@ -237,7 +237,7 @@ def var2ae(variance, L, G, U, T=600, sample_frq=10, plt=False):
 
 
 def ae2ti(ae23, L, G, U, T=600, sample_frq=10):
-    k_low, k_high = 2 * np.pi / (U * np.array([T, 1 / sample_frq]))
+    k_low, k_high = 2 * np.pi / (U * np.array([T, 2 / sample_frq]))
     k1 = 10 ** (np.linspace(np.log10(k_low), np.log10(k_high), 1000))
 
     uu = get_mann_model_spectra(ae23, L, G, k1)[0]
