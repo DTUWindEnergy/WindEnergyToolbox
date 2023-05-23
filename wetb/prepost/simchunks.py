@@ -876,12 +876,16 @@ class AppendDataFrames(object):
                     if write_header:
                         if header_fjoined is None:
                             header_fjoined = lines[header]
+                            header_f0 = lines[header]
                         # add extra column with the file name if applicable
                         if fname_col:
                             rpl = sep + fname_col + '\n'
                             header_fjoined = header_fjoined.replace('\n', rpl)
                         ft.write(header_fjoined)
                         write_header = False
+                    # check if the header is the same for each file
+                    if header is not None:
+                        assert lines[header] == header_f0
                     # but cut out the header on all other occurances
                     case_id = '.'.join(case_id.split('.')[:-1])
                     for line in lines[icut:]:
