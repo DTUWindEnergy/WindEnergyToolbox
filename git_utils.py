@@ -34,7 +34,13 @@ def get_git_branch(git_repo_path=None):
 
 def get_git_version(git_repo_path=None):
     cmd = ["git", "describe", "--tags", "--dirty", "--always"]
-    return _run_git_cmd(cmd, git_repo_path)
+    # format it will return: 'v0.1.0-12-g22668f0'
+    v = _run_git_cmd(cmd, git_repo_path)
+    # convert to something Pypi likes: 0.1.2.dev3.123456
+    # see also https://setuptools.pypa.io/en/latest/userguide/distribution.html
+    # and/or PEP440 https://peps.python.org/pep-0440/
+    v = v.replace('-', '.post', 1)
+    return v
 
 
 def get_tag(git_repo_path=None, verbose=False):
