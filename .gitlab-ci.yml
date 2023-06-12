@@ -74,3 +74,16 @@ pypi_windows:
   tags:
     - CPAV_old
 
+build_poetry_wheel:
+  stage: build
+  tags:
+    - linux, docker, shared
+  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
+
+  script:
+    - poetry build
+  
+  artifacts:
+    paths:
+      - dist/*
+    expire_in: "1d"
