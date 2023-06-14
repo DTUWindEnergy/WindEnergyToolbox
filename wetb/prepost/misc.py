@@ -1151,11 +1151,11 @@ def df_dict_check_datatypes(df_dict):
             try:
                 df_dict2[str(colkey)] = np.array(col, dtype=np.float64)
             except ValueError:
-                df_dict2[str(colkey)] = np.array(col, dtype=np.str)
+                df_dict2[str(colkey)] = np.array(col, dtype=np.str_)
         except TypeError:
             # in all other cases, make sure we have converted them to
             # strings and NOT unicode
-            df_dict2[str(colkey)] = np.array(col, dtype=np.str)
+            df_dict2[str(colkey)] = np.array(col, dtype=np.str_)
         except Exception as e:
             print('failed to convert column %s to single data type' % colkey)
             raise(e)

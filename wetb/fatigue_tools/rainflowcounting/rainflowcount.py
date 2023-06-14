@@ -64,7 +64,7 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
     if np.nanmax(signal) > 0:
         gain = np.nanmax(signal) / levels
         signal = signal / gain
-        signal = np.round(signal).astype(np.int)
+        signal = np.round(signal).astype(np.int32)
 
 
         # If possible the module is compiled using cython otherwise the python implementation is used

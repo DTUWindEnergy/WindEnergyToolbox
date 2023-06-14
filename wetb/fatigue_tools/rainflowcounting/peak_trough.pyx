@@ -22,7 +22,7 @@ cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[long,ndim=1] x, int R):
     MINZO = 1
     MAXZO = 2
     ENDZO = 3
-    S = np.zeros(x.shape[0] + 1, dtype=np.int)
+    S = np.zeros(x.shape[0] + 1, dtype=np.int32)
 
     L = x.shape[0]
     goto = BEGIN
