@@ -11,6 +11,7 @@ test-3.4:
   before_script:
   - git submodule sync --recursive
   - git submodule update --init --recursive
+  - pip3 install --find-links=./dist wetb
   - pip3 install pytest mock click
   script:
   - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
