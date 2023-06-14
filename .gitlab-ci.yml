@@ -3,6 +3,7 @@ image: dtuwindenergy/wetb
 
 
 test-3.4:
+  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_test
   stage:
     test
 #  except:
@@ -10,13 +11,11 @@ test-3.4:
   before_script:
   - git submodule sync --recursive
   - git submodule update --init --recursive
+  - pip3 install pytest mock click
   script:
-  - apt-get update
-  - pip3 install pytest
-  - pip3 install mock
   - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
   tags:
-  - python
+  - docker, linux, shared
 
 
 # ===== build documentation =====
