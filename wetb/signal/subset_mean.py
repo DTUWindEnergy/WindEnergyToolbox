@@ -218,6 +218,10 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1, 
     return trigger_indexes
 
 
+def rsod_dummy_function():
+    print("Dummy function to illustrate the coverage report")
+
+
 def revolution_trigger_old(values, rpm_dt=None, dmin=5, dmax=10, ):
     """Return indexes where values are > max(values)-dmin and decreases more than dmax
     If RPM and time step is provided, triggers steps < time of 1rpm is removed   
