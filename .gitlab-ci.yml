@@ -14,9 +14,15 @@ test-3.4:
   - pip3 install --find-links=./dist wetb
   - pip3 install pytest mock click
   script:
-  - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
+  - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb
   tags:
   - docker, linux, shared
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
 
 
 # ===== build documentation =====
