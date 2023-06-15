@@ -47,6 +47,25 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   tags:  # only runners with this tag can do the job [3]
   - python
 
+# Deploy package to local repository
+
+upload_package_local:
+  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_test
+  tags:
+    - docker, linux, shared
+  stage: deploy
+  needs:
+  - job: build_poetry_wheel
+    artifacts: true
+  - job: test-3.4
+    artifacts: false
+
+  script:
+    - pip install build twine
+    - python -m build
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+
+
 
   # ===== BUILD WHEELS AND UPLOAD TO PYPI =====
 pypi_linux:
