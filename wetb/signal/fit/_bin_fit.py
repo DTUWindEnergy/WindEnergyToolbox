@@ -157,7 +157,7 @@ def perpendicular_bin_fit(x, y, bins=30, fit_func=None, bin_min_count=3, plt=Non
     last = (-1, 0)
 
     pc = []
-    used = np.zeros_like(x).astype(np.bool_)
+    used = np.zeros_like(x).astype(bool)
     for i in range(0, len(nx)):
         i1, i2 = max(0, i - 1), min(len(nx) - 1, i + 1)
         a = -(nx[i2] - nx[i1]) / (ny[i2] - ny[i1])

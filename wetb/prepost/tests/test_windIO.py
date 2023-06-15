@@ -279,7 +279,7 @@ class TestsLoadResults(unittest.TestCase):
 
         # print(df1.pos[14], df2.pos[14])
         # the pos columns contains also tuples, read from csv doesn't get that
-        # df1['pos'] = df1['pos'].astype(np.str_)
+        # df1['pos'] = df1['pos'].astype(str)
         # df1['pos'] = df1['pos'].str.replace("'", "")
         # print(df1.pos[14], df2.pos[14])
 
