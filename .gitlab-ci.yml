@@ -17,6 +17,7 @@ test-3.4:
   - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb
   tags:
   - docker, linux, shared
+  coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
       coverage_report:
