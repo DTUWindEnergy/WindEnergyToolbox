@@ -50,7 +50,7 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
 # Deploy package to local repository
 
 upload_package_local:
-  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_test
+  image: continuumio/anaconda3:latest
   tags:
     - docker, linux, shared
   stage: deploy
