@@ -2,8 +2,8 @@ image: dtuwindenergy/wetb
 
 
 
-test-3.4:
-  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_test
+test:
+  image: continuumio/anaconda3:latest
   stage:
     test
 #  except:
