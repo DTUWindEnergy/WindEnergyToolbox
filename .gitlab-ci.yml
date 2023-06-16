@@ -57,7 +57,7 @@ upload_package_local:
   needs:
   - job: build_poetry_wheel
     artifacts: true
-  - job: test-3.4
+  - job: test
     artifacts: false
 
   script:
