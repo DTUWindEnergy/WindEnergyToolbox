@@ -75,6 +75,7 @@ upload_package_local:
       when: always
     - if: $CI_COMMIT_BRANCH != "master"
       when: manual
+      allow_failure: true
 
 
 
