@@ -127,3 +127,4 @@ build_poetry_wheel:
     paths:
       - dist/*
     expire_in: "1d"
+  when: always
