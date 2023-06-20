@@ -106,6 +106,8 @@ build_poetry_wheel:
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
 
   script:
+    - pip install jinja2
+    - python ./update_pyproject.py
     - poetry build
   
   artifacts:
