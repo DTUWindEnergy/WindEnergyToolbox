@@ -63,6 +63,14 @@ upload_package_local:
   script:
     - pip install twine
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  
+  rules:
+    - if: $CI_COMMIT_TAG != null
+      when: always
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: always
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: manual
 
 
 
@@ -104,15 +112,12 @@ build_poetry_wheel:
   tags:
     - linux, docker, shared
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
-
   before_script:
     - git config --global --add safe.directory ${CI_PROJECT_DIR}
     - pip install jinja2 gitpython
-
   script:
     - python ./update_pyproject.py
     - poetry build
-  
   artifacts:
     paths:
       - dist/*
