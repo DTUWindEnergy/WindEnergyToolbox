@@ -105,8 +105,11 @@ build_poetry_wheel:
     - linux, docker, shared
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
 
-  script:
+  before_script:
+    - git config --global --add safe.directory ${CI_PROJECT_DIR}
     - pip install jinja2 gitpython
+
+  script:
     - python ./update_pyproject.py
     - poetry build
   
