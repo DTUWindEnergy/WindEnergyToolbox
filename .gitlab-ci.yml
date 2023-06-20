@@ -4,6 +4,7 @@ workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
+    - when: always
 
 
 test:
@@ -127,4 +128,3 @@ build_poetry_wheel:
     paths:
       - dist/*
     expire_in: "1d"
-  when: always
