@@ -69,7 +69,7 @@ upload_package_local:
       when: always
     - if: $CI_COMMIT_BRANCH == "master"
       when: always
-    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH != "master"
       when: manual
 
 
