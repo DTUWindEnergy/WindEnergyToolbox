@@ -246,7 +246,7 @@ class DLB():
         writer = pd.ExcelWriter(filename)
         for k in self.keys():
             self[k].to_excel(writer, k, index=False)
-        writer.save()
+        writer.close()
 
 
 class DTU_IEC64100_1_Ref_DLB(DLB):
