@@ -15,7 +15,12 @@ with open("README.md") as f:
 # Getting the package version.
 repo = git.cmd.Git("./")
 v = repo.describe("--tags").split("-")
-version_string = f"{v[0]}.dev{v[1]}+{v[2]}"
+if len(v)>1:
+    # Development/untagged version
+    version_string = f"{v[0]}.dev{v[1]}+{v[2]}"
+elif len(v)==1:
+    # Tagged version
+    version_string = f"{v[0]}"
 
 
 # %% Applying the information to the template
