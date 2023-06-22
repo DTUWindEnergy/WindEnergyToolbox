@@ -39,10 +39,10 @@ class TestInterpolation(unittest.TestCase):
         #yp = [0.0, 1.0, 2.0, 5.0, 6.0, nan, 8.0, 9.0]
 
         y = signal.interpolate(x, xp, yp)
-        np.testing.assert_array_equal(y[~np.isnan(y)], [0., 0.5, 1. , 1.5, 2. , 2.5, 3. , 3.5, 4. , 4.5, 5. , 5.5, 8. , 8.5, 9. ])
+        np.testing.assert_array_equal(y[~np.isnan(y)], [0., 0.5, 1. , 1.5, 2. , 2.5, 3. , 3.5, 4. , 4.5, 5. , 5.5, 6., 8. , 8.5, 9. ])
 
         y = signal.interpolate(x, xp, yp, 10)
-        np.testing.assert_array_equal(y[~np.isnan(y)], [ 0. , 0.5, 1. , 1.5, 2. , 5. , 5.5, 8. , 8.5, 9. ])
+        np.testing.assert_array_equal(y[~np.isnan(y)], [ 0. , 0.5, 1. , 1.5, 2. , 5. , 5.5, 6., 8. , 8.5, 9. ])
 
 
 

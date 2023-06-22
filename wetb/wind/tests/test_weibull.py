@@ -21,7 +21,7 @@ class TestWeibull(unittest.TestCase):
 
     def test_random_weibull(self):
         y = weibull.random(4, 2, 1000000)
-        pdf, x = np.histogram(y, 100, normed=True)
+        pdf, x = np.histogram(y, 100, density=True)
         x = (x[1:] + x[:-1]) / 2
         self.assertLess(sum((pdf - weibull.pdf(4, 2)(x)) ** 2), 0.0001)
         if 0:
@@ -36,7 +36,7 @@ class TestWeibull(unittest.TestCase):
         self.assertAlmostEqual(A, 4, delta=0.01)
         self.assertAlmostEqual(k, 2, delta=0.01)
         if 0:
-            plt.hist(y, 100, normed=True)
+            plt.hist(y, 100, density=True)
             x = np.arange(0, 20, .1)
             plt.plot(x, weibull.pdf(4, 2)(x))
             plt.show()

@@ -103,7 +103,7 @@ def fit(wsp):
 if __name__ == "__main__":
     from wetb.wind import weibull
     from pylab import hist, show, plot
-    hist(weibull.random(10, 2, 10000), 20, normed=True)
+    hist(weibull.random(10, 2, 10000), 20, density=True)
     wsp = np.arange(0, 20, .5)
     plot(wsp, weibull.pdf(10, 2)(wsp))
     show()

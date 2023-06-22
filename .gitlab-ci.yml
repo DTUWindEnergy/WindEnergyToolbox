@@ -1,8 +1,14 @@
 image: dtuwindenergy/wetb
 
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: always
 
 
-test-3.4:
+test:
+  image: continuumio/anaconda3:latest
   stage:
     test
 #  except:
@@ -10,13 +16,19 @@ test-3.4:
   before_script:
   - git submodule sync --recursive
   - git submodule update --init --recursive
+  - python -m pip install .
+  - pip3 install pytest mock click
   script:
-  - apt-get update
-  - pip3 install pytest
-  - pip3 install mock
-  - python3 -m pytest  --cov-report term-missing:skip-covered --cov=wetb
+  - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb
   tags:
-  - python
+  - docker, linux, shared
+  coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
 
 
 # ===== build documentation =====
@@ -39,6 +51,33 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   - /^test_doc.*/
   tags:  # only runners with this tag can do the job [3]
   - python
+
+# Deploy package to local repository
+
+upload_package_local:
+  image: continuumio/anaconda3:latest
+  tags:
+    - docker, linux, shared
+  stage: deploy
+  needs:
+  - job: build_poetry_wheel
+    artifacts: true
+  - job: test
+    artifacts: false
+
+  script:
+    - pip install twine
+    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+  
+  rules:
+    - if: $CI_COMMIT_TAG != null
+      when: always
+    - if: $CI_COMMIT_BRANCH == "master"
+      when: always
+    - if: $CI_COMMIT_BRANCH != "master"
+      when: manual
+      allow_failure: true
+
 
 
   # ===== BUILD WHEELS AND UPLOAD TO PYPI =====
@@ -74,3 +113,18 @@ pypi_windows:
   tags:
     - CPAV_old
 
+build_poetry_wheel:
+  stage: build
+  tags:
+    - linux, docker, shared
+  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
+  before_script:
+    - git config --global --add safe.directory ${CI_PROJECT_DIR}
+    - pip install jinja2 gitpython
+  script:
+    - python ./update_pyproject.py
+    - poetry build
+  artifacts:
+    paths:
+      - dist/*
+    expire_in: "1d"

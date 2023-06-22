@@ -264,7 +264,7 @@ def _rotate(v, angle, rotfunc):
     if len(v.shape) == 1:
         assert angle.shape[0] == 1
         assert v.shape[0] == 3
-        return np.array(rotfunc(v[0], v[1], v[2], cos, sin), dtype=float).T
+        return np.array(rotfunc(v[0], v[1], v[2], cos[0], sin[0]), dtype=float).T
     else:
         assert angle.shape[0] == 1 or angle.shape[0] == v.shape[0]
         assert v.shape[1] == 3

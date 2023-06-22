@@ -13,13 +13,13 @@ def fourier_fit(y, max_nfft, x=None):
     return d, lambda deg : np.interp(deg%360, d, F2x(x2F(y, max_nfft, x)))
 
 def fourier_fit_old(y, nfft):
-    F = np.zeros(len(y), dtype=np.complex)
+    F = np.zeros(len(y), dtype=complex)
     F[:nfft + 1] = x2F(y, nfft)[:nfft + 1]
     return np.fft.ifft(F) * len(F)
 
 def F2x(F_coefficients):
     """Compute signal from Fourier coefficients"""
-    F = np.zeros(360, dtype=np.complex)
+    F = np.zeros(360, dtype=complex)
     nfft = len(F_coefficients) // 2
     F[:nfft + 1] = np.conj(F_coefficients[:nfft + 1])
     F[1:nfft + 1] += (F_coefficients[-nfft:][::-1])
@@ -53,7 +53,7 @@ def x2F(y, max_nfft, x=None):
         b[r] = 2 * np.nansum(y * np.sin(i * theta))
     AB = np.linalg.solve(a, b)
 
-    F = np.zeros(n, dtype=np.complex)
+    F = np.zeros(n, dtype=complex)
 
     F = np.r_[AB[0], (AB[1:nfft + 1] + 1j * AB[nfft + 1:]), np.zeros(nfft) ]
     return F
@@ -73,5 +73,5 @@ def rF2x(rF):
     """Convert single sided Fourier components, that satisfies x(t) = sum(X(cos(iw)+sin(iw)), i=0..N) to non-complex signal"""
     rF = np.conj(rF)
     rF[1:] /= 2
-    rF = np.r_[rF, np.zeros(181 - len(rF), dtype=np.complex)]
+    rF = np.r_[rF, np.zeros(181 - len(rF), dtype=complex)]
     return np.fft.irfft(rF) * 360

@@ -204,7 +204,7 @@ def revolution_trigger(rotor_position, sample_frq, rotor_speed, max_rev_diff=1, 
             # >1 missing triggers
             raise NotImplementedError
         trigger_indexes.extend([np.mean(trigger_indexes[i:i + 2]) for i in np.where(rpm_rs > rpm_i * 1.9)[0]])
-        trigger_indexes = np.sort(trigger_indexes).astype(np.int)
+        trigger_indexes = np.sort(trigger_indexes).astype(int)
 
         i1, i2 = trigger_indexes[0], trigger_indexes[-1]
         nround_rotor_speed = np.nansum(rotor_speed[i1:i2] / 60 / sample_frq)

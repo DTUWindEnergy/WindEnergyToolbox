@@ -19,7 +19,7 @@ def peak_trough(x, R):  # cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[l
     MINZO = 1
     MAXZO = 2
     ENDZO = 3
-    S = np.zeros(x.shape[0] + 1, dtype=np.int)
+    S = np.zeros(x.shape[0] + 1, dtype=int)
 
     L = x.shape[0]
     goto = BEGIN
