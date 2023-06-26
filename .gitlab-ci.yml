@@ -35,7 +35,7 @@ test:
 pages:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
     deploy
-  image: continuumio/anaconda3:latest
+  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
   script:  # use sphinx to build docs, move to public page
   - apt-get update
   - pip install --upgrade pip
