@@ -8,6 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 click = "^8.0.4"
+cryptography = "^41.0.2"
 Cython = "^0.29.35"
 h5py = "^3.8.0"
 Jinja2 = "^3.1.2"
