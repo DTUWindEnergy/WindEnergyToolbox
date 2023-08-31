@@ -4,20 +4,8 @@ Installation
 ===========================
 
 
-Install C++ compilers (Windows)
---------------------------------
-
-Your computer must have a C++ compiler installed in order to install
-``wetb``. Windows users can follow the instructions on 
-`this page <https://wiki.python.org/moin/WindowsCompilers>`_ under
-the section "14.2 standalone".
-
-
 Normal user
 --------------------------------
-
-You must first have installed a C++ compiler before you can use these
-commands. See section above.
 
 * Quick install::
 
@@ -30,6 +18,14 @@ commands. See section above.
 * Update an installation to the most recent version::
 
     pip install --upgrade wetb
+	
+* Install with dependencies needed by prepost
+  
+    pip install wetb[prepost]
+	
+* Install with all dependencies 
+  
+    pip install wetb[all]
 
 **NOTE**. Dependency conflicts can arise if you do not install
 ``wetb`` into a clean environment. In particular, your installation
@@ -47,5 +43,9 @@ Clone the repository and install a local editable copy::
 
   git clone https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox.git
   cd WindEnergyToolbox
-  pip install -e .
+  pip install -e .[all]
+  
+  
+  
+  
 

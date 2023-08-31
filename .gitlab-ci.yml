@@ -13,10 +13,12 @@ test:
     test
 #  except:
 #    - test_pypi
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   before_script:
-  - git submodule sync --recursive
-  - git submodule update --init --recursive
-  - python -m pip install .
+  #- git submodule sync --recursive
+  #- git submodule update --init --recursive
+  - python -m pip install .[all]
   - pip3 install pytest mock click
   script:
   - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb
@@ -81,37 +83,24 @@ upload_package_local:
 
 
   # ===== BUILD WHEELS AND UPLOAD TO PYPI =====
-pypi_linux:
-  stage:
-    deploy
-  only:
-    - tags
-    - test_pypi
+upload_package_pypi:
+  image: continuumio/anaconda3:latest
+  tags:
+    - docker, linux, shared
+  stage: deploy
+  needs:
+  - job: build_poetry_wheel
+    artifacts: true
+  - job: test
+    artifacts: false
+
   script:
-    - apt-get update
-    - pip install -e . --upgrade
-    - python3 -m pip install -U setuptools wheel
-    - python3 setup.py sdist bdist_wheel
-    - python3 -m pip install -U twine
-    - python3 -c 'from git_utils import rename_dist_file; rename_dist_file()'
+    - pip install twine
     - twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
-    #- twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD # for testing purposes
-  tags:
-    - python
-
-
-pypi_windows:
-  stage:
-    deploy
   only:
     - tags
     - test_pypi
-  script:
-    - c:/Anaconda3/envs/WindEnergyToolbox/python.exe setup.py bdist_wheel
-    - twine upload dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD%
-    #- twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u %TWINE_USERNAME% -p %TWINE_PASSWORD% # for testing purposes
-  tags:
-    - CPAV_old
+
 
 build_poetry_wheel:
   stage: build
