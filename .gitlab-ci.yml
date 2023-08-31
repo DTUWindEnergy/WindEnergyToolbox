@@ -41,8 +41,10 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   script:  # use sphinx to build docs, move to public page
   - pip install --upgrade pip
   - pip install sphinx --upgrade
+  - pip install sphinx sphinx_rtd_theme
   - pip install nbsphinx==0.3.5
   - pip install git+https://github.com/vidartf/nbsphinx-link.git
+  - pip install -e .
   - cd docs; make html
   - cd ../; mv docs/build/html public/
   artifacts:  # required for GitLab pages [1]

@@ -58,9 +58,9 @@ available to extract a ``numpy`` array, for example as follows::
      prj.bd['BSTIFFMB']
 
 
----------------------------------
+------------------------------------
 Convert BLADED project file to HAWC2
----------------------------------
+------------------------------------
 
 The class ``wetb.bladed.prj2hawc.Convert2Hawc`` will convert a Bladed project
 file into a set of HAWC2 input files. This process assumes that a standard

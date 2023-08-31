@@ -10,7 +10,7 @@ with open("README.md") as f:
     readme = f.read().split("\n# ")
     for section in readme:
         if section.startswith("Introduction"):
-            description = " ".join(section.split("\n")[1:]).lstrip().rstrip()
+            description = " ".join(section.split("\n")[1:]).lstrip().rstrip()[:512]
 
 # Getting the package version.
 repo = git.cmd.Git("./")

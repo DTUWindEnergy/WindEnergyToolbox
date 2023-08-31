@@ -197,8 +197,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         """Saves the htc object to an htc file.
 
         Args:
-            filename (str, optional): Specifies the filename of the htc file to be saved. 
-            If the value is none, the filename attribute of the object will be used as the filename. 
+            filename (str, optional): Specifies the filename of the htc file to be saved.
+            If the value is none, the filename attribute of the object will be used as the filename.
             Defaults to None.
         """
         self.contents  # load if not loaded
@@ -213,12 +213,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             fid.write(str(self))
 
     def set_name(self, name, subfolder=''):
-        """Sets the base filename of the simulation files. 
+        """Sets the base filename of the simulation files.
 
         Args:
             name (str): Specifies name of the log file, dat file (for animation), hdf5 file (for visualization) and htc file.
-            subfolder (str, optional): Specifies the name of a subfolder to place the files in. 
-                If the value is an empty string, no subfolders will be created. 
+            subfolder (str, optional): Specifies the name of a subfolder to place the files in.
+                If the value is an empty string, no subfolders will be created.
                 Defaults to ''.
 
         Returns:
@@ -306,6 +306,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             files.append(dll.filename[0])
             f, ext = os.path.splitext(dll.filename[0])
             files.append(f + "_64" + ext)
+            files.append(f + ".so")
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
             files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])
