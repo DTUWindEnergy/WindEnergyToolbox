@@ -9,6 +9,6 @@ notebook format. You can download the source notebooks from the
 .. toctree::
     :caption: HAWC2
 
-    notebooks/InputFileWriting
-    notebooks/RunningSimulations
-    notebooks/RunningSimulationsJess
+    notebooks/hawc2/InputFileWriting
+    notebooks/hawc2/RunningSimulations
+    notebooks/hawc2/RunningSimulationsJess
