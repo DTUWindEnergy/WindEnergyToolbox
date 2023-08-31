@@ -13,10 +13,12 @@ test:
     test
 #  except:
 #    - test_pypi
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   before_script:
-  - git submodule sync --recursive
-  - git submodule update --init --recursive
-  - python -m pip install .
+  #- git submodule sync --recursive
+  #- git submodule update --init --recursive
+  - python -m pip install .[all]
   - pip3 install pytest mock click
   script:
   - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb

@@ -4,6 +4,7 @@
     Setup file for wetb.
 """
 
+from distutils.extension import Extension
 import os
 from git_utils import write_vers
 import sys
@@ -28,9 +29,6 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
-from distutils.extension import Extension
-
-
 def setup_package(build_ext_switch=True):
     # if build_ext_switch:
     #     import numpy as np
@@ -51,28 +49,30 @@ def setup_package(build_ext_switch=True):
     sphinx = ['sphinx'] if needs_sphinx else []
     install_requires = ['mock',
                         'h5py',
-                        #'tables', # Has blosc2 as requirement, fails unless C compiler is present on win32
+                        # 'tables', # Has blosc2 as requirement, fails unless C compiler is present on win32
                         'pytest',
                         'pytest-cov',
                         #                        'blosc', # gives an error - has to be pre-installed
                         'pbr',
-                        'paramiko',
                         'scipy',
                         'pandas',
                         'matplotlib',
                         'coverage',
-                        'xlwt',
-                        'openpyxl',
                         'psutil',
-                        'six',
-                        'sshtunnel',
                         'Click',
                         'jinja2', ]
-    extras_require={
-          'prepost': [
-              'tables',  # requires blosc2 and may not install on 32 bit systems without a C compiler
-              'cython',
-          ]
+    extras_require = {
+        'prepost': [
+            'tables',  # requires blosc2 and may not install on 32 bit systems without a C compiler
+            'cython',
+            'openpyxl',
+        ],
+        'all': ['tables',  # requires blosc2 and may not install on 32 bit systems without a C compiler
+                'cython',
+                'sshtunnel',
+                'openpyxl',
+                'paramiko',
+                ]
     }
 
     setup(install_requires=install_requires,

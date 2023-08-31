@@ -1,4 +1,3 @@
-from six import exec_
 import time
 import inspect
 def get_time(f):
