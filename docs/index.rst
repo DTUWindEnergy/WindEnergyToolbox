@@ -24,7 +24,7 @@ Contents:
     .. toctree::
 
         installation
-        fatigue_tools/fatigue
-        hawc2/hawc2
+        fatigue
+        hawc2
         bladed/bladed2hawc
 

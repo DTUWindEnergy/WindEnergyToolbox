@@ -10,4 +10,4 @@ notebook format. You can download the source notebook from the
     :caption: Fatigue tools
     :maxdepth: 2
 
-    fatigue_nb
+    notebooks/Fatigue

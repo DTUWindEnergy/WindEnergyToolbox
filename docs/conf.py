@@ -46,7 +46,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'nbsphinx_link',
+    'nbsphinx',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
