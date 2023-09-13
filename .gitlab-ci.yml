@@ -6,6 +6,8 @@ workflow:
       when: never
     - when: always
 
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
 
 test:
   image: continuumio/anaconda3:latest
