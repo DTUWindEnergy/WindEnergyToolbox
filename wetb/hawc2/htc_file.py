@@ -173,7 +173,13 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
                 if self.modelpath == 'unknown':
                     p = os.path.dirname(self.filename)
-                    lu = [os.path.isfile(os.path.abspath(os.path.join(p, "../" * i, filename.replace("\\", "/"))))
+
+                    def isfile(f):
+                        try:
+                            return os.path.isfile(self.unix_path(f))
+                        except OSError:
+                            return False
+                    lu = [isfile(os.path.abspath(os.path.join(p, "../" * i, filename)))
                           for i in range(4)].index(True)
                     filename = os.path.join(p, "../" * lu, filename)
                 else:
