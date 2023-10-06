@@ -20,8 +20,7 @@ Cython = {version="^0.29.35", optional=true}
 h5py = "^3.1.0"
 Jinja2 = "^3.0.3"
 lxml = "^4.9.2"
-matplotlib = "^3.3.4"
-pillow  = "^10.0.1"
+matplotlib = "^3.8"
 mock = "^5.0.2"
 numpy = ">=1.4"
 openpyxl =  { version = "^3.1.2", optional = true }
