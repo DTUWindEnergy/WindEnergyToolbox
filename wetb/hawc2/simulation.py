@@ -244,7 +244,7 @@ class Simulation(object):
                 return
             if "error" in self.host.stdout.lower():
                 self.errors = (list(set([l for l in self.host.stdout.split(
-                    "\n") if 'error' in l.lower() and not 'rms error' in l])))
+                    "\n") if '*** error ***' in l.lower() and not 'rms error' in l])))
             self.status = ERROR
         if 'HAWC2MB version:' not in self.host.stdout and 'Build information for HAWC2MB' not in self.host.stdout:
             self.errors.append(self.host.stdout)
