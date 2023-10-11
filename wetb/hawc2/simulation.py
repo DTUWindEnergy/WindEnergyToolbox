@@ -239,7 +239,7 @@ class Simulation(object):
         self.logFile.clear()
         self.host._simulate(cancel_event=cancel_event)
         self.returncode, self.stdout = self.host.returncode, self.host.stdout
-        if self.host.returncode or 'error' in self.host.stdout.lower():
+        if self.host.returncode or ('elapsed time :' not in self.host.stdout.lower()):
             if self.status == ABORTED:
                 return
             if "error" in self.host.stdout.lower():
