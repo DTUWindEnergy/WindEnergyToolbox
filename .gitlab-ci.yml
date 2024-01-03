@@ -35,7 +35,7 @@ test:
 # ===== build documentation =====
 pages_debug:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
-    deploy
+    build
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
   script:  # use sphinx to build docs, move to public page
   - pip install --upgrade pip
@@ -49,9 +49,6 @@ pages_debug:  # "pages" is a job specifically for GitLab pages [1]
   artifacts:  # required for GitLab pages [1]
     paths:
     - public
-  only:  # only run for these branches
-  - master
-  - /^test_doc.*/
   tags:  # only runners with this tag can do the job [3]
   - linux, shared
 
