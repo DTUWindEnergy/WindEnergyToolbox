@@ -1,6 +1,7 @@
 import numpy as np
 from wetb.fatigue_tools.rainflowcounting import peak_trough
 from wetb.fatigue_tools.rainflowcounting import pair_range
+from wetb.fatigue_tools.rainflowcounting import rainflowcount_astm
 
 
 def check_signal(signal):
@@ -18,7 +19,7 @@ def check_signal(signal):
         raise TypeError("Signal contains no variation")
 
 
-def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
+def rainflow_windap(signal, levels=255., thresshold=(255 / 50), peak_trough=peak_trough, pair_range=pair_range):
     """Windap equivalent rainflow counting
 
 
@@ -66,13 +67,8 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
         signal = signal / gain
         signal = np.round(signal).astype(int)
 
-
-        # If possible the module is compiled using cython otherwise the python implementation is used
-
-
         # Convert to list of local minima/maxima where difference > thresshold
         sig_ext = peak_trough.peak_trough(signal, thresshold)
-
 
         # rainflow count
         ampl_mean = pair_range.pair_range_amplitude_mean(sig_ext)
@@ -83,8 +79,7 @@ def rainflow_windap(signal, levels=255., thresshold=(255 / 50)):
         return ampl_mean.T
 
 
-
-def rainflow_astm(signal):
+def rainflow_astm(signal, rainflowcount_astm=rainflowcount_astm):
     """Matlab equivalent rainflow counting
 
     Calculate the amplitude and mean values of half cycles in signal
@@ -117,15 +112,10 @@ def rainflow_astm(signal):
     # type <double> is reuqired by <find_extreme> and <rainflow>
     signal = signal.astype(np.double)
 
-    # Import find extremes and rainflow.
-    # If possible the module is compiled using cython otherwise the python implementation is used
-
-    from wetb.fatigue_tools.rainflowcounting.rainflowcount_astm import find_extremes, rainflowcount
-
     # Remove points which is not local minimum/maximum
-    sig_ext = find_extremes(signal)
+    sig_ext = rainflowcount_astm.find_extremes(signal)
 
     # rainflow count
-    ampl_mean = np.array(rainflowcount(sig_ext))
+    ampl_mean = np.array(rainflowcount_astm.rainflowcount(sig_ext))
 
     return np.array(ampl_mean).T

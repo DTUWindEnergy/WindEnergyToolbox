@@ -238,6 +238,8 @@ class HTCSection(HTCContents):
         while lines:
             if lines[0].strip() == "":
                 lines.pop(0)
+            if len(lines) == 0:
+                print()
             if lines[0].lower().startswith("begin"):
                 section._add_contents(HTCSection.from_lines(lines))
             elif lines[0].lower().startswith("end"):

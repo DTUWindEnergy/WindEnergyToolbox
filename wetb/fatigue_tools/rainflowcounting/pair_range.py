@@ -1,11 +1,9 @@
-
-import cython
+from numba import njit
 import numpy as np
-# cimport numpy as np
 
 
-@cython.locals(p=cython.int, q=cython.int, f=cython.int, flow=list, k=cython.int, n=cython.int, ptr=cython.int)
-def pair_range_amplitude(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
+@njit(cache=True)  # jit faster than previous cython compiled extension
+def pair_range_amplitude(x):
     """
     Returns a list of half-cycle-amplitudes
     x: Peak-Trough sequence (integer list of local minima and maxima)
@@ -69,11 +67,8 @@ def pair_range_amplitude(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
     return flow
 
 
-
-
-
-@cython.locals(p=cython.int, q=cython.int, f=cython.int, flow=list, k=cython.int, n=cython.int, ptr=cython.int)
-def pair_range_from_to(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
+@njit(cache=True)
+def pair_range_from_to(x):
     """
     Returns a list of half-cycle-amplitudes
     x: Peak-Trough sequence (integer list of local minima and maxima)
@@ -106,9 +101,9 @@ def pair_range_from_to(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
         if q == n:
             f = 1
         while p >= 4:
-            #print S[p - 3:p + 1]
-            #print S[p - 2], ">", S[p - 3], ", ", S[p - 1], ">=", S[p - 3], ", ", S[p], ">=", S[p - 2], (S[p - 2] > S[p - 3] and S[p - 1] >= S[p - 3] and S[p] >= S[p - 2])
-            #print S[p - 2], "<", S[p - 3], ", ", S[p - 1], "<=", S[p - 3], ", ", S[p], "<=", S[p - 2], (S[p - 2] < S[p - 3] and S[p - 1] <= S[p - 3] and S[p] <= S[p - 2])
+            # print S[p - 3:p + 1]
+            # print S[p - 2], ">", S[p - 3], ", ", S[p - 1], ">=", S[p - 3], ", ", S[p], ">=", S[p - 2], (S[p - 2] > S[p - 3] and S[p - 1] >= S[p - 3] and S[p] >= S[p - 2])
+            # print S[p - 2], "<", S[p - 3], ", ", S[p - 1], "<=", S[p - 3], ", ", S[p], "<=", S[p - 2], (S[p - 2] < S[p - 3] and S[p - 1] <= S[p - 3] and S[p] <= S[p - 2])
             #print (S[p - 2] > S[p - 3] and S[p - 1] >= S[p - 3] and S[p] >= S[p - 2]) or (S[p - 2] < S[p - 3] and S[p - 1] <= S[p - 3] and S[p] <= S[p - 2])
             if (S[p - 2] > S[p - 3] and S[p - 1] >= S[p - 3] and S[p] >= S[p - 2]) or \
                (S[p - 2] < S[p - 3] and S[p - 1] <= S[p - 3] and S[p] <= S[p - 2]):
@@ -128,12 +123,13 @@ def pair_range_from_to(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
         if p == q:
             break
         else:
-            #print S[q], "to", S[q + 1]
+            # print S[q], "to", S[q + 1]
             A[S[q], S[q + 1]] += 1
     return A
 
-@cython.locals(p=cython.int, q=cython.int, f=cython.int, flow=list, k=cython.int, n=cython.int, ptr=cython.int)
-def pair_range_amplitude_mean(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x):
+
+@njit(cache=True)
+def pair_range_amplitude_mean(x):
     """
     Returns a list of half-cycle-amplitudes
     x: Peak-Trough sequence (integer list of local minima and maxima)
@@ -159,7 +155,7 @@ def pair_range_amplitude_mean(x):  # cpdef pair_range(np.ndarray[long,ndim=1]  x
         p += 1
         q += 1
 
-                # read
+        # read
         S[p] = x[ptr]
         ptr += 1
 
