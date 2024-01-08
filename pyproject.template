@@ -6,7 +6,7 @@ version = "{{ version }}"
 description = "{{ description }}"
 authors = ["DTU Wind and Energy Systems <you@example.com>"]
 license = "{{ license }}"
-readme = "README.md"
+exclude = ["**/tests/**","**/test/**"]
 
 [tool.poetry.dependencies]
 click = "^8.0.4"
