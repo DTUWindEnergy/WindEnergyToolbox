@@ -93,7 +93,7 @@ def load(filename, dtype=None):
     finally:
         try:
             f.close()
-        except:
+        except BaseException:
             pass
 
 
@@ -129,7 +129,7 @@ def _load_info(f):
         info['attribute_descriptions'] = [v.decode('latin1') for v in f['attribute_descriptions']]
     try:
         info['dtype'] = f[block_name_fmt % 0]['data'].dtype
-    except:
+    except BaseException:
         pass
     return info
 
@@ -408,7 +408,7 @@ def append_block(filename, data, **kwargs):
     except Exception:
         try:
             f.close()
-        except:
+        except BaseException:
             pass
         raise
 
@@ -443,8 +443,11 @@ def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', '
     return np.array([get_stat(stat) for stat in statistics]).T
 
 
-def _add_statistic_data(file, stat_data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
+def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
+                        'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     f = h5py.File(file, "a")
+    if 'Statistic' in f:
+        del f["Statistic"]
     stat_grp = f.create_group("Statistic")
     stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
     stat_grp.create_dataset("statistic_data", data=stat_data.astype(float))
