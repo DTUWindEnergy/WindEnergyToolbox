@@ -239,12 +239,12 @@ class Simulation(object):
         self.logFile.clear()
         self.host._simulate(cancel_event=cancel_event)
         self.returncode, self.stdout = self.host.returncode, self.host.stdout
-        if self.host.returncode or 'error' in self.host.stdout.lower():
+        if self.host.returncode or ('elapsed time :' not in self.host.stdout.lower()):
             if self.status == ABORTED:
                 return
             if "error" in self.host.stdout.lower():
                 self.errors = (list(set([l for l in self.host.stdout.split(
-                    "\n") if 'error' in l.lower() and not 'rms error' in l])))
+                    "\n") if '*** error ***' in l.lower() and not 'rms error' in l])))
             self.status = ERROR
         if 'HAWC2MB version:' not in self.host.stdout and 'Build information for HAWC2MB' not in self.host.stdout:
             self.errors.append(self.host.stdout)
