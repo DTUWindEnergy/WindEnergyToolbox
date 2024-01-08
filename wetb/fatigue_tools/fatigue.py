@@ -65,7 +65,8 @@ def eq_load(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1, rainflow_func=ra
         return [[np.nan] * len(np.atleast_1d(m))] * len(np.atleast_1d(neq))
 
 
-def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6, 10 ** 7, 10 ** 8], rainflow_func=rainflow_windap):
+def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[
+                       10 ** 6, 10 ** 7, 10 ** 8], rainflow_func=rainflow_windap):
     """Calculate combined fatigue equivalent load
 
     Parameters
@@ -96,12 +97,13 @@ def eq_load_and_cycles(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=[10 ** 6
         Edges of the amplitude bins
     """
     cycles, ampl_bin_mean, ampl_bin_edges, _, _ = cycle_matrix(signals, no_bins, 1, rainflow_func)
-    if 0:  #to be similar to windap
+    if 0:  # to be similar to windap
         ampl_bin_mean = (ampl_bin_edges[:-1] + ampl_bin_edges[1:]) / 2
     cycles, ampl_bin_mean = cycles.flatten(), ampl_bin_mean.flatten()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m)) for _m in np.atleast_1d(m)]  for _neq in np.atleast_1d(neq)]
+        eq_loads = [[((np.nansum(cycles * ampl_bin_mean ** _m) / _neq) ** (1. / _m))
+                     for _m in np.atleast_1d(m)] for _neq in np.atleast_1d(neq)]
     return eq_loads, cycles, ampl_bin_mean, ampl_bin_edges
 
 
@@ -146,17 +148,18 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     """
 
     if isinstance(signals[0], tuple):
-        weights, ampls, means = np.array([(np.zeros_like(ampl)+weight,ampl,mean) for weight, signal in signals for ampl,mean in rainflow_func(signal[:]).T], dtype=np.float64).T
+        weights, ampls, means = np.array([(np.zeros_like(ampl) + weight, ampl, mean) for weight,
+                                         signal in signals for ampl, mean in rainflow_func(signal[:]).T], dtype=np.float64).T
     else:
         ampls, means = rainflow_func(signals[:])
         weights = np.ones_like(ampls)
     if isinstance(ampl_bins, int):
-        ampl_bins = np.linspace(0, 1, num=ampl_bins + 1) * ampls[weights>0].max()
+        ampl_bins = np.linspace(0, 1, num=ampl_bins + 1) * ampls[weights > 0].max()
     cycles, ampl_edges, mean_edges = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
-        ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles,cycles,np.nan),1)
+        ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles, cycles, np.nan), 1)
         mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
         mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
     cycles = cycles / 2  # to get full cycles
@@ -213,13 +216,12 @@ if __name__ == "__main__":
     signal2 = signal1 * 1.1
 
     # equivalent load for default wohler slopes
-    print (eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_windap))
-    print (eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_astm))
+    print(eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_windap))
+    print(eq_load(signal1, no_bins=50, neq=17, rainflow_func=rainflow_astm))
 
     # Cycle matrix with 4 amplitude bins and 4 mean value bins
-    print (cycle_matrix(signal1, 4, 4, rainflow_func=rainflow_windap))
-    print (cycle_matrix(signal1, 4, 4, rainflow_func=rainflow_astm))
+    print(cycle_matrix(signal1, 4, 4, rainflow_func=rainflow_windap))
+    print(cycle_matrix(signal1, 4, 4, rainflow_func=rainflow_astm))
 
     # Cycle matrix where signal1 and signal2 contributes with 50% each
-    print (cycle_matrix([(.5, signal1), (.5, signal2)], 4, 8, rainflow_func=rainflow_astm))
-
+    print(cycle_matrix([(.5, signal1), (.5, signal2)], 4, 8, rainflow_func=rainflow_astm))

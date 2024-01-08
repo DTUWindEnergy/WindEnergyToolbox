@@ -1,10 +1,9 @@
-import cython
 import numpy as np
-# cimport numpy as np
+from numba.core.decorators import njit
 
-@cython.locals(BEGIN=cython.int, MINZO=cython.int, MAXZO=cython.int, ENDZO=cython.int, \
-               R=cython.int, L=cython.int, i=cython.int, p=cython.int, f=cython.int)
-def peak_trough(x, R):  # cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[long,ndim=1] x, int R):
+
+@njit(cache=True)  # jit faster than previous cython compiled extension
+def peak_trough(x, R):
     """
     Returns list of local maxima/minima.
 
@@ -19,12 +18,12 @@ def peak_trough(x, R):  # cpdef np.ndarray[long,ndim=1] peak_trough(np.ndarray[l
     MINZO = 1
     MAXZO = 2
     ENDZO = 3
-    S = np.zeros(x.shape[0] + 1, dtype=int)
+    S = np.full(x.shape[0] + 1, 0)  # np.zeros(...).astype(int) not supported by numba
 
     L = x.shape[0]
     goto = BEGIN
 
-    while 1:
+    while True:
         if goto == BEGIN:
             trough = x[0]
             peak = x[0]

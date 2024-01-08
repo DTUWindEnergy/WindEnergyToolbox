@@ -15,22 +15,23 @@ print rainflow(ext)
 '''
 
 import numpy as np
+from numba.core.decorators import njit
 
 
-def find_extremes(signal):  #cpdef find_extremes(np.ndarray[double,ndim=1] signal):
+@njit(cache=True)  # jit faster than previous cython compiled extension
+def find_extremes(signal):
     """return indexes of local minima and maxima plus first and last element of signal"""
 
-    #cdef int pi, i
     # sign of gradient
-    sign_grad = np.int8(np.sign(np.diff(signal)))
+    sign_grad = np.sign(np.diff(signal))
 
     # remove plateaus(sign_grad==0) by sign_grad[plateau_index]=sign_grad[plateau_index-1]
     plateau_indexes, = np.where(sign_grad == 0)
     if len(plateau_indexes) > 0 and plateau_indexes[0] == 0:
         # first element is a plateau
         if len(plateau_indexes) == len(sign_grad):
-                # All values are equal to crossing level!
-                return np.array([0])
+            # All values are equal to crossing level!
+            return np.array([0.])
 
         # set first element = first element which is not a plateau and delete plateau index
         i = 0
@@ -40,19 +41,19 @@ def find_extremes(signal):  #cpdef find_extremes(np.ndarray[double,ndim=1] signa
 
         plateau_indexes = np.delete(plateau_indexes, 0)
 
-    for pi in plateau_indexes.tolist():
+    for pi in plateau_indexes:
         sign_grad[pi] = sign_grad[pi - 1]
 
-    extremes, = np.where(np.r_[1, (sign_grad[1:] * sign_grad[:-1] < 0), 1])
-
-    return signal[extremes]
-
-
-def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
-    """Cython compilable rain ampl_mean count without time analysis
+    extremes = np.full(len(sign_grad) + 1, True)
+    extremes[1:-1] = sign_grad[1:] * sign_grad[:-1] < 0
+    #extremes, = np.where(np.concatenate([np.array([True]), (sign_grad[1:] * sign_grad[:-1] < 0), np.array([True])]))
+    e = signal[extremes]
+    return e
 
 
-    This implemementation is based on the c-implementation by Adam Nieslony found at
+@njit(cache=True)
+def rainflowcount(sig):
+    """This implemementation is based on the c-implementation by Adam Nieslony found at
     the MATLAB Central File Exchange http://www.mathworks.com/matlabcentral/fileexchange/3026
 
     References
@@ -68,14 +69,13 @@ def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
 
     Copyright (c) 1999-2002 by Adam Nieslony
 
-    Ported to Cython compilable Python by Mads M Pedersen
+    Ported to Cython compilable Python by Mads M Pedersen but later jit seems to be faster
+
     In addition peak amplitude is changed to peak to peak amplitude
 
 
     """
 
-    #cdef int sig_ptr, index
-    #cdef double ampl
     a = []
     sig_ptr = 0
     ampl_mean = []
@@ -84,7 +84,7 @@ def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
         sig_ptr += 1
         while len(a) > 2 and abs(a[-3] - a[-2]) <= abs(a[-2] - a[-1]):
             ampl = abs(a[-3] - a[-2])
-            mean = (a[-3] + a[-2]) / 2;
+            mean = (a[-3] + a[-2]) / 2
             if len(a) == 3:
                 del a[0]
                 if ampl > 0:
@@ -96,7 +96,7 @@ def rainflowcount(sig):  #cpdef rainflowcount(np.ndarray[double,ndim=1] sig):
                     ampl_mean.append((ampl, mean))
     for index in range(len(a) - 1):
         ampl = abs(a[index] - a[index + 1])
-        mean = (a[index] + a[index + 1]) / 2;
+        mean = (a[index] + a[index + 1]) / 2
         if ampl > 0:
             ampl_mean.append((ampl, mean))
     return ampl_mean

@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import warnings
 
-import click
+from tqdm import tqdm
 import jinja2
 import pandas as pd
 from pandas.core.base import PandasObject
@@ -197,7 +197,7 @@ class HAWC2InputWriter(object):
 
         print(f'Generating {N} htc files in directory: {out_dir}')
 
-        with click.progressbar(self.contents.iterrows(), length=N) as bar:
+        with tqdm(self.contents.iterrows(), total=N) as bar:
             for _, row in bar:
                 if 'Folder' in row and row.Folder:
                     path = out_dir / row.Folder
