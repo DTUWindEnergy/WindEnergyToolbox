@@ -391,7 +391,7 @@ def excel_stabcon(proot, fext='xlsx', pignore=None, pinclude=None, sheet=0,
         for count, row in df2.iterrows():
             tags_dict = {}
             # construct to dict, convert unicode keys/values to strings
-            for key, value in row.iteritems():
+            for key, value in row.items():
                 if isinstance(value, str):
                     tags_dict[str(key)] = str(value)
                 else:

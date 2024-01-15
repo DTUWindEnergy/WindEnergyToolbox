@@ -762,7 +762,7 @@ class PlotCampbell(object):
         mark = mark*nr_modes
         ls = ls*nr_modes
 
-        for i, (name, row) in enumerate(df_freq.iteritems()):
+        for i, (name, row) in enumerate(df_freq.items()):
             colmark = '%s%s%s' % (col[i], ls[i], mark[i])
             ax.plot(self.wind, row.values, colmark)#, mfc='w')
             x, y = self.wind[pos[i]], row.values[pos[i]]
@@ -817,7 +817,7 @@ class PlotCampbell(object):
         elif isinstance(xpos, list) and len(xpos) < nr_modes:
             raise ValueError(f'xpos has only {len(xpos)}, while it needs to be >= {nr_modes}')
 
-        for i, (name, row) in enumerate(df_damp.iteritems()):
+        for i, (name, row) in enumerate(df_damp.items()):
             colmark = '%s%s%s' % (col[i], ls[i], mark[i])
             ax.plot(self.wind, row.values, colmark, alpha=0.8)#, mfc='w')
             x, y = self.wind[pos[i]], row.values[pos[i]]
