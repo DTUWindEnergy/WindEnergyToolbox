@@ -52,6 +52,7 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
 
     # map the run_dir to the same order as the post_dirs, labels
     run_dirs = []
+
     # avoid saving merged cases if there is only one!
     if type(sim_ids).__name__ == 'list' and len(sim_ids) == 1:
         sim_ids = sim_ids[0]
@@ -142,7 +143,11 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
         df_stats, _, _ = cc.load_stats(columns=columns, leq=False)
         if columns is not None:
             df_stats = df_stats[columns]
-        run_dirs = [df_stats['[run_dir]'].unique()[0]]
+
+        try:
+            run_dirs = [df_stats['[run_dir]'].unique()[0]]
+        except KeyError:
+            run_dirs = []
 
         # stats has only a few columns identifying the different cases
         # add some more for selecting them
@@ -157,7 +162,7 @@ def merge_sim_ids(sim_ids, post_dirs, post_dir_save=False, columns=None):
         add_cols = list(cols_cc - set(df_stats.columns))
         add_cols.append('[case_id]')
         dfc = dfc[add_cols]
-        df_stats = pd.merge(df_stats, dfc, on='[case_id]')
+        df_stats = pd.merge(df_stats, dfc, right_on='[case_id]', left_on='case_id')
         if '[Windspeed]' in df_stats.columns and '[wsp]' in df_stats.columns:
             df_stats.drop('[wsp]', axis=1, inplace=True)
         if wsp != '[Windspeed]':
@@ -355,11 +360,11 @@ def plot_dlc_stats(df_stats, plot_chans, fig_dir_base, labels=None,
 
             fig, axes = mplutils.make_fig(nrows=1, ncols=1,
                                           figsize=figsize, dpi=120)
-            ax = axes[0,0]
+            ax = axes
             # seperate figure for the mean of the 1Hz equivalent loads
             fig2, axes2 = mplutils.make_fig(nrows=1, ncols=1,
                                             figsize=figsize, dpi=120)
-            ax2 = axes2[0,0]
+            ax2 = axes2
 
             if fig_dir_base is None and len(sim_ids) < 2:
                 res_dir = df_chan['[res_dir]'][:1].values[0]

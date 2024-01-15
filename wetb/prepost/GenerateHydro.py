@@ -10,13 +10,35 @@ Description: This script is used for writing the hydro input files for HAWC2
 
 import os
 
+template = """
+begin wkin_input ;
+    wavetype {wavetype} ;
+    wdepth  {wdepth} ;
+    begin reg_airy ;
+        stretching {stretching} ; 0=none, 1=wheeler
+        wave {Hs} {Tp} {wave_phase_shift} ; (Hs, Tp, phase shift)
+;        ignore_water_surface ;
+    end reg_airy ;
+    begin ireg_airy ;
+        stretching {stretching} ; 0=none, 1=wheeler
+        spectrum   {spectrum_id} ; (1=jonswap, 2=pm)
+        mccamyfuchs {mccamyfuchs} {mccamyfuchs_radius};
+        jonswap {Hs} {Tp} {gamma} ; (Hs, Tp, gamma)
+        pm {Hs} {Tp} ; (Hs, Tp)
+;        wn {wn_variance} {wn_f0} {wn_f1};
+        coef {coef_nrs} {coef_seed} {coef_phase_shift} ; (number of coefficients, seed, phase shift)
+        spreading {spreading} {spreading_param};
+    end;
+end;
+"""
+
 class hydro_input(object):
 
     """ Basic class aiming for write the hydrodynamics input file"""
 
     def __init__(self, wavetype, wdepth, spectrum, Hs, Tp, seed, gamma=3.3,
                  stretching=1, wn=None, coef=200, spreading=None,
-                 embed_sf=None, embed_sf_t0=None):
+                 embed_sf=None, embed_sf_t0=None, mccamyfuchs=1):
 
         self.wdepth = wdepth
         if self.wdepth < 0:

@@ -415,7 +415,7 @@ class Sims(object):
                            copyback_turb=False, msg='', update_cases=False,
                            ignore_non_unique=False, run_only_new=False,
                            pbs_fname_appendix=False, short_job_names=False,
-                           windows_nr_cpus=2)
+                           windows_nr_cpus=2, update_model_data=True)
 
     def get_control_tuning(self, fpath):
         """
@@ -530,9 +530,9 @@ class MappingsH2HS2(object):
 
     def _powercurve_hs2(self, fname):
 
-        mappings = {'P [kW]'  :'P_aero',
-                    'T [kN]'  :'T_aero',
-                    'V [m/s]' :'windspeed'}
+        mappings = {'P'  :'P_aero',
+                    'T'  :'T_aero',
+                    'V' :'windspeed'}
 
         df_pwr, units = self.hs2_res.load_pwr_df(fname)
 
@@ -550,14 +550,21 @@ class MappingsH2HS2(object):
         if h2_df_stats is not None:
             self.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                self.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
+                # self.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion',
+                #                            xaxis='radius')
+                self.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'torsion',
+                                           component='Rz', xaxis='s')
+                self.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'def_x_svn',
+                                            component='Dx', xaxis='s')
+                self.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'def_y_svn',
+                                            component='Dy', xaxis='s')
 
     def _distribution_hs2(self):
         """Read a HAWCStab2 *.ind file (blade distribution loading)
 
         rot_angle and rot_vec_123 in HS2 should be in rotor polar coordinates
         """
-
+        # mapping_hs2[hawcstab2_key] = general_key
         mapping_hs2 =  {'s [m]'       :'curved_s',
                         'CL0 [-]'     :'Cl',
                         'CD0 [-]'     :'Cd',
@@ -613,6 +620,7 @@ class MappingsH2HS2(object):
         self.hs_aero['twist'] *= (180.0/np.pi)
 
     def _distribution_h2(self):
+        # mapping_h2[hawc2_key] = general_key
         mapping_h2 =  { 'Radius_s'  :'curved_s',
                         'Cl'        :'Cl',
                         'Cd'        :'Cd',
@@ -623,9 +631,9 @@ class MappingsH2HS2(object):
                         'Vrel'      :'vrel',
                         'Inflow_ang':'inflow_angle',
                         'alfa'      :'AoA',
-                        'pos_RP_x'  :'pos_x',
-                        'pos_RP_y'  :'pos_y',
-                        'pos_RP_z'  :'pos_z',
+                        'Pos_RP_x'  :'pos_x',
+                        'Pos_RP_y'  :'pos_y',
+                        'Pos_RP_z'  :'pos_z',
                         'Chord'     :'chord',
                         'Secfrc_RPx':'F_x',
                         'Secfrc_RPy':'F_y',
@@ -637,9 +645,13 @@ class MappingsH2HS2(object):
         h2_aero = self.h2_res[h2_cols].copy()
         # change column names to the standard form that is shared with HS
         h2_aero.columns = std_cols
+
+        # using the distributed aero outputs
         h2_aero['def_x'] = self.h2_res['Pos_B_x'] - self.h2_res['Inipos_x_x']
         h2_aero['def_y'] = self.h2_res['Pos_B_y'] - self.h2_res['Inipos_y_y']
         h2_aero['def_z'] = self.h2_res['Pos_B_z'] - self.h2_res['Inipos_z_z']
+        # note that distribution_stats_h2() will set def_x from statevec_new
+
         h2_aero['ax_ind_vel'] *= (-1.0)
 #        h2_aero['pos_x'] += (self.h2_res['Chord'] / 2.0)
         h2_aero['F_x'] *= (1e3)
@@ -651,7 +663,8 @@ class MappingsH2HS2(object):
 #        h2_aero = h2_aero[1:-1]
         self.h2_aero = h2_aero
 
-    def distribution_stats_h2(self, fname_h2, sensortype, newname):
+    def distribution_stats_h2(self, fname_h2, sensortype, newname, xaxis='s',
+                              component=None):
         """Determine blade distribution sensor from the HAWC2 statistics.
         This requires that for each aerodynamic calculation point there should
         be an output sensor defined manually in the output section.
@@ -665,6 +678,14 @@ class MappingsH2HS2(object):
 
         newname
 
+        xaxis : string
+            column name in LoadResults.ch_df identifying the blade radial
+            coordinate. Valid values are 's', 'radius', 'radius_actual',
+            'srel'
+
+        component : string
+            For statevec_new we also need to specify which component, Dx, Rx, etc.
+
         """
         if not hasattr(self, 'h2_aero'):
             raise UserWarning('first run blade_distribution')
@@ -674,34 +695,39 @@ class MappingsH2HS2(object):
         fname = os.path.basename(fname_h2)
         res = sim.windIO.LoadResults(fpath, fname, readdata=True)
         sel = res.ch_df[res.ch_df.sensortype == sensortype].copy()
+        if component is not None:
+            sel = sel[sel['component']=='Rz']
         if len(sel) == 0:
             msg = 'HAWC2 sensor type "%s" is missing, are they defined?'
             raise ValueError(msg % sensortype)
-        sel.sort_values(['radius'], inplace=True)
-        tors_e_channels = sel.unique_ch_name.tolist()
+        # for backward compatibilitiy with tors_e
+        sel.sort_values([xaxis], inplace=True)
+        chan_sel = sel.unique_ch_name.tolist()
 
         # find the current case in the statistics DataFrame
         case = fname.replace('.htc', '')
         df_case = self.h2_df_stats[self.h2_df_stats['[case_id]']==case].copy()
         # and select all the torsion channels
-        df_tors_e = df_case[df_case.channel.isin(tors_e_channels)].copy()
+        df_chan_sel = df_case[df_case.channel.isin(chan_sel)].copy()
         # join the stats with the channel descriptions DataFrames, have the
         # same name on the joining column
-        df_tors_e.set_index('channel', inplace=True)
+        df_chan_sel.set_index('channel', inplace=True)
         sel.set_index('unique_ch_name', inplace=True)
 
         # joining happens on the index, and for which the same channel has been
         # used: the unique HAWC2 channel naming scheme
-        df_tors_e = pd.concat([df_tors_e, sel], axis=1)
-        df_tors_e.radius = df_tors_e.radius.astype(np.float64)
-        # sorting on radius, combine with ch_df
-        df_tors_e.sort_values(['radius'], inplace=True)
+        df_chan_sel = pd.concat([df_chan_sel, sel], axis=1)
+        df_chan_sel[xaxis] = df_chan_sel[xaxis].astype(np.float64)
+        # sorting on radius/s/etc, combine with ch_df
+        df_chan_sel.sort_values([xaxis], inplace=True)
+
+        # TODO: check if the outputs are at the same positions as the aero outputs
 
         # FIXME: what if number of torsion outputs is less than aero
         # calculation points?
-        self.h2_aero['%s' % newname] = df_tors_e['mean'].values.copy()
-        self.h2_aero['%s_std' % newname] = df_tors_e['std'].values.copy()
-        self.h2_aero['%s_radius_s' % newname] = df_tors_e['radius'].values.copy()
+        self.h2_aero['%s' % newname] = df_chan_sel['mean'].values.copy()
+        self.h2_aero['%s_std' % newname] = df_chan_sel['std'].values.copy()
+        self.h2_aero['%s_%s_s' % (newname, xaxis)] = df_chan_sel[xaxis].values.copy()
 
     def body_structure_modes(self, fname_h2, fname_hs):
         self._body_structure_modes_h2(fname_h2)
@@ -791,7 +817,14 @@ class Plots(object):
         if h2_df_stats is not None:
             res.h2_df_stats = h2_df_stats
             if fname_h2_tors is not None:
-                res.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion')
+                # res.distribution_stats_h2(fname_h2_tors, 'Tors_e', 'torsion',
+                #                           xaxis='radius')
+                res.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'torsion',
+                                          component='Rz', xaxis='s')
+                res.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'def_x_svn',
+                                          component='Dx', xaxis='s')
+                res.distribution_stats_h2(fname_h2_tors, 'statevec_new', 'def_y_svn',
+                                          component='Dy', xaxis='s')
 
         return res
 

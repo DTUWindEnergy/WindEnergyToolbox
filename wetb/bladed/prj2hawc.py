@@ -15,16 +15,18 @@ import pandas as pd
 # from wetb.prepost import misc
 from wetb.hawc2 import (HTCFile, AEFile, PCFile, StFile)
 
-from readprj import ReadBladedProject
+from wetb.bladed.readprj import ReadBladedProject
 
 
 # TODO: move to misc?
 def get_circular_inertia(d1, t, m):
     d2 = d1 - 2*t
     A = np.pi/4*(d1**2-d2**2)
+    # area moment of inertia x=y
     I_g = np.pi/64*(d1**4-d2**4)
+    # mass moment of inertia
     I_m = I_g/A*m
-    return A,I_g,I_m
+    return A, I_g, I_m
 
 
 # TODO: move to HTCFile?
@@ -421,7 +423,7 @@ class Convert2Hawc(ReadBladedProject):
         t[0] = t_thick[0,1]
         mat[0,:] = t_mat[0,:].copy()
 
-        A,I_g,I_m = get_circular_inertia(d,t,mat[:,0])
+        A, I_g, I_m = get_circular_inertia(d, t, mat[:,0])
         # FIXME: MAYBE ANOTHER FIX FOR DIFFERENT MATERIALS
         # return c2_arr
         starr = np.zeros((c2_arr.shape[0],19))
@@ -430,8 +432,8 @@ class Convert2Hawc(ReadBladedProject):
         starr[:,2] = 0.0 # no cg offset
         starr[:,3] = 0.0 # no cg offset
         # radius of gyration
-        starr[:,4] = np.sqrt(I_m/m) # ri_x = (I_m/m)**0.5 = (I_g/A)**0.5
-        starr[:,5] = np.sqrt(I_m/m) # ri_y = (I_m/m)**0.5 = (I_g/A)**0.5
+        starr[:,4] = np.sqrt(I_m/mat[:,0]) # ri_x = (I_m/m)**0.5 = (I_g/A)**0.5
+        starr[:,5] = np.sqrt(I_m/mat[:,0]) # ri_y = (I_m/m)**0.5 = (I_g/A)**0.5
         # shear center
         starr[:,6] = 0.0 # no shear center offset
         starr[:,7] = 0.0 # no shear center offset

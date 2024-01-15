@@ -97,7 +97,7 @@ Where `-n py39` refers any user defined name that describes what is the environm
 used for. These environments can then be activated as follows:
 
 ```
->> conda activate py35
+>> conda activate py39
 ```
 
 The Python distribution in use will now be located in e.g. \<path_to_anaconda\>/env/py39/
@@ -110,13 +110,11 @@ use ```conda deactivate``` to deactivate the environment.
 - Compiler (```wetb``` contains cython extensions that require a compiler):
     - Linux: gcc (should be installed by default)
     - Windows:
-        - Python 2.7: [Microsoft Visual C++ Compiler for Python 2.7](http://aka.ms/vcpython27),
-        or the [direct link](https://www.microsoft.com/en-gb/download/details.aspx?id=44266).
-        - Python 3.4: MS Visual Studio 2010
-        - Python 3.5: MS Visual Studio 2015 or [Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017)
-        - Python 3.5+: MS Visual Studio 2017 or [Visual C++ 2017 Redistributable](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2017)
+        - Python 3.5+: MS Visual Studio 2022 or [Visual C++ 2022 Redistributable](https://visualstudio.microsoft.com/downloads/#microsoft-visual-c-redistributable-for-visual-studio-2022)
+        https://visualstudio.microsoft.com/visual-cpp-build-tools/
+        
         - Only one MS Visual Studio version can be installed, but you can for
-        example install MS Visual Studio 2010 alongside the Visual C++ Build Tools.
+        example install MS Visual Studio 2022 alongside different Visual C++ Build Tools.
 - [numpy](http://www.numpy.org/)
 - [cython](http://cython.org/)
 - [scipy](http://scipy.org/scipylib/)
@@ -128,9 +126,8 @@ use ```conda deactivate``` to deactivate the environment.
 - [pytables](http://www.pytables.org/)
 - [pytest](https://pypi.python.org/pypi/pytest)
 - [pytest-cov](https://pypi.python.org/pypi/pytest-cov/)
-- six
-- nose, sphinx, blosc, pbr, psutil, coverage, setuptools_scm
-- [parimeko](http://www.paramiko.org/)
+- nose, sphinx, blosc, pbr, psutil, coverage, six
+- [paramiko](http://www.paramiko.org/)
 - [sshtunnel](https://github.com/pahaz/sshtunnel)
 - [pandoc](http://pandoc.org/) , [pypandoc](https://pypi.python.org/pypi/pypandoc):
 - [click](https://click.palletsprojects.com/en/7.x/)
@@ -139,15 +136,13 @@ convert markdown formatted readme file to rst for PyPi compatibility. See also
 issue #22. ```pandoc``` is available in Anaconda. When installing
 ```pypandoc``` via pip, you have to install ```pandoc``` via your package
 manager (Linux/Mac).
-- [twine](https://pypi.python.org/pypi/twine): upload package to
-[PyPi](https://pypi.python.org/pypi)
 
 Install the necessary Python dependencies using the conda package manager:
 
 ```
->> conda install setuptools_scm mock h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
->> conda install scipy pandas matplotlib cython xlrd coverage xlwt openpyxl psutil pandoc twine pypandoc click jinja2
->> conda install -c conda-forge sshtunnel --no-deps
+conda install mock h5py pytables pytest pytest-cov nose sphinx blosc pbr paramiko
+conda install scipy pandas matplotlib cython coverage openpyxl psutil click jinja2
+conda install -c conda-forge sshtunnel --no-deps
 ```
 
 Note that ```--no-deps``` avoids that newer packages from the channel
@@ -155,11 +150,6 @@ Note that ```--no-deps``` avoids that newer packages from the channel
 channel. Depending on which packages get overwritten, this might brake your
 Anaconda root environment. As such, using ```--no-deps``` should be
 used for safety (especially when operating from the root environment).
-
-Note that:
-
-- With Python 2.7, blosc fails to install.
-- With Python 3.6, twine, pypandoc fails to install.
 
 
 ## Get wetb

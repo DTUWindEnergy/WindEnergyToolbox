@@ -564,7 +564,7 @@ def read_cmb_all(f_cmb, f_pwr=None, f_modid=None, f_save=None, ps=[1,3,6]):
         # add p in frequencies
         if f_pwr is not None:
             for p in ps:
-                tmp[f'{p}P'] = p*df_perf['rpm'].values / 60
+                tmp[f'{p}P'] = p*df_perf['Speed'].values / 60
         # sort columns on mean frequeny over wind speeds
         icolsort = tmp.values.mean(axis=0).argsort()
         tmp = tmp[tmp.columns[icolsort]]
@@ -634,7 +634,7 @@ def plot_pwr(figname, fnames, labels=[], figsize=(11,7.15), dpi=120):
 
     print('saving figure: %s ... ' % figname, end='')
     figpath = os.path.dirname(figname)
-    if not os.path.exists(figpath):
+    if len(figpath)>0 and not os.path.exists(figpath):
         os.makedirs(figpath)
     fig.savefig(figname)
     fig.clear()
@@ -669,30 +669,71 @@ class PlotCampbell(object):
         if xpos == 'random':
             pos = np.random.randint(1, nr_xpos-5, nr_series)
         elif xpos == 'centre':
-            pos = np.zeros((nr_series,))
+            pos = np.zeros((nr_series,), dtype=int)
             pos[0:len(pos):2] = np.ceil(nr_xpos/4.0)
             pos[1:len(pos):2] = np.ceil(2.0*nr_xpos/4.0)
         elif xpos == 'borders':
-            pos = np.zeros((nr_series,))
+            pos = np.zeros((nr_series,), dtype=int)
             pos[0:len(pos):2] = 2
             pos[2:len(pos):4] += 1
-            pos[1:len(pos):2] = np.floor(3.0*nr_xpos/4.0)
+            pos[1:len(pos):2] = np.floor(3.3*nr_xpos/4.0)
             # and +1 alternating on the right
             pos[1:len(pos):4] += 1
             pos[3:len(pos):4] -= 1
         elif xpos == 'right':
-            pos = np.zeros((nr_series,))
+            pos = np.zeros((nr_series,), dtype=int)
             pos[0:len(pos):2] = 2
             pos[1:len(pos):2] = np.ceil(1.0*nr_xpos/4.0)
         elif xpos == 'left':
-            pos = np.zeros((nr_series,))
+            pos = np.zeros((nr_series,), dtype=int)
             pos[0:len(pos):2] = np.ceil(2.0*nr_xpos/4.0)
             pos[1:len(pos):2] = np.ceil(3.0*nr_xpos/4.0)
+        elif xpos == 'spread':
+            # TODO: we should determine the spacing based on wind speeds since
+            # it might not be equally spaced
+            pos = np.zeros((nr_series,), dtype=int)
+            pos[0:len(pos):4] = 0
+            pos[1:len(pos):4] = np.ceil(1.0*nr_xpos/4.0)
+            pos[2:len(pos):4] = np.ceil(2.0*nr_xpos/4.0)
+            pos[3:len(pos):4] = nr_xpos - 2
 
         return pos
 
     def plot_freq(self, ax, xpos='random', col='k', mark='^', ls='-',
                   modes='all'):
+        """
+
+
+        Parameters
+        ----------
+        ax : TYPE
+            An Axes matplotlib instance that will be used for plotting.
+        xpos : TYPE, str
+            Specify strategy how to place the labels indifying the different modes.
+            Valid string values are: 'random', 'centre', 'borders', 'right', 'left', 'spread'.
+            The default is 'random'. If a list is passed, it should contain at
+            least nr_modes elements. Items in the list refer to the index of the
+            operating point (wind speed).
+        col : string, optional
+            Color used for the line plot. The default is 'k'. Can also be a list
+            of colors in case modes should have different colors.
+        mark : string, optional
+            Marker to use for the line plot. The default is '^'. Can also be a list
+            of mark symbols in case modes should have different symbols.
+        ls : TYPE, optional
+            Line style to use. The default is '-'. Can also be a list
+            of line styles in case modes should have different line styles.
+        modes : string, optional
+            Identify which modes to plot. The default is 'all'. Optionally
+            specify an integer to select the first x modes, or a list of indices
+            to cherry pick modes of interest.
+
+        Returns
+        -------
+        ax : matplotlib.axes
+            An updated Axes matplotlib instance of the plot.
+
+        """
 
         if isinstance(modes, str) and modes == 'all':
             df_freq = self.df_freq
@@ -703,7 +744,12 @@ class PlotCampbell(object):
 
         nr_winds = df_freq.shape[0]
         nr_modes = df_freq.shape[1]
-        pos = self._inplot_label_pos(nr_winds, nr_modes, xpos)
+
+        pos = xpos
+        if isinstance(xpos, str):
+            pos = self._inplot_label_pos(nr_winds, nr_modes, xpos)
+        elif isinstance(xpos, list) and len(xpos) < nr_modes:
+            raise ValueError(f'xpos has only {len(xpos)}, while it needs to be >= {nr_modes}')
 
         if isinstance(col, str):
             col = [col]
@@ -716,7 +762,7 @@ class PlotCampbell(object):
         mark = mark*nr_modes
         ls = ls*nr_modes
 
-        for i, (name, row) in enumerate(df_freq.iteritems()):
+        for i, (name, row) in enumerate(df_freq.items()):
             colmark = '%s%s%s' % (col[i], ls[i], mark[i])
             ax.plot(self.wind, row.values, colmark)#, mfc='w')
             x, y = self.wind[pos[i]], row.values[pos[i]]
@@ -733,9 +779,14 @@ class PlotCampbell(object):
 
     def plot_damp(self, ax, xpos='random', col='r', mark='o' ,ls='--',
                   modes=14):
+        """see plot_freq
+
+        """
 
         # reduce the number of modes we are going to plot
-        if isinstance(modes, int):
+        if isinstance(modes, str) and modes == 'all':
+            df_damp = self.df_damp
+        elif isinstance(modes, int):
             nr_modes = modes
             # sort the columns according to damping: lowest damped modes first
             # sort according to damping at lowest wind speed
@@ -744,18 +795,34 @@ class PlotCampbell(object):
             df_damp = self.df_damp[modes_sort_reduced]
         else:
             df_damp = self.df_damp[modes]
-            nr_modes = len(modes)
+
+        nr_winds = df_damp.shape[0]
+        nr_modes = df_damp.shape[1]
+
+        if isinstance(col, str):
+            col = [col]
+        if isinstance(mark, str):
+            mark = [mark]
+        if isinstance(ls, str):
+            ls = [ls]
+        # just to make sure we always have enough colors/marks,lss
+        col = col*nr_modes
+        mark = mark*nr_modes
+        ls = ls*nr_modes
 
         # put the labels in sensible places
-        nr_winds = df_damp.shape[0]
-        nr_damps = df_damp.shape[1]
-        pos = self._inplot_label_pos(nr_winds, nr_damps, xpos)
-        bbox = dict(boxstyle="round", alpha=self.alpha_box, edgecolor=col,
-                    facecolor=col,)
-        for imode, (name, row) in enumerate(df_damp.iteritems()):
-            colmark = '%s%s%s' % (col, ls, mark)
+        pos = xpos
+        if isinstance(xpos, str):
+            pos = self._inplot_label_pos(nr_winds, nr_modes, xpos)
+        elif isinstance(xpos, list) and len(xpos) < nr_modes:
+            raise ValueError(f'xpos has only {len(xpos)}, while it needs to be >= {nr_modes}')
+
+        for i, (name, row) in enumerate(df_damp.items()):
+            colmark = '%s%s%s' % (col[i], ls[i], mark[i])
             ax.plot(self.wind, row.values, colmark, alpha=0.8)#, mfc='w')
-            x, y = self.wind[pos[imode]], row.values[pos[imode]]
+            x, y = self.wind[pos[i]], row.values[pos[i]]
+            bbox = dict(boxstyle="round", alpha=self.alpha_box,
+                        edgecolor=col[i], facecolor=col[i])
             ax.annotate(name, xy=(x, y), xycoords='data',
                         xytext=(-6, 20), textcoords='offset points',
                         fontsize=12, bbox=bbox, arrowprops=dict(arrowstyle="->",
