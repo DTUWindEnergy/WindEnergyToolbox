@@ -4,7 +4,7 @@ Created on 16/06/2014
 @author: MMPE
 '''
 
-from scipy.optimize.optimize import fmin
+from scipy.optimize import fmin
 import numpy as np
 
 

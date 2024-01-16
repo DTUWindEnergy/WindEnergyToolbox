@@ -1,6 +1,6 @@
 
 import numpy as np
-from scipy.interpolate.interpolate import interp1d
+from scipy.interpolate import interp1d
 
 
 def bin_fit(x, y, bins=10, kind='linear', bin_func=np.nanmean, bin_min_count=3, lower_upper='discard'):
