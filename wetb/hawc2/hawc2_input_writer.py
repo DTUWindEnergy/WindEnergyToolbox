@@ -7,6 +7,7 @@ from tqdm import tqdm
 import jinja2
 import pandas as pd
 from pandas.core.base import PandasObject
+import numpy as np
 
 from wetb.hawc2.htc_file import HTCFile
 
@@ -163,9 +164,15 @@ class HAWC2InputWriter(object):
         for k, v in kwargs.items():
             k = k.replace('/', '.')
             if '.' in k:  # directly replace tags like "wind.wsp"
-                line = htc[k]
-                v = str(v).strip().replace(",", " ")
-                line.values = v.split()
+                command = k.split(".")[-1]
+                subsections = k.split(".")[:-1]
+                section = htc
+                for subsection in subsections:
+                    section = section.add_section(subsection)
+                if command in section:
+                    section[command].values = np.atleast_1d(v).tolist()
+                else:
+                    section[command] = v
             else:  # otherwise, use the "set_" attribute
                 if hasattr(self, 'set_%s' % k):
                     getattr(self, 'set_%s' % k)(htc, **kwargs)

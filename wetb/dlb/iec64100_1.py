@@ -202,6 +202,12 @@ class DLB():
                                        for n, d in var_name_desc], columns=['Name', 'Value', 'Description'],
                                       index=[n for (n, d) in var_name_desc])
 
+    @property
+    def dlb(self):
+        if not hasattr(self, '_dlb'):
+            self.generate_DLB()
+        return self._dlb
+
     def keys(self):
         return [n for n in self.dlcs['Name'] if not str(n).lower().strip() in ['', 'none', 'nan']]
 
@@ -211,7 +217,7 @@ class DLB():
         writer = pd.ExcelWriter(filename)
         self.dlcs.to_excel(writer, 'DLC', index=False)
         self.variables.to_excel(writer, 'Variables', index=False)
-        writer.save()
+        writer.close()
 
     @staticmethod
     def from_excel(filename):
@@ -225,7 +231,10 @@ class DLB():
         return DLB([row for _, row in dlb_def.iterrows() if row['Name'] is not np.nan], variables)
 
     def __getitem__(self, key):
-        dlc_definition = self.dlcs.loc[key]
+        return self.dlb[key]
+
+    def _make_dlc(self, dlc_name):
+        dlc_definition = self.dlcs.loc[dlc_name]
         kwargs = {k: DLC.getattr(str(dlc_definition[k]))
                   for k in ['Turb', 'Shear', 'Gust', 'Fault']}
         kwargs['Description'] = dlc_definition['Description']
@@ -237,8 +246,12 @@ class DLB():
         df.insert(0, 'DLC', name)
         return df
 
+    def generate_DLB(self):
+        self._dlb = {dlc: self._make_dlc(dlc) for dlc in self.keys()}
+        return self._dlb
+
     def to_pandas(self):
-        return pd.concat([self[dlc] for dlc in self.keys()], sort=False)
+        return pd.concat(self._dlb.values(), sort=False)
 
     def cases_to_excel(self, filename):
         if os.path.dirname(filename) != "":

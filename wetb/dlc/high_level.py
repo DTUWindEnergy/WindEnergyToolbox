@@ -210,7 +210,7 @@ class DLCHighLevel(object):
 
     def fatigue_distribution(self):
         fatigue_dist = {}
-        for row, load in self.dlc_df['load'].iteritems():
+        for row, load in self.dlc_df['load'].items():
             if "F" not in str(load).upper():
                 continue
             dlc = self.dlc_df[self.dist_value_keys[0][1]][row]
