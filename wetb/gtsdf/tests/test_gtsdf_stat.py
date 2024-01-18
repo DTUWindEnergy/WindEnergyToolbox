@@ -51,9 +51,9 @@ class Test_gsdf(unittest.TestCase):
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_statistics('missing', tmp_path)
 
-        df = collect_statistics('.', tmp_path, filename='*stat.hdf5')
+        df, info = collect_statistics('.', tmp_path, filename='*stat.hdf5')
         assert df.shape == (98, 12)
-        df = collect_statistics('.', tmp_path + "..", filename='*stat.hdf5')
+        df, info = collect_statistics('.', tmp_path + "..", filename='*stat.hdf5')
         assert df.shape == (98, 12)
         with pytest.raises(Exception, match=r'No \*stat\.hdf5 files found in'):
             collect_statistics('.', tmp_path + "..", filename='*stat.hdf5', recursive=False)

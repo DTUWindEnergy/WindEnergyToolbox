@@ -487,8 +487,9 @@ def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
 
     if not fn_lst:
         raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-
-    sensor_names = load_statistic(fn_lst[0])[1]['attribute_names']
+    info = load_statistic(fn_lst[0])[1]
+    info = {k: info[k] for k in ['attribute_names', 'attribute_units', 'attribute_descriptions']}
+    sensor_names = info['attribute_names']
 
     def get_stat(fn):
         stat, info = load_statistic(fn)
@@ -498,4 +499,4 @@ def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
         return stat
 
     stats = [get_stat(fn) for fn in tqdm.tqdm(fn_lst)]
-    return pd.concat(stats, keys=[os.path.relpath(fn, root) for fn in fn_lst], names=['filename', 'sensor'])
+    return pd.concat(stats, keys=[os.path.relpath(fn, root) for fn in fn_lst], names=['filename', 'sensor']), info
