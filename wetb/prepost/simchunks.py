@@ -601,7 +601,7 @@ def create_chunks_htc_pbs(cases, sort_by_values=['[Windspeed]'], ppn=20, i0=0,
             make_pbs_chunks(dfi, i02+ii, sim_id, run_dir, model_zip,
                             wine_arch=wine_arch, wine_prefix=wine_prefix,
                             compress=compress)
-            df_ind = df_ind.append(ind)
+            df_ind = pd.concat([df_ind, ind])
             print(fname)
         fname = os.path.join(post_dir, 'case_id-chunk-index')
         df_ind['chnk_nr'] = df_ind['chnk_nr'].astype(np.int32)
