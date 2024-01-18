@@ -29,6 +29,7 @@ class Test_gsdf(unittest.TestCase):
         # shutil.rmtree(tmp_path)
 
     def test_gtsdf_stat(self):
+        # test_gtsdf_stat
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         fn = tmp_path + "test_stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
@@ -37,7 +38,7 @@ class Test_gsdf(unittest.TestCase):
         self.assertEqual(data[:, 0].min(), stat_data.values[0, 0])
         self.assertEqual(stat_data.shape, (49, 10))
 
-    def test_gtsdf_compress2stat(self):
+        # test_gtsdf_compress2stat
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         fn = tmp_path + "test_compress2stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
@@ -46,7 +47,7 @@ class Test_gsdf(unittest.TestCase):
         gtsdf.compress2statistics(fn)
         self.assertLess(os.path.getsize(fn) * 50, os.path.getsize(tfp + 'test.hdf5'))
 
-    def test_collect_stat(self):
+        # test_collect_stat
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_statistics('missing', tmp_path)
 
