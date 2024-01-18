@@ -10,6 +10,8 @@ from wetb import gtsdf
 
 import unittest
 import os
+from wetb.gtsdf.gtsdf import collect_statistics
+import pytest
 
 tmp_path = os.path.dirname(__file__) + "/tmp/"
 tfp = os.path.dirname(os.path.abspath(__file__)) + "/test_files/"
@@ -27,6 +29,7 @@ class Test_gsdf(unittest.TestCase):
         # shutil.rmtree(tmp_path)
 
     def test_gtsdf_stat(self):
+        # test_gtsdf_stat
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         fn = tmp_path + "test_stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
@@ -35,7 +38,7 @@ class Test_gsdf(unittest.TestCase):
         self.assertEqual(data[:, 0].min(), stat_data.values[0, 0])
         self.assertEqual(stat_data.shape, (49, 10))
 
-    def test_gtsdf_compress2stat(self):
+        # test_gtsdf_compress2stat
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         fn = tmp_path + "test_compress2stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
@@ -43,6 +46,17 @@ class Test_gsdf(unittest.TestCase):
         gtsdf.save(tmp_path + "test_compress2stat2.hdf5", data, time=time, dtype=float, **info)
         gtsdf.compress2statistics(fn)
         self.assertLess(os.path.getsize(fn) * 50, os.path.getsize(tfp + 'test.hdf5'))
+
+        # test_collect_stat
+        with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
+            collect_statistics('missing', tmp_path)
+
+        df = collect_statistics('.', tmp_path, filename='*stat.hdf5')
+        assert df.shape == (98, 12)
+        df = collect_statistics('.', tmp_path + "..", filename='*stat.hdf5')
+        assert df.shape == (98, 12)
+        with pytest.raises(Exception, match=r'No \*stat\.hdf5 files found in'):
+            collect_statistics('.', tmp_path + "..", filename='*stat.hdf5', recursive=False)
 
 
 if __name__ == "__main__":
