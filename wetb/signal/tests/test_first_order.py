@@ -14,40 +14,38 @@ from wetb.signal.fit._fourier_fit import F2x, x2F, rx2F
 
 class Test_first_order_filters(unittest.TestCase):
 
-
     def test_low_pass(self):
-        a = np.random.randint(0,100,100).astype(float)
+        a = np.random.randint(0, 100, 100).astype(float)
         b = first_order.low_pass(a, 1, 1)
         self.assertLess(b.std(), a.std())
-        if 0:
+        if 1:
             import matplotlib.pyplot as plt
             plt.plot(a)
             plt.plot(b)
             plt.show()
-          
-          
+
     def test_low_pass2(self):
         t = np.linspace(0, 1.0, 2001)
         xlow = np.sin(2 * np.pi * 5 * t)
         xhigh = np.sin(2 * np.pi * 250 * t)
         x = xlow + xhigh
-                
+
         b, a = signal.butter(8, 0.125)
         y = signal.filtfilt(b, a, x, padlen=150)
-        self.assertAlmostEqual(np.abs(y - xlow).max(),0,4)
+        self.assertAlmostEqual(np.abs(y - xlow).max(), 0, 4)
         if 0:
             import matplotlib.pyplot as plt
             plt.plot(x)
             plt.plot(y)
             plt.show()
-        
+
 
 #     def test_low_pass3(self):
 #         t = np.linspace(0, 1.0, 2001)
 # #         xlow = np.sin(2 * np.pi * 5 * t)
 # #         xhigh = np.sin(2 * np.pi * 250 * t)
 # #         x = xlow + xhigh
-#         x = np.sum([np.sin(t*x*2*np.pi) for x in range(1,200)],0)                
+#         x = np.sum([np.sin(t*x*2*np.pi) for x in range(1,200)],0)
 #         cutoff = .2
 #         b, a = signal.butter(8,cutoff)
 #         w, h = signal.freqs(b, a)
@@ -55,19 +53,19 @@ class Test_first_order_filters(unittest.TestCase):
 #         F = rx2F(x, max_nfft=len(t))
 #         tF = np.linspace(0, len(F)/t[-1],len(F))
 #         Fy = rx2F(y, max_nfft=len(t))
-# 
+#
 #         if 1:
 #             import matplotlib.pyplot as plt
 # #             plt.plot(x)
 # #             plt.plot(y)
 # #             plt.show()
-# 
+#
 #             plt.plot(tF, np.abs(F))
 #             plt.plot(tF, np.abs(Fy))
 #             plt.xlim([0,260])
 #             plt.show()
 #             print (b,a)
-#             
+#
 #             plt.plot(w, 20 * np.log10(abs(h)))
 #             plt.xscale('log')
 #             plt.title('Butterworth filter frequency response')
@@ -77,7 +75,7 @@ class Test_first_order_filters(unittest.TestCase):
 #             plt.grid(which='both', axis='both')
 #             plt.axvline(cutoff, color='green') # cutoff frequency
 #             plt.show()
-#      
+#
 #     def test_low_pass2(self):
 #         t = np.arange(100000)/10000
 #         dt = t[1]-t[0]
@@ -89,11 +87,11 @@ class Test_first_order_filters(unittest.TestCase):
 #         print (sig.shape)
 #         F = rx2F(sig, max_nfft=len(t))
 #         tF = np.linspace(0, len(F)/t[-1],len(F))
-#           
-#           
+#
+#
 #         sig_lp1 = first_order.low_pass(sig, dt, 30*dt)
 #         F_lp1 = rx2F(sig_lp1, max_nfft=len(t))
-#    
+#
 #         bb, ba = signal.butter(1,5, 'low', analog=True)
 #         print (bb, ba)
 #         w1, h1 = signal.freqs(bb, ba)
@@ -104,24 +102,24 @@ class Test_first_order_filters(unittest.TestCase):
 # #         sig_lp3 = signal.lfilter(bb,ba, sig)
 # #         F_lp3 = rx2F(sig_lp3, max_nfft=len(t))
 # #         w2, h2 = signal.freqs(bb, ba)
-# # #          
+# # #
 # #         self.assertLess(b.std(), a.std())
 #         if 1:
 #             import matplotlib.pyplot as plt
 #             plt.plot(t, sig)
 # #             plt.plot(t, np.sum([1/x*np.sin(t*x*2*np.pi) for x in [1]],0))
-# #             
+# #
 #             plt.plot(t, sig_lp1)
 #             plt.plot(t, sig_lp2)
 #             #plt.plot(t, sig_lp3)
-#               
+#
 #             plt.show()
-#                
+#
 # #             plt.plot(tF, np.abs(F))
 # #             plt.plot(tF, np.abs(F_lp1))
 # # #             plt.plot(tF, np.abs(F_lp3))
 # # #             plt.plot(tF, np.abs(F_lp2))
-# #             plt.plot([0,1000],[0.708,.708])              
+# #             plt.plot([0,1000],[0.708,.708])
 # #             plt.xlim([0,205])
 # #             plt.ylim([0,1])
 # #             plt.show()
@@ -135,9 +133,8 @@ class Test_first_order_filters(unittest.TestCase):
 # #             plt.grid(which='both', axis='both')
 # #             plt.axvline(100, color='green') # cutoff frequency
 # #             plt.show()
- 
-          
- 
+
+
 # #     def test_low_pass2(self):
 # #         F = [0,1,0,0,0,0,0,0,0,0,0,0,0,0,.1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,.1]
 # #         F +=[0]*(len(F)-1)
@@ -149,7 +146,7 @@ class Test_first_order_filters(unittest.TestCase):
 # #         bb, ba = signal.butter(10,100, 'low', analog=True)
 # #         #c = signal.lfilter(bb,ba, a)
 # #         w, h = signal.freqs(bb, ba)
-# #          
+# #
 # # #         self.assertLess(b.std(), a.std())
 # #         if 1:
 # #             import matplotlib.pyplot as plt
@@ -168,12 +165,11 @@ class Test_first_order_filters(unittest.TestCase):
 # #             plt.grid(which='both', axis='both')
 # #             plt.axvline(100, color='green') # cutoff frequency
 # #             plt.show()
-# #              
-# #             
-    
+# #
+# #
 
     def test_high_pass(self):
-        a = np.random.randint(0,100,100).astype(float)
+        a = np.random.randint(0, 100, 100).astype(float)
         b = first_order.high_pass(a, 1, 1)
         self.assertLess(b.mean(), a.mean())
         if 0:
@@ -181,6 +177,8 @@ class Test_first_order_filters(unittest.TestCase):
             plt.plot(a)
             plt.plot(b)
             plt.show()
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
