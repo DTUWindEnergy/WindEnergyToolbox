@@ -8,6 +8,9 @@ import os
 import numpy as np
 import numpy.ma as ma
 import pandas as pd
+import glob
+import tqdm
+
 block_name_fmt = "block%04d"
 
 
@@ -473,3 +476,26 @@ def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3'
     stat_data = _get_statistic(time, data, statistics)
     _save_info(filename, data.shape, **info)
     _add_statistic_data(filename, stat_data, statistics)
+
+
+def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
+    if recursive:
+        p = os.path.join(root, folder, '**', filename)
+    else:
+        p = os.path.join(root, folder, filename)
+    fn_lst = glob.glob(p, recursive=recursive)  # python<310 does not takes root_dir argument
+
+    if not fn_lst:
+        raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
+
+    sensor_names = load_statistic(fn_lst[0])[1]['attribute_names']
+
+    def get_stat(fn):
+        stat, info = load_statistic(fn)
+        assert info['attribute_names'] == sensor_names
+        stat['filename'] = os.path.relpath(fn, root)
+        stat['sensor'] = np.arange(stat.shape[0])
+        return stat
+
+    stats = [get_stat(fn) for fn in tqdm.tqdm(fn_lst)]
+    return pd.concat(stats, keys=[os.path.relpath(fn, root) for fn in fn_lst], names=['filename', 'sensor'])
