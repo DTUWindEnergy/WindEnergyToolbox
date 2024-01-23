@@ -8,29 +8,19 @@ from numba.core.decorators import njit
 
 
 def low_pass(input, delta_t, tau, method=1):
-    from wetb.signal.filters import cy_filters
 
     if isinstance(tau, (int, float)):
         return low_pass_filter(input.astype(np.float64), delta_t, tau)
     else:
         if len(input.shape) == 2:
-            r1 = dynamic_low_pass_filter_2d(input.astype(np.float64), delta_t, tau, method)
-            r2 = cy_filters.cy_dynamic_low_pass_filter_2d(input.astype(np.float64), delta_t, tau, method)
-            np.testing.assert_array_equal(r1, r2)
-            return r1
+            return dynamic_low_pass_filter_2d(input.astype(np.float64), delta_t, tau, method)
+
         else:
-            r1 = dynamic_low_pass_filter(input.astype(np.float64), delta_t, tau, method)
-            r2 = cy_filters.cy_dynamic_low_pass_filter(input.astype(np.float64), delta_t, tau, method)
-            np.testing.assert_array_equal(r1, r2)
-            return r1
+            return dynamic_low_pass_filter(input.astype(np.float64), delta_t, tau, method)
 
 
 def high_pass(input, delta_t, tau):
-    from wetb.signal.filters import cy_filters
-    r1 = high_pass_filter(input.astype(np.float64), delta_t, tau)
-    r2 = cy_filters.cy_high_pass_filter(input.astype(np.float64), delta_t, tau)
-    np.testing.assert_array_almost_equal(r1, r2, 5)
-    return r1
+    return high_pass_filter(input.astype(np.float64), delta_t, tau)
 
 
 @njit(cache=True)
