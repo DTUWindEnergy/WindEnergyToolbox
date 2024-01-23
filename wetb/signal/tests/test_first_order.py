@@ -15,10 +15,10 @@ from wetb.signal.fit._fourier_fit import F2x, x2F, rx2F
 class Test_first_order_filters(unittest.TestCase):
 
     def test_low_pass(self):
-        a = np.random.randint(0, 100, 100).astype(float)
+        a = np.random.randint(0, 100, 100000).astype(float)
         b = first_order.low_pass(a, 1, 1)
         self.assertLess(b.std(), a.std())
-        if 1:
+        if 0:
             import matplotlib.pyplot as plt
             plt.plot(a)
             plt.plot(b)
