@@ -1,9 +1,10 @@
-'''
+"""
 Created on 21/07/2014
 
 @author: mmpe
-'''
+"""
 import numpy as np
+import numpy.typing as npt
 
 
 def s2matrix(s):
@@ -12,11 +13,11 @@ def s2matrix(s):
     Parameters
     ----------
     s : string
-        x is 
+        x is
     Returns
     -------
     matrix : array_like
-        3x3 transformation matrix             
+        3x3 transformation matrix
 
     Examples
     --------
@@ -24,7 +25,7 @@ def s2matrix(s):
     >> s2matrix('x,-z,y) # 90 deg rotation around x
 
     """
-    d = {xyz: v for xyz, v in zip('xyz', np.eye(3))}
+    d = {xyz: v for xyz, v in zip("xyz", np.eye(3))}
     return np.array([eval(xyz, d) for xyz in s.split(",")]).T
 
 
@@ -48,7 +49,11 @@ def transformation_matrix(angles, xyz):
     transformation_matrix : array_like, shape = (no_angles, 3,3)
         Rotation matrix(es)
     """
-    indexes = [(0, 4, 8, 5, 7), (4, 0, 8, 6, 2), (8, 0, 4, 1, 3)]  # 1, cos,cos,sin,-sin for x,y and z rotation matrix
+    indexes = [
+        (0, 4, 8, 5, 7),
+        (4, 0, 8, 6, 2),
+        (8, 0, 4, 1, 3),
+    ]  # 1, cos,cos,sin,-sin for x,y and z rotation matrix
     if isinstance(angles, (int, float)):
         n = 1
     else:
@@ -56,11 +61,11 @@ def transformation_matrix(angles, xyz):
     m = np.zeros(n * 9, float)
     cosx = np.cos(angles)
     sinx = np.sin(angles)
-    m[indexes[xyz][0]::9] = 1
-    m[indexes[xyz][1]::9] = cosx
-    m[indexes[xyz][2]::9] = cosx
-    m[indexes[xyz][3]::9] = sinx
-    m[indexes[xyz][4]::9] = -sinx
+    m[indexes[xyz][0] :: 9] = 1
+    m[indexes[xyz][1] :: 9] = cosx
+    m[indexes[xyz][2] :: 9] = cosx
+    m[indexes[xyz][3] :: 9] = sinx
+    m[indexes[xyz][4] :: 9] = -sinx
     return m.reshape(n, 3, 3)
 
 
@@ -84,7 +89,11 @@ def rotmat(angles, xyz):
     transformation_matrix : array_like, shape = (no_angles, 3,3)
         Rotation matrix(es)
     """
-    indexes = [(0, 4, 8, 5, 7), (4, 0, 8, 6, 2), (8, 0, 4, 1, 3)]  # 1, cos,cos,sin,-sin for x,y and z rotation matrix
+    indexes = [
+        (0, 4, 8, 5, 7),
+        (4, 0, 8, 6, 2),
+        (8, 0, 4, 1, 3),
+    ]  # 1, cos,cos,sin,-sin for x,y and z rotation matrix
     if isinstance(angles, (int, float)):
         n = 1
     else:
@@ -92,11 +101,11 @@ def rotmat(angles, xyz):
     m = np.zeros(n * 9, float)
     cosx = np.cos(angles)
     sinx = np.sin(angles)
-    m[indexes[xyz][0]::9] = 1
-    m[indexes[xyz][1]::9] = cosx
-    m[indexes[xyz][2]::9] = cosx
-    m[indexes[xyz][3]::9] = -sinx
-    m[indexes[xyz][4]::9] = sinx
+    m[indexes[xyz][0] :: 9] = 1
+    m[indexes[xyz][1] :: 9] = cosx
+    m[indexes[xyz][2] :: 9] = cosx
+    m[indexes[xyz][3] :: 9] = -sinx
+    m[indexes[xyz][4] :: 9] = sinx
     return m.reshape(n, 3, 3)
 
 
@@ -132,7 +141,9 @@ def mdot(m1, m2):
         for i in range(m1.shape[0]):
             mprod[i, :] = np.dot(m1[i, :], m2[i, :])
     else:
-        raise Exception("m1 and m2 must have same first dimension or one of the matrices must have first dimension 1")
+        raise Exception(
+            "m1 and m2 must have same first dimension or one of the matrices must have first dimension 1"
+        )
     return mprod
 
 
@@ -184,11 +195,16 @@ def rotate(rotmats, v):
             return rotate(rotmats_red, v)
         else:
             rotmats = rotmats[0]
-    assert rotmats.shape[-1] == rotmats.shape[-2] == v.shape[-1] == 3, "rotmats is %d x %x and v is i x %d, but must be 3" % (
-        rotmats.shape[-1], rotmats.shape[-2], v.shape[-1])
+    assert (
+        rotmats.shape[-1] == rotmats.shape[-2] == v.shape[-1] == 3
+    ), "rotmats is %d x %x and v is i x %d, but must be 3" % (
+        rotmats.shape[-1],
+        rotmats.shape[-2],
+        v.shape[-1],
+    )
 
-#    if isinstance(v, tuple):
-#        v = np.array([v])
+    #    if isinstance(v, tuple):
+    #        v = np.array([v])
     n = (1, v.shape[0])[len(v.shape) == 2]
 
     if rotmats.shape[0] == 1:
@@ -218,7 +234,9 @@ def rotate_x(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin: [x, cos * y - sin * z, sin * y + cos * z])
+    return _rotate(
+        v, angle, lambda x, y, z, cos, sin: [x, cos * y - sin * z, sin * y + cos * z]
+    )
 
 
 def rotate_y(v, angle):
@@ -236,7 +254,9 @@ def rotate_y(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin: [cos * x + sin * z, y, -sin * x + cos * z])
+    return _rotate(
+        v, angle, lambda x, y, z, cos, sin: [cos * x + sin * z, y, -sin * x + cos * z]
+    )
 
 
 def rotate_z(v, angle):
@@ -254,7 +274,9 @@ def rotate_z(v, angle):
     y : array_like
         Rotated vector(s)
     """
-    return _rotate(v, angle, lambda x, y, z, cos, sin: [cos * x - sin * y, sin * x + cos * y, z])
+    return _rotate(
+        v, angle, lambda x, y, z, cos, sin: [cos * x - sin * y, sin * x + cos * y, z]
+    )
 
 
 def _rotate(v, angle, rotfunc):
@@ -271,26 +293,27 @@ def _rotate(v, angle, rotfunc):
         return np.array(rotfunc(v[:, 0], v[:, 1], v[:, 2], cos, sin), dtype=float).T
 
 
-#=======================================================================================================================
+# =======================================================================================================================
 # Conversions
-#=======================================================================================================================
+# =======================================================================================================================
 # http://www.euclideanspace.com/maths/geometry/rotations/conversions/
 # - axis: [x,y,z]*angle_deg
 # - axis_angle: [x,y,z,angle_rad]
 # - Quaternion: [qw,qx,qy,qz]
 # - Matrix 3x3 transformation matrix
 
+
 def norm(vector):
-    return np.sqrt(np.sum(np.asarray(vector)**2))
+    return np.sqrt(np.sum(np.asarray(vector) ** 2))
 
 
-#=======================================================================================================================
+# =======================================================================================================================
 # axis to ...
-#=======================================================================================================================
+# =======================================================================================================================
 def axis2axis_angle(axis):
     """
     deg : boolean
-        if True, axis length is assumed to be angle in deg 
+        if True, axis length is assumed to be angle in deg
     """
     axis = np.asarray(axis)
     angle = np.sqrt(((axis**2).sum()))
@@ -310,22 +333,26 @@ def axis2matrix(axis, deg=False):
     c, s = np.cos(angle), np.sin(angle)
     t = 1 - c
 
-    return np.array([[t * x * x + c, t * x * y - z * s, t * x * z + y * s],
-                     [t * x * y + z * s, t * y * y + c, t * y * z - x * s],
-                     [t * x * z - y * s, t * y * z + x * s, t * z * z + c]])
+    return np.array(
+        [
+            [t * x * x + c, t * x * y - z * s, t * x * z + y * s],
+            [t * x * y + z * s, t * y * y + c, t * y * z - x * s],
+            [t * x * z - y * s, t * y * z + x * s, t * z * z + c],
+        ]
+    )
     # alternative implementation
-    #asym = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
+    # asym = np.array([[0, -z, y], [z, 0, -x], [-y, x, 0]])
     # return c * np.eye(3, 3) + s * asym + (1 - c) * xyz[np.newaxis] * xyz[:, np.newaxis]
 
-def axis2quaternion(axis):
 
+def axis2quaternion(axis):
     axis = np.asarray(axis)
     q = np.zeros([axis.shape[0], 4])
 
     if len(axis.shape) > 1:
-        yaw = axis[:,2]
-        pitch = axis[:,1]
-        roll = axis[:,0]
+        yaw = axis[:, 2]
+        pitch = axis[:, 1]
+        roll = axis[:, 0]
     else:
         yaw = axis[2]
         pitch = axis[1]
@@ -349,9 +376,11 @@ def axis2quaternion(axis):
     q[:, 3] = qz
 
     return q
-#=======================================================================================================================
+
+
+# =======================================================================================================================
 # # axis_angle to ...
-#=======================================================================================================================
+# =======================================================================================================================
 
 
 def axis_angle2axis(axis_angle):
@@ -371,9 +400,10 @@ def axis_angle2quaternion(axis_angle, deg=False):
     return w, x, y, z
 
 
-#=======================================================================================================================
+# =======================================================================================================================
 # # quaternion to ...
-#=======================================================================================================================
+# =======================================================================================================================
+
 
 def quaternion2axis_angle(quaternion, deg=False):
     qw, qx, qy, qz = quaternion / norm(quaternion)
@@ -399,13 +429,18 @@ def quaternion2matrix(quaternion):
     qyz = qy * qz
     qzw = qz * qw
 
-    return np.array([[sqx - sqy - sqz + sqw, 2.0 * (qxy - qzw), 2.0 * (qxz + qyw)],
-                     [2.0 * (qxy + qzw), -sqx + sqy - sqz + sqw, 2.0 * (qyz - qxw)],
-                     [2.0 * (qxz - qyw), 2.0 * (qyz + qxw), -sqx - sqy + sqz + sqw]])
+    return np.array(
+        [
+            [sqx - sqy - sqz + sqw, 2.0 * (qxy - qzw), 2.0 * (qxz + qyw)],
+            [2.0 * (qxy + qzw), -sqx + sqy - sqz + sqw, 2.0 * (qyz - qxw)],
+            [2.0 * (qxz - qyw), 2.0 * (qyz + qxw), -sqx - sqy + sqz + sqw],
+        ]
+    )
 
-#=======================================================================================================================
+
+# =======================================================================================================================
 # Matrix to ...
-#=======================================================================================================================
+# =======================================================================================================================
 
 
 def matrix2quaternion(matrix):
@@ -414,19 +449,19 @@ def matrix2quaternion(matrix):
     (m00, m01, m02), (m10, m11, m12), (m20, m21, m22) = matrix
     tr = m00 + m11 + m22
 
-    if (tr > 0):
+    if tr > 0:
         S = sqrt(tr + 1.0) * 2  # // S=4*qw
         qw = 0.25 * S
         qx = (m21 - m12) / S
         qy = (m02 - m20) / S
         qz = (m10 - m01) / S
-    elif ((m00 > m11) and (m00 > m22)):
+    elif (m00 > m11) and (m00 > m22):
         S = sqrt(1.0 + m00 - m11 - m22) * 2  # // S=4*qx
         qw = (m21 - m12) / S
         qx = 0.25 * S
         qy = (m01 + m10) / S
         qz = (m02 + m20) / S
-    elif (m11 > m22):
+    elif m11 > m22:
         S = sqrt(1.0 + m11 - m00 - m22) * 2  # // S=4*qy
         qw = (m02 - m20) / S
         qx = (m01 + m10) / S
@@ -448,3 +483,45 @@ def matrix2axis_angle(matrix, deg=False):
 
 def matrix2axis(matrix, deg=False):
     return axis_angle2axis(matrix2axis_angle(matrix, deg))
+
+
+def rotation_matrix_2d(theta: float, degrees=True) -> npt.NDArray:
+    """Generate 2D rotation matrix, rotating with angle theta. Theta is by default degrees, but is calculated in radians if keyword degrees=False.
+
+    Parameters
+    ----------
+    theta : float
+        Angle of the resulting rotation matrix
+    degrees : bool, optional
+        Switch to set the unit of theta. If False, unit is radians. By default True
+
+    Returns
+    -------
+    npt.NDArray
+        The 2D rotation matrix for the angle theta
+    """
+    if degrees:
+        theta = np.deg2rad(theta)
+    R = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+    return R
+
+
+def projection_2d(theta: float, degrees=True) -> npt.NDArray:
+    """Returns the rotation vector which will project a 2D vector onto the angle theta. Theta is by default degrees, but is calculated in radians if keyword degrees=False.
+
+    Parameters
+    ----------
+    theta : float
+        Angle of the resulting projection vector
+    degrees : bool, optional
+        Switch to set the units of theta. If False, unit is radians. By default True
+
+    Returns
+    -------
+    npt.NDArray
+        The projection vector of angle theta.
+    """
+    if degrees:
+        theta = np.deg2rad(theta)
+    R = np.array([np.cos(theta), np.sin(theta)])
+    return R
