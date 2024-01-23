@@ -319,15 +319,16 @@ def compute_envelope(
 
 
 def projected_extremes(
-    loads: npt.NDArray,
+    signal: npt.NDArray,
     angles: npt.NDArray = np.linspace(-150, 180, 12),
     sweep_angle: float | None = None,
+    degrees: bool = True
 ) -> npt.NDArray:
     """_summary_
 
     Parameters
     ----------
-    loads : npt.NDArray
+    signal : npt.NDArray
         2-Dimensional array, corresponding to a time-series or a load envelope for two given channels. The first column is treated as the x-coordinate, and the second column as the y-coordinate.
     angles : npt.NDArray, optional
         List of angles to project signals onto, before calculating the maximum value, by default numpy.linspace(-150,180, 12). Angles are given in degrees. The angles will be returned in the range (-180:180]
@@ -339,27 +340,31 @@ def projected_extremes(
     npt.NDArray
         _description_
     """
+    if degrees:
+        angles = np.deg2rad(angles)
+        if sweep_angle:
+            sweep_angle = np.deg2rad(sweep_angle)
 
     # Initialize output variables
     extremes = np.zeros(shape=(len(angles), 3))
 
     # rearrange angles to (-pi; pi]
     angles[angles > 180] -= 360
-    # Calculate the angle of the loads in the time-series
-    load_angles = np.rad2deg(np.arctan2(loads[:, 1], loads[:, 0]))
+    # Calculate the angle of the signal in the time-series
+    signal_angles = np.arctan2(signal[:, 1], signal[:, 0])
     for index, angle in enumerate(angles):
-        # Project loads into the desired angle, saving only the first component of the 2D load for extremes analysis
-        projected_loads = loads @ projection_2d(angle)
+        # Project signal into the desired angle, saving only the first component of the 2D load for extremes analysis
+        projected_signal = signal @ projection_2d(angle, degrees=False)
         if sweep_angle:
             # Remove the loads not covered by the main angle +/- the sweep angle
-            projected_loads = (
-                projected_loads
-                * (load_angles > (angle - sweep_angle))
-                * (load_angles < (angle + sweep_angle))
+            projected_signal = (
+                projected_signal
+                * (signal_angles > (angle - sweep_angle))
+                * (signal_angles < (angle + sweep_angle))
             )
             if all(
-                (load_angles > (angle - sweep_angle))
-                * (load_angles < (angle + sweep_angle))
+                (signal_angles > (angle - sweep_angle))
+                * (signal_angles < (angle + sweep_angle))
                 == False
             ):
                 # If no loads exist within the swept area, set idx to nan, and value to 0
@@ -367,12 +372,14 @@ def projected_extremes(
                 val = 0
             else:
                 # Save the larges projected load that satisfies the angle+sweep criteria
-                idx = np.argmax(projected_loads)
-                val = projected_loads[idx]
+                idx = np.argmax(projected_signal)
+                val = projected_signal[idx]
         else:
             # If no sweep angle is defined, simply get the maximum value of the projected vector
-            idx = np.argmax(projected_loads)
-            val = projected_loads[idx]
+            idx = np.argmax(projected_signal)
+            val = projected_signal[idx]
+        if degrees:
+            angle = np.rad2deg(angle)
         extremes[index, :] = (angle, val, idx)
 
     return extremes
