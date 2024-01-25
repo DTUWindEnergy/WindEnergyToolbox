@@ -6,6 +6,8 @@ version = "{{ version }}"
 description = "{{ description }}"
 authors = ["DTU Wind and Energy Systems <you@example.com>"]
 license = "{{ license }}"
+repository = "https://gitlab.windenergy.dtu.dk/toolbox/WindEnergyToolbox"
+documentation = "https://toolbox.pages.windenergy.dtu.dk/WindEnergyToolbox/"
 
 
 [tool.poetry.dependencies]
