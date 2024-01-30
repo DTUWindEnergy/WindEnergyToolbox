@@ -251,7 +251,7 @@ class DLB():
         return self._dlb
 
     def to_pandas(self):
-        return pd.concat(self._dlb.values(), sort=False)
+        return pd.concat(self.dlb.values(), sort=False)
 
     def cases_to_excel(self, filename):
         if os.path.dirname(filename) != "":
