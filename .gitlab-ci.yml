@@ -19,7 +19,6 @@ test:
   #- git submodule sync --recursive
   #- git submodule update --init --recursive
   - python -m pip install .[all]
-  - pip3 install pytest mock click
   script:
   - python3 -m pytest --cov-report term-missing:skip-covered --cov-report xml:coverage.xml --cov=wetb
   tags:
@@ -64,7 +63,7 @@ upload_package_local:
     - docker, linux, shared
   stage: deploy
   needs:
-  - job: build_poetry_wheel
+  - job: build_wheel
     artifacts: true
   - job: test
     artifacts: false
@@ -91,7 +90,7 @@ upload_package_pypi:
     - docker, linux, shared
   stage: deploy
   needs:
-  - job: build_poetry_wheel
+  - job: build_wheel
     artifacts: true
   - job: test
     artifacts: false
@@ -104,18 +103,16 @@ upload_package_pypi:
     - test_pypi
 
 
-build_poetry_wheel:
+build_wheel:
   stage: build
   tags:
     - linux, docker, shared
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
   before_script:
     - git config --global --add safe.directory ${CI_PROJECT_DIR}
-    - pip install jinja2 gitpython
   script:
-    - python ./update_pyproject.py
-    - poetry build
+    - pip wheel . --wheel-dir=dist
   artifacts:
     paths:
-      - dist/*
+      - dist/wetb*.whl
     expire_in: "1d"
