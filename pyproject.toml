@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "wetb"
 authors = [{name="DTU Wind and Energy Systems"}]
-description = ""The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection of Python scripts that facilitate working with (potentially a lot) of HAWC2, HAWCStab2, FAST or other text input based simulation tools."
+description = "The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection of Python scripts that facilitate working with (potentially a lot) of HAWC2, HAWCStab2, FAST or other text input based simulation tools."
 dependencies = [
     'click',
 	'Cython',
@@ -43,4 +43,4 @@ prepost = ["openpyxl", "tables", "wafo", "xlwt", "Cython"]
 all = ["openpyxl", "tables", "wafo", "xlwt", "Cython", "paramiko", "sshtunnel", 'pytest', 'mock', 'click']
 
 [tool.setuptools_scm]
-version_file = "app_utils/version.py"
+
