@@ -47,3 +47,5 @@ all = ["openpyxl", "tables", "wafo", "xlwt", "Cython", "paramiko", "sshtunnel", 
 
 [tool.setuptools_scm]
 
+[tool.setuptools]
+packages = ["wetb"]
