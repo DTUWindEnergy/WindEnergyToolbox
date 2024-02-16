@@ -72,28 +72,48 @@ def Weibull_IEC(Vref, Vhub_lst):
 
 
 class DLCHighLevel(object):
+    
+    
+    @staticmethod
+    def from_pandas(dlc: pd.DataFrame, sensor: pd.DataFrame, variables: pd.DataFrame, fail_on_resfile_not_found:bool=False, shape_k:float=2.0):
+        from wetb.dlc.high_level import DLCHighLevel
+        return DLCHighLevel(variables, sensor, dlc, fail_on_resfile_not_found=fail_on_resfile_not_found, shape_k=shape_k)
 
-    def __init__(self, filename, fail_on_resfile_not_found=False, shape_k=2.0):
-        self.filename = filename
+
+    @staticmethod
+    def from_file(filename: str, fail_on_resfile_not_found:bool=False, shape_k:float=2.0):
+        df_vars = pd.read_excel(filename, 'Variables', index_col='Name')
+        dlc_df = pd.read_excel(filename, 'DLC', skiprows=[1])
+        sensor_df = pd.read_excel(filename, 'Sensors')
+        return DLCHighLevel(df_vars, sensor_df, dlc_df, fail_on_resfile_not_found=fail_on_resfile_not_found, shape_k=shape_k)
+    
+
+    def __init__(self, df_vars, sensor_df, dlc_df, fail_on_resfile_not_found:bool=False, shape_k:float=2.0):
         self.fail_on_resfile_not_found = fail_on_resfile_not_found
 
         # Weibul distribution shape parameter
         self.shape_k = shape_k
 
         # Variables
-
-        df_vars = pd.read_excel(self.filename, 'Variables', index_col='Name')
+        self.df_vars = df_vars
         df_vars.fillna('', inplace=True)
         for name, value in zip(df_vars.index, df_vars.Value.values):
             setattr(self, name.lower(), value)
+        # If res_path is not defined
         if not hasattr(self, "res_path"):
-            raise Warning("The 'Variables' sheet of '%s' must contain the "
-                          "variable 'res_path' specifying the path to the "
-                          "result folder" % self.filename)
-        self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
+            if hasattr(self, "filename"):
+                mes = f"The 'Variables' sheet of '{self.filename}' must contain the variable 'res_path' specifying the path to the result folder"
+            else:
+                mes = f"The 'variables' dataframe must contain the variable 'res_path' specifying the path to the result folder"
+            raise Warning(mes)
+        
+        try:
+            self.res_path = os.path.join(os.path.dirname(self.filename), self.res_path)
+        except AttributeError as e:
+            pass
 
         # DLC sheet
-        self.dlc_df = pd.read_excel(self.filename, 'DLC', skiprows=[1])
+        self.dlc_df = dlc_df
         # empty strings are now nans, convert back to empty strings
         self.dlc_df.fillna('', inplace=True)
         # force headers to lower case
@@ -125,7 +145,7 @@ class DLCHighLevel(object):
             self.dlc_df['psf'] = 1
 
         # Sensors sheet
-        self.sensor_df = pd.read_excel(self.filename, 'Sensors')
+        self.sensor_df = sensor_df
         # empty strings are now nans, convert back to empty strings
         self.sensor_df.fillna('', inplace=True)
         # force headers to lower case
@@ -361,6 +381,112 @@ class DLCHighLevel(object):
     def psf(self):
         return {dlc: float((psf, 1)[psf == ""])
                 for dlc, psf in zip(self.dlc_df['dlc'], self.dlc_df['psf']) if dlc != ""}
+        
+    def to_excel(self, path):
+        with pd.ExcelWriter(path=path) as writer:
+            self.dlc_df.to_excel(writer, sheet_name="DLC")
+            self.sensor_df.to_excel(writer, sheet_name="Sensors")
+            self.df_vars.to_excel(writer, sheet_name="Variables")
+
+
+def dlc_sensor(
+    Name: str,
+    Description: str,
+    Nr: int | list[int],
+    Unit: str | None = None,
+    Neql: float | None = None,
+    M: int | list[int] | None = None,
+    Statistic: bool = False,
+    Fatigue: bool = False,
+    Ultimate: bool = False,
+    BearingDamage: bool = False,
+    ExtremeLoad: bool = False
+) -> dict[str, any]:
+    """Function to generate appropriate dictionary for dlc-post-processing of individual HAWC2 sensors
+
+    Parameters
+    ----------
+    Name : str
+        Name of the sensor
+    Description : str
+        Description of the sensor
+    Nr : int
+        Channel number in the result file
+    Unit : str
+        Sensor unit of measurement
+    Neql : float | None, optional
+        Number of equivalent load cycles, by default None
+    M : int | None, optional
+        Wöhler slope, by default None
+    Statistic : bool, optional
+        Whether or not to calculate basic statistics for the sensor, by default False
+    Fatigue : bool, optional
+        Whether or not to calculate fatigue for the sensor, by default False. Requires M and Neql input arguments
+    Ultimate : bool, optional
+        Whether or not do do ultimate analysis, by default False
+    BearingDamage : bool, optional
+        Whether or not to calculate bearing damage, by default False. Requires M and Neql input arguments
+    ExtremeLoad : bool, optional
+        Whether or not to calculate extreme loads, by default False
+
+    Returns
+    -------
+    dict
+        Returns dictionary of the postprocessing information for the given sensor
+
+    Raises
+    ------
+    AttributeError
+        To calculate fatigue loads please provide both Wöhler slope M, and number of equivalent loads Neql
+    AttributeError
+        To calculate bearing damage loads please provide both Wöhler slope M, and number of equivalent loads Neql
+    """
+    if Fatigue:
+        if not (M and Neql):
+            raise AttributeError("To calculate fatigue loads please provide Wöhler slope M, and number of equivalent loads Neql")
+    else:
+        Fatigue
+    if BearingDamage:
+        if (M and Neql):
+            raise AttributeError("To calculate bearing damage loads please provide Wöhler slope M, and number of equivalent loads Neql")
+    else:
+        BearingDamage = ""
+    if ExtremeLoad:
+        if type(Nr) == int:
+            Nr = [Nr]
+        if len(Nr) != 6:
+            raise ValueError("To calculate utlimate/extreme loads, 'Nr' must contain 6 sensors (Fx,Fy,Fz,Mx,My,Mz)")
+    else:
+        ExtremeLoad = ""
+    if not(Ultimate):
+        Ultimate = ""
+    if not(Statistic):
+        Statistic = ""
+
+    return locals()
+
+
+def dlc_vars(**kwargs) -> pd.DataFrame:
+    """'Protected' variables:
+        - vref, reference windspeed for calculation of Weibull distribution according to IEC 61400-1:2005 (p. 24)
+        - 
+
+    Returns
+    -------
+    pandas.DataFrame
+        Pandas dataframe containing 'Name', 'Value' pairs in 'Name' and 'Value' columns
+    """
+    df_vars = pd.DataFrame(
+        {
+            "Name": [k for k in kwargs.keys()],
+            "Value": [v for v in kwargs.values()]
+        }
+    )
+    df_vars.set_index("Name", inplace=True)
+    return df_vars
+
+
+dlc_sensor_colums = ["Name", "Description", "Nr", "Unit", "Neql", "M", "Fatigue", "Statistic", "Ultimate", "BearingDamage", "ExtremeLoad"]
 
 
 if __name__ == "__main__":
