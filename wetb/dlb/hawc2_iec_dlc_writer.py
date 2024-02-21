@@ -74,6 +74,16 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if Fault['type'] == 'GridLoss':
             T = Fault['T']
             self.set_gridloss_time(htc, self.time_start + T)
+        elif Fault['type'] == 'Start-up':
+            htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__24[1] = Fault['T']
+        elif Fault['type'] == 'Shut-down':
+            htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[1] = Fault['T']
+        elif Fault['type'] == 'Idle':
+            htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[1] = 0.1
+        # elif Fault['type'] == 'Locked_rotor':
+        #     d = Fault['angle']
+        #     htc.new_htc_structure.orientation.continue_in_file = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_orientation_shaftfix_%02ddeg.htc" % d
+        #     htc.new_htc_structure.constraint.continue_in_file  = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_constraint_shaftfix.htc"
         else:
             raise NotImplementedError(Fault)
 
@@ -87,6 +97,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "time for grid loss" in constant 7 comment.')
         gen_servo.init.constant__7 = 7, t
+    
+    
+    def set_startup_time(self, htc, t):
+        dtu_we_controller = htc.dll.get_subsection_by_name('dtu_we_controller', 'name')
+        
+        
 
 
 if __name__ == '__main__':
