@@ -77,13 +77,15 @@ class DLCHighLevel(object):
     @staticmethod
     def from_pandas(dlc: pd.DataFrame, sensor: pd.DataFrame, variables: pd.DataFrame, fail_on_resfile_not_found:bool=False, shape_k:float=2.0):
         from wetb.dlc.high_level import DLCHighLevel
+        variables.loc["filename"] = "None"
         return DLCHighLevel(variables, sensor, dlc, fail_on_resfile_not_found=fail_on_resfile_not_found, shape_k=shape_k)
 
 
     @staticmethod
     def from_file(filename: str, fail_on_resfile_not_found:bool=False, shape_k:float=2.0):
         df_vars = pd.read_excel(filename, 'Variables', index_col='Name')
-        dlc_df = pd.read_excel(filename, 'DLC', skiprows=[1])
+        df_vars.loc["filename"] = filename
+        dlc_df = pd.read_excel(filename, 'DLC')#, skiprows=[1])
         sensor_df = pd.read_excel(filename, 'Sensors')
         return DLCHighLevel(df_vars, sensor_df, dlc_df, fail_on_resfile_not_found=fail_on_resfile_not_found, shape_k=shape_k)
     
@@ -105,6 +107,7 @@ class DLCHighLevel(object):
                 mes = f"The 'Variables' sheet of '{self.filename}' must contain the variable 'res_path' specifying the path to the result folder"
             else:
                 mes = f"The 'variables' dataframe must contain the variable 'res_path' specifying the path to the result folder"
+                self.filename = "None"
             raise Warning(mes)
         
         try:
