@@ -379,8 +379,8 @@ class DTU_IEC64100_3_Ref_DLB(DLB):
         DLB.__init__(self, dlc_definitions, variables)
 
 
-class DTU_IEC64100_3_Ref_DLB_micro(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub):
+class DTU_IEC64100_3_Ref_DLB_custom(DLB):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub, time=10):
         """
         NOTE!!!!!!!!!!!
         SEVERAL DLCS ARE MISSING
@@ -391,17 +391,17 @@ class DTU_IEC64100_3_Ref_DLB_micro(DLB):
 
         dlc_definitions = [
             {Name: 'DLC12', Description: 'Normal production', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '-22.5/0/22.5', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: None, Time: 10}, #OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '-22.5/0/22.5', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: None, Time: time}, #OK
             {Name: 'DLC24', Description: 'Power production, large yaw error', WSP: 'Vin:2:Vout', Wdir: '-20/20', 
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: None, Time: 10}, #OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: None, Time: time}, #OK
             {Name: 'DLC31', Description: 'Start-up, normal wind profile' , WSP: 'Vin/Vr/Vout', Wdir: '0',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: 'StartUp', Time: 10}, #OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: 'StartUp', Time: time}, #OK
             {Name: 'DLC41', Description: 'Shut-down, normal wind profile' , WSP: 'Vin/Vr/Vout', Wdir: '0',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: 'ShutDown', Time: 10}, #OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'MSL', Fault: 'ShutDown', Time: time}, #OK
             {Name: 'DLC64', Description: 'Parked, idling rotor' , WSP: 'Vin:2:VrefX07', Wdir: '-8/8',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: 'Idle', Time: 10}, #OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: 'Idle', Time: time}, #OK
             {Name: 'DLC72', Description: 'Rotor locked, normal wind conditions' , WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: 'LockedRotor', Time: 10} # OK
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Wavedir: '0', Waves: 'Irregular', SeaLevel: 'NWLR', Fault: 'LockedRotor', Time: time} # OK
         ]
         variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
                      'Vout': Vout, 'Vr': Vr, 'VrefX07': VrefX07, 

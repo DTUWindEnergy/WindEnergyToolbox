@@ -290,6 +290,33 @@ class DTU_IEC64100_1_Ref_DLB(DLB):
                      'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
         DLB.__init__(self, dlc_definitions, variables)
 
+class DTU_IEC64100_1_Ref_DLB_custom(DLB):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub, time=10):
+        """
+        NOTE!!!!!!!!!!!
+        SEVERAL DLCS ARE MISSING
+        """
+        Vstep = 2
+        Name, Description, WSP, Wdir, Time = 'Name', 'Description', 'WSP', 'Wdir', 'Time'
+        Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
+
+        dlc_definitions = [
+            {Name: 'DLC12', Description: 'Normal production', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
+                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Fault: None, Time: time},
+            {Name: 'DLC13', Description: 'Normal production with high turbulence', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
+                Turb: 'ETM', Seeds: 6, Shear: 'NWP', Gust: None, Fault: None, Time: time},
+            {Name: 'DLC14', Description: 'Normal production with gust and direction change', WSP: 'Vr/Vr+2/Vr-2', Wdir: 0,
+                Turb: 'NoTurb', Seeds: None, Shear: 'NWP', Gust: 'ECD', Fault: None, Time: time},
+            {Name: 'DLC15', Description: 'Normal production with extreme wind shear', WSP: 'Vin:2:Vout', Wdir: 0,
+                Turb: 'NoTurb', Seeds: None, Shear: 'EWS', Gust: None, Fault: None, Time: time},
+            {Name: 'DLC21', Description: 'Loss of electical network', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
+                Turb: 'NTM', Seeds: 4, Shear: 'NWP', Gust: None, Fault: 'GridLoss10', Time: time},
+            {Name: 'DLC22y', Description: 'Abnormal yaw error', WSP: 'Vin:2:Vout', Wdir: '15:15:345',
+                Turb: 'NTM', Seeds: 1, Shear: 'NWP', Gust: None, Fault: None, Time: time}
+        ]
+        variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
+                     'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
+        DLB.__init__(self, dlc_definitions, variables)
 
 def main():
     if __name__ == '__main__':
