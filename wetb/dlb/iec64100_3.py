@@ -28,6 +28,7 @@ class DLC():
         wind_class = int(self.iec_wt_class[0])
         assert 1 <= wind_class <= 3
         self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
+        self.rng = np.random.default_rng(seed=variables["seed"])
 
     @classmethod
     def getattr(cls, name):
@@ -178,7 +179,7 @@ class DLC():
         ti = (self.I_ref * (0.75 * V_hub + 5.6)) / V_hub  # IEC (11)
         return [{'seed_id': 's%05d' % (s),
                  'ti': ti,
-                 'seed': s} for s in range(s0, s0 + int(self.Seeds))]
+                 'seed': s} for s in self.rng.integers(low=0, high=100000, size=int(self.Seeds))]
 
     def ETM(self, V_hub, **_):
         # Extreme Turbulence model
@@ -193,7 +194,7 @@ class DLC():
 
         return [{'seed_id': 's%05d' % (s),
                  'ti': ti,
-                 'seed': s} for s in range(s0, s0 + int(self.Seeds))]
+                 'seed': s} for s in self.rng.integers(low=0, high=100000, size=int(self.Seeds))]
 
     # ===============================================================================
     # Shear profiles
@@ -296,10 +297,13 @@ class DLB():
                          ('D', 'Rotor diameter'),
                          ('z_hub', 'Hub height'),
                          ('Vstep', 'Wind speed distribution step'),
-                         ('iec_wt_class', 'IEC wind turbine class, e.g. 1A')]
+                         ('iec_wt_class', 'IEC wind turbine class, e.g. 1A'),
+                         ("seed", "Seed to initialize the RNG for turbulence seed generation")
+                         ]
         self.variables = pd.DataFrame([{'Name': n, 'Value': variables[n], 'Description': d}
                                        for n, d in var_name_desc], columns=['Name', 'Value', 'Description'],
                                       index=[n for (n, d) in var_name_desc])
+        
 
     def keys(self):
         return [n for n in self.dlcs['Name'] if not str(n).lower().strip() in ['', 'none', 'nan']]
@@ -348,7 +352,7 @@ class DLB():
         writer.close()
 
 class DTU_IEC64100_3_Ref_DLB(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub, seed=int(42)):
         """
         NOTE!!!!!!!!!!!
         SEVERAL DLCS ARE MISSING
@@ -375,12 +379,13 @@ class DTU_IEC64100_3_Ref_DLB(DLB):
                      'Vout': Vout, 'Vr': Vr, 'VrefX07': VrefX07, 
                      'MSL': MSL, 'LAT': LAT, 'HAT': HAT,
                      'WaveTable': WaveTable,
-                     'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
+                     'D': D, 'z_hub': z_hub, 'Vstep': Vstep, "seed": seed}
+        
         DLB.__init__(self, dlc_definitions, variables)
 
 
 class DTU_IEC64100_3_Ref_DLB_custom(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub, time=10):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, VrefX07, MSL, LAT, HAT, WaveTable, D, z_hub, seed=int(42), time=10):
         """
         NOTE!!!!!!!!!!!
         SEVERAL DLCS ARE MISSING
@@ -407,7 +412,7 @@ class DTU_IEC64100_3_Ref_DLB_custom(DLB):
                      'Vout': Vout, 'Vr': Vr, 'VrefX07': VrefX07, 
                      'MSL': MSL, 'LAT': LAT, 'HAT': HAT,
                      'WaveTable': WaveTable,
-                     'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
+                     'D': D, 'z_hub': z_hub, 'Vstep': Vstep, "seed": seed}
         DLB.__init__(self, dlc_definitions, variables)
 
 

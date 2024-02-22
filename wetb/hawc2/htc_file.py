@@ -167,7 +167,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             self.htc_inputfiles.append(filename)
         htc_lines = []
         lines = self.readfilelines(filename)
-        for l in lines:
+        for idx, l in enumerate(lines):
             if l.lower().lstrip().startswith('continue_in_file'):
                 filename = l.lstrip().split(";")[0][len("continue_in_file"):].strip().lower()
 
@@ -179,8 +179,12 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                             return os.path.isfile(self.unix_path(f))
                         except OSError:
                             return False
-                    lu = [isfile(os.path.abspath(os.path.join(p, "../" * i, filename)))
-                          for i in range(4)].index(True)
+                    try:
+                        lu = [isfile(os.path.abspath(os.path.join(p, "../" * i, filename)))
+                            for i in range(4)].index(True)
+                    except ValueError as e:
+                        raise FileNotFoundError(f"'continue_in_file' on line {idx+1} in base file '{self.filename}' refers to non-existing file. '{filename}' not found.")
+
                     filename = os.path.join(p, "../" * lu, filename)
                 else:
                     filename = os.path.join(self.modelpath, filename)

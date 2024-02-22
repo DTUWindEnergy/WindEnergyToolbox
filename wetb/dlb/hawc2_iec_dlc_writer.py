@@ -21,7 +21,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
 
     def set_V_hub(self, htc, V_hub, **_):
         htc.wind.wsp = V_hub
-        htc.wind.wind_ramp_factor = 0, self.time_start, 8 / V_hub, 1
+        htc.wind.wind_ramp_factor = 0, self.time_start*0.75, 0.1 / V_hub, 1
 
     def set_wdir(self, htc, wdir, **_):
         htc.wind.windfield_rotations = wdir, 0, 0
@@ -65,6 +65,62 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             htc.wind.iec_gust = 'ECD', V_cg, theta_cg, self.time_start, T
         else:
             raise NotImplementedError(Gust)
+        
+    def WriteWaveInput(self,folder,WaveType,Hs,Tp,seed):
+        WT = {'Irregular': 1,'Regular': 0}[WaveType]
+        if WT == 1:
+            name = [f'./wavedata/wave_type{WT}_hs{int(round(Hs,2)*100)}_tp{int(round(Tp,2)*100)}',"_s%05d" % (seed),'.inp']
+            Wavename = "".join(name)
+            # Wavename = f'./wavedata/{WaveType}_{'Hs%02d' % d[Hs]}_{Tp}_{WaveSeed}.inp'
+        elif WT == 0:
+            name = [f'./wavedata/wave_type{WT}_hs{int(round(Hs,2)*100)}_tp{int(round(Tp,2)*100)}','.inp']
+            Wavename = "".join(name)
+        os.makedirs(os.path.dirname(folder+Wavename), exist_ok=True)
+        with open(folder+Wavename,'w+') as fid:
+            fid.write(f'''begin wkin_input ;
+  wavetype {WT} ; 0=regular, 1=irregular, 2=deterministic
+  wdepth 30.0 ;
+  ;
+  begin reg_airy ;
+    stretching 0; 0=none, 1=wheeler
+    wave {Hs} {Tp}; Hs,T
+  end;
+  ;
+  begin ireg_airy ;
+    stretching 0; 0=none, 1=wheeler
+    coef 200 {seed} ; number of coefficients, seed
+    spectrum 2; 1=jonswap, 2=Pierson Moscowitz
+    ;jonswap 1.102 8.515 1.0 ; Jonswap: Hs, Tp, gamma
+    pm {Hs} {Tp} ; Pierson Moscowitz: Hs, Tp, gamma
+    spreading 0 2; Spreading model [0=off 1=on], Spreading parameter [pos. integer min 1]
+  end;
+  ;
+end wkin_input;
+exit ;''')
+        return Wavename
+
+    def set_Wave(self, htc, Wave, seed, **_):        
+        if Wave['WaveType'] == 'Irregular' or Wave['WaveType'] == 'Regular':
+            # write wave input file
+            # Wave['seed'] = seed
+            WaveInputName =self.WriteWaveInput(folder=htc.modelpath,**Wave,seed=seed)
+            hydro = htc.add_section('hydro')
+            water_properties = hydro.add_section('water_properties')
+            htc.hydro.water_properties.water_kinematics_dll = 'wkin_dll.dll', WaveInputName
+        elif Wave['WaveType'] == 'nan':
+            return
+        else:
+            raise NotImplementedError(Wave['WaveType'])
+        
+    def set_SeaLevel(self, htc, SeaLevel, **_):
+        hydro = htc.add_section('hydro')
+        water_properties = hydro.add_section('water_properties')
+        htc.hydro.water_properties.mwl = SeaLevel
+
+    def set_Wavedir(self, htc, Wavedir, **_):
+        hydro = htc.add_section('hydro')
+        water_properties = hydro.add_section('water_properties')
+        htc.hydro.water_properties.wave_direction = Wavedir
 
     def set_Fault(self, htc, Fault, **kwargs):
         if str(Fault).lower() == 'nan':
@@ -80,14 +136,15 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[1] = Fault['T']
         elif Fault['type'] == 'Idle':
             htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[1] = 0.1
-        # elif Fault['type'] == 'Locked_rotor':
-        #     d = Fault['angle']
-        #     htc.new_htc_structure.orientation.continue_in_file = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_orientation_shaftfix_%02ddeg.htc" % d
-        #     htc.new_htc_structure.constraint.continue_in_file  = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_constraint_shaftfix.htc"
+        elif Fault['type'] == 'Locked_rotor':
+            Warning("Locked rotor fault is currently only implemented as a hardcoded 'continue_in_file' for the IEA-15MW-RWT")
+            d = Fault['angle']
+            htc.new_htc_structure.orientation.continue_in_file = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_orientation_shaftfix_%02ddeg.htc" % d
+            htc.new_htc_structure.constraint.continue_in_file  = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_constraint_shaftfix.htc"
         else:
             raise NotImplementedError(Fault)
 
-    def set_simulation_time(self, htc, simulation_time, **_):
+    def set_simulation_time(self, htc, simulation_time,**_):
         htc.set_time(self.time_start, simulation_time + self.time_start)
 
     def set_gridloss_time(self, htc, t):
@@ -97,12 +154,6 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "time for grid loss" in constant 7 comment.')
         gen_servo.init.constant__7 = 7, t
-    
-    
-    def set_startup_time(self, htc, t):
-        dtu_we_controller = htc.dll.get_subsection_by_name('dtu_we_controller', 'name')
-        
-        
 
 
 if __name__ == '__main__':
