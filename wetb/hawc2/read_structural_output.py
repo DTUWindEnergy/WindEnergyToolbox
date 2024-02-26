@@ -53,21 +53,21 @@ def read_body_matrix_output(file_name):
         bodies[name] = {}
 
         # Read mass matrix.
-        with open(f"{file_name}{name}_m.bin", "r") as fid:
+        with open(f"{file_name}{name}_m.bin", "rb") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
             bodies[name]["mass"] = np.fromfile(
                 fid, dtype=float, count=ndof * ndof
             ).reshape(ndof, ndof)
 
         # Read damping matrix.
-        with open(f"{file_name}{name}_c.bin", "r") as fid:
+        with open(f"{file_name}{name}_c.bin", "rb") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
             bodies[name]["damping"] = np.fromfile(
                 fid, dtype=float, count=ndof * ndof
             ).reshape(ndof, ndof)
 
         # Read stiffness matrix.
-        with open(f"{file_name}{name}_k.bin", "r") as fid:
+        with open(f"{file_name}{name}_k.bin", "rb") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
             bodies[name]["stiffness"] = np.fromfile(
                 fid, dtype=float, count=ndof * ndof
