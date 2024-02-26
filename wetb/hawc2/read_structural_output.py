@@ -17,7 +17,7 @@ import numpy as np
 def read_body_matrix_output(file_name):
     """
     Read output of `new_htc_structure` / `body_matrix_output`,
-    which is the mass, damping and stiffness matrices.
+    which is the mass, damping and stiffness matrices for each body.
 
     Parameters
     ----------
