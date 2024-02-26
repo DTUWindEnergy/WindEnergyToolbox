@@ -13,6 +13,7 @@ import numpy as np
 
 # %% Functions.
 
+
 def read_body_matrix_output(file_name):
     """
     Read output of `new_htc_structure` / `body_matrix_output`,
@@ -21,7 +22,7 @@ def read_body_matrix_output(file_name):
     Parameters
     ----------
     file_name : str
-        File name entered in the 
+        File name entered in the
         `new_htc_structure` / `body_matrix_output`
         command. A glob patter will be used to find all the files.
 
@@ -42,33 +43,38 @@ def read_body_matrix_output(file_name):
 
     # We get the body names by taking the part between
     # the file_name and _m.bin.
-    names = [s[len(file_name):-6] for s in files]
-    
+    names = [s[len(file_name) : -6] for s in files]
+
     # Dict that will contain all the results.
     bodies = dict.fromkeys(names)
-    
+
     # Loop over the bodies.
     for name in names:
-        
         bodies[name] = {}
 
         # Read mass matrix.
         with open(f"{file_name}{name}_m.bin", "r") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
-            bodies[name]["mass"] = np.fromfile(fid, dtype=float, count=ndof*ndof).reshape(ndof, ndof)
+            bodies[name]["mass"] = np.fromfile(
+                fid, dtype=float, count=ndof * ndof
+            ).reshape(ndof, ndof)
 
         # Read damping matrix.
         with open(f"{file_name}{name}_c.bin", "r") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
-            bodies[name]["damping"] = np.fromfile(fid, dtype=float, count=ndof*ndof).reshape(ndof, ndof)
+            bodies[name]["damping"] = np.fromfile(
+                fid, dtype=float, count=ndof * ndof
+            ).reshape(ndof, ndof)
 
         # Read stiffness matrix.
         with open(f"{file_name}{name}_k.bin", "r") as fid:
             ndof = np.fromfile(fid, dtype=int, count=2)[0]
-            bodies[name]["stiffness"] = np.fromfile(fid, dtype=float, count=ndof*ndof).reshape(ndof, ndof)
+            bodies[name]["stiffness"] = np.fromfile(
+                fid, dtype=float, count=ndof * ndof
+            ).reshape(ndof, ndof)
 
     return bodies
 
+
 if __name__ == "__main__":
-    
     bodies = read_body_matrix_output("struct/body_")
