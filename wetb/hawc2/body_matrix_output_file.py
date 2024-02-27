@@ -16,8 +16,7 @@ import numpy as np
 
 def read_body_matrix_output(file_name):
     """
-    Read output of `new_htc_structure` / `body_matrix_output`,
-    which is the mass, damping and stiffness matrices for each body.
+    Read output of `new_htc_structure` / `body_matrix_output`, which is the mass, damping and stiffness matrices for each body.
 
     Parameters
     ----------
@@ -54,23 +53,23 @@ def read_body_matrix_output(file_name):
 
         # Read mass matrix.
         with open(f"{file_name}{name}_m.bin", "rb") as fid:
-            ndof = np.fromfile(fid, dtype=int, count=2)[0]
+            ndof = np.fromfile(fid, dtype=np.int32, count=2)[0]
             bodies[name]["mass"] = np.fromfile(
-                fid, dtype=float, count=ndof * ndof
+                fid, dtype=np.float64, count=ndof * ndof
             ).reshape(ndof, ndof, order="F")
 
         # Read damping matrix.
         with open(f"{file_name}{name}_c.bin", "rb") as fid:
-            ndof = np.fromfile(fid, dtype=int, count=2)[0]
+            ndof = np.fromfile(fid, dtype=np.int32, count=2)[0]
             bodies[name]["damping"] = np.fromfile(
-                fid, dtype=float, count=ndof * ndof
+                fid, dtype=np.float64, count=ndof * ndof
             ).reshape(ndof, ndof, order="F")
 
         # Read stiffness matrix.
         with open(f"{file_name}{name}_k.bin", "rb") as fid:
-            ndof = np.fromfile(fid, dtype=int, count=2)[0]
+            ndof = np.fromfile(fid, dtype=np.int32, count=2)[0]
             bodies[name]["stiffness"] = np.fromfile(
-                fid, dtype=float, count=ndof * ndof
+                fid, dtype=np.float64, count=ndof * ndof
             ).reshape(ndof, ndof, order="F")
 
     return bodies
