@@ -25,12 +25,12 @@ class TestBodyOutput(unittest.TestCase):
         bodies = read_body_matrix_output(f"{tfp}/body_matrix_output/body_")
 
         # Have we read all files?
-        self.assertEqual(list(bodies.keys()), ["blade1_1", "tower"])
+        self.assertEqual(set(bodies.keys()), {"blade1_1", "tower"})
         self.assertEqual(
-            list(bodies["tower"].keys()), ["mass", "damping", "stiffness"]
+            set(bodies["tower"].keys()), {"mass", "damping", "stiffness"}
         )
         self.assertEqual(
-            list(bodies["blade1_1"].keys()), ["mass", "damping", "stiffness"]
+            set(bodies["blade1_1"].keys()), {"mass", "damping", "stiffness"}
         )
 
         # Check matrices shape.
