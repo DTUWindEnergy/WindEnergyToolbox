@@ -41,3 +41,7 @@ class TestBodyOutput(unittest.TestCase):
         npt.assert_almost_equal(
             bodies["tower"]["mass"][0, 0], 627396.222002882
         )
+
+
+if __name__ == "__main__":
+    unittest.main()
