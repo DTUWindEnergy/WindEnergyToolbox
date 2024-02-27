@@ -74,7 +74,3 @@ def read_body_matrix_output(file_name):
             ).reshape(ndof, ndof, order="F")
 
     return bodies
-
-
-if __name__ == "__main__":
-    bodies = read_body_matrix_output("struct/body_")
