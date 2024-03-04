@@ -29,6 +29,8 @@ class DLC():
         wind_class = int(self.iec_wt_class[0])
         assert 1 <= wind_class <= 3
         self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
+        if variables["seed"]:
+            self.rng = np.random.default_rng(seed=variables["seed"])
 
     @classmethod
     def getattr(cls, name):
@@ -123,9 +125,14 @@ class DLC():
         # Normal turbulence model IEC section 6.3.1.3
         s0 = int((V_hub - self.Vin) // self.Vstep * 100 + 1001)
         ti = (self.I_ref * (0.75 * V_hub + 5.6)) / V_hub  # IEC (11)
-        return [{'seed_id': 's%04d' % (s),
-                 'ti': ti,
-                 'seed': s} for s in range(s0, s0 + int(self.Seeds))]
+        if self.seed:
+            return [{'seed_id': 's%04d' % (s),
+                    'ti': ti,
+                    'seed': s} for s in self.rng.integers(low=0, high=10000, size=int(self.Seeds))]
+        else:
+            return [{'seed_id': 's%04d' % (s),
+                    'ti': ti,
+                    'seed': s} for s in range(s0, s0 + int(self.Seeds))]
 
     def ETM(self, V_hub, **_):
         # Extreme Turbulence model
@@ -138,9 +145,14 @@ class DLC():
 
         s0 = int((V_hub - self.Vin) // self.Vstep * 100 + 1001)
 
-        return [{'seed_id': 's%04d' % (s),
-                 'ti': ti,
-                 'seed': s} for s in range(s0, s0 + int(self.Seeds))]
+        if self.seed:
+            return [{'seed_id': 's%04d' % (s),
+                    'ti': ti,
+                    'seed': s} for s in self.rng.integers(low=0, high=10000, size=int(self.Seeds))]
+        else:
+            return [{'seed_id': 's%04d' % (s),
+                    'ti': ti,
+                    'seed': s} for s in range(s0, s0 + int(self.Seeds))]
 
     # ===============================================================================
     # Shear profiles
@@ -197,7 +209,9 @@ class DLB():
                          ('D', 'Rotor diameter'),
                          ('z_hub', 'Hub height'),
                          ('Vstep', 'Wind speed distribution step'),
-                         ('iec_wt_class', 'IEC wind turbine class, e.g. 1A')]
+                         ('iec_wt_class', 'IEC wind turbine class, e.g. 1A'),
+                         ("seed", "Seed to initialize the RNG for turbulence seed generation")
+                         ]
         self.variables = pd.DataFrame([{'Name': n, 'Value': variables[n], 'Description': d}
                                        for n, d in var_name_desc], columns=['Name', 'Value', 'Description'],
                                       index=[n for (n, d) in var_name_desc])
@@ -263,7 +277,7 @@ class DLB():
 
 
 class DTU_IEC64100_1_Ref_DLB(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub, seed=None):
         """
         NOTE!!!!!!!!!!!
         SEVERAL DLCS ARE MISSING
@@ -288,10 +302,14 @@ class DTU_IEC64100_1_Ref_DLB(DLB):
         ]
         variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
                      'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
+        if seed:
+            variables["seed"] = int(seed)
+        else:
+            variables["seed"] = seed
         DLB.__init__(self, dlc_definitions, variables)
 
 class DTU_IEC64100_1_Ref_DLB_custom(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub, time=10):
+    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub, seed=None, time=10):
         """
         NOTE!!!!!!!!!!!
         SEVERAL DLCS ARE MISSING
@@ -316,6 +334,10 @@ class DTU_IEC64100_1_Ref_DLB_custom(DLB):
         ]
         variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
                      'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
+        if seed:
+            variables["seed"] = int(seed)
+        else:
+            variables["seed"] = seed
         DLB.__init__(self, dlc_definitions, variables)
 
 def main():

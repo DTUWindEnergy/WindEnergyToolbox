@@ -137,7 +137,7 @@ exit ;''')
         elif Fault['type'] == 'Idle':
             htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[1] = 0.1
         elif Fault['type'] == 'Locked_rotor':
-            Warning("Locked rotor fault is currently only implemented as a hardcoded 'continue_in_file' for the IEA-15MW-RWT")
+            warnings.warn("Locked rotor fault is currently only implemented as a hardcoded 'continue_in_file' for the IEA-15MW-RWT")
             d = Fault['angle']
             htc.new_htc_structure.orientation.continue_in_file = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_orientation_shaftfix_%02ddeg.htc" % d
             htc.new_htc_structure.constraint.continue_in_file  = "../IEA-15-240-RWT/IEA_15MW_RWT_WTG_constraint_shaftfix.htc"
