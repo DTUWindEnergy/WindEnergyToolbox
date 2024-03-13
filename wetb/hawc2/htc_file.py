@@ -1,13 +1,21 @@
 '''
 Created on 20/01/2014
 
+@author: MMPE
+
 See documentation of HTCFile below
 
 '''
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import str
+from future import standard_library
 from wetb.utils.process_exec import pexec
 from wetb.hawc2.hawc2_pbs_file import HAWC2PBSFile
 import jinja2
-from wetb.utils.cluster_tools.os_path import fixcase, abspath, pjoin
+standard_library.install_aliases()
 from collections import OrderedDict
 from wetb.hawc2.htc_contents import HTCContents, HTCSection, HTCLine
 from wetb.hawc2.htc_extensions import HTCDefaults, HTCExtensions
@@ -71,6 +79,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     level = 0
     modelpath = "../"
     initial_comments = None
+    _contents = None
 
     def __init__(self, filename=None, modelpath=None, jinja_tags={}):
         """
@@ -81,12 +90,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         modelpath : str
             Model path relative to htc file
         """
+
         if filename is not None:
-            try:
-                filename = fixcase(abspath(filename))
-                with self.open(str(filename)):
-                    pass
-            except Exception:
+            with self.open(str(filename)):
                 pass
 
             self.filename = filename
@@ -97,10 +103,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if filename and self.modelpath != "unknown" and not os.path.isabs(self.modelpath):
             drive, p = os.path.splitdrive(os.path.join(os.path.dirname(str(self.filename)), self.modelpath))
             self.modelpath = os.path.join(drive, os.path.splitdrive(os.path.realpath(p))[1]).replace("\\", "/")
-        if self.modelpath != 'unknown' and self.modelpath[-1] != '/':
-            self.modelpath += "/"
 
-        self.load()
+            #assert 'simulation' in self.contents, "%s could not be loaded. 'simulation' section missing" % filename
 
     def auto_detect_modelpath(self):
         if self.filename is None:
@@ -109,30 +113,32 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         #print (["../"*i for i in range(3)])
         import numpy as np
         input_files = HTCFile(self.filename, 'unknown').input_files()
-        if len(input_files) == 1:  # only input file is the htc file
+        if len(input_files) == 1:
             return "../"
         rel_input_files = [f for f in input_files if not os.path.isabs(f)]
 
         def isfile_case_insensitive(f):
             try:
-                f = fixcase(f)  # raises exception if not existing
-                return os.path.isfile(f)
+                self.unix_path(f)
+                return True
             except IOError:
                 return False
         found = ([np.sum([isfile_case_insensitive(os.path.join(os.path.dirname(self.filename), "../" * i, f))
                           for f in rel_input_files]) for i in range(4)])
-
+        # for f in self.input_files():
+        #     print(os.path.isfile(os.path.join(os.path.dirname(self.filename), "../", f)), f)
         if max(found) > 0:
             relpath = "../" * np.argmax(found)
-            return abspath(pjoin(os.path.dirname(self.filename), relpath))
+            return os.path.abspath(os.path.join(os.path.dirname(self.filename), relpath))
         else:
             raise ValueError(
                 "Modelpath cannot be autodetected for '%s'.\nInput files not found near htc file" % self.filename)
 
-    def load(self):
-        self.contents = OrderedDict()
+    def _load(self):
+        self.reset()
         self.initial_comments = []
         self.htc_inputfiles = []
+        self.contents = OrderedDict()
         if self.filename is None:
             lines = self.empty_htc.split("\n")
         else:
@@ -152,8 +158,21 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                     break
                 self._add_contents(line)
 
+    def reset(self):
+        self._contents = None
+
+    @property
+    def contents(self):
+        if self._contents is None:
+            self._load()
+        return self._contents
+
+    @contents.setter
+    def contents(self, value):
+        self._contents = value
+
     def readfilelines(self, filename):
-        with self.open(self.unix_path(os.path.abspath(filename.replace('\\', '/'))), encoding='cp1252') as fid:
+        with self.open(self.unix_path(filename), encoding='cp1252') as fid:
             txt = fid.read()
         if txt[:10].encode().startswith(b'\xc3\xaf\xc2\xbb\xc2\xbf'):
             txt = txt[3:]
@@ -163,8 +182,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         return txt.replace("\r", "").split("\n")
 
     def readlines(self, filename):
-        if filename != self.filename:  # self.filename may be changed by set_name/save. Added it when needed instead
-            self.htc_inputfiles.append(filename)
+        self.htc_inputfiles.append(filename)
         htc_lines = []
         lines = self.readfilelines(filename)
         for l in lines:
@@ -173,14 +191,13 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
                 if self.modelpath == 'unknown':
                     p = os.path.dirname(self.filename)
-
-                    def isfile(f):
-                        try:
-                            return os.path.isfile(self.unix_path(f))
-                        except OSError:
-                            return False
-                    lu = [isfile(os.path.abspath(os.path.join(p, "../" * i, filename)))
-                          for i in range(4)].index(True)
+                    file_lst = [os.path.abspath(os.path.join(p, "../" * i, filename)) for i in range(4)]
+                    file_exist_lst = [isinstance(self.unix_path(f, raise_error=False), str) for f in file_lst]
+                    if any(file_exist_lst):
+                        lu = file_exist_lst.index(True)
+                    else:
+                        f_str = "\n" + "\n".join(file_lst)
+                        raise ValueError(f"{filename} not found. Attempted to find as (case insensitive): {f_str}")
                     filename = os.path.join(p, "../" * lu, filename)
                 else:
                     filename = os.path.join(self.modelpath, filename)
@@ -200,13 +217,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         return "".join(self.initial_comments + [c.__str__(1) for c in self] + ["exit;"])
 
     def save(self, filename=None):
-        """Saves the htc object to an htc file.
-
-        Args:
-            filename (str, optional): Specifies the filename of the htc file to be saved.
-            If the value is none, the filename attribute of the object will be used as the filename.
-            Defaults to None.
-        """
         self.contents  # load if not loaded
         if filename is None:
             filename = self.filename
@@ -219,17 +229,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             fid.write(str(self))
 
     def set_name(self, name, subfolder=''):
-        """Sets the base filename of the simulation files.
-
-        Args:
-            name (str): Specifies name of the log file, dat file (for animation), hdf5 file (for visualization) and htc file.
-            subfolder (str, optional): Specifies the name of a subfolder to place the files in.
-                If the value is an empty string, no subfolders will be created.
-                Defaults to ''.
-
-        Returns:
-            None
-        """
         # if os.path.isabs(folder) is False and os.path.relpath(folder).startswith("htc" + os.path.sep):
         self.contents  # load if not loaded
 
@@ -244,12 +243,11 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                 self.simulation.animation = os.path.join(fmt_folder(
                     'animation', subfolder), "%s.dat" % name).replace("\\", "/")
             if 'visualization' in self.simulation:
-                f = os.path.join(fmt_folder('visualization', subfolder), "%s.hdf5" % name).replace("\\", "/")
-                self.simulation.visualization[0] = f
+                self.simulation.visualization = os.path.join(fmt_folder(
+                    'visualization', subfolder), "%s.hdf5" % name).replace("\\", "/")
         elif 'test_structure' in self and 'logfile' in self.test_structure:  # hawc2aero
             self.test_structure.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
-        if 'output' in self:
-            self.output.filename = os.path.join(fmt_folder('res', subfolder), "%s" % name).replace("\\", "/")
+        self.output.filename = os.path.join(fmt_folder('res', subfolder), "%s" % name).replace("\\", "/")
 
     def set_time(self, start=None, stop=None, step=None):
         self.contents  # load if not loaded
@@ -290,9 +288,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     def input_files(self):
         self.contents  # load if not loaded
         if self.modelpath == "unknown":
-            files = [str(f).replace("\\", "/") for f in [self.filename] + self.htc_inputfiles]
+            files = [str(f).replace("\\", "/") for f in self.htc_inputfiles]
         else:
-            files = [os.path.abspath(str(f)).replace("\\", "/") for f in [self.filename] + self.htc_inputfiles]
+            files = [os.path.abspath(str(f)).replace("\\", "/") for f in self.htc_inputfiles]
         if 'new_htc_structure' in self:
             for mb in [self.new_htc_structure[mb]
                        for mb in self.new_htc_structure.keys() if mb.startswith('main_body')]:
@@ -312,7 +310,6 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             files.append(dll.filename[0])
             f, ext = os.path.splitext(dll.filename[0])
             files.append(f + "_64" + ext)
-            files.append(f + ".so")
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
             files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])
@@ -342,18 +339,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         except Exception:
             pass
 
-        def fix_path_case(f):
-            if os.path.isabs(f):
-                return self.unix_path(f)
-            elif self.modelpath != "unknown":
-                try:
-                    return "./" + os.path.relpath(self.unix_path(os.path.join(self.modelpath, f)),
-                                                  self.modelpath).replace("\\", "/")
-                except IOError:
-                    return f
-            else:
-                return f
-        return [fix_path_case(f) for f in set(files) if f]
+        return [f for f in set(files) if f]
 
     def output_files(self):
         self.contents  # load if not loaded
@@ -431,36 +417,27 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         self.save()
         htcfile = os.path.relpath(self.filename, self.modelpath)
-        assert any([os.path.isfile(os.path.join(f, exe)) for f in [''] + os.environ['PATH'].split(";")]), exe
+        assert os.path.isfile(exe), exe
         return pexec([exe, htcfile], self.modelpath)
 
     def simulate(self, exe, skip_if_up_to_date=False):
         errorcode, stdout, stderr, cmd = self._simulate(exe, skip_if_up_to_date)
-        if ('simulation' in self.keys() and "logfile" in self.simulation and
-                os.path.isfile(os.path.join(self.modelpath, self.simulation.logfile[0]))):
+        if 'simulation' in self.keys() and "logfile" in self.simulation:
             with self.open(os.path.join(self.modelpath, self.simulation.logfile[0])) as fid:
                 log = fid.read()
         else:
-            log = "%s\n%s" % (str(stdout), str(stderr))
+            log = stderr
 
         if errorcode or 'Elapsed time' not in log:
             log_lines = log.split("\n")
             error_lines = [i for i, l in enumerate(log_lines) if 'error' in l.lower()]
             if error_lines:
-                import numpy as np
-                line_i = np.r_[np.array([error_lines + i for i in np.arange(-3, 4)]).flatten(),
-                               np.arange(-5, 0) + len(log_lines)]
-                line_i = sorted(np.unique(np.maximum(np.minimum(line_i, len(log_lines) - 1), 0)))
-
-                lines = ["%04d %s" % (i, log_lines[i]) for i in line_i]
-                for jump in np.where(np.diff(line_i) > 1)[0]:
-                    lines.insert(jump, "...")
-
-                error_log = "\n".join(lines)
+                i = error_lines[0]
+                error_log = "\n".join(log_lines[i - 3:i + 3])
             else:
                 error_log = log
-            raise Exception("\nError code: %s\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
-                            (errorcode, str(stdout), str(stderr), error_log, cmd))
+            raise Exception("\nstdout:\n%s\n--------------\nstderr:\n%s\n--------------\nlog:\n%s\n--------------\ncmd:\n%s" %
+                            (str(stdout), str(stderr), error_log, cmd))
         return str(stdout) + str(stderr), log
 
     def simulate_hawc2stab2(self, exe):
@@ -483,17 +460,19 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
     def open(self):
         return open
 
-    def unix_path(self, filename):
+    def unix_path(self, filename, raise_error=True):
         filename = os.path.realpath(str(filename)).replace("\\", "/")
         ufn, rest = os.path.splitdrive(filename)
         ufn += "/"
         for f in rest[1:].split("/"):
             f_lst = [f_ for f_ in os.listdir(ufn) if f_.lower() == f.lower()]
             if len(f_lst) > 1:
-                # use the case sensitive match
                 f_lst = [f_ for f_ in f_lst if f_ == f]
-            if len(f_lst) == 0:
-                raise IOError("'%s' not found in '%s'" % (f, ufn))
+            elif len(f_lst) == 0:
+                if raise_error:
+                    raise IOError("'%s' not found in '%s'" % (f, ufn))
+                else:
+                    return
             else:  # one match found
                 ufn = os.path.join(ufn, f_lst[0])
         return ufn.replace("\\", "/")
@@ -557,11 +536,10 @@ class SSH_HTCFile(HTCFile):
 
 if "__main__" == __name__:
     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc", "../")
-    print(f.input_files())
-#     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
-#
-#     f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
-#     f.set_time = 0, 1, .1
-#     print(f.simulate(r"C:\mmpe\HAWC2\bin\HAWC2_12.8\hawc2mb.exe"))
-#
-#     f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
+    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT_power_curve.htc")
+
+    f = HTCFile(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc", "../")
+    f.set_time = 0, 1, .1
+    print(f.simulate(r"C:\mmpe\HAWC2\bin\HAWC2_12.8\hawc2mb.exe"))
+
+    f.save(r"C:\mmpe\HAWC2\models\DTU10MWRef6.0\htc\DTU_10MW_RWT.htc")
