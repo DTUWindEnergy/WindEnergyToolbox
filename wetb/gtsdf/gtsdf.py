@@ -466,8 +466,14 @@ def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', '
 def load_statistic(filename):
     f = _open_h5py_file(filename)
     info = _load_info(f)
+    if 'Statistic' not in f:
+        print (f"Calculating statistics for '{filename}'")
+        f.close()
+        add_statistic(filename)
+        return load_statistic(filename)
     names = decode(f['Statistic']['statistic_names'])
     data = np.array(f['Statistic']['statistic_data'])
+    f.close()
     return pd.DataFrame(data, columns=names), info
 
 
