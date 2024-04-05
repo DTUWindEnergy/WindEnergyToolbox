@@ -7,7 +7,7 @@ except ImportError as e:
 import os
 import numpy as np
 import numpy.ma as ma
-import pandas as pd
+import xarray as xr
 import glob
 import tqdm
 
@@ -463,18 +463,25 @@ def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', '
     _add_statistic_data(file, stat_data, statistics)
 
 
-def load_statistic(filename):
+def load_statistic(filename, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
     if 'Statistic' not in f:
         print (f"Calculating statistics for '{filename}'")
         f.close()
         add_statistic(filename)
-        return load_statistic(filename)
-    names = decode(f['Statistic']['statistic_names'])
-    data = np.array(f['Statistic']['statistic_data'])
+        return load_statistic(filename, xarray=xarray)
+
+    stat_names = decode(f['Statistic']['statistic_names'])
+    stat_data = np.array(f['Statistic']['statistic_data'])
     f.close()
-    return pd.DataFrame(data, columns=names), info
+    if xarray:
+        return xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
+                            coords={'sensor_name': info['attribute_names'], 'stat': stat_names,
+                                    'sensor_unit': (('sensor_name', info['attribute_units'])),
+                                    'sensor_description': ('sensor_name', info['attribute_descriptions'])})
+    else:
+        return stat_data, stat_names, info
 
 
 def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
@@ -493,16 +500,19 @@ def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
 
     if not fn_lst:
         raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-    info = load_statistic(fn_lst[0])[1]
-    info = {k: info[k] for k in ['attribute_names', 'attribute_units', 'attribute_descriptions']}
+    stat_names, info = load_statistic(fn_lst[0], xarray=False)[1:]
     sensor_names = info['attribute_names']
 
     def get_stat(fn):
-        stat, info = load_statistic(fn)
-        assert info['attribute_names'] == sensor_names
-        stat['filename'] = os.path.relpath(fn, root)
-        stat['sensor'] = np.arange(stat.shape[0])
-        return stat
+        stat_data, _stat_names, _info = load_statistic(fn, xarray=False)
+        assert stat_names == stat_names
+        assert _info['attribute_names'] == sensor_names
+        return stat_data
 
-    stats = [get_stat(fn) for fn in tqdm.tqdm(fn_lst)]
-    return pd.concat(stats, keys=[os.path.relpath(fn, root) for fn in fn_lst], names=['filename', 'sensor']), info
+    stats_data = [get_stat(fn) for fn in tqdm.tqdm(fn_lst)]
+    return xr.DataArray(stats_data,
+                        dims=['filename', 'sensor_name', 'stat'],
+                        coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
+                                'sensor_name': info['attribute_names'], 'stat': stat_names,
+                                'sensor_unit': (('sensor_name', info['attribute_units'])),
+                                'sensor_description': ('sensor_name', info['attribute_descriptions'])})

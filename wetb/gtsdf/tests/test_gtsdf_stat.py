@@ -34,9 +34,13 @@ class Test_gsdf(unittest.TestCase):
         fn = tmp_path + "test_stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
         gtsdf.add_statistic(fn)
-        stat_data, info = gtsdf.load_statistic(fn)
-        self.assertEqual(data[:, 0].min(), stat_data.values[0, 0])
-        self.assertEqual(stat_data.shape, (49, 10))
+        da = gtsdf.load_statistic(fn)
+        sensor = da[0]
+        self.assertEqual(data[:, 0].min(), sensor.sel(stat='min'))
+        assert sensor.sensor_name == info['attribute_names'][0]
+        assert sensor.sensor_unit == info['attribute_units'][0]
+        assert sensor.sensor_description == info['attribute_descriptions'][0]
+        self.assertEqual(da.shape, (49, 10))
 
         # test_gtsdf_compress2stat
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
@@ -51,10 +55,10 @@ class Test_gsdf(unittest.TestCase):
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_statistics('missing', tmp_path)
 
-        df, info = collect_statistics('.', tmp_path, filename='*stat.hdf5')
-        assert df.shape == (98, 12)
-        df, info = collect_statistics('.', tmp_path + "..", filename='*stat.hdf5')
-        assert df.shape == (98, 12)
+        da = collect_statistics('.', tmp_path, filename='*stat.hdf5')
+        assert da.shape == (2, 49, 10)
+        da = collect_statistics('.', tmp_path + "..", filename='*stat.hdf5')
+        assert da.shape == (2, 49, 10)
         with pytest.raises(Exception, match=r'No \*stat\.hdf5 files found in'):
             collect_statistics('.', tmp_path + "..", filename='*stat.hdf5', recursive=False)
 
