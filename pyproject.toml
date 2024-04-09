@@ -29,6 +29,7 @@ dependencies = [
     'sshtunnel',
     'tables',
     'tqdm',
+    'xarray',
     'xlwt',
     'XlsxWriter',
 ]
