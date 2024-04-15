@@ -9,6 +9,7 @@ import shutil
 import wetb
 import h5py
 import re
+import logging
 
 
 def recursiveGroupSearch(inObj, outObj, ndof=3):
@@ -42,7 +43,7 @@ def recursiveGroupSearch(inObj, outObj, ndof=3):
             outObj[f"{key}"] = inObj[key][()]
 
 
-def bodymode(structure: dict, body: str, mode_type="system", mode=1):
+def bodymode(structure: dict, body: str, mode_type="system", mode=0):
     """This function extracts the body coordinates and the modal amplitudes from the structure dictionary output from recurseGroupSearch().
 
 
@@ -62,7 +63,7 @@ def bodymode(structure: dict, body: str, mode_type="system", mode=1):
     tuple
         A tuple containing the coodinates of the body, and the modal amplitudes.
     """
-    assert mode > 0, "'mode' is 1 indexed - modes <=0 do not exist"
+    assert mode >= 0, "'mode' is 0 indexed - modes <0 do not exist"
     subbodies = [sb for sb in list(structure[body].keys()) if re.match(body, sb)]
     if len(subbodies) > 1:
         subbodies = [int(sb.replace(f"{body}_", "")) for sb in subbodies]
@@ -71,7 +72,7 @@ def bodymode(structure: dict, body: str, mode_type="system", mode=1):
 
     firstSub = True
     for sb in subbodies:
-        subMode = structure[body][f"{sb}"][f"{mode_type}_eigenmodes"][mode - 1, :, :]
+        subMode = structure[body][f"{sb}"][f"{mode_type}_eigenmodes"][mode, :, :]
         subCoords = structure[body][f"{sb}"]["initial_node_positions"]
         if firstSub:
             firstSub = False
@@ -84,14 +85,18 @@ def bodymode(structure: dict, body: str, mode_type="system", mode=1):
     return bodyCoords, bodyMode
 
 
-def get_body_eigenmode(file, body, mode, mode_type, ndof=3):
+def read_main_body_eigs(file, body, mode_type="system", ndof=6):
     f = h5py.File(file, 'r')
     Structure = {}
     recursiveGroupSearch(f['structure'], Structure, ndof=ndof)
     del f
-    return bodymode(Structure, body, mode_type=mode_type, mode=mode)
-
-
+    num_modes = np.shape(Structure[body][body][f"{mode_type}_eigenmodes"])[0]
+    eigenmodes = []
+    for mode in range(num_modes):
+        eigenmodes.append(bodymode(Structure, body, mode_type=mode_type, mode=mode)[-1])
+        if "coords" not in locals():
+            coords = bodymode(Structure, body, mode_type=mode_type, mode=mode)[0]
+    return coords, eigenmodes
 
 
 
@@ -110,7 +115,8 @@ def prepare_mainbody_htc_files(base_htc_file_path, model_path, num_modes=20):
         
         # Initialize the template htc file:
         TEMPLATE_HTC = HTCFile(
-            filename="/home/rsod/Desktop/IEA15MW-RWT_dlb/htc/main_body_analysis_template.htc"
+            filename="/home/rsod/Desktop/IEA15MW-RWT_dlb/htc/main_body_analysis_template.htc",
+            modelpath=model_path
         )
         
         #add comments to the header:
@@ -125,7 +131,7 @@ def prepare_mainbody_htc_files(base_htc_file_path, model_path, num_modes=20):
         
         # Add the new_htc_structure section, and add the calculation commands
         TEMPLATE_HTC.add_section("new_htc_structure")
-        TEMPLATE_HTC.new_htc_structure.add_line("system_eigenanalysis", [f"./main_body_eig/main_body_{main_body['name'].str_values()}/eigen_all.dat", 1, num_modes, 0.0])
+        TEMPLATE_HTC.new_htc_structure.add_line("system_eigenanalysis", [f"./main_body_eig/main_body_{main_body['name'].str_values()}/eigen_all.dat", 0, num_modes, 0.0])
         
         # Write the contents of the main_body 
         TEMPLATE_HTC.new_htc_structure.add_section(main_body)
@@ -161,19 +167,16 @@ def read_natural_freqs(htc_model):
         system_eigenanalysis_file,
         skiprows=8,
         usecols=[3,4,5],
-        names=["fn", "fd", "log_dec"],
+        names=["fd", "fn", "log_dec"],
         delimiter="\s+"
     )
     return sys_eig_freqs
 
 def read_modeshapes(htc_model):
     visualization_file = htc_model.modelpath + htc_model.simulation.visualization.str_values().split()[0]
-    body = main_body_models[0].new_htc_structure.main_body.name.str_values()
-    mode = 1
-    bodyCoords, bodyMode = get_body_eigenmode(visualization_file, body, mode, "system", ndof=6)
+    body = htc_model.new_htc_structure.main_body["name"].str_values()
 
-
-    return bodyCoords, bodyMode
+    return read_main_body_eigs(visualization_file, body)
 
 def delete_old_animation_files(htc_model):
     system_eigenanalysis_file = htc_model.modelpath + htc_model.new_htc_structure.system_eigenanalysis.str_values().split()[0]
@@ -183,14 +186,52 @@ def delete_old_animation_files(htc_model):
         os.remove(file)
 
 
-# %%
+
+def collect_eigenvalue_analysis(main_body_models, delete_animation_files=True):
+    main_body_eigenmodes = {}
+    for main_body in main_body_models:
+        name = main_body.new_htc_structure.main_body["name"].str_values()
+
+        # Cleanup old animation files if specified
+        if delete_animation_files:
+            delete_old_animation_files(main_body)
+        
+        # Save the htc object to the dictionary for documentation purposes
+        main_body_eigenmodes[name] = {"htc_object": main_body}
+        
+        # Read and save modal amplitudes
+        coords,modes = read_modeshapes(main_body)
+        main_body_eigenmodes[name]["coords"] = coords
+        main_body_eigenmodes[name]["modes"] = modes
+        
+        # Read and save natural frequencies
+        main_body_eigenmodes[name]["freqs"] = read_natural_freqs(main_body)
+        
+        
+    return main_body_eigenmodes
+
+
+
+#%%
+
 main_body_models = prepare_mainbody_htc_files(
     base_htc_file_path="/home/rsod/Desktop/IEA15MW-RWT_dlb/htc/IEA_15MW_RWT_Onshore.htc",
     model_path="/home/rsod/Desktop/IEA15MW-RWT_dlb",
-    num_modes=50
+    num_modes=10
     )
 
 run_analysis(main_body_models, "/home/rsod/HAWC2/HAWC2MB-x86_64-13.1.0.0.AppImage")
+main_body_eigenmodes = collect_eigenvalue_analysis(main_body_models)
 
-for main_body in main_body_models:
-    delete_old_animation_files(main_body)
+
+# %%
+import matplotlib.pyplot as plt
+
+body = "tower"
+
+
+plt.plot(
+    main_body_eigenmodes[body]["coords"][:,2],
+    np.real(main_body_eigenmodes[body]["modes"][7][:,:3])
+)
+# %%
