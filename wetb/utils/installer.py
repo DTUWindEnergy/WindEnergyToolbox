@@ -1,8 +1,22 @@
+import glob
 import io
 import json
 import os
+import stat
 import zipfile
 from urllib.request import Request, urlopen
+
+
+def chmod_x(exe_path: str):
+    """Utility function to change the file mode of a file to allow execution
+
+    Parameters
+    ----------
+    path : str
+        path to the file to apply the +x policy to.
+    """
+    st = os.stat(exe_path)
+    os.chmod(exe_path, st.st_mode | 0o111)
 
 
 def install_wind_tool(
@@ -79,7 +93,7 @@ def install_wind_tool(
         destination = os.getcwd()
 
     print(f"Installing {tool} version {version} for {platform}")
-
+    os.makedirs(destination, exist_ok=True)
     # If the download is a zip archive, extract the archive to the destination directory
     if req.full_url.endswith(".zip"):
         zipfile.ZipFile(buffer).extractall(path=destination)
@@ -87,6 +101,12 @@ def install_wind_tool(
     else:
         with open(f"{destination}/{req.full_url.split('/')[-1]}", "wb") as f:
             f.write(buffer.getvalue())
+    
+    # Add execution policy to the executable files (files with .exe or no extension)
+    for file in glob.glob(f"{destination}/*"):
+        if (file.endswith(".exe") or os.path.splitext(file)[-1] == ""):
+            chmod_x(file)
+    
 
     print(f"{tool} version {version} succesfully installed in {destination}")
 
