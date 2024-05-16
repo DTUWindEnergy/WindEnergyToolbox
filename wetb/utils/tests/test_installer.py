@@ -15,7 +15,7 @@ def test_installer_zip():
     except:
         raise
     finally:
-        shutil.rmtree()
+        shutil.rmtree(DESTINATION)
 
 def test_installer_executable():
     # Install a program distributed as a standalone executable
