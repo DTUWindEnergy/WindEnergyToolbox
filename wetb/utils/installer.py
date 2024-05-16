@@ -93,7 +93,7 @@ def install_wind_tool(
         destination = os.getcwd()
 
     print(f"Installing {tool} version {version} for {platform}")
-
+    os.makedirs(destination, exist_ok=True)
     # If the download is a zip archive, extract the archive to the destination directory
     if req.full_url.endswith(".zip"):
         zipfile.ZipFile(buffer).extractall(path=destination)
