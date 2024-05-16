@@ -13,10 +13,9 @@ def test_installer_zip():
             destination=DESTINATION
         )
     except:
-        shutil.rmtree(DESTINATION)
         raise
     finally:
-        shutil.rmtree(DESTINATION)
+        shutil.rmtree()
 
 def test_installer_executable():
     # Install a program distributed as a standalone executable
@@ -26,7 +25,6 @@ def test_installer_executable():
             destination=DESTINATION
         )
     except:
-        shutil.rmtree(DESTINATION)
         raise
     finally:
         shutil.rmtree(DESTINATION)
@@ -40,7 +38,6 @@ def test_version_not_available():
             destination=DESTINATION
         )
     except:
-        shutil.rmtree(DESTINATION)
         raise
     finally:
         shutil.rmtree(DESTINATION)
