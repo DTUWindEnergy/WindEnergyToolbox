@@ -10,7 +10,8 @@ import sys
 from pathlib import Path
 from platform import architecture
 from urllib.request import Request, urlopen
-
+import certifi
+import ssl
 
 
 def chmod_x(exe_path: str):
@@ -41,7 +42,7 @@ def install_wind_tool(
     destination : str, optional
         Destination path for the download / installation. If None, the destination is set to cwd. By default None
     """
-    if tool == None:
+    if tool is None:
         print("No tool has been given for install. Nothing has been installed.")
         return
 
@@ -67,7 +68,7 @@ def install_wind_tool(
         return
 
     # Check if requested version is available, and default it is not.
-    if version != None and version not in versions[tool]["available"]:
+    if version is not None and version not in versions[tool]["available"]:
         version = versions[tool]["latest"]
         print(
             f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{version}'"
@@ -107,18 +108,17 @@ def install_wind_tool(
     else:
         with open(f"{destination}/{req.full_url.split('/')[-1]}", "wb") as f:
             f.write(buffer.getvalue())
-    
+
     # Add execution policy to the executable files (files with .exe or no extension)
     for file in glob.glob(f"{destination}/*"):
         if (file.endswith(".exe") or os.path.splitext(file)[-1] == ""):
             chmod_x(file)
-    
 
     print(f"{tool} version {version} succesfully installed in {destination}")
 
     return
-    
-    
+
+
 def install_hawc2_dtu_license():
     """Function to install the DTU HAWC2 license. In order to install the license, you must be logged in to the DTU network.
     """
@@ -130,13 +130,16 @@ def install_hawc2_dtu_license():
         f = Path('~/.config/hawc2/license.cfg')
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
-        if b'LICENSE SERVER RUNNING' in urlopen("http://license-internal.windenergy.dtu.dk:34523").read():
+        r = urlopen("http://license-internal.windenergy.dtu.dk:34523",
+                    context=ssl.create_default_context(cafile=certifi.where())).read()
+        if b'LICENSE SERVER RUNNING' in r:
             f.write_text("[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523")
         else:
-            raise ConnectionError(f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function.")
+            raise ConnectionError(
+                f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function.")
 
 
-def install_keygen_license(software: str, cfg_file: str, force : bool=False):
+def install_keygen_license(software: str, cfg_file: str, force: bool=False):
     """Install license file for HAWC2, HAWCStab2 or Ellipsys on your machine
 
     Parameters
@@ -158,19 +161,17 @@ def install_keygen_license(software: str, cfg_file: str, force : bool=False):
     ValueError
         A ValueError is raised if the name of the software argument is not supported.
     """
-    
+
     SUPPORTED_SOFTWARES = ["hawc2", "hawcstab2", "ellipsys"]
     if software.lower() not in SUPPORTED_SOFTWARES:
         raise ValueError(f"'software' must be one of {SUPPORTED_SOFTWARES}")
 
-    
     USER_PLATFORM = platform.uname().system
 
     if USER_PLATFORM == "Windows":
         APPDATA = f"{os.environ['APPDATA']}"
     else:
         APPDATA = "None"
-
 
     def local_license_dir(platform, software):
         return {
@@ -192,14 +193,14 @@ def install_keygen_license(software: str, cfg_file: str, force : bool=False):
             "pywasp": "",
             "ellipsys": "license.cfg",
         }[software.lower()]
-    
-    
+
     license_path = local_license_dir(USER_PLATFORM, software)
     lic_name = local_license_file(software)
-    
+
     os.makedirs(license_path, exist_ok=True)
-    
-    if os.path.exists(os.path.join(license_path,lic_name)) and os.path.isfile(os.path.join(license_path,lic_name)) and (not force):
+
+    if os.path.exists(os.path.join(license_path, lic_name)) and os.path.isfile(
+            os.path.join(license_path, lic_name)) and (not force):
         print(f"License already installed for {software}, use 'force=True' to overwrite installation")
     else:
         shutil.copy(f"{cfg_file}", f"{os.path.join(license_path,lic_name)}")
