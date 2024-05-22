@@ -123,7 +123,7 @@ def install_hawc2_dtu_license():
     if sys.platform.lower() == "win32":
         f = Path(os.getenv("APPDATA")) / "DTU Wind Energy/hawc2/license.cfg"
     else:
-        f = Path(Path.home()) / ".config/hawc2/license.cfg"
+        f = Path.home() / '.config/hawc2/license.cfg'
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
         r = urlopen("http://license-internal.windenergy.dtu.dk:34523",
