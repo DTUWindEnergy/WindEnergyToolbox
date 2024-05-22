@@ -8,10 +8,13 @@ import sys
 import zipfile
 from pathlib import Path
 from platform import architecture
-from urllib.request import Request, urlopen
+from urllib.request import Request
+from urllib import request
 import ssl
 import certifi
 
+def urlopen(*args, **kwargs):
+    return request.urlopen(*args, **kwargs, context=ssl.create_default_context(cafile=certifi.where()))
 
 def chmod_x(exe_path: str):
     """Utility function to change the file mode of a file to allow execution
@@ -126,8 +129,7 @@ def install_hawc2_dtu_license():
         f = Path.home() / '.config/hawc2/license.cfg'
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
-        r = urlopen("http://license-internal.windenergy.dtu.dk:34523",
-                    context=ssl.create_default_context(cafile=certifi.where())).read()
+        r = urlopen("http://license-internal.windenergy.dtu.dk:34523").read()
         if b"LICENSE SERVER RUNNING" in r:
             f.write_text("[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523")
         else:
