@@ -86,6 +86,7 @@ def test_install_hawc2_dtu_license():
     license_path = local_license_dir(USER_PLATFORM, "HAWC2")
     try:
         install_hawc2_dtu_license()
+        assert os.path.exists(f"{local_license_dir(USER_PLATFORM, 'hawc2')}/{local_license_file('hawc2')}")
     except:
         raise
     finally:
@@ -97,11 +98,12 @@ def test_install_hawc2_dtu_license():
 TEST_LICENSE_FILE = "/tmp/license.cfg"
 with open(TEST_LICENSE_FILE, "w") as file:
     file.writelines(["\n[licensing]", "\nhost: www.fakehost.com", "\nport=360"])
-@pytest.mark.parametrize("software,license", [("HAWC2", TEST_LICENSE_FILE),("HAWCStab2", TEST_LICENSE_FILE),("ellipSYS", TEST_LICENSE_FILE)])
+@pytest.mark.parametrize("software,license", [("HAwC2", TEST_LICENSE_FILE),("HAWCStab2", TEST_LICENSE_FILE),("ellipSYS", TEST_LICENSE_FILE)])
 def test_install_keygen_license(software, license):
     license_path = local_license_dir(USER_PLATFORM, software)
     try:
         install_keygen_license(software=software, cfg_file=license)
+        assert os.path.exists(f"{local_license_dir(USER_PLATFORM, software)}/{local_license_file(software)}")
     except Exception as exc:
         raise exc
     finally:
