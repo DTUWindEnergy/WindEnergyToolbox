@@ -9,6 +9,8 @@ import zipfile
 from pathlib import Path
 from platform import architecture
 from urllib.request import Request, urlopen
+import ssl
+import certifi
 
 
 def chmod_x(exe_path: str):
@@ -39,7 +41,7 @@ def install_wind_tool(
     destination : str, optional
         Destination path for the download / installation. If None, the destination is set to cwd. By default None
     """
-    if tool == None:
+    if tool is None:
         print("No tool has been given for install. Nothing has been installed.")
         return
 
@@ -65,7 +67,7 @@ def install_wind_tool(
         return
 
     # Check if requested version is available, and default it is not.
-    if version != None and version not in versions[tool]["available"]:
+    if version is not None and version not in versions[tool]["available"]:
         version = versions[tool]["latest"]
         print(
             f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{version}'"
@@ -124,13 +126,10 @@ def install_hawc2_dtu_license():
         f = Path(Path.home()) / ".config/hawc2/license.cfg"
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
-        if (
-            b"LICENSE SERVER RUNNING"
-            in urlopen("http://license-internal.windenergy.dtu.dk:34523").read()
-        ):
-            f.write_text(
-                "[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523"
-            )
+        r = urlopen("http://license-internal.windenergy.dtu.dk:34523",
+                    context=ssl.create_default_context(cafile=certifi.where())).read()
+        if b"LICENSE SERVER RUNNING" in r:
+            f.write_text("[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523")
         else:
             raise ConnectionError(
                 f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function."
