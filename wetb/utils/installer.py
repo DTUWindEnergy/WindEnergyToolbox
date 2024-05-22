@@ -4,6 +4,7 @@ import json
 import os
 import stat
 import zipfile
+from platform import architecture
 from urllib.request import Request, urlopen
 
 
