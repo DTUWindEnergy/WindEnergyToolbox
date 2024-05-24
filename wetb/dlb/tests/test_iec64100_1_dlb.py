@@ -10,7 +10,7 @@ import shutil
 from tests import npt, run_main
 from wetb.hawc2.htc_file import HTCFile
 from tests.run_main import run_module_main
-from wetb.dlb.iec64100_1 import DTU_IEC64100_1_Ref_DLB
+from wetb.dlb.iec64100_1 import DTU_IEC64100_1_Ref_DLB, Sensors
 
 path = os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/htc/tmp/'
 
@@ -77,3 +77,10 @@ def test_DLC22y(writer):
     npt.assert_array_equal(htc.wind.windfield_rotations.values, [15, 0, 0])
     assert htc.wind.turb_format[0] == 1
     assert htc.wind.mann.create_turb_parameters[3] == 1001
+
+
+def test_make_sensor_statistic():
+    tfp = os.path.dirname(__file__) + "/test_files/"
+    dlb = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=8, Vr=10, D=180, z_hub=90)
+    sensors = Sensors.from_excel(tfp + "IEC64100-1_DLB_DTU_ref.xlsx")
+    dlb.make_sensor_statistic_files(tfp + "stat.nc", sensors)

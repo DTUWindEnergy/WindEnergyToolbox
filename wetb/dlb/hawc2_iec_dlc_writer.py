@@ -3,6 +3,7 @@ import warnings
 from wetb.hawc2.hawc2_input_writer import HAWC2InputWriter
 from wetb.hawc2.tests import test_files
 from wetb.dlb.iec64100_1 import DTU_IEC64100_1_Ref_DLB
+import numpy as np
 
 """
 TODO: delete wind ramp / replace wind section
@@ -18,40 +19,39 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         HAWC2InputWriter.__init__(self, base_htc_file, diameter=diameter,
                                   time_start=time_start,
                                   turbulence_defaults=turbulence_defaults)
+        self.ignore_fields = ['DLC', 'Folder', 'propability', 'Fatigue', 'Ultimate']
 
-    def set_V_hub(self, htc, V_hub, **_):
-        htc.wind.wsp = V_hub
-        htc.wind.wind_ramp_factor = 0, self.time_start, 8 / V_hub, 1
+    def set_WSP(self, htc, WSP, **_):
+        htc.wind.wsp = WSP
+        htc.wind.wind_ramp_factor = 0, self.time_start, 8 / WSP, 1
 
-    def set_wdir(self, htc, wdir, **_):
-        htc.wind.windfield_rotations = wdir, 0, 0
+    def set_Wdir(self, htc, Wdir, **_):
+        htc.wind.windfield_rotations = Wdir, 0, 0
 
-    def set_shear(self, htc, shear, **_):
-        if isinstance(shear, str):
-            shear = eval(shear)  # convert str to dict (if via excel)
-        shear_format, shear_arg = shear['profile']
+    def set_Shear(self, htc, type, profile, **kwargs):
+        shear_format, shear_arg = profile
         i_shear_format = ['log', 'power'].index(shear_format.lower()) + 2
         htc.wind.shear_format = i_shear_format, shear_arg
-        if shear['type'] == 'NWP':
+        if type == 'NWP':
             return
-        elif shear['type'] == 'EWS':
-            phi = {'++': 0, '+-': 90, '--': 180, '-+': 270}[shear['sign']]
-            htc.wind.iec_gust = 'ews', shear['A'], phi, self.time_start, shear['T']
+        elif type == 'EWS':
+            phi = {'++': 0, '+-': 90, '--': 180, '-+': 270}[kwargs['sign']]
+            htc.wind.iec_gust = 'ews', kwargs['A'], phi, self.time_start, kwargs['T']
         else:
-            raise NotImplementedError(shear['type'])
+            raise NotImplementedError('type')
 
     def set_ti(self, htc, ti, **_):
         htc.wind.tint = ti
 
-    def set_seed(self, htc, seed, **kwargs):
+    def set_Turb(self, htc, seed, ti, WSP, Time, **kwargs):
         if seed is None or seed == "":
             htc.wind.turb_format = 0
-        elif isinstance(seed, int):
+        elif isinstance(seed, (int, np.int_)):
             L, Gamma, nx, nyz = self.turbulence_defaults
 
             htc.add_mann_turbulence(L, 1, Gamma, seed, no_grid_points=(nx, nyz, nyz),
-                                    box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'],
-                                                   self.diameter, self.diameter))
+                                    box_dimension=(Time * WSP, self.diameter, self.diameter))
+            htc.wind.tint = ti
         else:
             raise NotImplementedError(seed)
 
@@ -67,7 +67,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             raise NotImplementedError(Gust)
 
     def set_Fault(self, htc, Fault, **kwargs):
-        if str(Fault).lower() == 'nan':
+        if str(Fault).lower() == '':
             return
         if isinstance(Fault, str):
             Fault = eval(Fault)
@@ -77,8 +77,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         else:
             raise NotImplementedError(Fault)
 
-    def set_simulation_time(self, htc, simulation_time, **_):
-        htc.set_time(self.time_start, simulation_time + self.time_start)
+    def set_Time(self, htc, Time, **_):
+        htc.set_time(self.time_start, Time + self.time_start)
 
     def set_gridloss_time(self, htc, t):
         gen_servo = htc.dll.get_subsection_by_name('generator_servo', 'name')

@@ -43,6 +43,8 @@ class HAWC2InputWriter(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+        self.ignore_fields = []
+
     def __call__(self, path, **kwargs):
         """Write single htc file if writer is called directly"""
         return self.write(path, **kwargs)
@@ -160,6 +162,9 @@ class HAWC2InputWriter(object):
         **kwargs : pd.DataFrame, pd.Series or dict
             Keyword arguments. The tags to update/replace in the file.
         """
+        for k, v in kwargs.items():
+            if isinstance(v, str) and v[0] == '{' and v[-1] == '}':
+                kwargs[k] = eval(v)
         htc = HTCFile(self.base_htc_file, jinja_tags=kwargs)
         for k, v in kwargs.items():
             k = k.replace('/', '.')
@@ -173,9 +178,14 @@ class HAWC2InputWriter(object):
                     section[command].values = np.atleast_1d(v).tolist()
                 else:
                     section[command] = v
-            else:  # otherwise, use the "set_" attribute
-                if hasattr(self, 'set_%s' % k):
-                    getattr(self, 'set_%s' % k)(htc, **kwargs)
+            elif hasattr(self, 'set_%s' % k):  # otherwise, use the "set_" attribute
+                if isinstance(kwargs[k], dict):
+                    _kwargs = {**kwargs[k], **kwargs}
+                else:
+                    _kwargs = kwargs
+                getattr(self, 'set_%s' % k)(htc, **_kwargs)
+            elif k not in self.ignore_fields:
+                print(f"{k} has no effect on the htc file")
         htc.save(path)
 
     def write_all(self, out_dir):
@@ -197,6 +207,7 @@ class HAWC2InputWriter(object):
         except KeyError:
             raise KeyError('"Name" not given in dlc contents! Cannot write files.')
 
+        assert self.contents.Name.is_unique
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
