@@ -238,8 +238,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
 
         self.filename = os.path.abspath(os.path.join(self.modelpath, fmt_folder(
             'htc', subfolder), "%s.htc" % name)).replace("\\", "/")
-        if 'simulation' in self and 'logfile' in self.simulation:
-            self.simulation.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
+        if 'simulation' in self:
+            if 'logfile' in self.simulation:
+                self.simulation.logfile = os.path.join(fmt_folder('log', subfolder), "%s.log" % name).replace("\\", "/")
             if 'animation' in self.simulation:
                 self.simulation.animation = os.path.join(fmt_folder(
                     'animation', subfolder), "%s.dat" % name).replace("\\", "/")

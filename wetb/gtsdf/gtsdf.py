@@ -467,7 +467,7 @@ def load_statistic(filename, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
     if 'Statistic' not in f:
-        print (f"Calculating statistics for '{filename}'")
+        print(f"Calculating statistics for '{filename}'")
         f.close()
         add_statistic(filename)
         return load_statistic(filename, xarray=xarray)
@@ -509,7 +509,7 @@ def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
         assert _info['attribute_names'] == sensor_names
         return stat_data
 
-    stats_data = [get_stat(fn) for fn in tqdm.tqdm(fn_lst)]
+    stats_data = [get_stat(fn) for fn in tqdm.tqdm(sorted(fn_lst))]
     return xr.DataArray(stats_data,
                         dims=['filename', 'sensor_name', 'stat'],
                         coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
