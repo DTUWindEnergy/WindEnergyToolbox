@@ -9,15 +9,16 @@ name = "wetb"
 authors = [{name="DTU Wind and Energy Systems"}]
 description = "The Wind Energy Toolbox (or ```wetb```, pronounce as wee-tee-bee) is a collection of Python scripts that facilitate working with (potentially a lot) of HAWC2, HAWCStab2, FAST or other text input based simulation tools."
 dependencies = [
+    'certifi'
     'click',
-	'Cython',
-	'h5py',
-	'Jinja2',
-	'lxml',
-	'matplotlib',
-	'pillow',
-	'mock',
-	'numpy',
+    'Cython',
+    'h5py',
+    'Jinja2',
+    'lxml',
+    'matplotlib',
+    'pillow',
+    'mock',
+    'numpy',
     'numba',
     'openpyxl',
     'pandas',
