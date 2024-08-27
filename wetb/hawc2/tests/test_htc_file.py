@@ -395,6 +395,13 @@ end turb_export;"""
         assert tower2.timoschenko_input.set.values == [1, 2]
         assert tower2.timoschenko_input__2.set.values == [3, 3]
 
+    def test_htc_copy2(self):
+        htc1 = HTCFile(self.testfilepath + "test.htc")
+        htc2 = htc1.copy()
+        test1 = len(htc2.compare(htc1)) == 0
+        test2 = id(htc1) != id(htc2)
+        assert test1 and test2
+
     def test_location(self):
         htc = HTCFile(self.testfilepath + "test.htc")
         assert htc.new_htc_structure.main_body__3.location() == 'test.htc/new_htc_structure/main_body__3'
