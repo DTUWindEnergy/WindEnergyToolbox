@@ -96,8 +96,8 @@ class HTCContents(object):
 
     def __iter__(self):
         # mainbodies must preceed constraints
-        values = ([v for v in self.contents.values() if v.name_ == 'main_body'] +
-                  [v for v in self.contents.values() if v.name_ != 'main_body'])
+        values = ([v for v in self.contents.values() if v.name_ != 'constraints'] +
+                  [v for v in self.contents.values() if v.name_ == 'constraints'])
         return iter(values)
 
     def __contains__(self, key):
