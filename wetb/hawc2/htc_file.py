@@ -231,7 +231,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         new_htc = HTCFile()
         for key in self.keys():
             new_htc[key] = self[key].copy()
-        new_htc.modelpath = self.model_path
+        new_htc.modelpath = self.modelpath
         new_htc.filename = self.filename[:-4] + "_copy.htc"
         return new_htc
 
