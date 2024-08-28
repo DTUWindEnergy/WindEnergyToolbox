@@ -218,6 +218,23 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         with self.open(filename, 'w', encoding='cp1252') as fid:
             fid.write(str(self))
 
+    def copy(self):
+        """
+        Copy this htc file.
+
+        Returns
+        -------
+        new_htc : HTCFile
+            Copy of this htc file.
+
+        """
+        new_htc = HTCFile()
+        for key in self.keys():
+            new_htc[key] = self[key].copy()
+        new_htc.modelpath = self.modelpath
+        new_htc.filename = self.filename[:-4] + "_copy.htc"
+        return new_htc
+
     def set_name(self, name, subfolder=''):
         """Sets the base filename of the simulation files.
 
