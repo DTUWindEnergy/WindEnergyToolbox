@@ -17,6 +17,7 @@ class HTCDefaults(object):
         begin newmark;
           deltat    0.02;
         end newmark;
+        log_deltat 1;
     end simulation;
     ;
     ;----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -38,6 +39,7 @@ class HTCDefaults(object):
     ;
     begin output;
       filename    ./tmp;
+      data_format gtsdf;
       general time;
     end output;
     exit;"""
