@@ -261,7 +261,7 @@ class DLCHighLevel(object):
                 files.extend(dlc_files)
         keys = list(zip(*self.dist_value_keys))[1]
         fmt = self.format_tag_value
-        tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).split("_"), keys)] for f in files]
+        tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).lower().split("_"), keys)] for f in files]
         dlc_tags = list(zip(*tags))[0]
         files_dict = {dlc_tag: {} for dlc_tag in dlc_tags}
         for tag_row, f in zip(tags, files):
