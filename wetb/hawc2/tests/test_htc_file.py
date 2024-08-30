@@ -194,6 +194,7 @@ end turb_export;"""
         htcfile.output.add_sensor('wind', 'free_wind', [1, 0, 0, -30])
         s = """begin output;
     filename\t./res/test;
+    data_format\tgtsdf;
     general time;
     wind free_wind\t1 0 0 -30;"""
         for a, b in zip(s.split("\n"), str(htcfile.output).split("\n")):
@@ -401,8 +402,8 @@ end turb_export;"""
         test1 = len(htc2.compare(htc1)) == 0
         test2 = id(htc1) != id(htc2)
         assert test1 and test2
-        assert htc1.modelpath==htc2.modelpath
-        assert htc2.filename==self.testfilepath + "test_copy.htc"
+        assert htc1.modelpath == htc2.modelpath
+        assert htc2.filename == self.testfilepath + "test_copy.htc"
 
     def test_location(self):
         htc = HTCFile(self.testfilepath + "test.htc")

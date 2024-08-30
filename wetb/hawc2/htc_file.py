@@ -334,7 +334,11 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if 'wind' in self:
             files.append(self.wind.get('user_defined_shear', [None])[0])
             files.append(self.wind.get('user_defined_shear_turbulence', [None])[0])
-            files.append(self.wind.get('met_mast_wind', [None])[0])
+            if 'met_mast_wind' in self.wind:
+                if isinstance(self.wind.met_mast_wind, HTCLine):
+                    files.append(self.wind.met_mast_wind[0])
+                else:
+                    files.append(self.wind.met_mast_wind.get('filename', [None])[0])
         if 'wakes' in self:
             files.append(self.wind.get('use_specific_deficit_file', [None])[0])
             files.append(self.wind.get('write_ct_cq_file', [None])[0])
