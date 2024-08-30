@@ -32,11 +32,11 @@ def Weibull(u, k, start, stop, step):
 
 def Weibull2(u, k, wsp_lst):
     C = 2 * u / np.sqrt(np.pi)
-
     def cdf(x): return -np.exp(-(x / C) ** k)
-    edges = np.r_[wsp_lst[0] - (wsp_lst[1] - wsp_lst[0]) / 2, (wsp_lst[1:] + wsp_lst[:-1]) /
-                  2, wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2]) / 2]
-    return [-cdf(e1) + cdf(e2) for wsp, e1, e2 in zip(wsp_lst, edges[:-1], edges[1:])]
+    edges = [wsp_lst[0] - (wsp_lst[1] - wsp_lst[0])/2]
+    edges += [(wsp_lst[i] + wsp_lst[i + 1])/2 for i in range(len(wsp_lst) - 1)]
+    edges += [wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2])/2]
+    return {wsp_lst[i]: cdf(edges[i + 1]) - cdf(edges[i]) for i in range(len(wsp_lst))}
 
 
 def Weibull_IEC(Vref, Vhub_lst):
