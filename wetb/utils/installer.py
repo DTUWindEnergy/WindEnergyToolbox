@@ -46,7 +46,7 @@ def install_wind_tool(
     """
 
     # Escape backslash if windowspath is given
-    destination = Path(destination.encode('unicode_escape')).as_posix()
+    destination = Path(destination.encode('unicode_escape').decode()).as_posix()
 
     if tool is None:
         print("No tool has been given for install. Nothing has been installed.")
