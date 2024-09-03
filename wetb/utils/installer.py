@@ -44,6 +44,10 @@ def install_wind_tool(
     destination : str, optional
         Destination path for the download / installation. If None, the destination is set to cwd. By default None
     """
+
+    # Escape backslash if windowspath is given
+    destination = Path(destination.encode('unicode_escape').decode()).as_posix()
+
     if tool is None:
         print("No tool has been given for install. Nothing has been installed.")
         return
