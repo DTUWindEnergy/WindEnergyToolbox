@@ -12,7 +12,9 @@ import openpyxl
 from openpyxl.styles import Alignment
 from wetb.hawc2.Hawc2io import ReadHawc2
 from wetb.gtsdf import load_statistic
-from wetb.utils.envelope import projected_extremes, compute_envelope
+from wetb.utils.envelope import projected_extremes
+from wetb.utils.rotation import projection_2d
+from wetb.fatigue_tools.fatigue import eq_load
 
 def get_filenames(path, ext):
     roots = [path] + [os.path.join(path, f) for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
@@ -31,10 +33,12 @@ def get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'e
 def dlb_postprocessing(path, ext,
                        sensor_lst=["Ae rot. torque", "Ae rot. power", "Ae rot. thrust", "bea1 angle_speed"],
                        statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12'],
-                       extreme_sensor_list=[], angles=np.linspace(-150, 180, 12), sweep_angle=30, degrees=True):
+                       load_sensor_list=[], angles=np.linspace(-150, 180, 12), sweep_angle=30, degrees=True,
+                       no_bins=46, m=4, neq=int(1e7)):
     filenames = get_filenames(path, ext)
     dlb_statistics = {}
     dlb_extreme_loads = {}
+    dlb_fatigue_loads = {}
     if ext == "*.hdf5":
         for f in filenames:
             file_statistics = load_statistic(f, xarray=True)
@@ -46,12 +50,16 @@ def dlb_postprocessing(path, ext,
             res_file = ReadHawc2(f)
             data = res_file.ReadAll()
             extreme_loads = {}
-            for s, ix, iy in extreme_sensor_list:
+            fatigue_loads = {}
+            for s, ix, iy in load_sensor_list:
                 extremes = projected_extremes(np.vstack([data[:,ix], data[:,iy]]).T, angles, sweep_angle, degrees)
                 extreme_loads[s] = {}
-                for angle in angles:
-                    extreme_loads[s][angle] = extremes[angles[angles.index(angle)]][1]
-            dlb_extreme_loads[os.path.basename(os.path.splitext(f)[0])] = extreme_loads                
+                fatigue_loads[s] = {}
+                for a in range(len(angles)):
+                    extreme_loads[s][angles[a]] = extremes[a][1]
+                    fatigue_loads[s][angles[a]] = eq_load(data[:,[ix,iy]] @ projection_2d(angles[a], degrees), no_bins=no_bins, m=m, neq=neq)[0][0]
+            dlb_extreme_loads[os.path.basename(os.path.splitext(f)[0])] = extreme_loads 
+            dlb_fatigue_loads[os.path.basename(os.path.splitext(f)[0])] = fatigue_loads               
     elif ext == "*.sel":
         for f in filenames:
             res_file = ReadHawc2(f)
@@ -65,17 +73,21 @@ def dlb_postprocessing(path, ext,
                 for st in statistics:
                     dlb_statistics[os.path.basename(os.path.splitext(f)[0])][s][st] = file_statistics[info.index(s), statistics.index(st)]
             extreme_loads = {}
-            for s, ix, iy in extreme_sensor_list:
+            fatigue_loads = {}
+            for s, ix, iy in load_sensor_list:
                 extremes = projected_extremes(np.vstack([data[:,ix], data[:,iy]]).T, angles, sweep_angle, degrees)
                 extreme_loads[s] = {}
+                fatigue_loads[s] = {}
                 for a in range(len(angles)):
                     extreme_loads[s][angles[a]] = extremes[a][1]
+                    fatigue_loads[s][angles[a]] = eq_load(data[:,[ix,iy]] @ projection_2d(angles[a], degrees), no_bins=no_bins, m=m, neq=neq)[0][0]
             dlb_extreme_loads[os.path.basename(os.path.splitext(f)[0])] = extreme_loads 
-    return dlb_statistics, dlb_extreme_loads
+            dlb_fatigue_loads[os.path.basename(os.path.splitext(f)[0])] = fatigue_loads 
+    return dlb_statistics, dlb_extreme_loads, dlb_fatigue_loads
     
-def write_dlb_report_to_excel(dlb_statistics, dlb_extreme_loads, excel_filename):
+def write_dlb_report_to_excel(dlb_statistics, dlb_extreme_loads, dlb_fatigue_loads, excel_filename):
     workbook = openpyxl.Workbook()
-    contents = {"Statistics": dlb_statistics, "Extreme loads": dlb_extreme_loads}
+    contents = {"Statistics": dlb_statistics, "Extreme loads": dlb_extreme_loads, "Fatigue loads": dlb_fatigue_loads}
     for sheet_name, sheet_values in contents.items():
         sheet = workbook.create_sheet(sheet_name)
         central_headers = ['Simulation']
@@ -123,6 +135,6 @@ def write_dlb_report_to_excel(dlb_statistics, dlb_extreme_loads, excel_filename)
 
 if __name__ == '__main__':        
     folder_path = r"C:\Users\nicgo\Documents\Turbine_Models\WindEnergyToolbox\res_hawc_ascii"
-    dlb_statistics, dlb_extreme_loads = dlb_postprocessing(folder_path, "*.sel", extreme_sensor_list=[('Tower base bending moment', 16, 17), ('Blade 1 root bending moment', 25, 26), ('Blade 2 root bending moment', 28, 29), ('Blade 3 root bending moment', 31, 32)])
+    dlb_statistics, dlb_extreme_loads, dlb_fatigue_loads = dlb_postprocessing(folder_path, "*.sel", load_sensor_list=[('Tower base bending moment', 16, 17), ('Blade 1 root bending moment', 25, 26), ('Blade 2 root bending moment', 28, 29), ('Blade 3 root bending moment', 31, 32)])
     excel_filename = 'DLB_Statistics_Report_ascii.xlsx'
-    write_dlb_report_to_excel(dlb_statistics, dlb_extreme_loads, excel_filename)
+    write_dlb_report_to_excel(dlb_statistics, dlb_extreme_loads, dlb_fatigue_loads, excel_filename)
