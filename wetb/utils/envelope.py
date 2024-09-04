@@ -10,7 +10,6 @@ import numpy as np
 import numpy.typing as npt
 import scipy
 
-from wetb.hawc2.Hawc2io import ReadHawc2
 from wetb.utils.rotation import projection_2d
 
 
@@ -433,6 +432,7 @@ def compute_ensemble_2d_envelope(
     individual_envelopes = []
 
     # Open result files in a loop, using the same variable to store the input to avoid excessive memory use
+    from wetb.hawc2.Hawc2io import ReadHawc2
     for result_file in result_files:
         res = ReadHawc2(f"{result_file}")
         # Make sure the queried channels are available, otherwise raise error.
