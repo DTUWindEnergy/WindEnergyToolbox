@@ -10,6 +10,7 @@ import numpy.ma as ma
 import xarray as xr
 import glob
 import tqdm
+from wetb.utils.envelope import projected_extremes
 
 block_name_fmt = "block%04d"
 
@@ -446,6 +447,13 @@ def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', '
     return np.array([get_stat(stat) for stat in statistics]).T
 
 
+def _get_extreme_loads(data, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
+    extreme_loads = []
+    for sensor, ix, iy in sensors_info:
+        extreme_loads.append(projected_extremes(np.vstack([data[:,ix],data[:,iy]]).T, angles, sweep_angle, degrees)[:,1])
+    return np.array(extreme_loads)
+
+
 def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
                         'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     f = h5py.File(file, "a")
@@ -457,10 +465,27 @@ def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
     f.close()
 
 
+def _add_extreme_loads_data(file, sensors_info, extreme_loads, angles=np.linspace(-150,180,12), degrees=True):
+    f = h5py.File(file, "a")
+    if 'Extreme_loads' in f:
+        del f["Extreme_loads"]
+    stat_grp = f.create_group("Extreme_loads")
+    stat_grp.create_dataset("sensor_names", data=np.array([s[0].encode('utf-8') for s in sensors_info]))
+    stat_grp.create_dataset("angles", data=angles.astype(float))
+    stat_grp.create_dataset("loads", data=extreme_loads.astype(float))
+    f.close()
+
+
 def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     time, data, info = load(file)
     stat_data = _get_statistic(time, data, statistics)
     _add_statistic_data(file, stat_data, statistics)
+
+
+def add_extreme_loads(file, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
+    time, data, info = load(file)
+    extreme_loads = _get_extreme_loads(data, sensors_info, angles, sweep_angle, degrees)
+    _add_extreme_loads_data(file, sensors_info, extreme_loads, angles, degrees)
 
 
 def load_statistic(filename, xarray=True):
@@ -482,6 +507,27 @@ def load_statistic(filename, xarray=True):
                                     'sensor_description': ('sensor_name', info['attribute_descriptions'])})
     else:
         return stat_data, stat_names, info
+
+
+def load_extreme_loads(filename, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True, xarray=True):
+    f = _open_h5py_file(filename)
+    info = _load_info(f)
+    if 'Extreme_loads' not in f:
+        print(f"Calculating extreme loads for '{filename}'")
+        f.close()
+        add_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees)
+        return load_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees, xarray=xarray)
+
+    sensor_names = decode(f['Extreme_loads']['sensor_names'])
+    extreme_angles = np.array(f['Extreme_loads']['angles'])
+    extreme_loads = np.array(f['Extreme_loads']['loads'])
+    f.close()
+    if xarray:
+        return xr.DataArray(extreme_loads, dims=['sensor_name', 'angle'],
+                            coords={'sensor_name': sensor_names, 'angle': extreme_angles,
+                                    'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in sensors_info])})
+    else:
+        return sensor_names, extreme_angles, extreme_loads, info
 
 
 def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
@@ -516,3 +562,22 @@ def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
                                 'sensor_name': info['attribute_names'], 'stat': stat_names,
                                 'sensor_unit': (('sensor_name', info['attribute_units'])),
                                 'sensor_description': ('sensor_name', info['attribute_descriptions'])})
+
+
+def collect_extreme_loads(folder, sensors_info, root='.', filename='*.hdf5', recursive=True, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
+    if recursive:
+        p = os.path.join(root, folder, '**', filename)
+    else:
+        p = os.path.join(root, folder, filename)
+    fn_lst = glob.glob(p, recursive=recursive)
+
+    if not fn_lst:
+        raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
+    sensor_names, _, _,  info = load_extreme_loads(fn_lst[0], sensors_info, angles, sweep_angle, degrees, xarray=False)
+
+    extremes_data = [load_extreme_loads(fn, sensors_info, angles, sweep_angle, degrees, xarray=False)[2] for fn in tqdm.tqdm(sorted(fn_lst))]
+    return xr.DataArray(extremes_data,
+                        dims=['filename', 'sensor_name', 'angle'],
+                        coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
+                                'sensor_name': sensor_names, 'angle': angles,
+                                'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in sensors_info])})
