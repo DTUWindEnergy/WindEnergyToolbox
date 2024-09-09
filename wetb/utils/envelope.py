@@ -349,31 +349,43 @@ def projected_extremes(
     extremes = np.zeros(shape=(len(angles), 3))
 
     # rearrange angles to (-pi; pi]
-    angles[angles > 180] -= 360
+    angles[angles > np.pi] -= 2*np.pi
+    angles[angles <= -np.pi] += 2*np.pi
     # Calculate the angle of the signal in the time-series
-    signal_angles = np.arctan2(signal[:, 1], signal[:, 0])
+    signal_angles = np.angle(signal[:, 0]+1j*signal[:, 1])
     for index, angle in enumerate(angles):
         # Project signal into the desired angle, saving only the first component of the 2D load for extremes analysis
         projected_signal = signal @ projection_2d(angle, degrees=False)
         if sweep_angle:
             # Remove the loads not covered by the main angle +/- the sweep angle
-            projected_signal = (
-                projected_signal
-                * (signal_angles > (angle - sweep_angle))
-                * (signal_angles < (angle + sweep_angle))
-            )
-            if all(
-                (signal_angles > (angle - sweep_angle))
-                * (signal_angles < (angle + sweep_angle))
-                == False
-            ):
-                # If no loads exist within the swept area, set idx to nan, and value to 0
-                idx = np.nan
-                val = 0
-            else:
+            lower_bound = angle - sweep_angle
+            if lower_bound<-np.pi: lower_bound +=2*np.pi
+            upper_bound = angle + sweep_angle
+            if upper_bound>np.pi: upper_bound -=2*np.pi
+            
+            if upper_bound > lower_bound:
+                # If lower bound is below upper bound, and the range is thus monotone, use the intersection of angles above lower- and below upper bound.
+                projected_signal = (
+                    projected_signal
+                    * (signal_angles > lower_bound)
+                    * (signal_angles < upper_bound)
+                )
+            else: 
+                # If lower bound is above upper bound, use the union of angles above lower- and below upper bounds.
+                projected_signal = (
+                    projected_signal
+                    * (signal_angles > lower_bound)
+                    + projected_signal
+                    * (signal_angles < upper_bound)
+                )
+            if (projected_signal.any()) == True:
                 # Save the larges projected load that satisfies the angle+sweep criteria
                 idx = np.argmax(projected_signal)
                 val = projected_signal[idx]
+            else:
+                # If no loads exist within the swept area, set idx to nan, and value to 0
+                idx = np.nan
+                val = 0
         else:
             # If no sweep angle is defined, simply get the maximum value of the projected vector
             idx = np.argmax(projected_signal)
