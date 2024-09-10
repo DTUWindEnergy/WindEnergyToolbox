@@ -592,6 +592,18 @@ def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3'
     stat_data = _get_statistic(time, data, statistics)
     _save_info(filename, data.shape, **info)
     _add_statistic_data(filename, stat_data, statistics)
+    
+    
+def compress2postproc(filename, config={'statistics': [['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']]}):
+    time, data, info = load(filename)
+    _save_info(filename, data.shape, **info)
+    for postproc, args in config.items():
+        if postproc == 'statistics':
+            output = _get_statistic(time, data, *args)
+            _add_statistic_data(filename, output, *args)
+        elif postproc == 'extreme_loads':
+            output = _get_extreme_loads(data, *args)
+            _add_extreme_loads_data(filename, output, *args)
 
 
 def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
