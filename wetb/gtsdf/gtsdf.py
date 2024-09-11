@@ -476,27 +476,26 @@ def _add_extreme_loads_data(file, extreme_loads, sensors_info, angles=np.linspac
     f.close()
 
 
-def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    time, data, info = load(file)
+def add_statistic(file, time_data_info=None, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
+    if time_data_info is None:
+        time_data_info = load(file)
+    time, data, info = time_data_info
     stat_data = _get_statistic(time, data, statistics)
     _add_statistic_data(file, stat_data, statistics)
 
 
-def add_extreme_loads(file, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
-    time, data, info = load(file)
+def add_extreme_loads(file, sensors_info, time_data_info=None, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
+    if time_data_info is None:
+        time_data_info = load(file)
+    time, data, info = time_data_info
     extreme_loads = _get_extreme_loads(data, sensors_info, angles, sweep_angle, degrees)
     _add_extreme_loads_data(file, extreme_loads, sensors_info, angles, degrees)
 
 
-def add_postproc(file, config={'statistics': [['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']]}):
-    time, data, info = load(file)
-    for postproc, args in config.items():
-        if postproc == 'statistics':
-            output = _get_statistic(time, data, *args)
-            _add_statistic_data(file, output, *args)
-        elif postproc == 'extreme_loads':
-            output = _get_extreme_loads(data, *args)
-            _add_extreme_loads_data(file, output, *args)
+def add_postproc(file, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+    time_data_info = load(file)
+    for postproc, kwargs in config.items():
+        postproc(file=file,time_data_info=time_data_info, **kwargs)
 
 
 def load_statistic(filename, xarray=True):
@@ -541,30 +540,31 @@ def load_extreme_loads(filename, sensors_info, angles=np.linspace(-150,180,12), 
         return sensor_names, extreme_angles, extreme_loads, info
 
 
-def load_postproc(filename, config={'statistics': [['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']]}, xarray=True):
+def load_postproc(filename, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
     calculate = False
     config_postproc = config.copy()
-    if 'statistics' in config.keys():
+    config_functions_as_strings = [k.__name__ for k in config.keys()]
+    if 'add_statistic' in config_functions_as_strings:
         if 'Statistic' not in f:
             print(f"Calculating statistics for '{filename}'")
             calculate = True
         else:
-            config_postproc.pop('statistics')
-    if 'extreme_loads' in config.keys():
+            config_postproc.pop(add_statistic)
+    if 'add_extreme_loads' in config_functions_as_strings:
         if 'Extreme_loads' not in f:
             print(f"Calculating extreme loads for '{filename}'")
             calculate = True
         else:
-            config_postproc.pop('extreme_loads')
+            config_postproc.pop(add_extreme_loads)
     if calculate:
         f.close()
         add_postproc(filename, config_postproc)
         return load_postproc(filename, config, xarray)
     xarrays = {}
     tuples = {}
-    if 'statistics' in config.keys():
+    if 'add_statistic' in config_functions_as_strings:
         stat_names = decode(f['Statistic']['statistic_names'])
         stat_data = np.array(f['Statistic']['statistic_data'])
         xarrays['statistics'] = xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
@@ -572,13 +572,13 @@ def load_postproc(filename, config={'statistics': [['min', 'mean', 'max', 'std',
                                     'sensor_unit': (('sensor_name', info['attribute_units'])),
                                     'sensor_description': ('sensor_name', info['attribute_descriptions'])})
         tuples['statistics'] = (stat_data, stat_names, info)
-    if 'extreme_loads' in config.keys():
+    if 'add_extreme_loads' in config_functions_as_strings:
         sensor_names = decode(f['Extreme_loads']['sensor_names'])
         extreme_angles = np.array(f['Extreme_loads']['angles'])
         extreme_loads = np.array(f['Extreme_loads']['loads'])
         xarrays['extreme_loads'] = xr.DataArray(extreme_loads, dims=['sensor_name', 'angle'],
                             coords={'sensor_name': sensor_names, 'angle': extreme_angles,
-                                    'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config['extreme_loads'][0]])})
+                                    'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config[add_extreme_loads]['sensors_info']])})
         tuples['extreme_loads'] = (sensor_names, extreme_angles, extreme_loads)
     f.close()
     if xarray:
@@ -594,16 +594,12 @@ def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3'
     _add_statistic_data(filename, stat_data, statistics)
     
     
-def compress2postproc(filename, config={'statistics': [['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']]}):
-    time, data, info = load(filename)
+def compress2postproc(filename, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+    time_data_info = load(filename)
+    time, data, info = time_data_info
     _save_info(filename, data.shape, **info)
-    for postproc, args in config.items():
-        if postproc == 'statistics':
-            output = _get_statistic(time, data, *args)
-            _add_statistic_data(filename, output, *args)
-        elif postproc == 'extreme_loads':
-            output = _get_extreme_loads(data, *args)
-            _add_extreme_loads_data(filename, output, *args)
+    for postproc, kwargs in config.items():
+        postproc(file=filename,time_data_info=time_data_info, **kwargs)
 
 
 def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
@@ -651,7 +647,7 @@ def collect_extreme_loads(folder, sensors_info, root='.', filename='*.hdf5', rec
                                 'sensor_name': sensor_names, 'angle': angles,
                                 'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in sensors_info])})
 
-def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config={'statistics': [['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']]}):
+def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
     if recursive:
         p = os.path.join(root, folder, '**', filename)
     else:
@@ -667,17 +663,17 @@ def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config
     
     postproc = [get_postproc(fn) for fn in tqdm.tqdm(sorted(fn_lst))]
     xarrays = {}
-    if 'statistics' in config.keys():
+    if add_statistic in config.keys():
         xarrays['statistics'] = xr.DataArray(np.array([f['statistics'][0] for f in postproc]),
                             dims=['filename', 'sensor_name', 'stat'],
                             coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
                                     'sensor_name': info['attribute_names'], 'stat': stat_names,
                                     'sensor_unit': (('sensor_name', info['attribute_units'])),
                                     'sensor_description': ('sensor_name', info['attribute_descriptions'])})
-    if 'extreme_loads' in config.keys():
+    if add_extreme_loads in config.keys():
         xarrays['extreme_loads'] = xr.DataArray(np.array([f['extreme_loads'][2] for f in postproc]),
                             dims=['filename', 'sensor_name', 'angle'],
                             coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
-                                    'sensor_name': [s[0] for s in config['extreme_loads'][0]], 'angle': config['extreme_loads'][1],
-                                    'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config['extreme_loads'][0]])})
+                                    'sensor_name': [s[0] for s in config[add_extreme_loads]['sensors_info']], 'angle': config[add_extreme_loads]['angles'],
+                                    'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config[add_extreme_loads]['sensors_info']])})
     return xarrays
