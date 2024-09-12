@@ -457,22 +457,26 @@ def _get_extreme_loads(data, sensors_info, angles=np.linspace(-150,180,12), swee
 def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
                         'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     f = h5py.File(file, "a")
-    if 'Statistic' in f:
-        del f["Statistic"]
-    stat_grp = f.create_group("Statistic")
-    stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
-    stat_grp.create_dataset("statistic_data", data=stat_data.astype(float))
+    if 'Postproc' not in f:
+        f.create_group('Postproc')
+    if 'Statistics' in f['Postproc']:
+        del f['Postproc']["Statistics"]
+    f['Postproc'].create_group("Statistics")
+    f['Postproc']["Statistics"].create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
+    f['Postproc']["Statistics"].create_dataset("statistic_data", data=stat_data.astype(float))
     f.close()
 
 
 def _add_extreme_loads_data(file, extreme_loads, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
     f = h5py.File(file, "a")
-    if 'Extreme_loads' in f:
-        del f["Extreme_loads"]
-    stat_grp = f.create_group("Extreme_loads")
-    stat_grp.create_dataset("sensor_names", data=np.array([s[0].encode('utf-8') for s in sensors_info]))
-    stat_grp.create_dataset("angles", data=angles.astype(float))
-    stat_grp.create_dataset("loads", data=extreme_loads.astype(float))
+    if 'Postproc' not in f:
+        f.create_group('Postproc')
+    if 'Extreme_loads' in f['Postproc']:
+        del f['Postproc']["Extreme_loads"]
+    f['Postproc'].create_group("Extreme_loads")
+    f['Postproc']["Extreme_loads"].create_dataset("sensor_names", data=np.array([s[0].encode('utf-8') for s in sensors_info]))
+    f['Postproc']["Extreme_loads"].create_dataset("angles", data=angles.astype(float))
+    f['Postproc']["Extreme_loads"].create_dataset("loads", data=extreme_loads.astype(float))
     f.close()
 
 
@@ -547,14 +551,19 @@ def add_postproc(file, config={add_statistic: {'statistics': ['min', 'mean', 'ma
 def load_statistic(filename, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
-    if 'Statistic' not in f:
+    if 'Postproc' not in f:
+        print(f"Calculating statistics for '{filename}'")
+        f.close()
+        add_statistic(filename)
+        return load_statistic(filename, xarray=xarray)
+    if 'Statistics' not in f['Postproc']:
         print(f"Calculating statistics for '{filename}'")
         f.close()
         add_statistic(filename)
         return load_statistic(filename, xarray=xarray)
 
-    stat_names = decode(f['Statistic']['statistic_names'])
-    stat_data = np.array(f['Statistic']['statistic_data'])
+    stat_names = decode(f['Postproc']['Statistics']['statistic_names'])
+    stat_data = np.array(f['Postproc']['Statistics']['statistic_data'])
     f.close()
     if xarray:
         return xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
@@ -568,15 +577,20 @@ def load_statistic(filename, xarray=True):
 def load_extreme_loads(filename, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
-    if 'Extreme_loads' not in f:
+    if 'Postproc' not in f:
+        print(f"Calculating extreme loads for '{filename}'")
+        f.close()
+        add_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees)
+        return load_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees, xarray=xarray)
+    if 'Extreme_loads' not in f['Postproc']:
         print(f"Calculating extreme loads for '{filename}'")
         f.close()
         add_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees)
         return load_extreme_loads(filename, sensors_info, angles, sweep_angle, degrees, xarray=xarray)
 
-    sensor_names = decode(f['Extreme_loads']['sensor_names'])
-    extreme_angles = np.array(f['Extreme_loads']['angles'])
-    extreme_loads = np.array(f['Extreme_loads']['loads'])
+    sensor_names = decode(f['Postproc']['Extreme_loads']['sensor_names'])
+    extreme_angles = np.array(f['Postproc']['Extreme_loads']['angles'])
+    extreme_loads = np.array(f['Postproc']['Extreme_loads']['loads'])
     f.close()
     if xarray:
         return xr.DataArray(extreme_loads, dims=['sensor_name', 'angle'],
@@ -589,39 +603,26 @@ def load_extreme_loads(filename, sensors_info, angles=np.linspace(-150,180,12), 
 def load_postproc(filename, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}, xarray=True):
     f = _open_h5py_file(filename)
     info = _load_info(f)
-    calculate = False
-    config_postproc = config.copy()
     config_functions_as_strings = [k.__name__ for k in config.keys()]
-    if 'add_statistic' in config_functions_as_strings:
-        if 'Statistic' not in f:
-            print(f"Calculating statistics for '{filename}'")
-            calculate = True
-        else:
-            config_postproc.pop(add_statistic)
-    if 'add_extreme_loads' in config_functions_as_strings:
-        if 'Extreme_loads' not in f:
-            print(f"Calculating extreme loads for '{filename}'")
-            calculate = True
-        else:
-            config_postproc.pop(add_extreme_loads)
-    if calculate:
+    if 'Postproc' not in f:
+        print(f"Calculating postproc for '{filename}'")
         f.close()
-        add_postproc(filename, config_postproc)
-        return load_postproc(filename, config, xarray)
+        add_postproc(filename, config)
+        return load_postproc(filename, config, xarray=xarray)
     xarrays = {}
     tuples = {}
     if 'add_statistic' in config_functions_as_strings:
-        stat_names = decode(f['Statistic']['statistic_names'])
-        stat_data = np.array(f['Statistic']['statistic_data'])
+        stat_names = decode(f['Postproc']['Statistics']['statistic_names'])
+        stat_data = np.array(f['Postproc']['Statistics']['statistic_data'])
         xarrays['statistics'] = xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
                             coords={'sensor_name': info['attribute_names'], 'stat': stat_names,
                                     'sensor_unit': (('sensor_name', info['attribute_units'])),
                                     'sensor_description': ('sensor_name', info['attribute_descriptions'])})
         tuples['statistics'] = (stat_data, stat_names, info)
     if 'add_extreme_loads' in config_functions_as_strings:
-        sensor_names = decode(f['Extreme_loads']['sensor_names'])
-        extreme_angles = np.array(f['Extreme_loads']['angles'])
-        extreme_loads = np.array(f['Extreme_loads']['loads'])
+        sensor_names = decode(f['Postproc']['Extreme_loads']['sensor_names'])
+        extreme_angles = np.array(f['Postproc']['Extreme_loads']['angles'])
+        extreme_loads = np.array(f['Postproc']['Extreme_loads']['loads'])
         xarrays['extreme_loads'] = xr.DataArray(extreme_loads, dims=['sensor_name', 'angle'],
                             coords={'sensor_name': sensor_names, 'angle': extreme_angles,
                                     'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config[add_extreme_loads]['sensors_info']])})
@@ -702,7 +703,7 @@ def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config
 
     if not fn_lst:
         raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-    stat_names, info = load_statistic(fn_lst[0], xarray=False)[1:]
+    stat_names, info = load_postproc(fn_lst[0], config=config, xarray=False)['statistics'][1:]
 
     def get_postproc(fn):
         return load_postproc(fn, config=config, xarray=False)
