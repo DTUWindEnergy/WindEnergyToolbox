@@ -492,10 +492,56 @@ def add_extreme_loads(file, sensors_info, time_data_info=None, angles=np.linspac
     _add_extreme_loads_data(file, extreme_loads, sensors_info, angles, degrees)
 
 
+def custom_postproc(file, custom_function, time_data_info=None, custom=True, kwargs={}):
+    """ Apply a custom postprocessing to a file
+
+    Parameters
+    ----------
+    file : str or h5py.File
+        filename or open file object
+    custom_function : func
+        custom function that uses file output data. Must take time_data_info as argument
+    time_data_info : tuple
+        tuple containing time, data and info from time series
+    kwargs : dict
+        dictionary containing the name-value pairs of the inputs needed by custom_function
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    if time_data_info is None:
+        time_data_info = load(file)
+    time, data, info = time_data_info
+    
+    outputs = custom_function(time_data_info, **kwargs)
+    if outputs is None:
+        return
+    f = h5py.File(file, "a")
+    if 'Postproc' not in f:
+        f.create_group('Postproc')
+    for label, data in outputs.items():
+        if label == 'Group':
+            group = data
+            if group in f['Postproc']:
+                del f['Postproc'][group]
+            f['Postproc'].create_group(group)
+            continue
+        if label in f['Postproc'][group]:
+            del f['Postproc'][group][label]        
+        f['Postproc'][group].create_dataset(label, data=data)
+    f.close()
+
+
 def add_postproc(file, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
     time_data_info = load(file)
     for postproc, kwargs in config.items():
-        postproc(file=file,time_data_info=time_data_info, **kwargs)
+        if 'custom' in kwargs.keys():
+            custom_postproc(file=file,time_data_info=time_data_info, custom_function=postproc, **kwargs)
+        else:
+            postproc(file=file,time_data_info=time_data_info, **kwargs)
 
 
 def load_statistic(filename, xarray=True):
