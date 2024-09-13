@@ -436,6 +436,14 @@ def check_type(f):
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
 
 
+def remove_time_series(file, time_data_info):
+    f = h5py.File(file, 'a')
+    for group in f:
+        if group.startswith('block'):
+            del f[group]
+    f.close()
+
+
 def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
     def get_stat(stat):
         if hasattr(np, stat):
