@@ -47,6 +47,7 @@ prepost = ["openpyxl", "tables", "wafo==0.1.2", "xlwt", "Cython"]
 all = ["openpyxl", "tables", "wafo==0.1.2", "xlwt", "Cython", "paramiko", "sshtunnel", 'pytest', 'mock', 'click']
 
 [tool.setuptools_scm]
+version_scheme = "no-guess-dev"
 
 [tool.setuptools]
 packages = ["wetb"]
