@@ -1,5 +1,6 @@
 import warnings
 from wetb.gtsdf.unix_time import from_unix
+from wetb.utils.postprocs import get_statistics
 try:
     import h5py
 except ImportError as e:
@@ -10,7 +11,7 @@ import numpy.ma as ma
 import xarray as xr
 import glob
 import tqdm
-from wetb.utils.envelope import projected_extremes
+import inspect
 
 block_name_fmt = "block%04d"
 
@@ -436,217 +437,117 @@ def check_type(f):
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
 
 
-def remove_time_series(file, time_data_info):
+def remove_time_series(file):
     f = h5py.File(file, 'a')
     for group in f:
         if group.startswith('block'):
             del f[group]
     f.close()
 
-
-def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    def get_stat(stat):
-        if hasattr(np, stat):
-            return getattr(np, stat)(data, 0)
-        elif (stat.startswith("eq") and stat[2:].isdigit()):
-            from wetb.fatigue_tools.fatigue import eq_load
-            m = float(stat[2:])
-            return [eq_load(sensor, 46, m, time[-1] - time[0] + time[1] - time[0])[0][0] for sensor in data.T]
-    return np.array([get_stat(stat) for stat in statistics]).T
-
-
-def _get_extreme_loads(data, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
-    extreme_loads = []
-    for sensor, ix, iy in sensors_info:
-        extreme_loads.append(projected_extremes(np.vstack([data[:,ix],data[:,iy]]).T, angles, sweep_angle, degrees)[:,1])
-    return np.array(extreme_loads)
-
-
-def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
-                        'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    f = h5py.File(file, "a")
-    if 'Postproc' not in f:
-        f.create_group('Postproc')
-    if 'Statistics' in f['Postproc']:
-        del f['Postproc']["Statistics"]
-    f['Postproc'].create_group("Statistics")
-    f['Postproc']["Statistics"].create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
-    f['Postproc']["Statistics"].create_dataset("statistic_data", data=stat_data.astype(float))
-    f.close()
-
-
-def _add_extreme_loads_data(file, extreme_loads, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
-    f = h5py.File(file, "a")
-    if 'Postproc' not in f:
-        f.create_group('Postproc')
-    if 'Extreme_loads' in f['Postproc']:
-        del f['Postproc']["Extreme_loads"]
-    f['Postproc'].create_group("Extreme_loads")
-    f['Postproc']["Extreme_loads"].create_dataset("sensor_names", data=np.array([s[0].encode('utf-8') for s in sensors_info]))
-    f['Postproc']["Extreme_loads"].create_dataset("angles", data=angles.astype(float))
-    f['Postproc']["Extreme_loads"].create_dataset("loads", data=extreme_loads.astype(float))
-    f.close()
-
-
-def add_statistic(file, time_data_info=None, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    if time_data_info is None:
-        time_data_info = load(file)
-    time, data, info = time_data_info
-    stat_data = _get_statistic(time, data, statistics)
-    _add_statistic_data(file, stat_data, statistics)
-
-
-def add_extreme_loads(file, sensors_info, time_data_info=None, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True):
-    if time_data_info is None:
-        time_data_info = load(file)
-    time, data, info = time_data_info
-    extreme_loads = _get_extreme_loads(data, sensors_info, angles, sweep_angle, degrees)
-    _add_extreme_loads_data(file, extreme_loads, sensors_info, angles, degrees)
-
-
-def custom_postproc(file, time_data_info=None, custom_function=None, group=None, **kwargs):
-    """ Apply a custom postprocessing to a file
-
-    Parameters
-    ----------
-    file : str or h5py.File
-        filename or open file object
-    custom_function : func
-        custom function that uses file output data. Must take file and time_data_info as argument
-    time_data_info : tuple
-        tuple containing time, data and info from time series
-    kwargs : dict
-        dictionary containing the name-value pairs of the inputs needed by custom_function
-
-    Returns
-    -------
-    None.
-
-    """
     
+def get_postproc(postproc_function, file, time_data_info=None, **kwargs):
     if time_data_info is None:
         time_data_info = load(file)
     time, data, info = time_data_info
-    
-    outputs = custom_function(file=file, time_data_info=time_data_info, **kwargs)
-    if outputs is None:
+    postproc_function_args = inspect.signature(postproc_function).parameters.keys()
+    file_args = {}
+    for item in ['file', 'time', 'data', 'info']:
+        if item in postproc_function_args:
+            file_args[item] = locals()[item]
+    outputs = postproc_function(**file_args, **kwargs)
+    return outputs
+
+
+def write_postproc(file, postproc_outputs):
+    if postproc_outputs is None:
         return
-    f = h5py.File(file, "a")
-    if 'Postproc' not in f:
-        f.create_group('Postproc')
-    if group in f['Postproc']:
-        del f['Postproc'][group]
-    f['Postproc'].create_group(group)
-    for label, data in outputs.items():
-        if label in f['Postproc'][group]:
-            del f['Postproc'][group][label]        
-        f['Postproc'][group].create_dataset(label, data=data)
-    f.close()
+    if 'Postproc' not in file:
+        file.create_group('Postproc')
+    for group in postproc_outputs.keys():
+        if group == 'data_array_info':
+            continue
+        if group in file['Postproc']:
+            del file['Postproc'][group]
+        file['Postproc'].create_group(group)
+        for label, data in postproc_outputs[group].items():
+            if label in file['Postproc'][group]:
+                del file['Postproc'][group][label]        
+            file['Postproc'][group].create_dataset(label, data=data)
 
 
-def add_postproc(file, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+def add_postproc(file, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
     time_data_info = load(file)
+    f = h5py.File(file, "a")
+    data_array_info = {}
     for postproc, kwargs in config.items():
-        if 'custom' in kwargs.keys():
-            if 'group' in kwargs.keys():
-                custom_postproc(file=file,time_data_info=time_data_info, custom_function=postproc, group=kwargs['group'], **kwargs['kwargs'])
-            else:
-                custom_postproc(file=file,time_data_info=time_data_info, custom_function=postproc, **kwargs['kwargs'])
-        else:
-            postproc(file=file,time_data_info=time_data_info, **kwargs)
+        postproc_outputs = get_postproc(postproc_function=postproc, file=file, time_data_info=time_data_info, **kwargs)
+        write_postproc(file=f, postproc_outputs=postproc_outputs)
+        if postproc_outputs is not None:
+            if "data_array_info" in postproc_outputs.keys():
+                data_array_info[list(postproc_outputs.keys())[0]] = postproc_outputs['data_array_info']
+    f.close()
+    return data_array_info
+    
 
-
-def load_postproc(filename, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}, xarray=True):
+def load_postproc(filename, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}, xarray=True, data_array_info=None):
     f = _open_h5py_file(filename)
     info = _load_info(f)
     if 'Postproc' not in f:
         print(f"Calculating postproc for '{filename}'")
         f.close()
-        add_postproc(filename, config)
-        return load_postproc(filename, config, xarray=xarray)
-    xarrays = {}
-    tuples = {}
-    for postproc, args in config.items():
-        if postproc.__name__ == 'add_statistic':
-            stat_names = decode(f['Postproc']['Statistics']['statistic_names'])
-            stat_data = np.array(f['Postproc']['Statistics']['statistic_data'])
-            xarrays['Statistics'] = xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
-                                coords={'sensor_name': info['attribute_names'], 'stat': stat_names,
-                                        'sensor_unit': (('sensor_name', info['attribute_units'])),
-                                        'sensor_description': ('sensor_name', info['attribute_descriptions'])})
-            tuples['Statistics'] = (stat_data, stat_names, info)
-        elif postproc.__name__ == 'add_extreme_loads':
-            sensor_names = decode(f['Postproc']['Extreme_loads']['sensor_names'])
-            extreme_angles = np.array(f['Postproc']['Extreme_loads']['angles'])
-            extreme_loads = np.array(f['Postproc']['Extreme_loads']['loads'])
-            xarrays['Extreme_loads'] = xr.DataArray(extreme_loads, dims=['sensor_name', 'angle'],
-                                coords={'sensor_name': sensor_names, 'angle': extreme_angles,
-                                        'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config[add_extreme_loads]['sensors_info']])})
-            tuples['Extreme_loads'] = (sensor_names, extreme_angles, extreme_loads)
-        elif "group" in args.keys():
-            if 'xarray' in args.keys():                
-                xarrays[args['group']] = xr.DataArray(data=f['Postproc'][args['group']]['data'], **args['xarray'])
-            else:
-                xarrays[args['group']] = xr.DataArray(data=f['Postproc'][args['group']]['data'])
-            tuples[args['group']] = tuple([np.array(f['Postproc'][args['group']][dataset]) for dataset in f['Postproc'][args['group']]])
-    f.close()
+        data_array_info = add_postproc(filename, config)
+        return load_postproc(filename, config, xarray=xarray, data_array_info=data_array_info)
     if xarray:
-        return xarrays
+        if data_array_info is None:
+            f.close()
+            data_array_info = add_postproc(filename, config)
+            f = _open_h5py_file(filename)
+        data_arrays = {}
+        for group in f['Postproc']:
+            if group in data_array_info.keys():
+                if 'coords_function' in data_array_info[group].keys():
+                    coords_function = data_array_info[group]['coords_function'](info, config)
+                    if 'coords' in data_array_info[group].keys():
+                        data_array_info[group]['coords'] = {**data_array_info[group]['coords'], **coords_function}
+                    else:
+                        data_array_info[group]['coords'] = coords_function
+                    data_array_info[group].pop('coords_function')                     
+                data_arrays[group] = xr.DataArray(data=f['Postproc'][group]['data'][:], **data_array_info[group])
+            else:
+                data_arrays[group] = xr.DataArray(data=f['Postproc'][group]['data'][:])
+        f.close()
+        return data_arrays
     else:
-        return tuples
-    
-    
-def compress2postproc(filename, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
-    time_data_info = load(filename)
-    time, data, info = time_data_info
-    _save_info(filename, data.shape, **info)
-    for postproc, kwargs in config.items():
-        postproc(file=filename,time_data_info=time_data_info, **kwargs)
+        dicts = {}
+        for group in f['Postproc']:
+            dicts[group] = {}
+            for dataset in f['Postproc'][group]:
+                dicts[group][dataset] = f['Postproc'][group][dataset][:]
+        f.close()
+        return dicts
+
+ 
+def compress2postproc(filename, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+    if remove_time_series not in config.keys():
+        config[remove_time_series] = {}
+    add_postproc(filename, config)
 
 
-def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config={add_statistic: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
     if recursive:
         p = os.path.join(root, folder, '**', filename)
     else:
         p = os.path.join(root, folder, filename)
     fn_lst = glob.glob(p, recursive=recursive)
-
     if not fn_lst:
         raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-    stat_names, info = load_postproc(fn_lst[0], config=config, xarray=False)['Statistics'][1:]
+    postproc_output = [load_postproc(fn, config=config, xarray=True) for fn in tqdm.tqdm(sorted(fn_lst))]
+    data_arrays = {}
+    for postproc in postproc_output[0].keys():
+        data = np.array([f[postproc] for f in postproc_output])
+        dims = ('filename',) + postproc_output[0][postproc].dims
+        coords = postproc_output[0][postproc].coords
+        data_arrays[postproc] = xr.DataArray(data=data, dims=dims, coords=coords)
+        data_arrays[postproc].coords['filename'] = [os.path.relpath(fn, root) for fn in fn_lst]
+    return data_arrays
 
-    def get_postproc(fn):
-        return load_postproc(fn, config=config, xarray=False)
-    
-    postproc_output = [get_postproc(fn) for fn in tqdm.tqdm(sorted(fn_lst))]
-    xarrays = {}
-    for postproc, args in config.items():
-        if postproc.__name__ == 'add_statistic':
-            xarrays['Statistics'] = xr.DataArray(np.array([f['Statistics'][0] for f in postproc_output]),
-                                dims=['filename', 'sensor_name', 'stat'],
-                                coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
-                                        'sensor_name': info['attribute_names'], 'stat': stat_names,
-                                        'sensor_unit': (('sensor_name', info['attribute_units'])),
-                                        'sensor_description': ('sensor_name', info['attribute_descriptions'])})
-        elif postproc.__name__ == 'add_extreme_loads':
-            xarrays['Extreme_loads'] = xr.DataArray(np.array([f['Extreme_loads'][2] for f in postproc_output]),
-                                dims=['filename', 'sensor_name', 'angle'],
-                                coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
-                                        'sensor_name': [s[0] for s in config[add_extreme_loads]['sensors_info']], 'angle': config[add_extreme_loads]['angles'],
-                                        'sensor_unit': ('sensor_name', [info['attribute_units'][s[1]] for s in config[add_extreme_loads]['sensors_info']])})
-        elif "group" in args.keys():
-            if 'xarray' in args.keys():
-                if 'dims' in args['xarray']:
-                    args['xarray']['dims'] = ['filename'] + args['xarray']['dims']
-                if 'coords' in args['xarray']:
-                    args['xarray']['coords']['filename'] = [os.path.relpath(fn, root) for fn in fn_lst]
-                else:
-                    args['xarray']['coords'] = {}
-                    args['xarray']['coords']['filename'] = [os.path.relpath(fn, root) for fn in fn_lst]                   
-                data=np.array([f[args['group']][0] for f in postproc_output])
-                if len(data.shape) == 1:
-                    data = np.reshape(data, (data.shape[0], 1))
-                xarrays[args['group']] = xr.DataArray(data=data, **args['xarray'])
-            else:
-                xarrays[args['group']] = xr.DataArray(np.array([f[args['group']][0] for f in postproc_output]))
-    return xarrays

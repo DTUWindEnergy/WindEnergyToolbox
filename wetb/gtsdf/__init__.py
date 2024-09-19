@@ -32,10 +32,6 @@ from .gtsdf import save
 from .gtsdf import load
 from .gtsdf import append_block
 from .gtsdf import load_pandas
-from .gtsdf import add_statistic
-from .gtsdf import add_extreme_loads
-from .gtsdf import add_postproc
-from .gtsdf import compress2postproc
 
 class Dataset(object):
     def __init__(self, filename):
