@@ -176,9 +176,9 @@ class StFile(object):
             return
 
         K = np.zeros((13, 13))
-        "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
+        "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y K k_x k_y A pitch x_e y_e"
         ES1, ES2, EMOD, GMOD, IX, IY, IZ, KX, KY, A = [getattr(self, n)(radius, mset_nr, set_nr)
-                                                       for n in "x_sh,y_sh,E,G,I_x,I_y,I_p,k_x,k_y,A".split(",")]
+                                                       for n in "x_sh,y_sh,E,G,I_x,I_y,K,k_x,k_y,A".split(",")]
         ELLGTH = length
 
         ETAX = EMOD * IX / (KY * GMOD * A * ELLGTH**2)
@@ -239,7 +239,7 @@ class StFile(object):
             return
 
         XSC, YSC, EMOD, GMOD, IX, IY, IZ, KX, KY, AREA = [getattr(self, n)(radius, mset_nr, set_nr)
-                                                          for n in "x_sh,y_sh,E,G,I_x,I_y,I_p,k_x,k_y,A".split(",")]
+                                                          for n in "x_sh,y_sh,E,G,I_x,I_y,K,k_x,k_y,A".split(",")]
 
         etax = EMOD * IX / KY / GMOD / AREA / (length**2)
         etay = EMOD * IY / KX / GMOD / AREA / (length**2)
