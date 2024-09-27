@@ -8,7 +8,7 @@ import os
 import numpy as np
 
 
-stc = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y I_p k_x k_y A pitch x_e y_e"
+stc = "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y K k_x k_y A pitch x_e y_e"
 fpm = 'r m x_cg y_cg ri_x ri_y pitch x_e y_e K_11 K_12 K_13 K_14 K_15 K_16 K_22'
 fpm += ' K_23 K_24 K_25 K_26 K_33 K_34 K_35 K_36 K_44 K_45 K_46 K_55 K_56 K_66'
 
