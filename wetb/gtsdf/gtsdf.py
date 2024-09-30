@@ -555,7 +555,13 @@ def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True,
     return data_arrays                   
     
 
-# def compress2postproc(filename, config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
-#     if remove_time_series not in config.keys():
-#         config[remove_time_series] = {}
-#     add_postproc(filename, config)        
+def compress2postproc(file, config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+    time_data_info = load(file)
+    time, data, info = time_data_info
+    _save_info(file, data.shape, **info)
+    f = h5py.File(file, "a")
+    for postproc, kwargs in config.items():
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
+        write_postproc(file=f, postproc_output=postproc_output)
+    f.close()
+      
