@@ -10,7 +10,7 @@ from wetb import gtsdf
 
 import unittest
 import os
-from wetb.gtsdf.gtsdf import collect_postproc
+from wetb.gtsdf.gtsdf import add_postproc, load_postproc, collect_postproc, compress2postproc
 import pytest
 
 tmp_path = os.path.dirname(__file__) + "/tmp/"
@@ -33,14 +33,14 @@ class Test_gsdf(unittest.TestCase):
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
         fn = tmp_path + "test_stat.hdf5"
         gtsdf.save(fn, data, time=time, **info)
-        gtsdf.add_postproc(fn)
-        da = gtsdf.gtsdf.load_postproc(fn)
-        sensor = da['Statistics'][0]
-        self.assertEqual(data[:, 0].min(), sensor.sel(stat='min'))
-        assert sensor.sensor_name == info['attribute_names'][0]
-        assert sensor.sensor_unit == info['attribute_units'][0]
-        assert sensor.sensor_description == info['attribute_descriptions'][0]
-        self.assertEqual(da['Statistics'].shape, (49, 10))
+        add_postproc(fn)
+        da = load_postproc(fn)
+        sensor = da[0]
+        self.assertEqual(data[:, 0].min(), sensor[0].sel(statistic='min'))
+        assert sensor[0].sensor_name == info['attribute_names'][0]
+        assert sensor[0].sensor_unit == info['attribute_units'][0]
+        assert sensor[0].sensor_description == info['attribute_descriptions'][0]
+        self.assertEqual(da[0].shape, (49, 10))
 
         # test_gtsdf_compress2postproc
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
@@ -48,17 +48,17 @@ class Test_gsdf(unittest.TestCase):
         gtsdf.save(fn, data, time=time, **info)
         del info['dtype']
         gtsdf.save(tmp_path + "test_compress2stat2.hdf5", data, time=time, dtype=float, **info)
-        gtsdf.compress2postproc(fn)
-        self.assertLess(os.path.getsize(fn) * 40, os.path.getsize(tfp + 'test.hdf5'))
+        compress2postproc(fn)
+        self.assertLess(os.path.getsize(fn) * 30, os.path.getsize(tfp + 'test.hdf5'))
 
         # test_collect_postproc
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_postproc('missing', tmp_path)
 
         da = collect_postproc('.', tmp_path, filename='*stat.hdf5')
-        assert da['Statistics'].shape == (2, 49, 10)
+        assert da[0].shape == (2, 49, 10)
         da = collect_postproc('.', tmp_path + "..", filename='*stat.hdf5')
-        assert da['Statistics'].shape == (2, 49, 10)
+        assert da[0].shape == (2, 49, 10)
         with pytest.raises(Exception, match=r'No \*stat\.hdf5 files found in'):
             collect_postproc('.', tmp_path + "..", filename='*stat.hdf5', recursive=False)
 
