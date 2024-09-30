@@ -1,6 +1,6 @@
 import warnings
 from wetb.gtsdf.unix_time import from_unix
-from wetb.utils.postprocs import get_statistics
+from wetb.utils.postprocs import statistics
 try:
     import h5py
 except ImportError as e:
@@ -436,50 +436,51 @@ def check_type(f):
     if 'no_blocks' not in f.attrs:
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
 
-
-def remove_time_series(file):
-    f = h5py.File(file, 'a')
-    for group in f:
-        if group.startswith('block'):
-            del f[group]
-    f.close()
-
     
-def get_postproc(postproc_function, file, time_data_info=None, **kwargs):
+def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwargs):
+    print(f"Calculating {postproc_function.__name__} for '{file}'")
     if time_data_info is None:
         time_data_info = load(file)
     time, data, info = time_data_info
     postproc_function_args = inspect.signature(postproc_function).parameters.keys()
     file_args = {}
-    for item in ['file', 'time', 'data', 'info']:
+    for item in ['file_h5py', 'file', 'time', 'data', 'info']:
         if item in postproc_function_args:
             file_args[item] = locals()[item]
     postproc_output = postproc_function(**file_args, **kwargs)
+    if postproc_output is None:
+        return
+    if isinstance(postproc_output, np.ndarray) or isinstance(postproc_output, list):
+        postproc_output = xr.DataArray(postproc_output)
+    postproc_output.name = postproc_function.__name__
     return postproc_output
 
 
 def write_postproc(file, postproc_output):
     if postproc_output is None:
         return
+    print(f"Writing {postproc_output.name} to '{file.filename}'")
     if 'postproc' not in file:
         file.create_group('postproc')
     if postproc_output.name in file['postproc']:
         del file['postproc'][postproc_output.name]
     file['postproc'].create_group(postproc_output.name)
     file['postproc'][postproc_output.name].create_dataset(name='data', data=postproc_output.astype(float))
+    file['postproc'][postproc_output.name]['data'].attrs['dims'] = [d.encode('utf-8') for d in postproc_output.dims]
     for coord in postproc_output.coords:
         if np.issubdtype(postproc_output.coords[coord].dtype, np.str_):
             file['postproc'][postproc_output.name].create_dataset(name=coord, data=np.array([v.encode('utf-8') for v in postproc_output.coords[coord].values]))
         else:
             file['postproc'][postproc_output.name].create_dataset(name=coord, data=postproc_output.coords[coord].astype(float))
+        file['postproc'][postproc_output.name][coord].attrs['dim'] = postproc_output.coords[coord].dims[0].encode('utf-8')
 
 
-def add_postproc(file, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+def add_postproc(file, config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
     time_data_info = load(file)
     f = h5py.File(file, "a")
     postproc_output_list = []
     for postproc, kwargs in config.items():
-        postproc_output = get_postproc(postproc_function=postproc, file=file, time_data_info=time_data_info, **kwargs)
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
         write_postproc(file=f, postproc_output=postproc_output)
         if postproc_output is not None:
             postproc_output_list.append(postproc_output)
@@ -487,39 +488,54 @@ def add_postproc(file, config={get_statistics: {'statistics': ['min', 'mean', 'm
     return postproc_output_list
     
 
-def load_postproc(filename, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}, postproc_output_list=None):
+def load_postproc(filename, 
+                  config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}},
+                  force_recompute=False):
+    if force_recompute:
+        postproc_output_list = add_postproc(filename, config)
+        return postproc_output_list
     f = _open_h5py_file(filename)
     if 'postproc' not in f:
-        print(f"Calculating postproc for '{filename}'")
         f.close()
         postproc_output_list = add_postproc(filename, config)
         return postproc_output_list
-    if postproc_output_list is None:
-        f.close()
-        postproc_output_list = add_postproc(filename, config)
-        return postproc_output_list
-    config_writtable = {k: v for k, v in config.items() if k.__name__.startswith('get_')}
+    # Check which postprocs in config are missing in the hdf5 file
     config_missing = {}
-    for postproc, args in config_writtable.items():
-        if postproc.__name__[4:] not in f['postproc']:
+    for postproc, args in config.items():
+        if postproc.__name__ not in f['postproc']:
             config_missing[postproc] = args
+    # Add missing postprocs in config to hdf5 file, if there are any
     if config_missing != {}:
+        f.close()
         add_postproc(filename, config_missing)
+        f = _open_h5py_file(filename)
+    # Return list of DataArrays for all postprocs in config
     data_arrays = []
-    for postproc in config_writtable.keys():
-        data_array = [p for p in postproc_output_list if p.name == postproc.__name__[4:]][0]
-        data_arrays.append(xr.DataArray(name=data_array.name, data=f['postproc'][data_array.name]['data'], dims=data_array.dims, coords=data_array.coords))
+    for postproc in config.keys():
+        try:
+            data_arrays.append(xr.DataArray(name=postproc.__name__,
+                                            data=f['postproc'][postproc.__name__]['data'],
+                                            dims=f['postproc'][postproc.__name__]['data'].attrs['dims'],
+                                            coords={coord: ([v.decode('latin1') for v in f['postproc'][postproc.__name__][coord]]
+                                                                if np.issubdtype(f['postproc'][postproc.__name__][coord].dtype, bytes)
+                                                                else 
+                                                            f['postproc'][postproc.__name__][coord])
+                                                                    if coord in f['postproc'][postproc.__name__]['data'].attrs['dims']
+                                                                    else 
+                                                            ((f['postproc'][postproc.__name__][coord].attrs['dim'], [v.decode('latin1') for v in f['postproc'][postproc.__name__][coord]])
+                                                                if np.issubdtype(f['postproc'][postproc.__name__][coord].dtype, bytes)
+                                                                else 
+                                                            (f['postproc'][postproc.__name__][coord].attrs['dim'], f['postproc'][postproc.__name__][coord]))
+                                                                        for coord in f['postproc'][postproc.__name__] if coord != 'data'}))
+        except:
+            continue
     f.close()
     return data_arrays
 
- 
-def compress2postproc(filename, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
-    if remove_time_series not in config.keys():
-        config[remove_time_series] = {}
-    add_postproc(filename, config)
 
-
-def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config={get_statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True,
+                     config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}},
+                     force_recompute=False):
     if recursive:
         p = os.path.join(root, folder, '**', filename)
     else:
@@ -527,15 +543,19 @@ def collect_postproc(folder, root='.', filename='*.hdf5', recursive=True, config
     fn_lst = glob.glob(p, recursive=recursive)
     if not fn_lst:
         raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-    postproc_output_list = add_postproc(fn_lst[0], config)
-    postproc_output_all_files = [load_postproc(fn, config=config, postproc_output_list=postproc_output_list) for fn in tqdm.tqdm(sorted(fn_lst))]
+    postproc_output_list_all_files = [load_postproc(fn, config=config, force_recompute=force_recompute) for fn in tqdm.tqdm(sorted(fn_lst))]
     data_arrays = []
-    for i in range(len(postproc_output_list)):
-        name = postproc_output_list[i].name
-        data = np.array([f[i] for f in postproc_output_all_files])
-        dims = ('filename',) + postproc_output_list[i].dims
-        coords = postproc_output_list[i].coords
+    for i in range(len(postproc_output_list_all_files[0])):
+        name = postproc_output_list_all_files[0][i].name
+        data = np.array([f[i] for f in postproc_output_list_all_files])
+        dims = ('filename',) + postproc_output_list_all_files[0][i].dims
+        coords = postproc_output_list_all_files[0][i].coords
         data_arrays.append(xr.DataArray(name=name, data=data, dims=dims, coords=coords))
         data_arrays[-1].coords['filename'] = [os.path.relpath(fn, root) for fn in fn_lst]
-    return data_arrays
+    return data_arrays                   
+    
 
+# def compress2postproc(filename, config={statistics: {'statistics': ['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']}}):
+#     if remove_time_series not in config.keys():
+#         config[remove_time_series] = {}
+#     add_postproc(filename, config)        
