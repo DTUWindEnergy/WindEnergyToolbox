@@ -123,6 +123,27 @@ class StFile(object):
         return '\n'.join([(precision * d.shape[1]) % tuple(row) for row in d])
 
     def set_value(self, mset_nr, set_nr, **kwargs):
+        """
+        Set the value of one column in the st file.
+
+        Example: `st.set_value(1, 1, m=mass_array, x_sh=shear_offset)`.
+
+        Parameters
+        ----------
+        mset_nr : int
+            Main set number.
+        set_nr : int
+            Set number.
+        **kwargs : dict
+            An arbitrary number of columns, in the form `col_name = value`.
+            The column name must be as written in the class documentation.
+            The `value` argument must be a 1D array with size equal to the number of radius.
+
+        Returns
+        -------
+        None.
+
+        """
         for k, v in kwargs.items():
             column = self.cols.index(k)
             self.main_data_sets[mset_nr][set_nr][:, column] = v
