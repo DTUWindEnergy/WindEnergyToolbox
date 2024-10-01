@@ -95,6 +95,19 @@ class StFile(object):
     """
 
     def __init__(self, filename=None):
+        """
+        Instantiate a new `StFile`.
+
+        Parameters
+        ----------
+        filename : str, optional
+            Path to the st file. If provided, this file will be immediately read. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
 
         # in case the user wants to create a new non-existing st file
         if filename is None:
@@ -137,10 +150,10 @@ class StFile(object):
             setattr(self, name, lambda radius=None, mset=1, set=1,
                     column=i: self._value(radius, column, mset, set))
 
-    def _value(self, radius, column, mset_nr=1, set_nr=1):
-        st_data = self.main_data_sets[mset_nr][set_nr]
+    def _value(self, radius, column, mset=1, set=1):
+        st_data = self.main_data_sets[mset][set]
         if radius is None:
-            radius = self.radius_st(None, mset_nr, set_nr)
+            radius = self.radius_st(None, mset, set)
         return np.interp(radius, st_data[:, 0], st_data[:, column])
 
     def radius_st(self, radius=None, mset=1, set=1):
@@ -153,7 +166,7 @@ class StFile(object):
         d = self.main_data_sets[mset][set]
         return '\n'.join([(precision * d.shape[1]) % tuple(row) for row in d])
 
-    def set_value(self, mset_nr, set_nr, **kwargs):
+    def set_value(self, mset, set, **kwargs):
         """
         Set the value of one column in the st file.
 
@@ -161,10 +174,10 @@ class StFile(object):
 
         Parameters
         ----------
-        mset_nr : int
+        mset : int
             Main set number.
-        set_nr : int
-            Set number.
+        set : int
+            Sub set number.
         **kwargs : dict
             An arbitrary number of columns, in the form `col_name = value`.
             The column name must be as written in the class documentation.
@@ -177,7 +190,7 @@ class StFile(object):
         """
         for k, v in kwargs.items():
             column = self.cols.index(k)
-            self.main_data_sets[mset_nr][set_nr][:, column] = v
+            self.main_data_sets[mset][set][:, column] = v
 
     def save(self, filename, precision='%15.07e', encoding='utf-8'):
         """Save all data defined in main_data_sets to st file.
@@ -212,15 +225,19 @@ class StFile(object):
                     fid.write('$%i %i\n' % (set, npoints))
                     fid.write(dstr + '\n')
 
-    def element_stiffnessmatrix(self, radius, mset_nr, set_nr, length):
+    def element_stiffnessmatrix(self, radius, mset, set, length):
         """Compute the element stiffness matrix
 
         Parameters
         ----------
         radius : float
-            radius of element (used of obtain element properties
+            radius of element (used of obtain element properties).
+        mset : int
+            Main set number.
+        set : int
+            Sub set number.
         length : float
-            eleement length
+            Element length
         """
 
         # not supported for FPM format
@@ -229,7 +246,7 @@ class StFile(object):
 
         K = np.zeros((13, 13))
         "r m x_cg y_cg ri_x ri_y x_sh y_sh E G I_x I_y K k_x k_y A pitch x_e y_e"
-        ES1, ES2, EMOD, GMOD, IX, IY, IZ, KX, KY, A = [getattr(self, n)(radius, mset_nr, set_nr)
+        ES1, ES2, EMOD, GMOD, IX, IY, IZ, KX, KY, A = [getattr(self, n)(radius, mset, set)
                                                        for n in "x_sh,y_sh,E,G,I_x,I_y,K,k_x,k_y,A".split(",")]
         ELLGTH = length
 
@@ -284,13 +301,13 @@ class StFile(object):
         K = K + K.T - np.eye(12) * K
         return K
 
-    def shape_function_ori(self, radius, mset_nr, set_nr, length, z):
+    def shape_function_ori(self, radius, mset, set, length, z):
 
         # not supported for FPM format
         if len(self.cols)==30:
             return
 
-        XSC, YSC, EMOD, GMOD, IX, IY, IZ, KX, KY, AREA = [getattr(self, n)(radius, mset_nr, set_nr)
+        XSC, YSC, EMOD, GMOD, IX, IY, IZ, KX, KY, AREA = [getattr(self, n)(radius, mset, set)
                                                           for n in "x_sh,y_sh,E,G,I_x,I_y,K,k_x,k_y,A".split(",")]
 
         etax = EMOD * IX / KY / GMOD / AREA / (length**2)
