@@ -210,6 +210,34 @@ def cycle_matrix2(signal, nrb_amp, nrb_mean, rainflow_func=rainflow_windap):
 
     return cycles, ampl_edges, mean_edges
 
+def eq_loads_from_Markov(markov_matrix, m_list, neq=1e7):
+    """
+    Calculate the damage equivalent loads from the cycles and amplitudes 
+    of a Markov matrix for different Woehler slopes.
+
+    Parameters
+    ----------
+    markov_matrix : array (Nbins x 2)
+        Array containing the number of cycles and mean ampltude for each bin.
+        Can have extra leading dimensions such as Nsensors x Ndimensions
+    m_list : list (Nwoehlerslopes)
+        List containing different Woehler slopes.
+    neq : int or float, optional
+        Number of equivalent load cycles. The default is 1e7.
+
+    Returns
+    -------
+    Array (Nwoehlerslopes)
+        Array containing the equivalent loads for each Woehler slope and
+        for each extra leading dimension if any
+
+    """
+    cycles = markov_matrix[..., 0]
+    amplitudes = markov_matrix[..., 1]
+    eq_loads = np.array([((np.nansum(cycles*amplitudes**m, axis=-1)/neq)**(1/m))
+                      for m in m_list])
+    eq_loads = np.transpose(eq_loads, list(range(1, eq_loads.ndim)) + [0])
+    return eq_loads
 
 if __name__ == "__main__":
     signal1 = np.array([-2.0, 0.0, 1.0, 0.0, -3.0, 0.0, 5.0, 0.0, -1.0, 0.0, 3.0, 0.0, -4.0, 0.0, 4.0, 0.0, -2.0])
