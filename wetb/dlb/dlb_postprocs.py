@@ -78,7 +78,6 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
                         max_load = copy(groups[group][sensor_list[s][0]][extreme_loads.coords['angle'].values[a]])
                         max_load_dlc = copy(DLC)
                         max_load_group = copy(group)
-            # DLB_extreme_loads[-1].append([max_load, max_load_dlc, max_load_group])
             DLB_extreme_loads[-1].append([max_load, max_load_dlc, max_load_group])
     data = DLB_extreme_loads
     dims = ['sensor_name', 'angle', '(value, dlc, group)']
