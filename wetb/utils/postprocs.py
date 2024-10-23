@@ -148,6 +148,58 @@ def extreme_loads_2(data, sensors_info, angles=np.linspace(-150,180,12), sweep_a
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
+def extreme_loads_matrix(data, sensors_info) -> xr.DataArray:
+    """
+    Calculate the extreme load matrix (Fx, Fy, Fz, Mx, My, Mz) for different sensors using as criteria driving force or moment along x, y and z directions,
+    including also maximum x-y in-plane loads Fres and Mres.
+
+    Parameters
+    ----------
+    data : array (Ntimesteps x Nsensors_all)
+        Array containing the time series of all sensors
+    sensors_info : list of tuples (Nsensors)
+        List of 7-element tuples containing the name of a load sensor and the indices of the 6 of their components.\n
+        Example: [('Tower base', 0, 1, 2, 3, 4, 5), ('Blade 1 root', 6, 7, 8, 9, 10, 11)]
+
+    Returns
+    -------
+    DataArray (Nsensors x 14)
+        DataArray containing extreme load states (Fx, Fy, Fz, Mx, My, Mz) for each sensor in sensors_info
+        for each case where a load is maximum or minimum (6 x 2 = 12) plus the 2 cases where Fres and Mres are maximum.\n
+        Dims: sensor_name, driver, load\n
+        Coords: sensor_name, driver, load, sensor_unit
+
+    """
+    extreme_loads = []
+    for component, i_fx, i_fy, i_fz, i_mx, i_my, i_mz in sensors_info:
+        extreme_loads.append([])
+        for i in i_fx, i_fy, i_fz, i_mx, i_my, i_mz:
+            time_step_max = np.argmax(data[:, i])
+            time_step_min = np.argmin(data[:, i])
+            extreme_loads[-1].append([data[time_step_max, i_fx], data[time_step_max, i_fy], data[time_step_max, i_fz],
+                                     data[time_step_max, i_mx], data[time_step_max, i_my], data[time_step_max, i_mz]])
+            extreme_loads[-1].append([data[time_step_min, i_fx], data[time_step_min, i_fy], data[time_step_min, i_fz],
+                                     data[time_step_min, i_mx], data[time_step_min, i_my], data[time_step_min, i_mz]])
+        fres = np.sqrt(data[:, i_fx]**2 + data[:, i_fy]**2)
+        mres = np.sqrt(data[:, i_mx]**2 + data[:, i_my]**2)
+        time_step_max_fres = np.argmax(fres)
+        time_step_max_mres = np.argmax(mres)
+        extreme_loads[-1].append([data[time_step_max_fres, i_fx], data[time_step_max_fres, i_fy], data[time_step_max_fres, i_fz],
+                                 data[time_step_max_fres, i_mx], data[time_step_max_fres, i_my], data[time_step_max_fres, i_mz]])
+        extreme_loads[-1].append([data[time_step_max_mres, i_fx], data[time_step_max_mres, i_fy], data[time_step_max_mres, i_fz],
+                                 data[time_step_max_mres, i_mx], data[time_step_max_mres, i_my], data[time_step_max_mres, i_mz]])       
+    data = np.array(extreme_loads)
+    dims = ['sensor_name', 'driver', 'load']
+    coords = {'sensor_name': [s[0] for s in sensors_info],
+              'driver': ['Fx_max', 'Fx_min', 'Fy_max', 'Fy_min', 'Fz_max', 'Fz_min',
+                         'Mx_max', 'Mx_min', 'My_max', 'My_min', 'Mz_max', 'Mz_min',
+                         'Fres_max', 'Mres_max'],
+              'load': ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'],
+              'sensor_unit': ('load', ['kN', 'kN', 'kN', 'kNm', 'kNm', 'kNm']),
+                }
+    return xr.DataArray(data=data, dims=dims, coords=coords)
+
+
 def fatigue_loads(data, info, sensors_info, m_list, neq=1e7, no_bins=46, angles=np.linspace(-150,180,12), degrees=True):
     """
     Calculate directional fatigue equivalent loads for different load sensors for different Woehler slopes for different directions.
