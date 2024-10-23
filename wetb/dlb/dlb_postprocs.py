@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import re
 import xarray as xr
@@ -127,7 +128,7 @@ def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
                 m = m_list[k]
                 eq_load = 0
                 for l in range(markov_matrices.shape[0]):
-                    file = os.path.basename(markov_matrices[l, 0, 0, 0, 0].coords['filename'].values[()])[:-5]
+                    file = os.path.basename(markov_matrices[l, 0, 0, 0, 0].coords['filename'].values[()]).replace('.hdf5', '')
                     eq_load += weight_list[file]*individual_eq_loads[l, i, j, k]**m
                 DLB_fatigue_loads[-1][-1].append(eq_load**(1/m))
     data = DLB_fatigue_loads
@@ -138,3 +139,23 @@ def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
               'sensor_unit': markov_matrices.coords['sensor_unit'],
                }
     return xr.DataArray(data=data, dims=dims, coords=coords) 
+
+def mean_upperhalf(group):
+    """
+    Calculate the mean of the values in the upper half of a set. To be
+    used as the metric for some DLCs.
+
+    Parameters
+    ----------
+    group : array
+        Array containing the maximum values of a given sensor for each 
+        simulation in a group
+
+    Returns
+    -------
+    float
+        The mean value of the upper half of simulations
+
+    """
+    upperhalf = sorted(group, reverse=True)[0:int(len(group)/2)]
+    return np.mean(upperhalf)
