@@ -15,12 +15,48 @@ seed numbering and reuse???
 
 class DLC():
 
-    def __init__(self, Description, Turb, Shear, Gust, Fault=None, variables={}):
+    def __init__(self, Description, Operation, Turb, Shear, Gust, Fault=None, variables={}):
         self.Description = Description
-        self.Turb = Turb
-        self.Shear = Shear
-        self.Gust = Gust
-        self.Fault = Fault
+        if isinstance(Turb, tuple):
+            func_Turb, params_Turb = Turb
+            def Turb_wrapper(*args, **kwargs):
+                combined_kwargs = {**params_Turb, **kwargs}
+                return func_Turb(*args, **combined_kwargs)
+            setattr(self, 'Turb', Turb_wrapper)        
+        else:
+            setattr(self, 'Turb', Turb)
+        if isinstance(Shear, tuple):
+            func_Shear, params_Shear = Shear
+            def Shear_wrapper(*args, **kwargs):
+                combined_kwargs = {**params_Shear, **kwargs}
+                return func_Shear(*args, **combined_kwargs)
+            setattr(self, 'Shear', Shear_wrapper)        
+        else:
+            setattr(self, 'Shear', Shear)
+        if isinstance(Gust, tuple):
+            func_Gust, params_Gust = Gust
+            def Gust_wrapper(*args, **kwargs):
+                combined_kwargs = {**params_Gust, **kwargs}
+                return func_Gust(*args, **combined_kwargs)
+            setattr(self, 'Gust', Gust_wrapper)        
+        else:
+            setattr(self, 'Gust', Gust)
+        if isinstance(Fault, tuple):
+            func_Fault, params_Fault = Fault
+            def Fault_wrapper(*args, **kwargs):
+                combined_kwargs = {**params_Fault, **kwargs}
+                return func_Fault(*args, **combined_kwargs)
+            setattr(self, 'Fault', Fault_wrapper)        
+        else:
+            setattr(self, 'Fault', Fault)
+        if isinstance(Operation, tuple):
+            func_Operation, params_Operation = Operation
+            def Operation_wrapper(*args, **kwargs):
+                combined_kwargs = {**params_Operation, **kwargs}
+                return func_Operation(*args, **combined_kwargs)
+            setattr(self, 'Operation', Operation_wrapper)        
+        else:
+            setattr(self, 'Operation', Operation)
         self.variables = variables
         self.variables.update({k.lower(): v for k, v in variables.items()})
         turb_class = self.iec_wt_class[1].lower()
@@ -126,10 +162,9 @@ class DLC():
     # ===============================================================================
     def NoTurb(self, **_):
         return [{'seed': None}]
-
-    def Turb_0p11(self, **_):
+    
+    def ConstantTurb(self, ti, **_):
         s0 = 1001
-        ti = 0.11
         if self.seed:
             return [{'seed_id': 's%04d' % (s),
                     'ti': ti,
@@ -177,15 +212,11 @@ class DLC():
     # Shear profiles
     # ===============================================================================
 
-    def NWP(self, **_):
+    def NWP(self, alpha, **_):
         # The normal wind profile model IEC section 6.3.1.2
-        return [{'shear': {'type': 'NWP', 'profile': ('power', .2)}}]
-    
-    def NWP_0p11(self, **_):
-        # The normal wind profile model IEC section 6.3.1.2 for 50-year extreme wind conditions
-        return [{'shear': {'type': 'NWP', 'profile': ('power', .11)}}]
+        return [{'shear': {'type': 'NWP', 'profile': ('power', alpha)}}]
 
-    def EWS(self, V_hub, **_):
+    def EWS(self, V_hub, alpha, **_):
         # Extreme wind shear, IEC section 6.3.2.6
         beta = 6.4
         T = 12
@@ -193,9 +224,9 @@ class DLC():
 
         D = self.D
         lambda_1 = 42 if self.z_hub < 60 else .7 * self.z_hub
-        A = (2.5 + 0.2 * beta * sigma_1 * (D / lambda_1)**0.25) / D  # IEC (26) & (27)
+        A = (2.5 + alpha * beta * sigma_1 * (D / lambda_1)**0.25) / D  # IEC (26) & (27) TO-DO: check if here alpha is 0.2
 
-        return [{'shear': {'type': 'EWS', 'profile': ('power', .2), 'A': A, 'T': T, 'sign': ews_sign},
+        return [{'shear': {'type': 'EWS', 'profile': ('power', alpha), 'A': A, 'T': T, 'sign': ews_sign},
                  'ews_id': ews_sign}
                 for ews_sign in ['++', '+-', '-+', '--']]
 
@@ -229,56 +260,70 @@ class DLC():
     # Faults
     # ===============================================================================
 
-    def StuckBlade(self, **_):
-        return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': 0.1, 'pitch': 0}}]
-    
-    def PitchRunaway(self, **_):
-        return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': 10}}]
-
-    def GridLoss10(self, **_):
-        return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': 10}}]
-    
-    def GridLoss3times(self, **_):
-        gridloss_times = [2.5, 4, 5.25]
-        return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': T}, 'T_id': 't' + str(gridloss_times.index(T))} for T in gridloss_times]
-    
-    # ===============================================================================
-    # Operation
-    # ===============================================================================
-    
-    @staticmethod
-    def Operation(self, **_):
-        if 'start-up at 4 different times' in self.Description.lower():
-            startup_times = [0.1, 2.5, 4, 5.25]
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': T}, 'T_id': 't' + str(startup_times.index(T))} for T in startup_times]
-        if 'start-up at 2 different times' in self.Description.lower():
-            startup_times = [-0.1, 5]
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': T}, 'T_id': 't' + str(startup_times.index(T))} for T in startup_times]
-        if 'start-up' in self.Description.lower():
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': 0}}]
-        if 'emergency shut-down' in self.Description.lower():
-            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': 0}}]
-        if 'shut-down at 6 different times' in self.Description.lower():
-            shutdown_times = [0.1, 2.5, 4, 5, 8, 10]
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': T}, 'T_id': 't' + str(shutdown_times.index(T))} for T in shutdown_times]
-        if 'shut-down' in self.Description.lower():
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': 0}}]
-        if 'parked' in self.Description.lower():
-            return [{'Operation': {'type': 'Parked', 'controller': self.controller}}]
-        if 'rotor locked at 4 different azimuth angles' in self.Description.lower():
-            azimuth_angles = [0, 30, 60, 90]
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller, 'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azi},
-                     'Azi_id': 'azi' + f"{azi:03}"} for azi in azimuth_angles]
-        if 'rotor locked' in self.Description.lower():
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller, 'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': self.best_azimuth}}]
+    def StuckBlade(self, t, pitch, **_):
+        if (not isinstance(t, list)) and (not isinstance(pitch, list)):
+            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch}}]
         else:
-            return [{}]
+            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch},
+                     'T_id': 't' + str(t.index(tp[0])) + 'p' + str(pitch.index(tp[1]))} for tp in itertools.product(t, pitch)]
+            
+    def PitchRunaway(self, t, **_):
+        if not isinstance(t, list):
+            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': t}}]
+        else:
+            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': T},
+                     'T_id': 't' + str(t.index(T))} for T in t]
+    
+    def GridLoss(self, t, **_):
+        if not isinstance(t, list):
+            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': t}}]
+        else:
+            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': T}, 'T_id': 't' + str(t.index(T))} for T in t]
+    
+    # ===============================================================================
+    # Operations
+    # ===============================================================================
+            
+    def PowerProduction(self, **_):
+        return [{}]
+    
+    def StartUp(self, t, **_):
+        if not isinstance(t, list):
+            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': t}}]
+        else:
+            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': T},
+                     'T_id': 't' + str(t.index(T))} for T in t]
+    
+    def ShutDown(self, t, **_):
+        if not isinstance(t, list):
+            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': t}}]
+        else:
+            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': T},
+                     'T_id': 't' + str(t.index(T))} for T in t]
         
+    def EmergencyShutDown(self, t, **_):
+        if not isinstance(t, list):
+            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': t}}]
+        else:
+            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': T},
+                     'T_id': 't' + str(t.index(T))} for T in t]
+        
+    def Parked(self, **_):
+        return [{'Operation': {'type': 'Parked', 'controller': self.controller}}]
+    
+    def RotorLocked(self, azimuth, **_):
+        if not isinstance(azimuth, list):
+            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
+                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azimuth}}]
+        else:
+            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
+                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azi},
+                     'Azi_id': 'azi' + f"{azi:03}"} for azi in azimuth]
 
 class DLB():
     
     def __init__(self, dlc_definitions, variables):
-        cols = ['Name', 'Description', 'WSP', 'Wdir', 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault', 'Time']
+        cols = ['Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault', 'Time']
         self.dlcs = pd.DataFrame(dlc_definitions, columns=cols, index=[dlc['Name'] for dlc in dlc_definitions])
 
         var_name_desc = [('iec_wt_class', 'IEC wind turbine class, e.g. 1A'),
@@ -340,8 +385,8 @@ class DLB():
 
     def _make_dlc(self, dlc_name):
         dlc_definition = self.dlcs.loc[dlc_name]
-        kwargs = {k: DLC.getattr(str(dlc_definition[k]))
-                  for k in ['Turb', 'Shear', 'Gust', 'Fault']}
+        kwargs = {k: (DLC.getattr(str(dlc_definition[k][0])), dlc_definition[k][1]) if isinstance(dlc_definition[k], tuple)
+                  else DLC.getattr(str(dlc_definition[k])) for k in ['Operation', 'Turb', 'Shear', 'Gust', 'Fault']}
         kwargs['Description'] = dlc_definition['Description']
         variables = {v['Name']: v['Value'] for _, v in self.variables.iterrows()}
         variables.update(dlc_definition)
@@ -377,256 +422,274 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
     def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
                  controller, generator_servo, pitch_servo, best_azimuth,
                  Vstep=2, seed=None, shaft='shaft', shaft_constraint='shaft_rot'):
-        """
-        NOTE!!!!!!!!!!!
-        SEVERAL DLCS ARE MISSING
-        """
         
-        Name, Description, WSP, Wdir, Time = 'Name', 'Description', 'WSP', 'Wdir', 'Time'
+        Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
 
         dlc_definitions = [
             {Name: 'DLC12',
-             Description: 'Normal production',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: '-10/0/10',               
-             Turb: 'NTM',
-             Seeds: 6,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Normal production',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: '-10/0/10',               
+              Turb: 'NTM',
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC13',
-             Description: 'Normal production with high turbulence',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: '-10/0/10',                
-             Turb: 'ETM',
-             Seeds: 6,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Normal production with high turbulence',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: '-10/0/10',                
+              Turb: 'ETM',
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC14',
-             Description: 'Normal production with gust and direction change',
-             WSP: 'Vr/Vr+2/Vr-2',
-             Wdir: 0,
-             Turb: 'NoTurb',
-             Seeds: None,
-             Shear: 'NWP',
-             Gust: 'ECD',
-             Fault: None,
-             Time: 100},
+              Description: 'Normal production with gust and direction change',
+              Operation: 'PowerProduction',
+              WSP: 'Vr/Vr+2/Vr-2',
+              Wdir: 0,
+              Turb: 'NoTurb',
+              Seeds: None,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: 'ECD',
+              Fault: None,
+              Time: 100},
             
             {Name: 'DLC15',
-             Description: 'Normal production with extreme wind shear',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: 0,
-             Turb: 'NoTurb',
-             Seeds: None,
-             Shear: 'EWS',
-             Gust: None,
-             Fault: None,
-             Time: 100},
+              Description: 'Normal production with extreme wind shear',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: 0,
+              Turb: 'NoTurb',
+              Seeds: None,
+              Shear: ('EWS', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 100},
             
             {Name: 'DLC21',
-             Description: 'Loss of electical network',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: '-10/0/10',
-             Turb: 'NTM',
-             Seeds: 4,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: 'GridLoss10',
-             Time: 100},
+              Description: 'Loss of electical network',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: '-10/0/10',
+              Turb: 'NTM',
+              Seeds: 4,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: ('GridLoss', {'t': 10}),
+              Time: 100},
             
             {Name: 'DLC22b',
-             Description: 'One blade stuck at minimum pitch angle',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: 0,
-             Turb: 'NTM',
-             Seeds: 12,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: 'StuckBlade',
-             Time: 100},
+              Description: 'One blade stuck at minimum pitch angle',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: 0,
+              Turb: 'NTM',
+              Seeds: 12,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: ('StuckBlade', {'t': 0.1, 'pitch': 0}),
+              Time: 100},
             
             {Name: 'DLC22p',
-             Description: 'Pitch runaway',
-             WSP: 'Vr:Vstep:Vout',
-             Wdir: 0,
-             Turb: 'NTM',
-             Seeds: 12,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: 'PitchRunaway',
-             Time: 100},
+              Description: 'Pitch runaway',
+              Operation: 'PowerProduction',
+              WSP: 'Vr:Vstep:Vout',
+              Wdir: 0,
+              Turb: 'NTM',
+              Seeds: 12,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: ('PitchRunaway', {'t': 10}),
+              Time: 100},
             
             {Name: 'DLC22y',
-             Description: 'Abnormal yaw error',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: '15:15:345',
-             Turb: 'NTM',
-             Seeds: 1,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Abnormal yaw error',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: '15:15:345',
+              Turb: 'NTM',
+              Seeds: 1,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC23',
               Description: 'Loss of electical network with extreme operating gust',
+              Operation: 'PowerProduction',
               WSP: 'Vr-2/Vr+2/Vout',
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: 'NWP',
+              Shear: ('NWP', {'alpha': 0.2}),
               Gust: 'EOG',
-              Fault: 'GridLoss3times',
+              Fault: ('GridLoss', {'t': [2.5, 4, 5.25]}),
               Time: 100},
             
             {Name: 'DLC24',
-             Description: 'Normal production with large yaw error',
-             WSP: 'Vin:Vstep:Vout',
-             Wdir: '-20/20',
-             Turb: 'NTM',
-             Seeds: 3,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Normal production with large yaw error',
+              Operation: 'PowerProduction',
+              WSP: 'Vin:Vstep:Vout',
+              Wdir: '-20/20',
+              Turb: 'NTM',
+              Seeds: 3,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC31',
-             Description: 'Start-up',
-             WSP: 'Vin/Vr/Vout',
-             Wdir: 0,
-             Turb: 'NoTurb',
-             Seeds: None,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 100},
+              Description: 'Start-up',
+              Operation: ('StartUp', {'t': 0}),
+              WSP: 'Vin/Vr/Vout',
+              Wdir: 0,
+              Turb: 'NoTurb',
+              Seeds: None,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 100},
             
             {Name: 'DLC32',
               Description: 'Start-up at 4 different times with extreme operating gust',
+              Operation: ('StartUp', {'t': [0.1, 2.5, 4, 5.25]}),
               WSP: 'Vin/Vr-2/Vr+2/Vout',
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: 'NWP',
+              Shear: ('NWP', {'alpha': 0.2}),
               Gust: 'EOG',
               Fault: None,
               Time: 100},
             
             {Name: 'DLC33',
               Description: 'Start-up at 2 different times with extreme wind direction change',
+              Operation: ('StartUp', {'t': [-0.1, 5]}),
               WSP: 'Vin/Vr-2/Vr+2/Vout',
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: 'NWP',
+              Shear: ('NWP', {'alpha': 0.2}),
               Gust: 'EDC',
               Fault: None,
               Time: 100},
             
             {Name: 'DLC41',
-             Description: 'Shut-down',
-             WSP: 'Vin/Vr/Vout',
-             Wdir: 0,
-             Turb: 'NoTurb',
-             Seeds: None,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 100},
+              Description: 'Shut-down',
+              Operation: ('ShutDown', {'t': 0}),
+              WSP: 'Vin/Vr/Vout',
+              Wdir: 0,
+              Turb: 'NoTurb',
+              Seeds: None,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 100},
             
             {Name: 'DLC42',
               Description: 'Shut-down at 6 different times with extreme operating gust',
+              Operation: ('ShutDown', {'t': [0.1, 2.5, 4, 5, 8, 10]}),
               WSP: 'Vr-2/Vr+2/Vout',
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: 'NWP',
+              Shear: ('NWP', {'alpha': 0.2}),
               Gust: 'EOG',
               Fault: None,
               Time: 100},
             
             {Name: 'DLC51',
               Description: 'Emergency shut-down',
+              Operation: ('EmergencyShutDown', {'t': 0}),
               WSP: 'Vr-2/Vr+2/Vout',
               Wdir: 0,
               Turb: 'NTM',
               Seeds: 12,
-              Shear: 'NWP',
+              Shear: ('NWP', {'alpha': 0.2}),
               Gust: None,
               Fault: None,
               Time: 100},
             
             {Name: 'DLC61',
-             Description: 'Parked with 50-year wind',
-             WSP: 'Vref',
-             Wdir: '-8/8',
-             Turb: 'Turb_0p11',
-             Seeds: 6,
-             Shear: 'NWP_0p11',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Parked with 50-year wind',
+              Operation: 'Parked',
+              WSP: 'Vref',
+              Wdir: '-8/8',
+              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.11}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC62',
-             Description: 'Parked with 50-year wind without grid connection',
-             WSP: 'Vref',
-             Wdir: '0:15:345',
-             Turb: 'Turb_0p11',
-             Seeds: 1,
-             Shear: 'NWP_0p11',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Parked with 50-year wind without grid connection',
+              Operation: 'Parked',
+              WSP: 'Vref',
+              Wdir: '0:15:345',
+              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Seeds: 1,
+              Shear: ('NWP', {'alpha': 0.11}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC63',
-             Description: 'Parked with 1-year wind with large yaw error',
-             WSP: 'V1',
-             Wdir: '-20/20',
-             Turb: 'Turb_0p11',
-             Seeds: 6,
-             Shear: 'NWP_0p11',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Parked with 1-year wind with large yaw error',
+              Operation: 'Parked',
+              WSP: 'V1',
+              Wdir: '-20/20',
+              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.11}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC64',
-             Description: 'Parked',
-             WSP: 'Vin:Vstep:0.7*Vref',
-             Wdir: '-8/8',
-             Turb: 'NTM',
-             Seeds: 6,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Parked',
+              Operation: 'Parked',
+              WSP: 'Vin:Vstep:0.7*Vref',
+              Wdir: '-8/8',
+              Turb: 'NTM',
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC71',
-             Description: 'Rotor locked at 4 different azimuth angles and extreme yaw',
-             WSP: 'V1',
-             Wdir: '0:15:345',
-             Turb: 'Turb_0p11',
-             Seeds: 1,
-             Shear: 'NWP_0p11',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Rotor locked at 4 different azimuth angles and extreme yaw',
+              Operation: ('RotorLocked', {'azimuth': [0, 30, 60, 90]}),
+              WSP: 'V1',
+              Wdir: '0:15:345',
+              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Seeds: 1,
+              Shear: ('NWP', {'alpha': 0.11}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
             
             {Name: 'DLC81',
-             Description: 'Rotor locked for maintenance',
-             WSP: 'Vmaint',
-             Wdir: '-8/8',
-             Turb: 'NTM',
-             Seeds: 6,
-             Shear: 'NWP',
-             Gust: None,
-             Fault: None,
-             Time: 600},
+              Description: 'Rotor locked for maintenance',
+              Operation: ('RotorLocked', {'azimuth': best_azimuth}),
+              WSP: 'Vmaint',
+              Wdir: '-8/8',
+              Turb: 'NTM',
+              Seeds: 6,
+              Shear: ('NWP', {'alpha': 0.2}),
+              Gust: None,
+              Fault: None,
+              Time: 600},
         ]
         
         Vref = {1: 50, 2: 42.5, 3: 37.5}[int(iec_wt_class[0])]
@@ -662,37 +725,6 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
             variables["seed"] = seed
         DLB.__init__(self, dlc_definitions, variables)
 
-class DTU_IEC61400_1_Ref_DLB_custom(DLB):
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, D, z_hub, seed=None, time=10):
-        """
-        NOTE!!!!!!!!!!!
-        SEVERAL DLCS ARE MISSING
-        """
-        Vstep = 2
-        Name, Description, WSP, Wdir, Time = 'Name', 'Description', 'WSP', 'Wdir', 'Time'
-        Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
-
-        dlc_definitions = [
-            {Name: 'DLC12', Description: 'Normal production', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
-                Turb: 'NTM', Seeds: 6, Shear: 'NWP', Gust: None, Fault: None, Time: time},
-            {Name: 'DLC13', Description: 'Normal production with high turbulence', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
-                Turb: 'ETM', Seeds: 6, Shear: 'NWP', Gust: None, Fault: None, Time: time},
-            {Name: 'DLC14', Description: 'Normal production with gust and direction change', WSP: 'Vr/Vr+2/Vr-2', Wdir: 0,
-                Turb: 'NoTurb', Seeds: None, Shear: 'NWP', Gust: 'ECD', Fault: None, Time: time},
-            {Name: 'DLC15', Description: 'Normal production with extreme wind shear', WSP: 'Vin:2:Vout', Wdir: 0,
-                Turb: 'NoTurb', Seeds: None, Shear: 'EWS', Gust: None, Fault: None, Time: time},
-            {Name: 'DLC21', Description: 'Loss of electical network', WSP: 'Vin:2:Vout', Wdir: '-10/0/10',
-                Turb: 'NTM', Seeds: 4, Shear: 'NWP', Gust: None, Fault: 'GridLoss10', Time: time},
-            {Name: 'DLC22y', Description: 'Abnormal yaw error', WSP: 'Vin:2:Vout', Wdir: '15:15:345',
-                Turb: 'NTM', Seeds: 1, Shear: 'NWP', Gust: None, Fault: None, Time: time}
-        ]
-        variables = {'iec_wt_class': iec_wt_class, 'Vin': Vin,
-                     'Vout': Vout, 'Vr': Vr, 'D': D, 'z_hub': z_hub, 'Vstep': Vstep}
-        if seed:
-            variables["seed"] = int(seed)
-        else:
-            variables["seed"] = seed
-        DLB.__init__(self, dlc_definitions, variables)
 
 def main():
     if __name__ == '__main__':
