@@ -75,10 +75,10 @@ def install_wind_tool(
 
     # Check if requested version is available, and default it is not.
     if version is not None and version not in versions[tool]["available"]:
-        version = versions[tool]["latest"]
         print(
-            f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{version}'"
+            f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{versions[tool]["latest"]}'"
         )
+        version = versions[tool]["latest"]
     elif version is None:
         version = versions[tool]["latest"]
         print(f"Using latest version of '{tool}': {version}")
