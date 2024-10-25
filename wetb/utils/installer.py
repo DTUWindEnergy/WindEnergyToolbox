@@ -13,8 +13,12 @@ from urllib import request
 import ssl
 import certifi
 
+
 def urlopen(*args, **kwargs):
-    return request.urlopen(*args, **kwargs, context=ssl.create_default_context(cafile=certifi.where()))
+    return request.urlopen(
+        *args, **kwargs, context=ssl.create_default_context(cafile=certifi.where())
+    )
+
 
 def chmod_x(exe_path: str):
     """Utility function to change the file mode of a file to allow execution
@@ -46,7 +50,7 @@ def install_wind_tool(
     """
 
     # Escape backslash if windowspath is given
-    destination = Path(destination.encode('unicode_escape').decode()).as_posix()
+    destination = Path(destination.encode("unicode_escape").decode()).as_posix()
 
     if tool is None:
         print("No tool has been given for install. Nothing has been installed.")
@@ -76,7 +80,7 @@ def install_wind_tool(
     # Check if requested version is available, and default it is not.
     if version is not None and version not in versions[tool]["available"]:
         print(
-            f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{versions[tool]["latest"]}'"
+            f"Version '{version}' of '{tool}' is not available - defaulting to the latest version: '{versions[tool]['latest']}'"
         )
         version = versions[tool]["latest"]
     elif version is None:
@@ -130,12 +134,14 @@ def install_hawc2_dtu_license():
     if sys.platform.lower() == "win32":
         f = Path(os.getenv("APPDATA")) / "DTU Wind Energy/hawc2/license.cfg"
     else:
-        f = Path.home() / '.config/hawc2/license.cfg'
+        f = Path.home() / ".config/hawc2/license.cfg"
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
         r = urlopen("http://license-internal.windenergy.dtu.dk:34523").read()
         if b"LICENSE SERVER RUNNING" in r:
-            f.write_text("[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523")
+            f.write_text(
+                "[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523"
+            )
         else:
             raise ConnectionError(
                 f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function."
