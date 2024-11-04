@@ -95,59 +95,6 @@ def extreme_loads(data, info, sensors_info, angles=np.linspace(-150,180,12), swe
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def extreme_loads_2(data, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True) -> xr.DataArray:
-    """
-    Calculate extreme load states (Fx, Fy, Mx, My) from different sensors using as criteria driving loads(force or moment) along different directions.
-
-    Parameters
-    ----------
-    data : array (Ntimesteps x Nsensors_all)
-        Array containing the time series of all sensors
-    sensors_info : list of tuples (Nsensors)
-        List of 5-element tuples containing the name of a load sensor and the indices of 2 of their components
-        for both force and moment (Fx, Fy, Mx, My).\n
-        Example: [('Tower base', 0, 1, 3, 4), ('Blade 1 root', 9, 10, 12, 13)]
-    angles : array (Ndirections), optional
-        Array containing the directions along which extreme load states drive force or moment.
-        The default is np.linspace(-150,180,12).
-    sweep_angle : float, optional
-        Angle to be swept to both sides of a direction in the search for its extreme load state.
-        It should match the angular step in angles. The default is 30.
-    degrees : bool, optional
-        Whether angles and sweep_angle are in degrees (True) or radians (False). The default is True.
-
-    Returns
-    -------
-    DataArray (Nsensors x 2*Ndirections x 4)
-        DataArray containing extreme load states (Fx, Fy, Mx, My) for each sensor in sensors_info
-        for each criteria (Ndirections cases where the load state drives the force in that direction + 
-        Ndirections cases where the load state drives the moment in that direction).\n
-        Dims: sensor_name, driver, load\n
-        Coords: sensor_name, driver, load, sensor_unit
-
-    """
-    extreme_loads = []
-    for component, i_fx, i_fy, i_mx, i_my in sensors_info:
-        extreme_forces = projected_extremes(np.vstack([data[:,i_fx], data[:,i_fy]]).T, angles, sweep_angle, degrees)
-        extreme_moments = projected_extremes(np.vstack([data[:,i_mx], data[:,i_my]]).T, angles, sweep_angle, degrees)
-        force_time_indices = np.nan_to_num(extreme_forces[:, 2]).astype(int)
-        moment_time_indices = np.nan_to_num(extreme_moments[:, 2]).astype(int)
-        time_indices = np.reshape(np.concatenate((force_time_indices, moment_time_indices)), (len(force_time_indices) + len(moment_time_indices), 1))
-        load_indices = np.reshape([i_fx, i_fy, i_mx, i_my], (1, 4))
-        extreme_loads.append(data[time_indices, load_indices])
-        nan_indices = np.concatenate((np.where(np.isnan(extreme_forces[:, 2]))[0], np.where(np.isnan(extreme_moments[:, 2]))[0] + 6))
-        if len(nan_indices) > 0:
-            extreme_loads[-1][np.reshape(nan_indices, (len(nan_indices), 1)), :] = 0 
-    data = np.array(extreme_loads)
-    dims = ['sensor_name', 'driver', 'load']
-    coords = {'sensor_name': [s[0] for s in sensors_info],
-              'driver': ['F' + "{:.0f}".format(a) for a in angles] + ['M' + "{:.0f}".format(a) for a in angles],
-              'load': ['Fx', 'Fy', 'Mx', 'My'],
-              'sensor_unit': ('load', ['kN', 'kN', 'kNm', 'kNm']),
-                }
-    return xr.DataArray(data=data, dims=dims, coords=coords)
-
-
 def extreme_loads_matrix(data, sensors_info) -> xr.DataArray:
     """
     Calculate the extreme load matrix (Fx, Fy, Fz, Mx, My, Mz) for different sensors using as criteria driving force or moment along x, y and z directions,
@@ -200,7 +147,7 @@ def extreme_loads_matrix(data, sensors_info) -> xr.DataArray:
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def fatigue_loads(data, info, sensors_info, m_list, neq=1e7, no_bins=46, angles=np.linspace(-150,180,12), degrees=True):
+def fatigue_loads(data, info, sensors_info, m_list, neq=1e7, no_bins=46, angles=np.linspace(-150,180,12), degrees=True) -> xr.DataArray:
     """
     Calculate directional fatigue equivalent loads for different load sensors for different Woehler slopes for different directions.
 
@@ -256,7 +203,7 @@ def fatigue_loads(data, info, sensors_info, m_list, neq=1e7, no_bins=46, angles=
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def markov_matrices(data, info, sensors_info, no_bins=46, angles=np.linspace(-150,180,12), degrees=True):
+def markov_matrices(data, info, sensors_info, no_bins=46, angles=np.linspace(-150,180,12), degrees=True) -> xr.DataArray:
     """
     Calculate the Markov matrices for different load sensors for different directions.
 
