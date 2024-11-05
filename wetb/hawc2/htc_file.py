@@ -120,7 +120,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
             except IOError:
                 return False
         found = ([np.sum([isfile_case_insensitive(os.path.join(os.path.dirname(self.filename), "../" * i, f))
-                          for f in rel_input_files]) for i in range(100)])
+                          for f in rel_input_files]) for i in range(4)])
 
         if max(found) > 0:
             relpath = "../" * np.argmax(found)
