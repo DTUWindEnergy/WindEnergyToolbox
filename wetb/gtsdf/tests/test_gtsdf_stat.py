@@ -40,7 +40,7 @@ class Test_gsdf(unittest.TestCase):
         assert sensor[0].sensor_name == info['attribute_names'][0]
         assert sensor[0].sensor_unit == info['attribute_units'][0]
         assert sensor[0].sensor_description == info['attribute_descriptions'][0]
-        self.assertEqual(da[0].shape, (49, 10))
+        self.assertEqual(da[0].shape, (49, 4))
 
         # test_gtsdf_compress2postproc
         time, data, info = gtsdf.load(tfp + 'test.hdf5')
@@ -55,13 +55,10 @@ class Test_gsdf(unittest.TestCase):
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_postproc('missing', tmp_path)
 
-        da = collect_postproc('.', tmp_path, filename='*stat.hdf5')
-        assert da[0].shape == (2, 49, 10)
-        da = collect_postproc('.', tmp_path + "..", filename='*stat.hdf5')
-        assert da[0].shape == (2, 49, 10)
-        with pytest.raises(Exception, match=r'No \*stat\.hdf5 files found in'):
-            collect_postproc('.', tmp_path + "..", filename='*stat.hdf5', recursive=False)
-
+        da = collect_postproc(tmp_path)
+        assert da[0].shape == (3, 49, 4)
+        da = collect_postproc(tmp_path + "..")
+        assert da[0].shape == (4, 49, 4)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
