@@ -128,7 +128,7 @@ class DLC():
             case_arg_lst.append(d)
         return case_arg_lst
 
-    def to_pandas(self, **extra_kwargs):
+    def to_pandas(self):
         case_dict_lst = []
 
         for V_hub in self.wsp_lst:
@@ -138,7 +138,7 @@ class DLC():
                                   'V_hub': V_hub,
                                   'wdir': wdir,
                                   }
-                for case_args in self.case_arg_lst_product(**default_kwargs, **extra_kwargs):
+                for case_args in self.case_arg_lst_product(**default_kwargs):
                     case_args.update({k: v for k, v in default_kwargs.items() if k not in case_args})
                     case_dict_lst.append(case_args)
         cols = ['Name', 'Folder', 'V_hub', 'wdir', 'simulation_time']
@@ -223,8 +223,7 @@ class DLC():
         sigma_1 = self.I_ref * (0.75 * V_hub + 5.6)  # IEC (11)
 
         D = self.D
-        lambda_1 = 42 if self.z_hub < 60 else .7 * self.z_hub
-        A = (2.5 + alpha * beta * sigma_1 * (D / lambda_1)**0.25) / D  # IEC (26) & (27) TO-DO: check if here alpha is 0.2
+        A = (2.5 + 0.2 * beta * sigma_1 * (D / self.lambda_1)**0.25) / D
 
         return [{'shear': {'type': 'EWS', 'profile': ('power', alpha), 'A': A, 'T': T, 'sign': ews_sign},
                  'ews_id': ews_sign}
@@ -246,13 +245,13 @@ class DLC():
     
     def EDC(self, V_hub, **_):
         # Extreme direction change
-        phi = 4*(np.rad2deg(np.arctan(self.I_ref*(0.75*V_hub + 5.6)/V_hub/(1 + 0.1*self.D/self.scale_parameter))))
+        phi = 4*(np.rad2deg(np.arctan(self.I_ref*(0.75*V_hub + 5.6)/V_hub/(1 + 0.1*self.D/self.lambda_1))))
         T = 10 # Duration
         return [{'Gust': {'type': 'EDC', 'phi': sign*phi, 'T': T}, 'edc_id': {-1: '-', 1: '+'}[sign]} for sign in [-1, 1]]
     
     def EOG(self, V_hub, **_):
         # Extreme operation gust
-        V_gust = min(1.35*(0.8*1.4*self.V_ref - V_hub), 3.3*self.I_ref*(0.75*V_hub + 5.6)/(1 + 0.1*self.D/self.scale_parameter))  # magnitude of gust
+        V_gust = min(1.35*(0.8*1.4*self.V_ref - V_hub), 3.3*self.I_ref*(0.75*V_hub + 5.6)/(1 + 0.1*self.D/self.lambda_1))  # magnitude of gust
         T = 10.5  # duration
         return [{'Gust': {'type': 'EOG', 'V_gust': V_gust, 'T': T}}]
 
@@ -339,7 +338,7 @@ class DLB():
                          ('Vstep', 'Wind speed distribution step'),
                          ('D', 'Rotor diameter'),
                          ('z_hub', 'Hub height'),
-                         ('scale_parameter', 'Scale parameter'),
+                         ('lambda_1', 'Longitudinal turbulence scale parameter'),
                          ('controller', 'Filename of controller DLL'),
                          ('generator_servo', 'Filename of generator servo DLL'),
                          ('pitch_servo', 'Filename of pitch servo DLL'),
@@ -391,12 +390,7 @@ class DLB():
         variables = {v['Name']: v['Value'] for _, v in self.variables.iterrows()}
         variables.update(dlc_definition)
         dlc = DLC(variables=variables, **kwargs)
-        extra_kwargs = {}
-        extra_kwargs['Vref'] = variables['Vref']
-        extra_kwargs['tiref'] = variables['tiref']
-        extra_kwargs['D'] = variables['D']
-        extra_kwargs['scale_parameter'] = variables['scale_parameter']
-        df = dlc.to_pandas(**extra_kwargs)
+        df = dlc.to_pandas()
         name = dlc_definition['Name']
         df.insert(0, 'DLC', name)
         return df
@@ -421,7 +415,8 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
     
     def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
                  controller, generator_servo, pitch_servo, best_azimuth,
-                 Vstep=2, seed=None, shaft='shaft', shaft_constraint='shaft_rot'):
+                 Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
+                 shaft='shaft', shaft_constraint='shaft_rot'):
         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
@@ -434,7 +429,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-10/0/10',               
               Turb: 'NTM',
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -446,7 +441,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-10/0/10',                
               Turb: 'ETM',
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -458,7 +453,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: 'ECD',
               Fault: None,
               Time: 100},
@@ -470,7 +465,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('EWS', {'alpha': 0.2}),
+              Shear: ('EWS', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 100},
@@ -482,7 +477,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-10/0/10',
               Turb: 'NTM',
               Seeds: 4,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: ('GridLoss', {'t': 10}),
               Time: 100},
@@ -494,7 +489,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NTM',
               Seeds: 12,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: ('StuckBlade', {'t': 0.1, 'pitch': 0}),
               Time: 100},
@@ -506,7 +501,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NTM',
               Seeds: 12,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: ('PitchRunaway', {'t': 10}),
               Time: 100},
@@ -518,7 +513,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '15:15:345',
               Turb: 'NTM',
               Seeds: 1,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -530,7 +525,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
               Fault: ('GridLoss', {'t': [2.5, 4, 5.25]}),
               Time: 100},
@@ -542,7 +537,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-20/20',
               Turb: 'NTM',
               Seeds: 3,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -554,7 +549,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 100},
@@ -566,7 +561,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
               Fault: None,
               Time: 100},
@@ -578,7 +573,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EDC',
               Fault: None,
               Time: 100},
@@ -590,7 +585,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 100},
@@ -602,7 +597,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NoTurb',
               Seeds: None,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
               Fault: None,
               Time: 100},
@@ -614,7 +609,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: 0,
               Turb: 'NTM',
               Seeds: 12,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 100},
@@ -624,9 +619,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Operation: 'Parked',
               WSP: 'Vref',
               Wdir: '-8/8',
-              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Turb: ('ConstantTurb', {'ti': ti_extreme}),
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.11}),
+              Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -636,9 +631,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Operation: 'Parked',
               WSP: 'Vref',
               Wdir: '0:15:345',
-              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Turb: ('ConstantTurb', {'ti': ti_extreme}),
               Seeds: 1,
-              Shear: ('NWP', {'alpha': 0.11}),
+              Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -648,9 +643,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Operation: 'Parked',
               WSP: 'V1',
               Wdir: '-20/20',
-              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Turb: ('ConstantTurb', {'ti': ti_extreme}),
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.11}),
+              Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -662,7 +657,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-8/8',
               Turb: 'NTM',
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -672,9 +667,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Operation: ('RotorLocked', {'azimuth': [0, 30, 60, 90]}),
               WSP: 'V1',
               Wdir: '0:15:345',
-              Turb: ('ConstantTurb', {'ti': 0.11}),
+              Turb: ('ConstantTurb', {'ti': ti_extreme}),
               Seeds: 1,
-              Shear: ('NWP', {'alpha': 0.11}),
+              Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -686,7 +681,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Wdir: '-8/8',
               Turb: 'NTM',
               Seeds: 6,
-              Shear: ('NWP', {'alpha': 0.2}),
+              Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
               Fault: None,
               Time: 600},
@@ -697,7 +692,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
         V1 = 0.8*Vref
         Ve50 = 1.4*Vref
         Ve1 = 0.8*Ve50
-        scale_parameter = 42 # TO-DO: define it as function of hub height
+        lambda_1 = 0.7*z_hub if z_hub < 60 else 42
         
         variables = {'iec_wt_class': iec_wt_class,
                      'Vref': Vref,
@@ -712,7 +707,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
                      'Vstep': Vstep,
                      'D': D,
                      'z_hub': z_hub,
-                     'scale_parameter': scale_parameter,
+                     'lambda_1': lambda_1,
                      'controller': controller,
                      'generator_servo': generator_servo,
                      'pitch_servo': pitch_servo,
