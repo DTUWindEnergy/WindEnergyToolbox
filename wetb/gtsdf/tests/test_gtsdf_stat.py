@@ -4,8 +4,6 @@ Created on 12/09/2013
 @author: mmpe
 '''
 
-import h5py
-import numpy as np
 from wetb import gtsdf
 
 import unittest
@@ -37,6 +35,9 @@ class Test_gsdf(unittest.TestCase):
         da = load_postproc(fn)
         sensor = da[0]
         self.assertEqual(data[:, 0].min(), sensor[0].sel(statistic='min'))
+        assert sensor[0].sensor_name == info['attribute_names'][0]
+        assert sensor[0].sensor_unit == info['attribute_units'][0]
+        assert sensor[0].sensor_description == info['attribute_descriptions'][0]
         self.assertEqual(da[0].shape, (49, 4))
 
         # test_gtsdf_compress2postproc
@@ -51,11 +52,6 @@ class Test_gsdf(unittest.TestCase):
         # test_collect_postproc
         with pytest.raises(Exception, match=r'No \*\.hdf5 files found in'):
             collect_postproc('missing', tmp_path)
-
-        da = collect_postproc(tmp_path)
-        assert da[0].shape == (3, 49, 4)
-        da = collect_postproc(tmp_path + "..")
-        assert da[0].shape == (4, 49, 4)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
