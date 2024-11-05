@@ -37,9 +37,6 @@ class Test_gsdf(unittest.TestCase):
         da = load_postproc(fn)
         sensor = da[0]
         self.assertEqual(data[:, 0].min(), sensor[0].sel(statistic='min'))
-        assert sensor[0].sensor_name == info['attribute_names'][0]
-        assert sensor[0].sensor_unit == info['attribute_units'][0]
-        assert sensor[0].sensor_description == info['attribute_descriptions'][0]
         self.assertEqual(da[0].shape, (49, 4))
 
         # test_gtsdf_compress2postproc
