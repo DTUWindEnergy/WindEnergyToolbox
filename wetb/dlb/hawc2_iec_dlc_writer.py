@@ -2,7 +2,7 @@ import os
 import warnings
 from wetb.hawc2.hawc2_input_writer import HAWC2InputWriter
 from wetb.hawc2.tests import test_files
-from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
+from wetb.dlb.iec64100_1 import DTU_IEC64100_1_Ref_DLB
 
 """
 TODO: delete wind ramp / replace wind section
@@ -90,7 +90,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
 
 
 if __name__ == '__main__':
-    dlb = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)
+    dlb = DTU_IEC64100_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)
     path = os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/'
     writer = HAWC2_IEC_DLC_Writer(path + 'htc/DTU_10MW_RWT.htc', 180)
     p = writer.from_pandas(dlb['DLC14'])

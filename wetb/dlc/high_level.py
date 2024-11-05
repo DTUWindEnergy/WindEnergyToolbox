@@ -32,11 +32,11 @@ def Weibull(u, k, start, stop, step):
 
 def Weibull2(u, k, wsp_lst):
     C = 2 * u / np.sqrt(np.pi)
+
     def cdf(x): return -np.exp(-(x / C) ** k)
-    edges = [wsp_lst[0] - (wsp_lst[1] - wsp_lst[0])/2]
-    edges += [(wsp_lst[i] + wsp_lst[i + 1])/2 for i in range(len(wsp_lst) - 1)]
-    edges += [wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2])/2]
-    return {wsp_lst[i]: cdf(edges[i + 1]) - cdf(edges[i]) for i in range(len(wsp_lst))}
+    edges = np.r_[wsp_lst[0] - (wsp_lst[1] - wsp_lst[0]) / 2, (wsp_lst[1:] + wsp_lst[:-1]) /
+                  2, wsp_lst[-1] + (wsp_lst[-1] - wsp_lst[-2]) / 2]
+    return [-cdf(e1) + cdf(e2) for wsp, e1, e2 in zip(wsp_lst, edges[:-1], edges[1:])]
 
 
 def Weibull_IEC(Vref, Vhub_lst):
@@ -261,7 +261,7 @@ class DLCHighLevel(object):
                 files.extend(dlc_files)
         keys = list(zip(*self.dist_value_keys))[1]
         fmt = self.format_tag_value
-        tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).lower().split("_"), keys)] for f in files]
+        tags = [[fmt(tag.replace(key, "")) for tag, key in zip(os.path.basename(f).split("_"), keys)] for f in files]
         dlc_tags = list(zip(*tags))[0]
         files_dict = {dlc_tag: {} for dlc_tag in dlc_tags}
         for tag_row, f in zip(tags, files):
