@@ -8,9 +8,8 @@ Created on Tue Feb 13 12:58:25 2018
 
 import numpy as np
 import numpy.typing as npt
+from typing import List, Tuple, Union
 import scipy
-
-from wetb.hawc2.Hawc2io import ReadHawc2
 from wetb.utils.rotation import projection_2d
 
 
@@ -95,7 +94,7 @@ def compute_env_of_env(
 
 def int_envelope(
     ch1, ch2, Nx: int
-) -> tuple[
+) -> Tuple[
     npt.NDArray[np.float64],
     npt.NDArray[np.float64],
     npt.NDArray[np.float64],
@@ -231,7 +230,7 @@ def proj_envelope(
 
 def closed_contour(
     cloud: npt.NDArray[np.float64],
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Returns a tuple of the vertices of the closed convex contour, and the indices of the vertices in the input array.
 
     Parameters
@@ -321,7 +320,7 @@ def compute_envelope(
 def projected_extremes(
     signal: npt.NDArray,
     angles: npt.NDArray = np.linspace(-150, 180, 12),
-    sweep_angle: float | None = None,
+    sweep_angle: Union[float, None] = None,
     degrees: bool = True
 ) -> npt.NDArray:
     """_summary_
@@ -398,8 +397,8 @@ def projected_extremes(
 
 
 def compute_ensemble_2d_envelope(
-    channels: list[int], result_files: list[str]
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    channels: List[int], result_files: List[str]
+) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Calculate the ensemble envelope of an arbitrary number of 2D signals. The envelope is calculated as a convex hull.
 
     Parameters
@@ -433,6 +432,7 @@ def compute_ensemble_2d_envelope(
     individual_envelopes = []
 
     # Open result files in a loop, using the same variable to store the input to avoid excessive memory use
+    from wetb.hawc2.Hawc2io import ReadHawc2
     for result_file in result_files:
         res = ReadHawc2(f"{result_file}")
         # Make sure the queried channels are available, otherwise raise error.

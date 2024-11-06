@@ -1,5 +1,6 @@
 import warnings
 from wetb.gtsdf.unix_time import from_unix
+from wetb.utils.postprocs import statistics
 try:
     import h5py
 except ImportError as e:
@@ -10,6 +11,7 @@ import numpy.ma as ma
 import xarray as xr
 import glob
 import tqdm
+import inspect
 
 block_name_fmt = "block%04d"
 
@@ -434,85 +436,265 @@ def check_type(f):
     if 'no_blocks' not in f.attrs:
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
 
+    
+def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwargs) -> xr.DataArray:
+    """
+    Call a given postproc function with its postproc-specific and file-specific parameters, and return a DataArray from its output if any.
 
-def _get_statistic(time, data, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    def get_stat(stat):
-        if hasattr(np, stat):
-            return getattr(np, stat)(data, 0)
-        elif (stat.startswith("eq") and stat[2:].isdigit()):
-            from wetb.fatigue_tools.fatigue import eq_load
-            m = float(stat[2:])
-            return [eq_load(sensor, 46, m, time[-1] - time[0] + time[1] - time[0])[0][0] for sensor in data.T]
-    return np.array([get_stat(stat) for stat in statistics]).T
+    Parameters
+    ----------
+    postproc_function : function
+        Function that executes a given postproc
+    file_h5py : h5py.File object
+        h5py.File object in append mode from hdf5 file
+    file : str
+        Absolute path to hdf5 file
+    time_data_info : tuple, optional
+        Tuple containing the arrays time, data and the dictionary info. If passed, it is not necessary
+        to load them from the hdf5 file. The default is None.
+    **kwargs : dict, optional
+        Dictionary containing the postproc-specific parameters that postproc_function takes.
+
+    Returns
+    -------
+    postproc_output : xarray.DataArray
+        DataArray from postproc_function output if any, otherwise None. Its name will be
+        the same as the postproc_function
+
+    """
+    print(f"Calculating {postproc_function.__name__} for '{file}'")
+    if time_data_info is None:
+        time_data_info = load(file)
+    time, data, info = time_data_info
+    postproc_function_args = inspect.signature(postproc_function).parameters.keys()
+    file_args = {}
+    for item in ['file_h5py', 'file', 'time', 'data', 'info']:
+        if item in postproc_function_args:
+            file_args[item] = locals()[item]
+    postproc_output = postproc_function(**file_args, **kwargs)
+    if postproc_output is None:
+        return
+    if isinstance(postproc_output, np.ndarray) or isinstance(postproc_output, list):
+        postproc_output = xr.DataArray(postproc_output)
+    postproc_output.name = postproc_function.__name__
+    return postproc_output
 
 
-def _add_statistic_data(file, stat_data, statistics=['min', 'mean',
-                        'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
+def write_postproc(file, postproc_output) -> None:
+    """
+    Write a postproc DataArray to hdf5 file.\n
+    A block called the same as the DataArray is created under the block 'postproc'.
+    A dataset called 'data' is created under the previous block for the DataArray data
+    with its dims in the attribute "dims", and also a dataset for each DataArray coordinate
+    with its dimension in the attribute "dim".
+
+    Parameters
+    ----------
+    file : h5py.File object
+        h5py.File object in append mode from hdf5 file
+    postproc_output : xarray.DataArray
+        DataArray whose name, data, dims and coords are written into hdf5 file.
+
+    Returns
+    -------
+    None
+
+    """
+    if postproc_output is None:
+        return
+    print(f"Writing {postproc_output.name} to '{file.filename}'")
+    if 'postproc' not in file:
+        file.create_group('postproc')
+    if postproc_output.name in file['postproc']:
+        del file['postproc'][postproc_output.name]
+    file['postproc'].create_group(postproc_output.name)
+    file['postproc'][postproc_output.name].create_dataset(name='data', data=postproc_output.astype(float))
+    file['postproc'][postproc_output.name]['data'].attrs['dims'] = [d.encode('utf-8') for d in postproc_output.dims]
+    for coord in postproc_output.coords:
+        if np.issubdtype(postproc_output.coords[coord].dtype, np.str_):
+            file['postproc'][postproc_output.name].create_dataset(name=coord, data=np.array([v.encode('utf-8') for v in postproc_output.coords[coord].values]))
+        else:
+            file['postproc'][postproc_output.name].create_dataset(name=coord, data=postproc_output.coords[coord].astype(float))
+        file['postproc'][postproc_output.name][coord].attrs['dim'] = postproc_output.coords[coord].dims[0].encode('utf-8')
+
+
+def add_postproc(file, config={statistics: {'statistics': ['min', 'mean', 'max', 'std']}}) -> list:
+    """
+    Call get_postproc and write_postproc for each postproc in config.
+
+    Parameters
+    ----------
+    file : str
+        Absolute path to hdf5 file
+    config : dict, optional
+        Dictionary containing postprocs. Its keys are functions and its values are dicts for their postproc-specific parameters.\n
+        Example:\n
+        {statistics: {'statistics': ['min', 'mean', 'max', 'std']},\n
+        extreme_loads: {'sensors_info': [('Tower base shear force', 0, 1), ('Blade 1 '.' bending moment', 9, 10)]}}\n
+        The default is {statistics: {'statistics': ['min', 'mean', 'max', 'std']}}.
+
+    Returns
+    -------
+    postproc_output_list : list of DataArrays
+        List of DataArrays output by each postproc function
+
+    """
+    time_data_info = load(file)
     f = h5py.File(file, "a")
-    if 'Statistic' in f:
-        del f["Statistic"]
-    stat_grp = f.create_group("Statistic")
-    stat_grp.create_dataset("statistic_names", data=np.array([v.encode('utf-8') for v in statistics]))
-    stat_grp.create_dataset("statistic_data", data=stat_data.astype(float))
+    postproc_output_list = []
+    for postproc, kwargs in config.items():
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
+        write_postproc(file=f, postproc_output=postproc_output)
+        if postproc_output is not None:
+            postproc_output_list.append(postproc_output)
     f.close()
+    return postproc_output_list
+    
 
+def load_postproc(filename, 
+                  config={statistics: {'statistics': ['min', 'mean', 'max', 'std']}},
+                  force_recompute=False) -> list:
+    """
+    Read data from hdf5 file for each postproc in config and return a list of DataArrays. If any postproc in config is missing in the hdf5 file
+    it will compute it and write it as well. This can be also be done to rewrite postprocs in config that already are in the hdf5 file
+    by passing force_recompute=True.
 
-def add_statistic(file, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    time, data, info = load(file)
-    stat_data = _get_statistic(time, data, statistics)
-    _add_statistic_data(file, stat_data, statistics)
+    Parameters
+    ----------
+    filename : str
+        Absolute path to hdf5 file
+    config : dict, optional
+        Dictionary containing postprocs. Its keys are functions and its values are dicts for their postproc-specific parameters.\n
+        Example:\n
+        {statistics: {'statistics': ['min', 'mean', 'max', 'std']},\n
+        extreme_loads: {'sensors_info': [('Tower base shear force', 0, 1), ('Blade 1 '.' bending moment', 9, 10)]}}\n
+        The default is {statistics: {'statistics': ['min', 'mean', 'max', 'std']}}.
+    force_recompute : bool, optional
+        Whether all postprocs in config should be calculated and written to hdf5 file (True) or only the ones that
+        are missing (False). The default is False.
 
+    Returns
+    -------
+    data_arrays: list of DataArrays
+       List of DataArrays from each block under 'postproc' in hdf5 file that also is in config
 
-def load_statistic(filename, xarray=True):
+    """
+    if force_recompute:
+        postproc_output_list = add_postproc(filename, config)
+        return postproc_output_list
     f = _open_h5py_file(filename)
-    info = _load_info(f)
-    if 'Statistic' not in f:
-        print(f"Calculating statistics for '{filename}'")
+    if 'postproc' not in f:
         f.close()
-        add_statistic(filename)
-        return load_statistic(filename, xarray=xarray)
-
-    stat_names = decode(f['Statistic']['statistic_names'])
-    stat_data = np.array(f['Statistic']['statistic_data'])
+        postproc_output_list = add_postproc(filename, config)
+        return postproc_output_list
+    # Check which postprocs in config are missing in the hdf5 file
+    config_missing = {}
+    for postproc, args in config.items():
+        if postproc.__name__ not in f['postproc']:
+            config_missing[postproc] = args
+    # Add missing postprocs in config to hdf5 file, if there are any
+    if config_missing != {}:
+        f.close()
+        add_postproc(filename, config_missing)
+        f = _open_h5py_file(filename)
+    # Return list of DataArrays for all postprocs in config
+    data_arrays = []
+    for postproc in config.keys():
+        try:
+            data_arrays.append(xr.DataArray(name=postproc.__name__,
+                                            data=f['postproc'][postproc.__name__]['data'],
+                                            dims=f['postproc'][postproc.__name__]['data'].attrs['dims'],
+                                            coords={coord: ([v.decode('latin1') for v in f['postproc'][postproc.__name__][coord]]
+                                                                if np.issubdtype(f['postproc'][postproc.__name__][coord].dtype, bytes)
+                                                                else 
+                                                            f['postproc'][postproc.__name__][coord])
+                                                                    if coord in f['postproc'][postproc.__name__]['data'].attrs['dims']
+                                                                    else 
+                                                            ((f['postproc'][postproc.__name__][coord].attrs['dim'], [v.decode('latin1') for v in f['postproc'][postproc.__name__][coord]])
+                                                                if np.issubdtype(f['postproc'][postproc.__name__][coord].dtype, bytes)
+                                                                else 
+                                                            (f['postproc'][postproc.__name__][coord].attrs['dim'], f['postproc'][postproc.__name__][coord]))
+                                                                        for coord in f['postproc'][postproc.__name__] if coord != 'data'}))
+        except:
+            continue
     f.close()
-    if xarray:
-        return xr.DataArray(stat_data, dims=['sensor_name', 'stat'],
-                            coords={'sensor_name': info['attribute_names'], 'stat': stat_names,
-                                    'sensor_unit': (('sensor_name', info['attribute_units'])),
-                                    'sensor_description': ('sensor_name', info['attribute_descriptions'])})
-    else:
-        return stat_data, stat_names, info
+    return data_arrays
 
 
-def compress2statistics(filename, statistics=['min', 'mean', 'max', 'std', 'eq3', 'eq4', 'eq6', 'eq8', 'eq10', 'eq12']):
-    time, data, info = load(filename)
-    stat_data = _get_statistic(time, data, statistics)
-    _save_info(filename, data.shape, **info)
-    _add_statistic_data(filename, stat_data, statistics)
+def collect_postproc(folder, recursive=True,
+                     config={statistics: {'statistics': ['min', 'mean', 'max', 'std']}},
+                     force_recompute=False) -> list:
+    """
+    Call load_postproc for all hdf5 files in folder and collect into a single dataArray for each postproc in config.
+    
+    Parameters
+    ----------
+    folder : str
+        Absolute path to folder containing hdf5 files
+    recursive : bool, optional
+        Whether to include hdf5 files in subfolders (True) or not (False). The default is True.
+    config : dict, optional
+        Dictionary containing postprocs. Its keys are functions and its values are dicts for their postproc-specific parameters.\n
+        Example:\n
+        {statistics: {'statistics': ['min', 'mean', 'max', 'std']},\n
+        extreme_loads: {'sensors_info': [('Tower base shear force', 0, 1), ('Blade 1 '.' bending moment', 9, 10)]}}\n
+        The default is {statistics: {'statistics': ['min', 'mean', 'max', 'std']}}.
+    force_recompute : bool, optional
+        Whether all postprocs in config should be calculated and written to hdf5 file (True) or only the ones that
+        are missing (False). The default is False.
 
+    Returns
+    -------
+    data_arrays: list of DataArrays
+        List of DataArrays from each block under 'postproc' in hdf5 file that also is in config. Each DataArray has
+        an extra dimension 'filename' since DataArrays from all files have been collected into a single one
 
-def collect_statistics(folder, root='.', filename='*.hdf5', recursive=True):
+    """
     if recursive:
-        p = os.path.join(root, folder, '**', filename)
+        p = os.path.join('.', folder, '**', '*.hdf5')
     else:
-        p = os.path.join(root, folder, filename)
-    fn_lst = glob.glob(p, recursive=recursive)  # python<310 does not takes root_dir argument
-
+        p = os.path.join('.', folder, '*.hdf5')
+    fn_lst = glob.glob(p, recursive=recursive)
     if not fn_lst:
-        raise Exception(f'No {filename} files found in {os.path.abspath(os.path.join(root, folder))}')
-    stat_names, info = load_statistic(fn_lst[0], xarray=False)[1:]
-    sensor_names = info['attribute_names']
+        raise Exception(f"No *.hdf5 files found in {os.path.abspath(os.path.join('.', folder))}")
+    postproc_output_list_all_files = [load_postproc(fn, config=config, force_recompute=force_recompute) for fn in tqdm.tqdm(sorted(fn_lst))]
+    data_arrays = []
+    for i in range(len(postproc_output_list_all_files[0])):
+        name = postproc_output_list_all_files[0][i].name
+        data = np.array([f[i] for f in postproc_output_list_all_files])
+        dims = ('filename',) + postproc_output_list_all_files[0][i].dims
+        coords = postproc_output_list_all_files[0][i].coords
+        data_arrays.append(xr.DataArray(name=name, data=data, dims=dims, coords=coords))
+        data_arrays[-1].coords['filename'] = [os.path.relpath(fn, '.') for fn in fn_lst]
+    return data_arrays                   
+    
 
-    def get_stat(fn):
-        stat_data, _stat_names, _info = load_statistic(fn, xarray=False)
-        assert stat_names == stat_names
-        assert _info['attribute_names'] == sensor_names
-        return stat_data
+def compress2postproc(file, config={statistics: {'statistics': ['min', 'mean', 'max', 'std']}}) -> None:
+    """
+    Compress hdf5 file into only the postproc data, removing all time series.
 
-    stats_data = [get_stat(fn) for fn in tqdm.tqdm(sorted(fn_lst))]
-    return xr.DataArray(stats_data,
-                        dims=['filename', 'sensor_name', 'stat'],
-                        coords={'filename': [os.path.relpath(fn, root) for fn in fn_lst],
-                                'sensor_name': info['attribute_names'], 'stat': stat_names,
-                                'sensor_unit': (('sensor_name', info['attribute_units'])),
-                                'sensor_description': ('sensor_name', info['attribute_descriptions'])})
+    Parameters
+    ----------
+    file : str
+        Absolute path to hdf5 file
+    config : dict, optional
+        Dictionary containing postprocs. Its keys are functions and its values are dicts for their postproc-specific parameters.\n
+        Example:\n
+        {statistics: {'statistics': ['min', 'mean', 'max', 'std']},\n
+        extreme_loads: {'sensors_info': [('Tower base shear force', 0, 1), ('Blade 1 '.' bending moment', 9, 10)]}}\n
+        The default is {statistics: {'statistics': ['min', 'mean', 'max', 'std']}}.
+
+    Returns
+    -------
+    None
+
+    """
+    time_data_info = load(file)
+    time, data, info = time_data_info
+    _save_info(file, data.shape, **info)
+    f = h5py.File(file, "a")
+    for postproc, kwargs in config.items():
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
+        write_postproc(file=f, postproc_output=postproc_output)
+    f.close()
+      
