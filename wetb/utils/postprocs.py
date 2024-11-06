@@ -33,7 +33,7 @@ def statistics(time, data, info,
 
     Returns
     -------
-    DataArray (Nsensors x Nstatistics)
+    xarray.DataArray (Nsensors x Nstatistics)
         DataArray containing statistics for all sensors.\n
         Dims: sensor_name, statistic\n
         Coords: sensor_name, statistic, sensor_unit, sensor_description
@@ -77,7 +77,7 @@ def extreme_loads(data, info, sensors_info, angles=np.linspace(-150,180,12), swe
 
     Returns
     -------
-    DataArray (Nsensors x Ndirections)
+    xarray.DataArray (Nsensors x Ndirections)
         DataArray containing extreme loads for each sensor in sensors_info in each direction in angles.\n
         Dims: sensor_name, angle\n
         Coords: sensor_name, angle, sensor_unit
@@ -110,7 +110,7 @@ def extreme_loads_matrix(data, sensors_info) -> xr.DataArray:
 
     Returns
     -------
-    DataArray (Nsensors x 14)
+    xarray.DataArray (Nsensors x 14)
         DataArray containing extreme load states (Fx, Fy, Fz, Mx, My, Mz) for each sensor in sensors_info
         for each case where a load is maximum or minimum (6 x 2 = 12) plus the 2 cases where Fres and Mres are maximum.\n
         Dims: sensor_name, driver, load\n
@@ -176,7 +176,7 @@ def fatigue_loads(data, info, sensors_info, m_list, neq=1e7, no_bins=46, angles=
 
     Returns
     -------
-    DataArray (Nsensors x Nwoehlerslopes x Ndirections)
+    xarray.DataArray (Nsensors x Nwoehlerslopes x Ndirections)
         DataArray containing directional fatigue loads for each sensor in sensors_info, for each Woehler slope in m_list
         and for each direction in angles.\n
         Dims: sensor_name, m, angle\n
@@ -228,7 +228,7 @@ def markov_matrices(data, info, sensors_info, no_bins=46, angles=np.linspace(-15
 
     Returns
     -------
-    DataArray (Nsensors x Ndirections x Nbins x 2)
+    xarray.DataArray (Nsensors x Ndirections x Nbins x 2)
         DataArray containing directional number of cycles and load amplitude 
         for each sensor in sensors_info, for each direction in angles and
         for each bin in no_bins.\n

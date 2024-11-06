@@ -9,7 +9,7 @@ def DLB_extreme_loads_to_excel(DLB_extreme_loads, path):
 
     Parameters
     ----------
-    DLB_extreme_loads : DataArray ('sensor_name', 'angle', '(value, dlc, group)')
+    DLB_extreme_loads : xarray.DataArray ('sensor_name', 'angle', '(value, dlc, group)')
         DataArray containing the extreme loads of the DLB. It matches the
         output from get_DLB_extreme_loads
     path : str
@@ -50,7 +50,7 @@ def DLB_fatigue_loads_to_excel(DLB_fatigue_loads, path):
 
     Parameters
     ----------
-    DLB_fatigue_loads : DataArray ('sensor_name', 'angle', 'm')
+    DLB_fatigue_loads : xarray.DataArray ('sensor_name', 'angle', 'm')
         DataArray containing the fatigue loads of the DLB. It matches the
         output from get_DLB_fatigue_loads
     path : str
@@ -84,7 +84,7 @@ def plot_DLB_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
 
     Parameters
     ----------
-    DLB_extreme_loads : DataArray ('sensor_name', 'angle', '(value, dlc, group)')
+    DLB_extreme_loads : xarray.DataArray ('sensor_name', 'angle', '(value, dlc, group)')
         DataArray containing the extreme loads of the DLB. It matches the
         output from get_DLB_extreme_loads
     folder : str
@@ -124,7 +124,7 @@ def plot_DLB_fatigue_loads(DLB_fatigue_loads, folder, extension='.png'):
 
     Parameters
     ----------
-    DLB_fatigue_loads : DataArray ('sensor_name', 'angle', 'm')
+    DLB_fatigue_loads : xarray.DataArray ('sensor_name', 'angle', 'm')
         DataArray containing the fatigue loads of the DLB. It matches the
         output from get_DLB_fatigue_loads
     folder : str

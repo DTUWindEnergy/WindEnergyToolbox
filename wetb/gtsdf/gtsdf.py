@@ -457,7 +457,7 @@ def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwar
 
     Returns
     -------
-    postproc_output : DataArray
+    postproc_output : xarray.DataArray
         DataArray from postproc_function output if any, otherwise None. Its name will be
         the same as the postproc_function
 
@@ -492,7 +492,7 @@ def write_postproc(file, postproc_output) -> None:
     ----------
     file : h5py.File object
         h5py.File object in append mode from hdf5 file
-    postproc_output : DataArray
+    postproc_output : xarray.DataArray
         DataArray whose name, data, dims and coords are written into hdf5 file.
 
     Returns

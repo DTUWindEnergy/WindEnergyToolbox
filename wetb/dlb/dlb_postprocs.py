@@ -11,7 +11,7 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
 
     Parameters
     ----------
-    extreme_loads : DataArray (Nsimulations x Nsensors x Ndirections)
+    extreme_loads : xarray.DataArray (Nsimulations x Nsensors x Ndirections)
         DataArray containing extreme values for each simulation
         for each sensor in sensors_info in each direction in angles.
         It matches the output from collect_postproc\n
@@ -94,7 +94,7 @@ def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
 
     Parameters
     ----------
-    markov_matrices : DataArray (Nsimulations x Nsensors x Ndirections x Nbins x 2)
+    markov_matrices : xarray.DataArray (Nsimulations x Nsensors x Ndirections x Nbins x 2)
         DataArray containing directional number of cycles and load amplitude 
         for each simulation for each sensor in sensors_info,
         for each direction in angles and for each bin in no_bins.\n
@@ -109,7 +109,7 @@ def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
 
     Returns
     -------
-    DataArray (Nsensors x Ndirections x Nwoehlerslopes)
+    xarray.DataArray (Nsensors x Ndirections x Nwoehlerslopes)
         DataArray containing the fatigue loads of the DLB for each sensor,
         direction and Woehler slope.\n
         Dims: sensor_name, angle, m\n
