@@ -654,10 +654,10 @@ def collect_postproc(folder, recursive=True,
         p = os.path.join('.', folder, '**', '*.hdf5')
     else:
         p = os.path.join('.', folder, '*.hdf5')
-    fn_lst = glob.glob(p, recursive=recursive)
+    fn_lst = sorted(glob.glob(p, recursive=recursive))
     if not fn_lst:
         raise Exception(f"No *.hdf5 files found in {os.path.abspath(os.path.join('.', folder))}")
-    postproc_output_list_all_files = [load_postproc(fn, config=config, force_recompute=force_recompute) for fn in tqdm.tqdm(sorted(fn_lst))]
+    postproc_output_list_all_files = [load_postproc(fn, config=config, force_recompute=force_recompute) for fn in tqdm.tqdm(fn_lst)]
     data_arrays = []
     for i in range(len(postproc_output_list_all_files[0])):
         name = postproc_output_list_all_files[0][i].name
