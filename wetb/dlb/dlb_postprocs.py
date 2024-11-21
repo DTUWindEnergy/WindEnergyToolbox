@@ -159,3 +159,166 @@ def mean_upperhalf(group):
     """
     upperhalf = sorted(group, reverse=True)[0:int(len(group)/2)]
     return np.mean(upperhalf)
+
+def get_weight_dict(file_list,
+                    lifetime,
+                    Vin,
+                    Vr,
+                    Vout,
+                    Vref=None,
+                    Vstep=2,
+                    waves=False,
+                    prob_dataarray=None,
+                    wsp_list=None,
+                    wdir_weight_dict={0: 1},
+                    wvdir_weight_dict={0: 1},
+                    DLC_scaling_factors_per_wsp=None,
+                    DLC_scaling_factors_per_yaw={'DLC12': {0: 0.5, 10: 0.25, 350: 0.25},
+                                                 'DLC24': {20: 0.5, 340: 0.5},
+                                                 'DLC64': {8: 0.5, 352: 0.5}},
+                    n_seeds={'DLC12': 6,
+                             'DLC24': 3,
+                             'DLC64': 6},
+                    n_events=None,
+                    sim_time={'DLC12': 600,
+                              'DLC24': 600,
+                              'DLC31': 100,
+                              'DLC41': 100,
+                              'DLC64': 600},
+                    scaling_factor_DLC64_Vin_Vout=0.025):
+    """
+    Calculate the dictionary containing the weight for each simulation for the
+    calculation of damage equivalent loads of the whole DLB.
+
+    Parameters
+    ----------
+    file_list : list (Nsimulations)
+        List containing the paths to all simulations 
+    lifetime : int or float
+        Turbine's lifetime in years
+    Vin: int or float
+        Cut-in wind speed
+    Vr: int or float
+        Rated wind speed
+    Vout: int or float
+        Cut-out wind speed
+    Vref: int or float, optional
+        Reference wind speed. Only used if prob_dataarray is not passed. 
+        The default is None.
+    Vstep: int or float, optional
+        Step between the different wind speeds. Only used if 
+        prob_dataarray or wsp_list are not passed. The default is 2.
+    waves: bool, optional
+        Whether there are waves or not. The default is False 
+    prob_dataarray: xarray.DataArray, optional
+        DataArray containing the probability of each combination of wind speed 
+        and wind direction (and wave direction if waves=True). The default is None.
+    wsp_list: list, optional
+        List containing all simulated wind speeds. Only used if prob_dataarray is not passed.
+        The default is None.
+    wdir_weight_dict: dict, optional
+        Dictionary containing the weights for each wind direction. Only used if
+        prob_dataarray is not passed. The default is {0: 1}.
+    wvdir_weight_dict: dict, optional
+        Dictionary containing the weights for each wave direction. Only used if
+        prob_dataarray is not passed and waves is True. The default is {0: 1}.
+    DLC_scaling_factors_per_wsp: dict, optional
+        Dictionary containing the scaling factors per DLC and windspeed, i.e. 
+        {'DLC1': {v1: sf11, v2: sf12, ...}, 'DLC2': {v1: sf21, v2: sf22, ...}, ...}.
+        The default is None, in which case it is assumed that DLC64 takes 2.5% of time
+        between Vin and Vout and DLC24 takes 50 hours per year.
+    DLC_scaling_factors_per_yaw: dict, optional
+        Dictionary containing the scaling factors per DLC and yaw misalignment.
+        The default is {'DLC12': {0: 0.5, 10: 0.25, 350: 0.25},
+                        'DLC24': {20: 0.5, 340: 0.5},
+                        'DLC64': {8: 0.5, 352: 0.5}}.
+    n_seeds: dict, optional
+        Dictionary containing the number of seeds per DLC per wind speed and wind direction.
+        The default is {'DLC12': 6,
+                        'DLC24': 3,
+                        'DLC64': 6}.
+    n_events: dict, optional
+        Dictionary containing the number of events per DLC per windspeed.
+        The default is {'DLC31': {Vin: 1000, Vr: 50, Vout: 50},
+                        'DLC41': {Vin: 1000, Vr: 50, Vout: 50}}.
+    sim_time: dict, optional
+        Dictionary containing the simulation time per DLC.
+        The default is {'DLC12': 600,
+                        'DLC24': 600,
+                        'DLC31': 100,
+                        'DLC41': 100,
+                        'DLC64': 600} 
+    scaling_factor_DLC64_Vin_Vout: int or float, optional
+        Percentage of time that DLC64 takes between Vin and Vout. Only used if
+        DLC_scaling_factors_per_wsp is not passed.
+        The default is 0.025.
+            
+    Returns
+    -------
+    dict (Nsimulations)
+        Dictionary containing the weight for each simulation.
+
+    """
+    if prob_dataarray is None:
+        if wsp_list is None:
+            wsp_list = list(range(Vin, int(0.7*Vref) + 1, Vstep))
+        coords = {'wsp': wsp_list}
+        from wetb.dlc.high_level import Weibull_IEC
+        prob_data = Weibull_IEC(Vref=Vref, Vhub_lst=wsp_list)
+        prob_data = prob_data[:, np.newaxis]*np.array(list(wdir_weight_dict.values()))[np.newaxis, :]
+        coords['wdir'] = list(wdir_weight_dict.keys())
+        if waves:
+            prob_data = prob_data[:, :, np.newaxis]*np.array(list(wvdir_weight_dict.values()))[np.newaxis, :]
+            coords['wvdir'] =  list(wvdir_weight_dict.keys())
+            prob_dataarray = xr.DataArray(data=prob_data,
+                                          dims=('wsp', 'wdir', 'wvdir'),
+                                          coords=coords)
+        else:
+            prob_dataarray = xr.DataArray(data=prob_data,
+                                          dims=('wsp', 'wdir'),
+                                          coords=coords)
+    else:
+        wsp_list = list(prob_dataarray.wsp.values)
+    
+    if DLC_scaling_factors_per_wsp is None:
+        prob_Vin_Vout = prob_dataarray.where((prob_dataarray.wsp >= Vin) & (prob_dataarray.wsp <= Vout), drop=True).sum().values[()]
+        scaling_factor_DLC24 = (50/prob_Vin_Vout)/(365.25*24)
+        scaling_factor_DLC12 = 1 - scaling_factor_DLC24 - scaling_factor_DLC64_Vin_Vout                
+        DLC_scaling_factors_per_wsp = {'DLC12': {wsp: scaling_factor_DLC12 if Vin <= wsp <= Vout else 0 for wsp in wsp_list},
+                                       'DLC24': {wsp: scaling_factor_DLC24 if Vin <= wsp <= Vout else 0 for wsp in wsp_list},
+                                       'DLC64': {wsp: scaling_factor_DLC64_Vin_Vout if Vin <= wsp <= Vout else 1 for wsp in wsp_list}}
+       
+    if n_events is None:
+        n_events = {'DLC31': {Vin: 1000, Vr: 50, Vout: 50},
+                    'DLC41': {Vin: 1000, Vr: 50, Vout: 50}} 
+    
+    file_hour_dict = {}
+    for file in file_list:
+        file = os.path.basename(file)
+        i1 = file.find('DLC')
+        i2 = file.find('_', i1)
+        DLC = file[i1:i2]
+        i3 = file.find('wsp')
+        i4 = file.find('_', i3)
+        wsp = int(file[i3 + 3:i4])
+        if DLC in ['DLC12', 'DLC24', 'DLC64']:
+            i5 = file.find('wdir')
+            i6 = file.find('_', i5)
+            wdir = int(file[i5 + 4:i6])
+            i7 = file.find('yaw')
+            i8 = file.find('_', i7)
+            yaw = int(file[i7 + 3:i8])
+            if waves:
+                i9 = file.find('wvdir')
+                i10 = file.find('_', i9)
+                wvdir = int(file[i9 + 5:i10])
+                file_hour_dict[file] = (365.25*24*prob_dataarray.sel(wsp=wsp).sel(wdir=wdir).sel(wvdir=wvdir).values[()]*
+                DLC_scaling_factors_per_wsp[DLC][wsp]*DLC_scaling_factors_per_yaw[DLC][yaw]/n_seeds[DLC])
+            else:
+                file_hour_dict[file] = (365.25*24*prob_dataarray.sel(wsp=wsp).sel(wdir=wdir).values[()]*
+                DLC_scaling_factors_per_wsp[DLC][wsp]*DLC_scaling_factors_per_yaw[DLC][yaw]/n_seeds[DLC])
+        elif DLC in ['DLC31', 'DLC41']:
+            file_hour_dict[file] = n_events[DLC][wsp]*sim_time[DLC]/3600
+    
+    weight_dict = {file: lifetime*hours*3600/sim_time[DLC] for file, hours in file_hour_dict.items()}
+    return weight_dict
