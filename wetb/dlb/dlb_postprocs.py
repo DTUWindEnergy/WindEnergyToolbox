@@ -5,18 +5,70 @@ import xarray as xr
 from copy import copy
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
-def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_list, sensor_list):
+def get_DLC(filename):
+    filename = os.path.basename(filename)
+    i1 = filename.find('DLC')
+    i2 = filename.find('_', i1)
+    if i2 == -1:
+        DLC = filename[i1:]
+    else:
+        DLC = filename[i1:i2]
+    return DLC
+
+def apply_regex(filename, regex):
+    filename = os.path.basename(filename)
+    if re.match(regex, filename) is None:
+        return False
+    else:
+        return True
+    
+def get_groups(filename, regex_list):
+    for regex in regex_list.values():
+        match = re.match(regex, os.path.basename(filename))
+        if match is not None:
+            break
+    return match.group(0) if match is not None else None
+
+def group_simulations(dataarray, regex_list):
+    groups = np.unique(np.vectorize(get_groups)(dataarray.filename, regex_list))
+    grouped_simulations = {}
+    for group in groups:
+        grouped_simulations[group] = dataarray.sel(filename=np.vectorize(apply_regex)(dataarray.filename, group))
+    return grouped_simulations
+
+def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
+    grouped_simulations = group_simulations(dataarray, regex_list)
+    group_values_dict = {}
+    for group, simulations in grouped_simulations.items():
+        DLC = get_DLC(group)
+        values = xr.apply_ufunc(
+        metric_list[DLC], 
+        simulations,
+        input_core_dims=[["filename"]],
+        vectorize=True)*safety_factor_list[DLC]
+        group_values_dict[group] = values
+    group_values = xr.concat(list(group_values_dict.values()), 'group')
+    group_values = group_values.drop_vars('variable')
+    group_values.coords['group'] = list(group_values_dict.keys())
+    return group_values
+
+def get_extreme_values(dataarray):
+    max_values = dataarray.max('group')
+    max_indices = dataarray.argmax('group')
+    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
+    return max_values
+
+def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_list):
     """
-    Calculate the extreme loads for the whole DLB.
+    Calculate the extreme values for the whole DLB.
 
     Parameters
     ----------
-    extreme_loads : xarray.DataArray (Nsimulations x Nsensors x Ndirections)
-        DataArray containing extreme values for each simulation
-        for each sensor in sensors_info in each direction in angles.
-        It matches the output from collect_postproc\n
-        Dims: filename, sensor_name, angle\n
-        Coords: filename, sensor_name, angle, sensor_unit
+    dataarray : xarray.DataArray (Nsimulations x *)
+        DataArray containing collected data for each simulation. Must have
+        filename as leading dimension and can have any number of extra dimensions.
+        Dims: filename, *\n
+        Coords: filename, *
     regex_list : dict
         Dictionary containing the regular expression for grouping simulations
         for each DLC.
@@ -33,60 +85,15 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
     Returns
     -------
     DataArray (Nsensors x Ndirections x 3)
-        DataArray containing the extreme loads of the DLB, as well as the DLC
-        and group of simulations driving each load.\n
-        Dims: sensor_name, angle, (value, dlc, group)\n
-        Coords: sensor_name, angle, sensor_unit
+        DataArray containing the extreme values of the DLB, as well as the DLC
+        and group of simulations driving each sensor.\n
+        Dims: dataarray.dims without filename\n
+        Coords: dataarray.dims without filename, group
 
     """
-    max_loads_per_simulation = {}
-    for i in range(extreme_loads.shape[0]):
-        file = os.path.basename(extreme_loads[i].coords['filename'].values[()])
-        for DLC, regex in regex_list.items():
-            match = re.match(regex, os.path.basename(file))
-            if match is None:
-                continue
-            try:
-                max_loads_per_simulation[DLC][match.group(0)][file] = []
-            except:
-                try:
-                    max_loads_per_simulation[DLC][match.group(0)] = {}
-                    max_loads_per_simulation[DLC][match.group(0)][file] = []
-                except:
-                    max_loads_per_simulation[DLC] = {}
-                    max_loads_per_simulation[DLC][match.group(0)] = {}
-                    max_loads_per_simulation[DLC][match.group(0)][file] = []
-            break
-        for sensor, i_x, i_y in sensor_list:
-            max_loads_per_simulation[DLC][match.group(0)][file].append(extreme_loads[i].sel(sensor_name=sensor))
-    extreme_loads_per_group = {}
-    for DLC, groups in max_loads_per_simulation.items():
-        extreme_loads_per_group[DLC] = {}
-        for group, sims in groups.items():
-            extreme_loads_per_group[DLC][group] = {}
-            for s in range(len(sensor_list)):
-                extreme_loads_per_group[DLC][group][sensor_list[s][0]] = {}
-                for a in range(len(extreme_loads.coords['angle'].values)):
-                    extreme_loads_per_group[DLC][group][sensor_list[s][0]][extreme_loads.coords['angle'].values[a]] = metric_list[DLC]([sim[s][a] for sim in sims.values()])*safety_factor_list[DLC]           
-    DLB_extreme_loads = []
-    for s in range(len(sensor_list)):
-        DLB_extreme_loads.append([])
-        for a in range(len(extreme_loads.coords['angle'].values)):
-            max_load = 0
-            for DLC, groups in extreme_loads_per_group.items():
-                for group in groups.keys():
-                    if groups[group][sensor_list[s][0]][extreme_loads.coords['angle'].values[a]] > max_load:
-                        max_load = copy(groups[group][sensor_list[s][0]][extreme_loads.coords['angle'].values[a]])
-                        max_load_dlc = copy(DLC)
-                        max_load_group = copy(group)
-            DLB_extreme_loads[-1].append([max_load, max_load_dlc, max_load_group])
-    data = DLB_extreme_loads
-    dims = ['sensor_name', 'angle', '(value, dlc, group)']
-    coords = {'sensor_name': extreme_loads.coords['sensor_name'],
-              'angle': extreme_loads.coords['angle'],
-              'sensor_unit': extreme_loads.coords['sensor_unit'],
-               }
-    return xr.DataArray(data=data, dims=dims, coords=coords)
+    group_values = get_group_values(dataarray, regex_list, metric_list, safety_factor_list)
+    extreme_values = get_extreme_values(group_values)
+    return extreme_values
 
 def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
     """
