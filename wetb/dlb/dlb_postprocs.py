@@ -78,15 +78,12 @@ def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_lis
     safety_factor_list : dict
         Dictionary containing the safety factor to be applied to each group of simulations
         for each DLC.
-    sensor_list : list of tuples (Nsensors)
-        List of 3-element tuples containing the name of a load sensor and the indices of 2 of their components.\n
-        Example: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
 
     Returns
     -------
     DataArray (Nsensors x Ndirections x 3)
-        DataArray containing the extreme values of the DLB, as well as the DLC
-        and group of simulations driving each sensor.\n
+        DataArray containing the extreme values of the DLB, as well as 
+        the group of simulations driving each sensor.\n
         Dims: dataarray.dims without filename\n
         Coords: dataarray.dims without filename, group
 
@@ -95,18 +92,51 @@ def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_lis
     extreme_values = get_extreme_values(group_values)
     return extreme_values
 
-def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
+def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
     """
-    Calculate the fatigue loads for the whole DLB.
+    Calculate the fatigue equivalent loads for the whole DLB
+    from equivalent loads of individual simulations.
 
     Parameters
     ----------
-    markov_matrices : xarray.DataArray (Nsimulations x Nsensors x Ndirections x Nbins x 2)
-        DataArray containing directional number of cycles and load amplitude 
-        for each simulation for each sensor in sensors_info,
-        for each direction in angles and for each bin in no_bins.\n
-        Dims: filename, sensor_name, angle, bin, (cycles, amplitude)\n
-        Coords: filename, sensor_name, angle, sensor_unit
+    eq_loads : xarray.DataArray (Nsimulations x * x Nwoehlerslopes)
+        DataArray containing equivalent loads for each Woehler slope, 
+        for each sensor and for each simulation.\n
+        Dims: filename, *, m\n
+        Coords: filename, *, m
+    weight_list : dict
+        Dictionary containing the weight (real time / simulation time) for each simulation
+    neq : int or float, optional
+        Number of equivalent load cycles. The default is 1e7.
+
+    Returns
+    -------
+    xarray.DataArray (Nsensors x Ndirections x Nwoehlerslopes)
+        DataArray containing the fatigue equivalent loads of the DLB
+        for each sensor and Woehler slope.\n
+        Dims: *, m\n
+        Coords: *, m
+
+    """
+    weight_list = xr.DataArray(data=list(weight_list.values()),
+                               dims='filename',
+                               coords={'filename': list(weight_list.keys())})
+    m_list = eq_loads.m
+    DLB_eq_loads = (weight_list*eq_loads**m_list).sum('filename')**(1/m_list)
+    return DLB_eq_loads
+
+def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
+    """
+    Calculate the fatigue equivalent loads for the whole DLB
+    from Markov matrices of individual simulations.
+
+    Parameters
+    ----------
+    markov_matrices : xarray.DataArray (Nsimulations x * x Nbins x 2)
+        DataArray containing number of cycles and load amplitude 
+        for each sensor for each simulation.\n
+        Dims: filename, *, bin, (cycles, amplitude)\n
+        Coords: filename, *
     weight_list : dict
         Dictionary containing the weight (real time / simulation time) for each simulation
     m_list : list (Nwoehlerslopes)
@@ -117,35 +147,24 @@ def get_DLB_fatigue_loads(markov_matrices, weight_list, m_list, neq=1e7):
     Returns
     -------
     xarray.DataArray (Nsensors x Ndirections x Nwoehlerslopes)
-        DataArray containing the fatigue loads of the DLB for each sensor,
-        direction and Woehler slope.\n
-        Dims: sensor_name, angle, m\n
-        Coords: sensor_name, angle, m, sensor_unit
+        DataArray containing the fatigue equivalent loads of the DLB
+        for each sensor and Woehler slope.\n
+        Dims: *, m\n
+        Coords: *, m
 
     """
-    individual_eq_loads = eq_loads_from_Markov(markov_matrix=markov_matrices,
-                                               m_list=m_list,
-                                               neq=neq)
-    DLB_fatigue_loads = []
-    for i in range(markov_matrices.shape[1]):
-        DLB_fatigue_loads.append([])
-        for j in range(markov_matrices.shape[2]):
-            DLB_fatigue_loads[-1].append([])
-            for k in range(len(m_list)):
-                m = m_list[k]
-                eq_load = 0
-                for l in range(markov_matrices.shape[0]):
-                    file = os.path.basename(markov_matrices[l, 0, 0, 0, 0].coords['filename'].values[()]).replace('.hdf5', '')
-                    eq_load += weight_list[file]*individual_eq_loads[l, i, j, k]**m
-                DLB_fatigue_loads[-1][-1].append(eq_load**(1/m))
-    data = DLB_fatigue_loads
-    dims = ['sensor_name', 'angle', 'm']
-    coords = {'sensor_name': markov_matrices.coords['sensor_name'],
-              'angle': markov_matrices.coords['angle'],
-              'm': m_list,
-              'sensor_unit': markov_matrices.coords['sensor_unit'],
-               }
-    return xr.DataArray(data=data, dims=dims, coords=coords) 
+    eq_loads = eq_loads_from_Markov(markov_matrix=markov_matrices,
+                                    m_list=m_list,
+                                    neq=neq)
+    eq_loads = xr.DataArray(eq_loads)
+    eq_loads = eq_loads.rename({f'dim_{i}': markov_matrices.dims[i]
+                                for i in range(len(markov_matrices.dims) - 2)})
+    eq_loads = eq_loads.rename({eq_loads.dims[-1]: 'm'})
+    eq_loads = eq_loads.assign_coords(markov_matrices.coords)
+    eq_loads.coords['m'] = m_list
+    eq_loads = eq_loads.drop_vars('variable')
+    DLB_eq_loads = get_DLB_eq_loads(eq_loads, weight_list, neq)
+    return DLB_eq_loads
 
 def mean_upperhalf(group):
     """
