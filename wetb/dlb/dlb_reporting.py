@@ -23,9 +23,9 @@ def dataarray_to_excel(dataarray, path):
     df = dataarray.to_dataframe('value').reset_index()    
     df.to_excel(path, index=False)
 
-def plot_DLB_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
+def plot_DLB_directional_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
     """
-    Plot the DLB extreme loads and save them to a given folder.
+    Plot the DLB directional extreme loads and save them to a given folder.
 
     Parameters
     ----------
@@ -62,9 +62,9 @@ def plot_DLB_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
         plt.savefig(os.path.join(folder, 'Extreme_' + DLB_extreme_loads[i].coords['sensor_name'].values[()] + extension))
         plt.show()
         
-def plot_DLB_fatigue_loads(DLB_fatigue_loads, folder, extension='.png'):
+def plot_DLB_directional_equivalent_loads(DLB_fatigue_loads, folder, extension='.png'):
     """
-    Plot the DLB extreme loads and save them to a given folder.
+    Plot the DLB directional equivalent loads and save them to a given folder.
 
     Parameters
     ----------
