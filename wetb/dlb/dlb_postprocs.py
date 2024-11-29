@@ -104,8 +104,8 @@ def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
         for each sensor and for each simulation.\n
         Dims: filename, *, m\n
         Coords: filename, *, m
-    weight_list : dict
-        Dictionary containing the weight (real time / simulation time) for each simulation
+    weight_list : dict or xarray.DataArray
+        Dictionary or DataArray containing the weight (real time / simulation time) for each simulation
     neq : int or float, optional
         Number of equivalent load cycles. The default is 1e7.
 
@@ -118,11 +118,13 @@ def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
         Coords: *, m
 
     """
-    weight_list = xr.DataArray(data=list(weight_list.values()),
-                               dims='filename',
-                               coords={'filename': list(weight_list.keys())})
+    if isinstance(weight_list, dict):
+        weight_list = xr.DataArray(data=list(weight_list.values()),
+                                   dims='filename',
+                                   coords={'filename': list(weight_list.keys())})
     m_list = eq_loads.m
     DLB_eq_loads = (weight_list*eq_loads**m_list).sum('filename')**(1/m_list)
+    DLB_eq_loads = DLB_eq_loads.drop_vars('variable')
     return DLB_eq_loads
 
 def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
@@ -137,8 +139,8 @@ def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
         for each sensor for each simulation.\n
         Dims: filename, *, bin, (cycles, amplitude)\n
         Coords: filename, *
-    weight_list : dict
-        Dictionary containing the weight (real time / simulation time) for each simulation
+    weight_list : dict or xarray.DataArray
+        Dictionary or DataArray containing the weight (real time / simulation time) for each simulation
     m_list : list (Nwoehlerslopes)
         List containing the different woehler slopes
     neq : int or float, optional
