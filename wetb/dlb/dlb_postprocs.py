@@ -124,7 +124,6 @@ def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
                                    coords={'filename': list(weight_list.keys())})
     m_list = eq_loads.m
     DLB_eq_loads = (weight_list*eq_loads**m_list).sum('filename')**(1/m_list)
-    DLB_eq_loads = DLB_eq_loads.drop_vars('variable')
     return DLB_eq_loads
 
 def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
@@ -164,7 +163,6 @@ def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
     eq_loads = eq_loads.rename({eq_loads.dims[-1]: 'm'})
     eq_loads = eq_loads.assign_coords(markov_matrices.coords)
     eq_loads.coords['m'] = m_list
-    eq_loads = eq_loads.drop_vars('variable')
     DLB_eq_loads = get_DLB_eq_loads(eq_loads, weight_list, neq)
     return DLB_eq_loads
 
