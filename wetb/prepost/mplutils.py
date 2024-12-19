@@ -6,16 +6,13 @@ Created on Wed Nov 23 11:22:50 2011
 """
 # external libraries
 import numpy as np
+from scipy.signal import find_peaks
 
 import matplotlib as mpl
 from matplotlib.figure import Figure
 # use a headless backend
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
-# wafo is an optional dependency only required for non default PSD peak marking
-try:
-    import wafo
-except ImportError:
-    pass
+# from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
+
 
 
 def make_fig(nrows=1, ncols=1, figsize=(12,8), dpi=120):
@@ -221,20 +218,21 @@ def peaks(ax, freqs, Pxx, fn_max, min_h, nr_peaks=15, min_p=0, col_line='k',
     Pxx = Pxx[:i_fn_max]
     Pxx_log = 10.*np.log10(Pxx)
     try:
-        pi = wafo.misc.findpeaks(Pxx_log, n=len(Pxx), min_h=min_h, min_p=min_p)
+        # pi = wafo.misc.findpeaks(Pxx_log, n=len(Pxx), min_h=min_h, min_p=min_p)
+        pi, pi_props = find_peaks(Pxx_log, height=Pxx_log.min(), prominence=(20, None))
         if verbose:
             print('len Pxx', len(Pxx_log), 'nr of peaks:', len(pi))
     except Exception as e:
         if verbose:
             print('len Pxx', len(Pxx_log))
-            print('*** wafo.misc.findpeaks FAILED ***')
+            # print('*** wafo.misc.findpeaks FAILED ***')
             print(e)
         return ax
 
-    # only take the nr_peaks most significant heights
-    pi = pi[:nr_peaks]
-    # and sort them accoriding to frequency (or index)
-    pi.sort()
+    # # only take the nr_peaks most significant heights
+    # pi = pi[:nr_peaks]
+    # # and sort them accoriding to frequency (or index)
+    # pi.sort()
 
     # mark the peaks with a circle
 #    ax.plot(freqs[pi], Pxx[:xlim][pi], 'o')
