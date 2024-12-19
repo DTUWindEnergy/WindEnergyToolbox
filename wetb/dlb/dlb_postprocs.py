@@ -36,6 +36,127 @@ def group_simulations(dataarray, regex_list):
         grouped_simulations[group] = dataarray.sel(filename=np.vectorize(apply_regex)(dataarray.filename, group))
     return grouped_simulations
 
+def average_contemporaneous_loads(extreme_loads, driver, load, metric, safety_factor):
+    if load in driver:  
+        return metric(extreme_loads)*safety_factor
+    if driver == 'Fres_max':
+        if load in ['Fx', 'Fy']:
+            return metric(extreme_loads)*safety_factor
+    if driver == 'Mres_max':
+        if load in ['Mx', 'My']:
+            return metric(extreme_loads)*safety_factor
+    return np.mean(np.abs(extreme_loads))*np.sign(extreme_loads[np.argmax(np.abs(extreme_loads))])
+    
+def scale_contemporaneous_loads(extreme_loads, driver, load, scaling_factor, safety_factor):
+    if load in driver:  
+        return extreme_loads*scaling_factor*safety_factor
+    if driver == 'Fres_max':
+        if load in ['Fx', 'Fy']:
+            return extreme_loads*scaling_factor*safety_factor
+    if driver == 'Mres_max':
+        if load in ['Mx', 'My']:
+            return extreme_loads*scaling_factor*safety_factor
+    return extreme_loads*scaling_factor
+
+def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_list, contemporaneous_method='averaging'):   
+    grouped_simulations = group_simulations(extreme_loads, regex_list)
+    loads_by_group_dict = {}
+    if contemporaneous_method == 'averaging':
+        for group, simulations in grouped_simulations.items():
+            DLC = get_DLC(group)
+            group_loads = xr.apply_ufunc(average_contemporaneous_loads,
+                                         simulations,
+                                         simulations.coords['driver'], 
+                                         simulations.coords['load'], 
+                                         kwargs={'metric': metric_list[DLC], 'safety_factor': safety_factor_list[DLC]},
+                                         input_core_dims=[['filename'], [], []],
+                                         vectorize=True)
+            loads_by_group_dict[group] = group_loads
+    elif contemporaneous_method == 'scaling':
+        for group, simulations in grouped_simulations.items():
+            main_loads = simulations.isel(driver=range(12), load=xr.DataArray([int(i/2) for i in range(12)], dims='driver'))
+            Fres = np.sqrt(simulations.sel(driver='Fres_max').sel(load='Fx')**2 + simulations.sel(driver='Fres_max').sel(load='Fy')**2)
+            Mres = np.sqrt(simulations.sel(driver='Mres_max').sel(load='Mx')**2 + simulations.sel(driver='Mres_max').sel(load='My')**2)
+            Fres.coords['load'] = 'Fres'
+            Mres.coords['load'] = 'Mres'
+            main_loads = xr.concat([main_loads, Fres, Mres], dim='driver')
+            DLC = get_DLC(group)
+            characteristic_loads = xr.apply_ufunc(metric_list[DLC],
+                                    main_loads,
+                                    input_core_dims=[['filename']],
+                                    vectorize=True)
+            scaling_factors = characteristic_loads/main_loads
+            closest_load_indices = np.abs(1/scaling_factors - 1).argmin('filename')
+            scaling_factors = scaling_factors.isel(filename=closest_load_indices)
+            closest_load_indices = closest_load_indices.drop_vars('load')
+            simulations = simulations.isel(filename=closest_load_indices)
+            group_loads = xr.apply_ufunc(scale_contemporaneous_loads,
+                                         simulations,
+                                         simulations.coords['driver'], 
+                                         simulations.coords['load'],
+                                         scaling_factors,
+                                         kwargs={'safety_factor': safety_factor_list[DLC]},
+                                         input_core_dims=[[], [], [], []],
+                                         vectorize=True)
+            loads_by_group_dict[group] = group_loads
+        
+    loads_by_group = xr.concat(list(loads_by_group_dict.values()), 'group')
+    if 'variable' in loads_by_group.coords:
+        loads_by_group = loads_by_group.drop_vars('variable')
+    if 'filename' in loads_by_group.coords:
+        loads_by_group = loads_by_group.drop_vars('filename')
+    loads_by_group.coords['group'] = list(loads_by_group_dict.keys())
+    return loads_by_group
+
+def get_extreme_values(dataarray):
+    max_values = dataarray.max('group')
+    max_indices = dataarray.argmax('group')
+    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
+    return max_values
+
+def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_list, contemporaneous_method='averaging'):
+    """
+    Calculate the extreme loads for the whole DLB.
+
+    Parameters
+    ----------
+    dataarray : xarray.DataArray (Nsimulations x Nsensors x 14 x 6)
+        DataArray containing collected data for each simulation and load sensor.
+        The 14 x 6 matrix corresponds to the extreme loading matrix in IE61400-1
+        in annex I-1, where the 6 components are Fx, Fy, Fz, Mx, My, Mz.
+        Dims: filename, sensor_name, driver, load
+    regex_list : dict
+        Dictionary containing the regular expression for grouping simulations
+        for each DLC.
+    metric_list : dict
+        Dictionary containing the function to be applied to each group of simulations
+        for each DLC.
+    safety_factor_list : dict
+        Dictionary containing the safety factor to be applied to each group of simulations
+        for each DLC.
+    contemporaneous_method : str
+        Method for assessing the contemporaneous loads.
+        'averaging': the mean of the absolute values from each timeseries is used,
+         posteriorly applying the sign of the absolute maximum value.
+         'scaling': the contemporaneous values from the timeseries with the closest
+         load to the characteristic load are selected, posteriorly scaling them
+         by the factor characteristic load / timeseries load.
+         The default is 'averaging'.
+
+    Returns
+    -------
+    DataArray (Nsensors x 14 x 6)
+        DataArray containing the extreme loading matrix of the DLB for each sensor,
+        as well as the group of simulations driving each sensor.\n
+        Dims: sensor_name, driver, load
+        Coords: sensor_name, driver, load, group
+
+    """
+    loads_by_group = get_loads_by_group(extreme_loads, regex_list, metric_list,
+                                        safety_factor_list, contemporaneous_method=contemporaneous_method)
+    DLB_extreme_loads = get_extreme_values(loads_by_group)
+    return DLB_extreme_loads
+
 def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
     grouped_simulations = group_simulations(dataarray, regex_list)
     group_values_dict = {}
@@ -52,15 +173,9 @@ def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
     group_values.coords['group'] = list(group_values_dict.keys())
     return group_values
 
-def get_extreme_values(dataarray):
-    max_values = dataarray.max('group')
-    max_indices = dataarray.argmax('group')
-    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
-    return max_values
-
 def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_list):
     """
-    Calculate the extreme values for the whole DLB.
+    Calculate the extreme values of any sensor for the whole DLB.
 
     Parameters
     ----------
