@@ -50,10 +50,8 @@ def DLB_extreme_loads_to_excel(DLB_extreme_loads, path):
     for sensor in DLB_extreme_loads.coords['sensor_name'].values:
         for i in range(12):
             workbook[sensor].cell(row=i + 2, column=int(i/2) + 2).fill = highlight
-        workbook[sensor].cell(row=14, column=2).fill = highlight
-        workbook[sensor].cell(row=14, column=3).fill = highlight
-        workbook[sensor].cell(row=15, column=5).fill = highlight
-        workbook[sensor].cell(row=15, column=6).fill = highlight
+        workbook[sensor].cell(row=14, column=8).fill = highlight
+        workbook[sensor].cell(row=15, column=10).fill = highlight
     workbook.save(path)
 
 def plot_DLB_directional_extreme_loads(DLB_extreme_loads, folder, extension='.png'):

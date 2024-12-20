@@ -71,6 +71,15 @@ def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_lis
                                          kwargs={'metric': metric_list[DLC], 'safety_factor': safety_factor_list[DLC]},
                                          input_core_dims=[['filename'], [], []],
                                          vectorize=True)
+            Fres = np.sqrt(group_loads.sel(load='Fx')**2 + group_loads.sel(load='Fy')**2)
+            Fres.coords['load'] = 'Fres'
+            Mres = np.sqrt(group_loads.sel(load='Mx')**2 + group_loads.sel(load='My')**2)
+            Mres.coords['load'] = 'Mres'
+            thetaF = np.arctan2(group_loads.sel(load='Fy'), group_loads.sel(load='Fx'))*180/np.pi
+            thetaF.coords['load'] = 'Theta_F'
+            thetaM = np.arctan2(group_loads.sel(load='My'), group_loads.sel(load='Mx'))*180/np.pi
+            thetaM.coords['load'] = 'Theta_M'
+            group_loads = xr.concat([group_loads, Fres, thetaF, Mres, thetaM], dim='load')
             loads_by_group_dict[group] = group_loads
     elif contemporaneous_method == 'scaling':
         for group, simulations in grouped_simulations.items():
@@ -98,6 +107,15 @@ def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_lis
                                          kwargs={'safety_factor': safety_factor_list[DLC]},
                                          input_core_dims=[[], [], [], []],
                                          vectorize=True)
+            Fres = np.sqrt(group_loads.sel(load='Fx')**2 + group_loads.sel(load='Fy')**2)
+            Fres.coords['load'] = 'Fres'
+            Mres = np.sqrt(group_loads.sel(load='Mx')**2 + group_loads.sel(load='My')**2)
+            Mres.coords['load'] = 'Mres'
+            thetaF = np.arctan2(group_loads.sel(load='Fy'), group_loads.sel(load='Fx'))*180/np.pi
+            thetaF.coords['load'] = 'Theta_F'
+            thetaM = np.arctan2(group_loads.sel(load='My'), group_loads.sel(load='Mx'))*180/np.pi
+            thetaM.coords['load'] = 'Theta_M'
+            group_loads = xr.concat([group_loads, Fres, thetaF, Mres, thetaM], dim='load')
             loads_by_group_dict[group] = group_loads
         
     loads_by_group = xr.concat(list(loads_by_group_dict.values()), 'group')
@@ -108,22 +126,16 @@ def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_lis
     loads_by_group.coords['group'] = list(loads_by_group_dict.keys())
     return loads_by_group
 
-def get_extreme_values(dataarray):
-    max_values = dataarray.max('group')
-    max_indices = dataarray.argmax('group')
-    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
-    return max_values
-
 def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_list, contemporaneous_method='averaging'):
     """
     Calculate the extreme loads for the whole DLB.
 
     Parameters
     ----------
-    dataarray : xarray.DataArray (Nsimulations x Nsensors x 14 x 6)
+    dataarray : xarray.DataArray (Nsimulations x Nsensors x 14 x 10)
         DataArray containing collected data for each simulation and load sensor.
         The 14 x 6 matrix corresponds to the extreme loading matrix in IE61400-1
-        in annex I-1, where the 6 components are Fx, Fy, Fz, Mx, My, Mz.
+        in annex I-1, where the 10 components are Fx, Fy, Fz, Mx, My, Mz, Fr, theta_F, Mr, theta_M.
         Dims: filename, sensor_name, driver, load
     regex_list : dict
         Dictionary containing the regular expression for grouping simulations
@@ -145,7 +157,7 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
 
     Returns
     -------
-    DataArray (Nsensors x 14 x 6)
+    DataArray (Nsensors x 14 x 10)
         DataArray containing the extreme loading matrix of the DLB for each sensor,
         as well as the group of simulations driving each sensor.\n
         Dims: sensor_name, driver, load
@@ -154,7 +166,17 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
     """
     loads_by_group = get_loads_by_group(extreme_loads, regex_list, metric_list,
                                         safety_factor_list, contemporaneous_method=contemporaneous_method)
-    DLB_extreme_loads = get_extreme_values(loads_by_group)
+    driving_group_indices = []
+    for driver in loads_by_group.coords['driver'].values:
+        load = driver[:driver.find('_')]
+        metric = driver[driver.find('_') + 1:]
+        if metric == 'max':
+            driving_group_indices.append(loads_by_group.sel(driver=driver, load=load).argmax('group'))
+        elif metric == 'min':
+            driving_group_indices.append(loads_by_group.sel(driver=driver, load=load).argmin('group'))
+    driving_group_indices = xr.concat(driving_group_indices, dim='driver')
+    driving_group_indices = driving_group_indices.drop_vars('load')
+    DLB_extreme_loads = loads_by_group.isel(group=driving_group_indices)
     return DLB_extreme_loads
 
 def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
@@ -172,6 +194,12 @@ def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
     group_values = group_values.drop_vars('variable')
     group_values.coords['group'] = list(group_values_dict.keys())
     return group_values
+
+def get_extreme_values(dataarray):
+    max_values = dataarray.max('group')
+    max_indices = dataarray.argmax('group')
+    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
+    return max_values            
 
 def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_list):
     """
