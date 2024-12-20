@@ -12,6 +12,7 @@ from subprocess import STDOUT
 import subprocess
 from threading import Thread
 import time
+from platform import system
 
 from wetb.hawc2 import log_file
 from wetb.hawc2.log_file import LogInfo, LogFile
@@ -173,8 +174,13 @@ class SimulationThread(Thread):
                 self.process = subprocess.Popen(" ".join([wine, hawc2exe, htcfile]),
                                                 stdout=stdout, stderr=STDOUT, shell=True, cwd=exepath)
             else:
-                self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout,
-                                                stderr=STDOUT, shell=False, cwd=exepath, creationflags=CREATE_NO_WINDOW)
+                if system().lower == "linux":
+                    self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout,
+                                                    stderr=STDOUT, shell=False, cwd=exepath)
+                else:
+                    self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout,
+                                                    stderr=STDOUT, shell=False, cwd=exepath, creationflags=CREATE_NO_WINDOW)
+                    
             # self.process.communicate()
 
         import psutil
