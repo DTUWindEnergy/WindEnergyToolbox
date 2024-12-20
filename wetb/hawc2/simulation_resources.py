@@ -174,7 +174,7 @@ class SimulationThread(Thread):
                 self.process = subprocess.Popen(" ".join([wine, hawc2exe, htcfile]),
                                                 stdout=stdout, stderr=STDOUT, shell=True, cwd=exepath)
             else:
-                if system().lower == "linux":
+                if system().lower() == "linux":
                     self.process = subprocess.Popen([hawc2exe, htcfile], stdout=stdout,
                                                     stderr=STDOUT, shell=False, cwd=exepath)
                 else:
