@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 import matplotlib.pyplot as plt
 import os
 from wetb.dlb.dlb_postprocs import get_DLC
@@ -23,9 +25,38 @@ def dataarray_to_excel(dataarray, path):
     df = dataarray.to_dataframe('value').reset_index()    
     df.to_excel(path, index=False)
 
-def plot_DLB_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
+def DLB_extreme_loads_to_excel(DLB_extreme_loads, path):
     """
-    Plot the DLB extreme loads and save them to a given folder.
+    Generate excel report of DLB extreme loads.
+
+    Parameters
+    ----------
+    DLB_extreme_loads : xarray.DataArray
+        DataArray containing the DLB extreme loading matrices for each load sensor.
+    path : str
+        Path to the new excel file to be created
+
+    Returns
+    -------
+    None.
+
+    """
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        for sensor in DLB_extreme_loads.coords['sensor_name'].values:
+            df = DLB_extreme_loads.sel(sensor_name=sensor).to_pandas()    
+            df.to_excel(writer, sheet_name=sensor, index_label='driver')
+    workbook = load_workbook(path)
+    highlight = PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")
+    for sensor in DLB_extreme_loads.coords['sensor_name'].values:
+        for i in range(12):
+            workbook[sensor].cell(row=i + 2, column=int(i/2) + 2).fill = highlight
+        workbook[sensor].cell(row=14, column=8).fill = highlight
+        workbook[sensor].cell(row=15, column=10).fill = highlight
+    workbook.save(path)
+
+def plot_DLB_directional_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
+    """
+    Plot the DLB directional extreme loads and save them to a given folder.
 
     Parameters
     ----------
@@ -62,9 +93,9 @@ def plot_DLB_extreme_loads(DLB_extreme_loads, folder, extension='.png'):
         plt.savefig(os.path.join(folder, 'Extreme_' + DLB_extreme_loads[i].coords['sensor_name'].values[()] + extension))
         plt.show()
         
-def plot_DLB_fatigue_loads(DLB_fatigue_loads, folder, extension='.png'):
+def plot_DLB_directional_equivalent_loads(DLB_fatigue_loads, folder, extension='.png'):
     """
-    Plot the DLB extreme loads and save them to a given folder.
+    Plot the DLB directional equivalent loads and save them to a given folder.
 
     Parameters
     ----------
