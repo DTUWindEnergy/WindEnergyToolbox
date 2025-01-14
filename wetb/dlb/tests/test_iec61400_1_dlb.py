@@ -37,7 +37,10 @@ def test_main():
 
 
 def test_DLC12(writer):
-    dlc12 = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC12']
+    dlc12 = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90,
+                                   Vmaint=18, controller='dtu_we_controller',
+                                   generator_servo='generator_servo', pitch_servo='servo_with_limits',
+                                   best_azimuth=180)['DLC12']
     assert len(dlc12) == 216  # 12 wsp, 3 wdir, 6 seeds
     writer.from_pandas(dlc12[::24][:2])
     writer.write_all(path)
@@ -51,7 +54,10 @@ def test_DLC12(writer):
 
 
 def test_DLC21(writer):
-    dlc = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC21']
+    dlc = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90,
+                                 Vmaint=18, controller='dtu_we_controller',
+                                 generator_servo='generator_servo', pitch_servo='servo_with_limits',
+                                 best_azimuth=180)['DLC21']
     assert len(dlc) == 144  # 12 wsp, 3 wdir, 4 seeds
     writer.from_pandas(dlc[::16][:2])
     writer.write_all(path)
@@ -66,7 +72,10 @@ def test_DLC21(writer):
 
 
 def test_DLC22y(writer):
-    dlc = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)['DLC22y']
+    dlc = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90,
+                                 Vmaint=18, controller='dtu_we_controller',
+                                 generator_servo='generator_servo', pitch_servo='servo_with_limits',
+                                 best_azimuth=180)['DLC22y']
     assert len(dlc) == 276  # 12 wsp, 23 wdir, 1 seeds
     writer.from_pandas(dlc[::24][:2])
     writer.write_all(path)
