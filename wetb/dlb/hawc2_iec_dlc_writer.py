@@ -3,6 +3,7 @@ import warnings
 from wetb.hawc2.hawc2_input_writer import HAWC2InputWriter
 from wetb.hawc2.tests import test_files
 from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
+from wetb.prepost.GenerateHydro import hydro_input
 
 """
 TODO: delete wind ramp / replace wind section
@@ -25,6 +26,9 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
 
     def set_wdir(self, htc, wdir, **_):
         htc.wind.windfield_rotations = wdir, 0, 0
+        
+    def set_wwmis(self, htc, wdir, wwmis, **_):
+        htc.hydro.water_properties.wave_direction = wdir + wwmis
 
     def set_shear(self, htc, shear, **_):
         if isinstance(shear, str):
@@ -121,6 +125,47 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             self.set_rotor_locked(htc, shaft, shaft_constraint, azimuth)
         else:
             raise NotImplementedError(Operation)
+            
+    def set_Waves(self, htc, Waves, **kwargs):
+        if str(Waves).lower() == 'nan':
+            return
+        if isinstance(Waves, str):
+            Waves = eval(Waves)
+        if Waves['type'] == 'Stochastic':
+            wdepth = Waves['water_level']
+            MSL = Waves['MSL']
+            spectrum = Waves['spectrum']
+            Hs = Waves['Hs']
+            Tp = Waves['Tp']
+            seed = Waves['seed']
+            self.set_ireg_airy(htc, wdepth, spectrum, Hs, Tp, seed)
+            self.set_water_level(htc, wdepth, MSL)
+        elif Waves['type'] == 'Deterministic':
+            wdepth = Waves['water_level']
+            MSL = Waves['MSL']
+            file = Waves['file']
+            nskip = Waves['nskip']
+            nsamples = Waves['nsamples']
+            columns = Waves['columns']
+            self.set_det_airy(htc, wdepth, file, nskip, nsamples, columns)
+            self.set_water_level(htc, wdepth, MSL)
+        else:
+            raise NotImplementedError(Waves)
+    
+    def set_Current(self, htc, Current, **kwargs):
+        if str(Current).lower() == 'nan':
+            return
+        if isinstance(Current, str):
+            Current = eval(Current)
+        if Current['type'] == 'Exponential':
+            typeno = 2
+            alpha = Current['alpha']
+            u0 = Current['u0']
+            direction = Current['direction']
+            self.set_current_exponential(htc, typeno, alpha, u0, direction)
+        else:
+            raise NotImplementedError(Current)
+
 
     def set_simulation_time(self, htc, simulation_time, **_):
         htc.set_time(self.time_start, simulation_time + self.time_start)
@@ -204,8 +249,25 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                     break
             except:
                 continue
-                  
+      
+    def set_water_level(self, htc, water_level, MSL):
+        htc.hydro.water_properties.mwl = MSL - water_level
+        htc.hydro.water_properties.mudlevel = MSL
+    
+    def set_ireg_airy(self, htc, wdepth, spectrum, Hs, Tp, seed):
+        htc.hydro.water_properties.water_kinematics_dll = './hydro/wkin_dll.dll ' + './hydro/%s_hs%.2f_tp%.2f_s%3d.inp'%(spectrum, Hs, Tp, seed)
+        hydro = hydro_input(wavetype='ireg_airy', wdepth=wdepth, spectrum={'JONSWAP': 'jonswap', 'PiersonMoskowitz': 'pm'}[spectrum], Hs=Hs, Tp=Tp, seed=seed)
+        hydro.execute(filename='%s_hs%.2f_tp%.2f_s%3d.inp'%(spectrum, Hs, Tp, seed), folder='./hydro')
+        
+    def set_det_airy(self, htc, wdepth, file, nsamples, nskip, columns):
+        htc.hydro.water_properties.water_kinematics_dll = './hydro/wkin_dll.dll ' + file.replace('./waves', './hydro').replace('.dat', '.inp')
+        hydro = hydro_input(wavetype='det_airy', wdepth=wdepth, file=file, nsamples=nsamples, nskip=nskip, columns=columns)
+        hydro.execute(filename=file.replace('./waves/', '').replace('.dat', '.inp'), folder='./hydro')
+        
+    def set_current_exponential(self, htc, typeno, alpha, u0, direction):
+        htc.hydro.water_properties.current = typeno, u0, alpha, direction
 
+        
 if __name__ == '__main__':
     dlb = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)
     path = os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/'

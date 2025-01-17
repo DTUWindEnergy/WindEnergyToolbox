@@ -36,7 +36,8 @@ class hydro_input(object):
 
     """ Basic class aiming for write the hydrodynamics input file"""
 
-    def __init__(self, wavetype, wdepth, spectrum, Hs, Tp, seed, gamma=3.3,
+    def __init__(self, wavetype, wdepth, spectrum=None, Hs=None, Tp=None, seed=None,
+                 file=None, nsamples=None, nskip=None, columns=None, gamma=3.3,
                  stretching=1, wn=None, coef=200, spreading=None,
                  embed_sf=None, embed_sf_t0=None, mccamyfuchs=1):
 
@@ -75,6 +76,13 @@ class hydro_input(object):
             if embed_sf is not None:
                 self.argument += '\n\t\tembed_sf %.2f %d;'%(embed_sf, embed_sf_t0)
             self.argument += '\n\tend;'
+            
+        # Deterministic Irregular Airy Wave Input
+        if wavetype == 'det_airy':
+            self.waveno = 2
+            self.argument = 'begin %s ;\n\t\tfile %s;\n\t\tnsamples %s;'\
+                            '\n\t\tnskip %d;\n\t\tcolumns %d %d;\n\tend;'\
+                            %(wavetype, file, nsamples, nskip, columns[0], columns[1])
 
         # Stream Wave Input
         if wavetype == 'strf':
