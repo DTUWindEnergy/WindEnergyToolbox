@@ -148,6 +148,25 @@ def install_hawc2_dtu_license():
             )
 
 
+def install_hawcstab2_dtu_license():
+    """Function to install the DTU HAWCStab2 license. In order to install the license, you must be logged in to the DTU network."""
+    if sys.platform.lower() == "win32":
+        f = Path(os.getenv("APPDATA")) / "DTU Wind Energy/hawcstab2/license.cfg"
+    else:
+        f = Path.home() / ".config/hawcstab2/license.cfg"
+    if not f.exists():
+        f.parent.mkdir(parents=True, exist_ok=True)
+        r = urlopen("http://license-internal.windenergy.dtu.dk:34523").read()
+        if b"LICENSE SERVER RUNNING" in r:
+            f.write_text(
+                "[licensing]\nhost = http://license-internal.windenergy.dtu.dk\nport = 34523"
+            )
+        else:
+            raise ConnectionError(
+                f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function."
+            )
+
+
 def install_keygen_license(software: str, cfg_file: str, force: bool = False):
     """Install license file for HAWC2, HAWCStab2 or Ellipsys on your machine
 
