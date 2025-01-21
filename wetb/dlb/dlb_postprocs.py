@@ -5,9 +5,34 @@ import xarray as xr
 from copy import copy
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
+def nc_to_dataarray(nc_file):
+    return xr.open_dataset(nc_file).to_dataarray().squeeze('variable')
+
+def get_params(filename, regex):
+    match = re.match(regex, os.path.basename(filename))
+    if match is not None:
+        return match.groups()
+    else:
+        return np.nan
+
+def add_coords_from_filename(dataarray, params, regex, formats=None):
+    coords = xr.apply_ufunc(get_params,
+                            dataarray.coords['filename'],
+                            kwargs={'regex': regex},
+                            input_core_dims=[[]],
+                            output_core_dims=len(params)*[[]],
+                            vectorize=True)
+    if formats is None:
+        for i in range(len(params)):
+            dataarray.coords[params[i]] = ('filename', coords[i].values)
+    else:
+        for i in range(len(params)):
+            dataarray.coords[params[i]] = ('filename', [formats[i](v) for v in coords[i].values])
+    return dataarray
+
 def get_DLC(filename):
     filename = os.path.basename(filename)
-    i1 = filename.find('DLC')
+    i1 = filename.lower().find('dlc')
     i2 = filename.find('_', i1)
     if i2 == -1:
         DLC = filename[i1:]
