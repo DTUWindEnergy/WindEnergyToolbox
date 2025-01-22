@@ -86,19 +86,17 @@ def test_version_not_available():
 def test_install_dtu_license(software):
     software = software.lower()
     license_path = local_license_dir(USER_PLATFORM, "HAWC2")
-    try:
-        if software == "hawc2":
-            install_hawc2_dtu_license()
-        elif software == "hawcstab2":
-            install_hawcstab2_dtu_license()
-        elif software == "ellipsys":
-            install_ellipsys_dtu_license()
-            
-        assert os.path.exists(f"{local_license_dir(USER_PLATFORM, software)}/{local_license_file(software)}")
-    except:
-        raise
-    finally:
-        shutil.rmtree(license_path, ignore_errors=True)
+
+    if software == "hawc2":
+        install_hawc2_dtu_license()
+    elif software == "hawcstab2":
+        install_hawcstab2_dtu_license()
+    elif software == "ellipsys":
+        install_ellipsys_dtu_license()
+        
+    assert os.path.exists(f"{local_license_dir(USER_PLATFORM, software)}/{local_license_file(software)}")
+
+    shutil.rmtree(license_path, ignore_errors=True)
 
 
 
