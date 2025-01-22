@@ -131,10 +131,27 @@ def install_wind_tool(
 
 def install_hawc2_dtu_license():
     """Function to install the DTU HAWC2 license. In order to install the license, you must be logged in to the DTU network."""
+    install_dtu_license("hawc2")
+
+
+def install_hawcstab2_dtu_license():
+    """Function to install the DTU HAWCStab2 license. In order to install the license, you must be logged in to the DTU network."""
+    install_dtu_license("hawcstab2")
+
+
+def install_ellipsys_dtu_license():
+    """Function to install the DTU HAWCStab2 license. In order to install the license, you must be logged in to the DTU network."""
+    install_dtu_license("ellipsys")
+
+
+def install_dtu_license(software : str):
+    """Function to install the DTU online license for HAWC2, HAWCStab2 and Ellipsys. In order to install the license, you must be logged in to the DTU network."""
+    software = software.lower()
+    assert software in ["hawc2", "hawcstab2", "ellipsys"], "Argument 'software' must be one of ['hawc2', 'hawcstab2,' 'ellipsys']"
     if sys.platform.lower() == "win32":
-        f = Path(os.getenv("APPDATA")) / "DTU Wind Energy/hawc2/license.cfg"
+        f = Path(os.getenv("APPDATA")) / f"DTU Wind Energy/{software}/license.cfg"
     else:
-        f = Path.home() / ".config/hawc2/license.cfg"
+        f = Path.home() / f".config/{software}/license.cfg"
     if not f.exists():
         f.parent.mkdir(parents=True, exist_ok=True)
         r = urlopen("http://license-internal.windenergy.dtu.dk:34523").read()
@@ -146,6 +163,8 @@ def install_hawc2_dtu_license():
             raise ConnectionError(
                 f"Could not connect to the DTU license server. You must be connected to the DTU network to use this function."
             )
+
+
 
 
 def install_keygen_license(software: str, cfg_file: str, force: bool = False):
