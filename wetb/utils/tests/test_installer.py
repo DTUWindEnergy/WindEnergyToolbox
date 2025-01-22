@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from wetb.utils.installer import install_wind_tool, install_hawc2_dtu_license, install_keygen_license, install_dtu_license, install_hawcstab2_dtu_license
+from wetb.utils.installer import install_wind_tool, install_hawc2_dtu_license, install_keygen_license, install_hawcstab2_dtu_license, install_ellipsys_dtu_license
 import shutil
 
 DESTINATION="/tmp/hawc2"
@@ -82,7 +82,7 @@ def test_version_not_available():
         shutil.rmtree(DESTINATION)
 
 
-@pytest.mark.parametrize("software", ["HAwC2","HAWCStab2"])
+@pytest.mark.parametrize("software", ["HAwC2","HAWCStab2", "ellipsys"])
 def test_install_dtu_license(software):
     software = software.lower()
     license_path = local_license_dir(USER_PLATFORM, "HAWC2")
@@ -91,6 +91,8 @@ def test_install_dtu_license(software):
             install_hawc2_dtu_license()
         elif software == "hawcstab2":
             install_hawcstab2_dtu_license()
+        elif software == "ellipsys":
+            install_ellipsys_dtu_license()
             
         assert os.path.exists(f"{local_license_dir(USER_PLATFORM, software)}/{local_license_file(software)}")
     except:

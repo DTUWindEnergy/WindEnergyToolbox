@@ -139,6 +139,11 @@ def install_hawcstab2_dtu_license():
     install_dtu_license("hawcstab2")
 
 
+def install_ellipsys_dtu_license():
+    """Function to install the DTU HAWCStab2 license. In order to install the license, you must be logged in to the DTU network."""
+    install_dtu_license("ellipsys")
+
+
 def install_dtu_license(software : str):
     """Function to install the DTU online license for HAWC2, HAWCStab2 and Ellipsys. In order to install the license, you must be logged in to the DTU network."""
     software = software.lower()
