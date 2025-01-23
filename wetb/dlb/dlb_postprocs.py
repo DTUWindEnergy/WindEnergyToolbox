@@ -5,9 +5,34 @@ import xarray as xr
 from copy import copy
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
+def nc_to_dataarray(nc_file):
+    return xr.open_dataset(nc_file).to_dataarray().squeeze('variable')
+
+def get_params(filename, regex):
+    match = re.match(regex, os.path.basename(filename))
+    if match is not None:
+        return match.groups()
+    else:
+        return np.nan
+
+def add_coords_from_filename(dataarray, params, regex, formats=None):
+    coords = xr.apply_ufunc(get_params,
+                            dataarray.coords['filename'],
+                            kwargs={'regex': regex},
+                            input_core_dims=[[]],
+                            output_core_dims=len(params)*[[]],
+                            vectorize=True)
+    if formats is None:
+        for i in range(len(params)):
+            dataarray.coords[params[i]] = ('filename', coords[i].values)
+    else:
+        for i in range(len(params)):
+            dataarray.coords[params[i]] = ('filename', [formats[i](v) for v in coords[i].values])
+    return dataarray
+
 def get_DLC(filename):
     filename = os.path.basename(filename)
-    i1 = filename.find('DLC')
+    i1 = filename.lower().find('dlc')
     i2 = filename.find('_', i1)
     if i2 == -1:
         DLC = filename[i1:]
@@ -235,7 +260,7 @@ def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_lis
     extreme_values = get_extreme_values(group_values)
     return extreme_values
 
-def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
+def get_DLB_eq_loads(eq_loads, weight_list):
     """
     Calculate the fatigue equivalent loads for the whole DLB
     from equivalent loads of individual simulations.
@@ -249,8 +274,6 @@ def get_DLB_eq_loads(eq_loads, weight_list, neq=1e7):
         Coords: filename, *, m
     weight_list : dict or xarray.DataArray
         Dictionary or DataArray containing the weight (real time / simulation time) for each simulation
-    neq : int or float, optional
-        Number of equivalent load cycles. The default is 1e7.
 
     Returns
     -------
@@ -306,7 +329,7 @@ def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
     eq_loads = eq_loads.rename({eq_loads.dims[-1]: 'm'})
     eq_loads = eq_loads.assign_coords(markov_matrices.coords)
     eq_loads.coords['m'] = m_list
-    DLB_eq_loads = get_DLB_eq_loads(eq_loads, weight_list, neq)
+    DLB_eq_loads = get_DLB_eq_loads(eq_loads, weight_list)
     return DLB_eq_loads
 
 def mean_upperhalf(group):
@@ -328,3 +351,121 @@ def mean_upperhalf(group):
     """
     upperhalf = sorted(group, reverse=True)[0:int(len(group)/2)]
     return np.mean(upperhalf)
+
+def get_weight_list(file_list,
+                    n_years,
+                    Vin,
+                    Vout,
+                    Vr,
+                    wsp_list,
+                    probability,
+                    wsp_weights=None,
+                    yaw_weights=xr.concat([xr.DataArray(data=[[0.5, 0.25, 0.25]],
+                                                        dims=('dlc', 'wdir'),
+                                                        coords={'dlc': ['12'], 'wdir': [0, 10, 350]}),
+                                           xr.DataArray(data=[[0.5, 0.5]],
+                                                        dims=('dlc', 'wdir'),
+                                                        coords={'dlc': ['24'], 'wdir': [20, 340]}),
+                                           xr.DataArray(data=[[0.5, 0.5]],
+                                                        dims=('dlc', 'wdir'),
+                                                        coords={'dlc': ['64'], 'wdir': [8, 352]})],
+                                           dim='dlc'),
+                    n_seeds=xr.DataArray(data=[6, 3, 6],
+                                         dims=('dlc'),
+                                         coords={'dlc': ['12', '24', '64']}),
+                    n_events=None,
+                    sim_time=xr.DataArray(data=[600, 600, 100, 100, 600],
+                                          dims=('dlc'),
+                                          coords={'dlc': ['12', '24', '31', '41', '64']}),
+                    weight_DLC64_Vin_Vout=0.025,
+                    neq=None):
+    """
+    Calculate the weights for each simulation for the
+    calculation of damage equivalent loads of the whole DLB.
+
+    Parameters
+    ----------
+    file_list : xr.DataArray
+        DataArray containing the paths to all simulations. It must also have
+        coordinates for DLC, wind speed, wind direction and/or wave direction
+    n_years : int or float
+        Turbine's lifetime in years
+    Vin: int or float
+        Cut-in wind speed
+    Vout: int or float
+        Cut-out wind speed
+    Vr: int or float
+        Rated wind speed
+    wsp_list: array
+        Array containing all simulated wind speeds
+    probability: xarray.DataArray
+        DataArray containing the probability of each combination of wind speed, 
+        wind direction and/or wave direction
+    wsp_weights: xarray.DataArray, optional
+        DataArray containing the percentage of time each DLC takes for each wind speed.
+        The default assumes that DLC64 takes 2.5% of time between Vin and Vout
+    yaw_weights: xarray.DataArray, optional
+        DataArray containing the percentage of time each yaw misalignment takes for each DLC.
+        The default assumes {-10: 0.25, 0: 0.5, 10: 0.25} for DLC12,
+        {-20: 0.5, 20: 0.5} for DLC24 and {-8: 0.5, 8: 0.5} for DLC64
+    n_seeds: xarray.DataArray, optional
+        DataArray containing the number of seeds per DLC per wind speed and wind direction and/or wave direction.
+        The default assumes 6 seeds for DLC12, 3 seeds for DLC24 and 6 seeds for DLC64
+    n_events: xarray.DataArray, optional
+        DataArray containing the number of events per DLC per windspeed.
+        The default assumes {Vin: 1000, Vr: 50, Vout: 50} for both DLC31 and DLC41.
+    sim_time: xarray.DataArray, optional
+        DataArray containing the simulation time per DLC.
+        The default assumes 600s for DLC12, DLC24, DLC64 and 100s for DLC31 and DLC41
+    weight_DLC64_Vin_Vout: int or float, optional
+        Percentage of time that DLC64 takes between Vin and Vout. Only used if
+        wsp_weights is not passed.
+        The default is 0.025.
+    neq : int or float, optional
+        Number of equivalent load cycles. If not passed, the output weights
+        can ONLY be used when calculating DLB equivalent loads from individual file
+        Markov matrices. If passed, the output weights can ONLY be used when 
+        calculating DLB equivalent loads from individual equivalent loads (recommended)
+            
+    Returns
+    -------
+    xarray.DataArray 
+        DataArray containing the weight for each simulation.
+
+    """
+    
+    if wsp_weights is None:
+        weight_DLC24 = 50/(365.25*24)
+        weight_DLC12 = 1 - weight_DLC64_Vin_Vout                
+        wsp_weights = xr.DataArray(data=[[weight_DLC12 if Vin <= v <= Vout else 0 for v in wsp_list],
+                                         [weight_DLC24 if Vin <= v <= Vout else 0 for v in wsp_list],
+                                         [weight_DLC64_Vin_Vout if Vin <= v <= Vout else 1 for v in wsp_list]],
+                                   dims=('dlc', 'wsp'),
+                                   coords={'dlc': ['12', '24', '64'],
+                                           'wsp': wsp_list})       
+    if n_events is None:
+        n_events = xr.DataArray(data=[[1000, 50, 50], 
+                                      [1000, 50, 50]],
+                                dims=('dlc', 'wsp'),
+                                coords={'dlc': ['31', '41'],
+                                        'wsp': [Vin, Vr, Vout]})
+    
+    lifetime = n_years*365.25*24*3600 # convert to seconds
+    weight_list = (lifetime*probability*wsp_weights*yaw_weights/n_seeds/sim_time).combine_first(n_years*n_events)
+    if neq is not None: # correct by sim_time/neq so it can be used for individual equivalent loads
+        weight_list = weight_list*sim_time/neq
+    
+    # rearrange weights from parameters (DLC, wsp, wdir) to actual filenames
+    # TO-DO: allow wvdir as well
+    def get_weight_list_per_filename(file_list, dlc, wsp, wdir, weight_list):
+        return weight_list.sel(dlc=dlc, wsp=wsp, wdir=wdir)    
+    
+    weight_list = xr.apply_ufunc(get_weight_list_per_filename,
+                       file_list,
+                       file_list['dlc'],
+                       file_list['wsp'],
+                       file_list['wdir'],
+                       kwargs={'weight_list': weight_list},
+                       vectorize=True)
+    
+    return weight_list
