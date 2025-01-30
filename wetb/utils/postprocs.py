@@ -148,6 +148,40 @@ def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
+def extremes_and_contemporaneous(data, info, sensor_indices) -> xr.DataArray:
+    """
+    Calculate the maximum and minimum values for different sensors as well as
+    the contemporaneous values of the other sensors at such instants.
+    
+    Parameters
+    ----------
+    data : array (Ntimesteps x Nsensors_all)
+        Array containing the time series of all sensors
+    sensor_indices : list
+        List containing the indices of the desired output sensors
+
+    Returns
+    -------
+    xarray.DataArray ((Nsensors*2) x Nsensors)
+        DataArray containing the maximum and minimum values for each sensor
+        and the contemporaneous values of the other sensors.
+    """
+    table = []
+    for s in sensor_indices:
+        time_step_max = np.argmax(data[:, s])
+        time_step_min = np.argmin(data[:, s])
+        table.append([data[time_step_max, s2] for s2 in sensor_indices])
+        table.append([data[time_step_min, s2] for s2 in sensor_indices])
+    data = np.array(table)
+    dims = ['driver', 'sensor_description']
+    sensor_descriptions = [info['attribute_descriptions'][s] for s in sensor_indices]
+    coords = {'driver': [s + '_' + e for s in sensor_descriptions for e in ['max', 'min']],
+              'sensor_description': sensor_descriptions,
+              'sensor_name': ('sensor_description', [info['attribute_names'][s] for s in sensor_indices]),
+              'sensor_unit': ('sensor_description', [info['attribute_units'][s] for s in sensor_indices])}
+    return xr.DataArray(data=data, dims=dims, coords=coords)
+
+
 def equivalent_loads(data, time, info, m_list=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46) -> xr.DataArray:
     """
     Calculate fatigue equivalent loads for different sensors

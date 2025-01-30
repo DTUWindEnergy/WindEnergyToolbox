@@ -204,6 +204,67 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
     DLB_extreme_loads = loads_by_group.isel(group=driving_group_indices)
     return DLB_extreme_loads
 
+def ext_or_cont(ext_and_cont, driver, sensor_description, metric, safety_factor):
+    if sensor_description in driver:  
+        return metric(ext_and_cont)*safety_factor
+    else:
+        return np.mean(np.abs(ext_and_cont))*np.sign(ext_and_cont[np.argmax(np.abs(ext_and_cont))])
+
+def get_DLB_ext_and_cont(ext_and_cont, regex_list, metric_list, safety_factor_list):
+    """
+    Analogue function to get_DLB_extreme_loads, but generalized for any given
+    set of sensors and not only the 6 load components of a node.
+
+    Parameters
+    ----------
+    ext_and_cont : xarray.DataArray (Nsimulations x Nsensors*2 x Nsensors)
+        DataArray containing collected data for each simulation of the extreme values
+        (max and min) and their contemporaneous values for a given set of sensors.
+    regex_list : dict
+        Dictionary containing the regular expression for grouping simulations
+        for each DLC.
+    metric_list : dict
+        Dictionary containing the function to be applied to each group of simulations
+        for each DLC.
+    safety_factor_list : dict
+        Dictionary containing the safety factor to be applied to each group of simulations
+        for each DLC.
+
+    Returns
+    -------
+    DataArray (Nsensors*2 x Nsensors)
+        DataArray containing the extreme values (max and min) and their contemporaneous
+        values for a given set of sensors.
+
+    """
+    grouped_simulations = group_simulations(ext_and_cont, regex_list)
+    values_by_group_dict = {}
+    for group, simulations in grouped_simulations.items():
+        DLC = get_DLC(group)
+        group_values = xr.apply_ufunc(ext_or_cont,
+                                     simulations,
+                                     simulations.coords['driver'], 
+                                     simulations.coords['sensor_description'], 
+                                     kwargs={'metric': metric_list[DLC], 'safety_factor': safety_factor_list[DLC]},
+                                     input_core_dims=[['filename'], [], []],
+                                     vectorize=True)
+        values_by_group_dict[group] = group_values
+    values_by_group = xr.concat(list(values_by_group_dict.values()), dim='group')
+    values_by_group['group'] = list(values_by_group_dict.keys())
+
+    driving_group_indices = []
+    for driver in values_by_group.coords['driver'].values:
+        sensor_description = driver[:-4]
+        metric = driver[-3:]
+        if metric == 'max':
+            driving_group_indices.append(values_by_group.sel(driver=driver, sensor_description=sensor_description).argmax('group'))
+        elif metric == 'min':
+            driving_group_indices.append(values_by_group.sel(driver=driver, sensor_description=sensor_description).argmin('group'))
+    driving_group_indices = xr.concat(driving_group_indices, dim='driver')
+    driving_group_indices = driving_group_indices.drop_vars('sensor_description')
+    DLB_ext_and_cont = values_by_group.isel(group=driving_group_indices)
+    return DLB_ext_and_cont
+
 def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
     grouped_simulations = group_simulations(dataarray, regex_list)
     group_values_dict = {}
