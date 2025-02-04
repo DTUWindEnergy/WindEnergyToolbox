@@ -43,7 +43,8 @@ def DLB_extreme_loads_to_excel(DLB_extreme_loads, path):
     """
     with pd.ExcelWriter(path, engine="openpyxl") as writer:
         for sensor in DLB_extreme_loads.coords['sensor_name'].values:
-            df = DLB_extreme_loads.sel(sensor_name=sensor).to_pandas()    
+            df = DLB_extreme_loads.sel(sensor_name=sensor).to_pandas()
+            df['group'] = DLB_extreme_loads.sel(sensor_name=sensor)['group'].values
             df.to_excel(writer, sheet_name=sensor, index_label='driver')
     workbook = load_workbook(path)
     highlight = PatternFill(start_color="C0C0C0", end_color="C0C0C0", fill_type="solid")

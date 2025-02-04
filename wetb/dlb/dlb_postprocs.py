@@ -202,9 +202,71 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
     driving_group_indices = xr.concat(driving_group_indices, dim='driver')
     driving_group_indices = driving_group_indices.drop_vars('load')
     DLB_extreme_loads = loads_by_group.isel(group=driving_group_indices)
-    return DLB_extreme_loads
+    return DLB_extreme_loads.transpose('sensor_name', 'driver', 'load')
 
-def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
+def ext_or_cont(ext_and_cont, driver, sensor_description, metric, safety_factor):
+    if sensor_description in driver:  
+        return metric(ext_and_cont)*safety_factor
+    else:
+        return np.mean(np.abs(ext_and_cont))*np.sign(ext_and_cont[np.argmax(np.abs(ext_and_cont))])
+
+def get_DLB_ext_and_cont(ext_and_cont, regex_list, metric_list, safety_factor_list):
+    """
+    Analogue function to get_DLB_extreme_loads, but generalized for any given
+    set of sensors and not only the 6 load components of a node.
+
+    Parameters
+    ----------
+    ext_and_cont : xarray.DataArray (Nsimulations x Nsensors*2 x Nsensors)
+        DataArray containing collected data for each simulation of the extreme values
+        (max and min) and their contemporaneous values for a given set of sensors.
+    regex_list : dict
+        Dictionary containing the regular expression for grouping simulations
+        for each DLC.
+    metric_list : dict
+        Dictionary containing the function to be applied to each group of simulations
+        for each DLC.
+    safety_factor_list : dict
+        Dictionary containing the safety factor to be applied to each group of simulations
+        for each DLC.
+
+    Returns
+    -------
+    DataArray (Nsensors*2 x Nsensors)
+        DataArray containing the extreme values (max and min) and their contemporaneous
+        values for a given set of sensors.
+
+    """
+    grouped_simulations = group_simulations(ext_and_cont, regex_list)
+    values_by_group_dict = {}
+    for group, simulations in grouped_simulations.items():
+        DLC = get_DLC(group)
+        group_values = xr.apply_ufunc(ext_or_cont,
+                                     simulations,
+                                     simulations.coords['driver'], 
+                                     simulations.coords['sensor_description'], 
+                                     kwargs={'metric': metric_list[DLC], 'safety_factor': safety_factor_list[DLC]},
+                                     input_core_dims=[['filename'], [], []],
+                                     vectorize=True)
+        values_by_group_dict[group] = group_values
+    values_by_group = xr.concat(list(values_by_group_dict.values()), dim='group')
+    values_by_group = values_by_group.drop_vars('variable')
+    values_by_group['group'] = list(values_by_group_dict.keys())
+
+    driving_group_indices = []
+    for driver in values_by_group.coords['driver'].values:
+        sensor_description = driver[:-4]
+        metric = driver[-3:]
+        if metric == 'max':
+            driving_group_indices.append(values_by_group.sel(driver=driver, sensor_description=sensor_description).argmax('group'))
+        elif metric == 'min':
+            driving_group_indices.append(values_by_group.sel(driver=driver, sensor_description=sensor_description).argmin('group'))
+    driving_group_indices = xr.concat(driving_group_indices, dim='driver')
+    driving_group_indices = driving_group_indices.drop_vars('sensor_description')
+    DLB_ext_and_cont = values_by_group.isel(group=driving_group_indices)
+    return DLB_ext_and_cont
+
+def get_values_by_group(dataarray, regex_list, metric_list, safety_factor_list):
     grouped_simulations = group_simulations(dataarray, regex_list)
     group_values_dict = {}
     for group, simulations in grouped_simulations.items():
@@ -218,25 +280,17 @@ def get_group_values(dataarray, regex_list, metric_list, safety_factor_list):
     group_values = xr.concat(list(group_values_dict.values()), 'group')
     group_values = group_values.drop_vars('variable')
     group_values.coords['group'] = list(group_values_dict.keys())
-    return group_values
+    return group_values            
 
-def get_extreme_values(dataarray):
-    max_values = dataarray.max('group')
-    max_indices = dataarray.argmax('group')
-    max_values.coords['group'] = dataarray['group'].isel(group=max_indices)
-    return max_values            
-
-def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_list):
+def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list, metric_list, safety_factor_list):
     """
-    Calculate the extreme values of any sensor for the whole DLB.
+    Identic procedure as in get_DLB_extreme_loads, but for maximum loads 
+    along each direction.
 
     Parameters
     ----------
-    dataarray : xarray.DataArray (Nsimulations x *)
-        DataArray containing collected data for each simulation. Must have
-        filename as leading dimension and can have any number of extra dimensions.
-        Dims: filename, *\n
-        Coords: filename, *
+    directional_extreme_loads : xarray.DataArray 
+        DataArray containing the collected directional extreme loads of all simulations.
     regex_list : dict
         Dictionary containing the regular expression for grouping simulations
         for each DLC.
@@ -249,16 +303,56 @@ def get_DLB_extreme_values(dataarray, regex_list, metric_list, safety_factor_lis
 
     Returns
     -------
-    DataArray (Nsensors x Ndirections x 3)
-        DataArray containing the extreme values of the DLB, as well as 
-        the group of simulations driving each sensor.\n
-        Dims: dataarray.dims without filename\n
-        Coords: dataarray.dims without filename, group
+    xarray.DataArray
+        DataArray containing the maximum values of the DLB, as well as 
+        the group of simulations driving each load direction
 
     """
-    group_values = get_group_values(dataarray, regex_list, metric_list, safety_factor_list)
-    extreme_values = get_extreme_values(group_values)
-    return extreme_values
+    group_values = get_values_by_group(directional_extreme_loads, regex_list, metric_list, safety_factor_list)
+    
+    DLB_directional_extreme_loads = group_values.max('group')
+    DLB_directional_extreme_loads.coords['group'] = group_values['group'].isel(group=group_values.argmax('group'))
+    return DLB_directional_extreme_loads
+
+def get_DLB_extreme_values(statistics, regex_list, metric_list, safety_factor_list):
+    """
+    Group sensors maxima and minima of each timeseries by regular expression,
+    apply a metric and scale by a safety factor. Identic procedure as in
+    get_DLB_extreme_loads, but applycable for any sensor and only extreme values
+    are computed, not contemporaneous values of other sensors.
+
+    Parameters
+    ----------
+    statistics : xarray.DataArray (Nsimulations x *)
+        DataArray containing the collected statistics of all simulations.
+    regex_list : dict
+        Dictionary containing the regular expression for grouping simulations
+        for each DLC.
+    metric_list : dict
+        Dictionary containing the function to be applied to each group of simulations
+        for each DLC.
+    safety_factor_list : dict
+        Dictionary containing the safety factor to be applied to each group of simulations
+        for each DLC.
+
+    Returns
+    -------
+    DataArray (Nsensors x 2)
+        DataArray containing the maximum and minimum values of the DLB, as well as 
+        the group of simulations driving each sensor
+
+    """
+    group_values = get_values_by_group(statistics, regex_list, metric_list, safety_factor_list)
+    
+    max_values = group_values.sel(statistic='max').max('group')
+    max_indices = group_values.sel(statistic='max').argmax('group')
+    max_values.coords['group'] = group_values.sel(statistic='max')['group'].isel(group=max_indices)
+    
+    min_values = group_values.sel(statistic='min').min('group')
+    min_indices = group_values.sel(statistic='min').argmin('group')
+    min_values.coords['group'] = group_values.sel(statistic='min')['group'].isel(group=min_indices)
+    DLB_extreme_values = xr.concat([max_values, min_values], dim='statistic')
+    return DLB_extreme_values.transpose('sensor_name', 'statistic')
 
 def get_DLB_eq_loads(eq_loads, weight_list):
     """
@@ -290,6 +384,8 @@ def get_DLB_eq_loads(eq_loads, weight_list):
                                    coords={'filename': list(weight_list.keys())})
     m_list = eq_loads.m
     DLB_eq_loads = (weight_list*eq_loads**m_list).sum('filename')**(1/m_list)
+    if 'variable' in DLB_eq_loads.coords:
+        DLB_eq_loads = DLB_eq_loads.drop_vars('variable')
     return DLB_eq_loads
 
 def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
