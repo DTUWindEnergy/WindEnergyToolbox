@@ -352,7 +352,9 @@ def get_DLB_extreme_values(statistics, regex_list, metric_list, safety_factor_li
     min_indices = group_values.sel(statistic='min').argmin('group')
     min_values.coords['group'] = group_values.sel(statistic='min')['group'].isel(group=min_indices)
     DLB_extreme_values = xr.concat([max_values, min_values], dim='statistic')
-    return DLB_extreme_values.transpose('sensor_name', 'statistic')
+    if 'sensor_name' in DLB_extreme_values.dims:
+        DLB_extreme_values = DLB_extreme_values.transpose('sensor_name', 'statistic')
+    return DLB_extreme_values
 
 def get_DLB_eq_loads(eq_loads, weight_list):
     """
