@@ -409,9 +409,9 @@ class HTCOutputSection(HTCSection):
         return s
 
     def copy(self):
-        section = HTCSection.copy(self)
-        section.sensors = list.copy(self.sensors)
-        return section
+        copy = HTCSection.copy(self)
+        copy.sensors = list.copy(self.sensors)
+        return copy
 
 
 class HTCOutputAtTimeSection(HTCOutputSection):
@@ -433,6 +433,14 @@ class HTCOutputAtTimeSection(HTCOutputSection):
         s += "%send %s;%s\n" % ("  " * level, self.name_, ("", "\t" + self.end_comments)
                                 [self.end_comments.strip() != ""])
         return s
+
+    def copy(self):
+        copy = HTCOutputAtTimeSection(name=f"{self.name_} {self.type} {self.time}",
+                                           begin_comments=self.begin_comments, end_comments=self.end_comments)
+        for k, v in self.contents.items():
+            copy.contents[k] = v.copy()
+        copy.sensors = list.copy(self.sensors)
+        return copy
 
 
 class HTCSensor(HTCLine):
