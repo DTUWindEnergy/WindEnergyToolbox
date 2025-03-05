@@ -290,7 +290,7 @@ class HTCSection(HTCContents):
             raise ValueError("Multiple contents with '%s=%s' not found" % (key, value))
 
     def copy(self):
-        copy = HTCSection(name=self.name_, begin_comments=self.begin_comments, end_comments=self.end_comments)
+        copy = self.__class__(name=self.name_, begin_comments=self.begin_comments, end_comments=self.end_comments)
         for k, v in self.contents.items():
             copy.contents[k] = v.copy()
         return copy
@@ -407,6 +407,11 @@ class HTCOutputSection(HTCSection):
             s += "\n".join(["- %s" % l for l in str(s2).strip().split("\n")]) + "\n"
 
         return s
+
+    def copy(self):
+        section = HTCSection.copy(self)
+        section.sensors = list.copy(self.sensors)
+        return section
 
 
 class HTCOutputAtTimeSection(HTCOutputSection):
