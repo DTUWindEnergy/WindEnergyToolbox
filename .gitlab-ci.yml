@@ -70,7 +70,7 @@ upload_package_local:
     artifacts: false
 
   script:
-    - pip install twine
+    - pip install --upgrade twine packaging
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --verbose --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*
   
   rules:
@@ -97,7 +97,7 @@ upload_package_pypi:
     artifacts: false
 
   script:
-    - pip install twine
+    - pip install --upgrade twine packaging
     - twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
   only:
     - tags
