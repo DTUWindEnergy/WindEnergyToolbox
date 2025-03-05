@@ -403,7 +403,9 @@ end turb_export;"""
         test2 = id(htc1) != id(htc2)
         assert test1 and test2
         assert htc1.modelpath == htc2.modelpath
-        assert htc2.filename == self.testfilepath + "test_copy.htc"
+        assert htc2.filename == self.testfilepath.replace("\\", "/") + "test_copy.htc"
+        assert str(htc1.output) == str(htc2.output)
+        assert str(htc1.output_at_time) == str(htc2.output_at_time)
 
     def test_location(self):
         htc = HTCFile(self.testfilepath + "test.htc")
