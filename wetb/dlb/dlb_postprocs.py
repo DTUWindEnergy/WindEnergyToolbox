@@ -6,7 +6,13 @@ from copy import copy
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
 def nc_to_dataarray(nc_file):
-    return xr.open_dataset(nc_file).to_dataarray().squeeze('variable')
+    dataarray = xr.open_dataset(nc_file).to_dataarray().squeeze('variable')
+    if 'sensor_unit' in dataarray.coords:
+        dataarray = dataarray.assign_coords(sensor_unit=dataarray["sensor_unit"].astype(str))
+    if 'sensor_description' in dataarray.coords:
+        dataarray = dataarray.assign_coords(sensor_description=dataarray["sensor_description"].astype(str))
+        dataarray = add_coords_from_sensor_description(dataarray)
+    return dataarray
 
 def get_params(filename, regex):
     match = re.match(regex, os.path.basename(filename))
@@ -28,6 +34,77 @@ def add_coords_from_filename(dataarray, params, regex, formats=None):
     else:
         for i in range(len(params)):
             dataarray.coords[params[i]] = ('filename', [formats[i](v) for v in coords[i].values])
+    return dataarray
+
+def get_load_info(sensor_description):
+    if sensor_description.startswith('Force_intp'):
+        load = sensor_description[12:14]
+        mbdy_end = sensor_description.find(' ', 20)
+        mbdy = sensor_description[20:mbdy_end]
+        s_start = sensor_description.find('s=', mbdy_end) + 3
+        s_end = s_start + 6
+        s = float(sensor_description[s_start: s_end])
+        ss_start = sensor_description.find('s/S=', mbdy_end) + 5
+        ss_end = ss_start + 6
+        ss = float(sensor_description[ss_start: ss_end])
+        coo_start = sensor_description.find('coo:', ss_end) + 5
+        coo_end = sensor_description.find(' ', coo_start)
+        coo = sensor_description[coo_start:coo_end]
+        center_start = sensor_description.find('center:', coo_end) + 7
+        center_end = sensor_description.find(' ', center_start)
+        center = sensor_description[center_start:center_end]
+        return coo, load, mbdy, None, s, ss, center
+    elif sensor_description.startswith('Moment_intp'):
+        load = sensor_description[13:15]
+        mbdy_end = sensor_description.find(' ', 21)
+        mbdy = sensor_description[21:mbdy_end]
+        s_start = sensor_description.find('s=', mbdy_end) + 3
+        s_end = s_start + 6
+        s = float(sensor_description[s_start: s_end])
+        ss_start = sensor_description.find('s/S=', mbdy_end) + 5
+        ss_end = ss_start + 6
+        ss = float(sensor_description[ss_start: ss_end])
+        coo_start = sensor_description.find('coo:', ss_end) + 5
+        coo_end = sensor_description.find(' ', coo_start)
+        coo = sensor_description[coo_start:coo_end]
+        center_start = sensor_description.find('center:', coo_end) + 7
+        center_end = sensor_description.find(' ', center_start)
+        center = sensor_description[center_start:center_end]
+        return coo, load, mbdy, None, s, ss, center
+    elif sensor_description.startswith('Force'):
+        load = sensor_description[7:9]
+        mbdy_end = sensor_description.find(' ', 15)
+        mbdy = sensor_description[15:mbdy_end]
+        node_start = sensor_description.find('nodenr:', mbdy_end) + 8
+        node_end = node_start + 3
+        node = int(sensor_description[node_start:node_end])
+        coo_start = sensor_description.find('coo:', node_end) + 5
+        coo_end = sensor_description.find(' ', coo_start)
+        coo = sensor_description[coo_start:coo_end]
+        return coo, load, mbdy, node, None, None, None
+    elif sensor_description.startswith('Moment'):
+        load = sensor_description[6:8]
+        mbdy_end = sensor_description.find(' ', 14)
+        mbdy = sensor_description[14:mbdy_end]
+        node_start = sensor_description.find('nodenr:', mbdy_end) + 8
+        node_end = node_start + 3
+        node = int(sensor_description[node_start:node_end])
+        coo_start = sensor_description.find('coo:', node_end) + 5
+        coo_end = sensor_description.find(' ', coo_start)
+        coo = sensor_description[coo_start:coo_end]
+        return coo, load, mbdy, node, None, None, None
+    else:
+        return None, None, None, None, None, None, None
+
+def add_coords_from_sensor_description(dataarray):
+    coords = xr.apply_ufunc(get_load_info,
+                            dataarray.coords['sensor_description'],
+                            input_core_dims=[[]],
+                            output_core_dims=[[], [], [], [], [], [], []],
+                            vectorize=True)
+    coords_labels = ['coo', 'load', 'mbdy', 'node', 's', 's/S', 'center']
+    for i in range(len(coords_labels)):
+        dataarray.coords[coords_labels[i]] = ('sensor_name', coords[i].values)
     return dataarray
 
 def get_DLC(filename):
