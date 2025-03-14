@@ -163,8 +163,8 @@ class TestHtcFile(unittest.TestCase):
     filename_v\t./turb/mann_l30.1_ae1.1000_g3.3_h0_16384x32x32_0.366x3.23x3.23_s0102v.turb;
     filename_w\t./turb/mann_l30.1_ae1.1000_g3.3_h0_16384x32x32_0.366x3.23x3.23_s0102w.turb;
     box_dim_u\t16384 0.3662;
-    box_dim_v\t32 3.2258;
-    box_dim_w\t32 3.2258;"""
+    box_dim_v\t32 3.125;
+    box_dim_w\t32 3.125;"""
         for a, b in zip(s.split("\n"), str(htcfile.wind.mann).split("\n")):
             self.assertEqual(a.strip(), b.strip())
         self.assertEqual(htcfile.wind.turb_format[0], 1)
@@ -182,8 +182,8 @@ class TestHtcFile(unittest.TestCase):
   samplefrq\t3;
   time_start\t100;
   nsteps\t60000.0;
-  box_dim_v\t32 3.2258;
-  box_dim_w\t32 3.2258;
+  box_dim_v\t32 3.125;
+  box_dim_w\t32 3.125;
 end turb_export;"""
         for a, b in zip(s.split("\n"), str(htc.wind.turb_export).split("\n")):
             self.assertEqual(a.strip(), b.strip())

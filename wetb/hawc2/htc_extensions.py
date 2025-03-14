@@ -44,7 +44,7 @@ class HTCDefaults(object):
     end output;
     exit;"""
 
-    def add_mann_turbulence(self, L=29.4, ae23=1, Gamma=3.9, seed=1001, high_frq_compensation=True,
+    def add_mann_turbulence(self, L=33.6, ae23=1, Gamma=3.9, seed=1001, high_frq_compensation=True,
                             filenames=None,
                             no_grid_points=(16384, 32, 32), box_dimension=(6000, 100, 100),
                             dont_scale=False,
@@ -70,7 +70,7 @@ class HTCDefaults(object):
         for filename, c in zip(filenames, ['u', 'v', 'w']):
             setattr(mann, 'filename_%s' % c, filename)
         for c, n, dim in zip(['u', 'v', 'w'], no_grid_points, box_dimension):
-            setattr(mann, 'box_dim_%s' % c, "%d %.4f" % (n, dim / (n - 1)))
+            setattr(mann, 'box_dim_%s' % c, "%d %.4f" % (n, dim / n))
         if dont_scale:
             mann.dont_scale = 1
         else:
