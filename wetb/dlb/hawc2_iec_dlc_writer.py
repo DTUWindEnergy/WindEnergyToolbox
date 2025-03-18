@@ -13,7 +13,7 @@ TODO: set default turb_format = 0
 class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def __init__(self, base_htc_file, diameter,
                  time_start=100,  # Minimum 5s cf. IEC61400-1(2005), section 7.5
-                 turbulence_defaults=(29.4, 3.7, 8192, 32)  # L, gamma, n_x, n_yz):
+                 turbulence_defaults=(33.6, 3.9, 8192, 64)  # L, gamma, n_x, n_yz):
                  ):
         HAWC2InputWriter.__init__(self, base_htc_file, diameter=diameter,
                                   time_start=time_start,

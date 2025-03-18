@@ -1,6 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, UTC
 import numpy as np
-timestamp0 = datetime.utcfromtimestamp(0)
+timestamp0 = datetime(1970, 1, 1)
 
 
 def to_unix(dateTime):
@@ -11,11 +11,11 @@ def to_unix(dateTime):
             return [(dt - timestamp0).total_seconds() for dt in dateTime]
         raise
 
+
 # def from_unix_old(sec):
 #     if np.isnan(sec):
 #         return datetime.utcfromtimestamp(0)
 #     return datetime.utcfromtimestamp(sec)
-
 
 day_dict = {}
 
