@@ -55,7 +55,7 @@ class HTCDefaults(object):
         if filenames is None:
 
             import numpy as np
-            dxyz = tuple(np.array(box_dimension) / (np.array(no_grid_points) - 1))
+            dxyz = tuple(np.array(box_dimension) / np.array(no_grid_points))
             from wetb.wind.turbulence import mann_turbulence
             filenames = ["./turb/" + mann_turbulence.name_format %
                          ((L, ae23, Gamma, high_frq_compensation) + no_grid_points + dxyz + (seed, uvw))
