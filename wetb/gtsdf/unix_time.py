@@ -1,4 +1,4 @@
-from datetime import datetime, date, UTC
+from datetime import datetime, date
 import numpy as np
 timestamp0 = datetime(1970, 1, 1)
 
