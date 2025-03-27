@@ -279,7 +279,7 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
     driving_group_indices = xr.concat(driving_group_indices, dim='driver')
     driving_group_indices = driving_group_indices.drop_vars('load')
     DLB_extreme_loads = loads_by_group.isel(group=driving_group_indices)
-    return DLB_extreme_loads.transpose('sensor_name', 'driver', 'load')
+    return DLB_extreme_loads.transpose(..., 'sensor_name', 'driver', 'load')
 
 def ext_or_cont(ext_and_cont, driver, sensor_description, metric, safety_factor):
     if sensor_description in driver:  
@@ -430,7 +430,7 @@ def get_DLB_extreme_values(statistics, regex_list, metric_list, safety_factor_li
     min_values.coords['group'] = group_values.sel(statistic='min')['group'].isel(group=min_indices)
     DLB_extreme_values = xr.concat([max_values, min_values], dim='statistic')
     if 'sensor_name' in DLB_extreme_values.dims:
-        DLB_extreme_values = DLB_extreme_values.transpose('sensor_name', 'statistic')
+        DLB_extreme_values = DLB_extreme_values.transpose(..., 'sensor_name', 'statistic')
     return DLB_extreme_values
 
 def get_DLB_eq_loads(eq_loads, weight_list):
