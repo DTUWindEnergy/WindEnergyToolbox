@@ -18,7 +18,11 @@ from itertools import chain
 import numpy as np
 import scipy as sp
 import scipy.io as sio
-import scipy.integrate as integrate
+# scipy changed interface name from 1.14 to 1.15
+try:
+    from scipy.integrate import trapezoid # scipy >1.15
+except ImportError:
+    from scipy.integrate import trapz as trapezoid  # scipy <=1.14
 import pandas as pd
 
 # misc is part of prepost, which is available on the dtu wind gitlab server:
@@ -698,7 +702,7 @@ class LoadResults(ReadHawc2):
         stats['range'] = stats['max'] - stats['min']
         stats['absmax'] = np.absolute(sig[i0:i1, :]).max(axis=0)
         stats['rms'] = np.sqrt(np.mean(sig[i0:i1, :]*sig[i0:i1, :], axis=0))
-        stats['int'] = integrate.trapz(sig[i0:i1, :], x=sig[i0:i1, 0], axis=0)
+        stats['int'] = trapezoid(sig[i0:i1, :], x=sig[i0:i1, 0], axis=0)
         return stats
 
     def statsdel_df(self, i0=0, i1=None, statchans='all', delchans='all',
@@ -765,8 +769,8 @@ class LoadResults(ReadHawc2):
         statsdel['range'] = statsdel['max'] - statsdel['min']
         statsdel['absmax'] = np.abs(datasel).max(axis=0)
         statsdel['rms'] = np.sqrt(np.mean(datasel*datasel, axis=0))
-        statsdel['int'] = integrate.trapz(datasel, x=time, axis=0)
-        statsdel['intabs'] = integrate.trapz(np.abs(datasel), x=time, axis=0)
+        statsdel['int'] = trapezoid(datasel, x=time, axis=0)
+        statsdel['intabs'] = trapezoid(np.abs(datasel), x=time, axis=0)
 
         if neq is None:
             neq = self.sig[-1,0] - self.sig[0,0]
