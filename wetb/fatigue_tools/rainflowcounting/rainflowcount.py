@@ -2,6 +2,7 @@ import numpy as np
 from wetb.fatigue_tools.rainflowcounting import peak_trough
 from wetb.fatigue_tools.rainflowcounting import pair_range
 from wetb.fatigue_tools.rainflowcounting import rainflowcount_astm
+from wetb.fatigue_tools.rainflowcounting import rainflowcount_astm_new
 
 
 def check_signal(signal):
@@ -117,5 +118,27 @@ def rainflow_astm(signal, rainflowcount_astm=rainflowcount_astm):
 
     # rainflow count
     ampl_mean = np.array(rainflowcount_astm.rainflowcount(sig_ext))
+
+    return np.array(ampl_mean).T
+    
+def rainflow_astm_new(signal, rainflowcount_astm=rainflowcount_astm_new):
+    """Matlab equivalent rainflow counting
+
+    Calculate the cycle characteristics of both half and full cycles in the signal.
+    Cycle characteristics include, cycle weight, amplitude, means, and indices of maxima/minima forming the cycle
+    
+    This implementation is based on the MATLAB implementation of rainflow counting algorithm found at:
+        https://de.mathworks.com/help/signal/ref/rainflow.html#References
+        ASTM E1049-85(2017), "Standard Practices for Cycle Counting in Fatigue Analysis." West Conshohocken, PA: ASTM International, 2017, https://www.astm.org/e1049-85r17.html.
+
+
+    """
+    check_signal(signal)
+
+    # type <double> is reuqired by <find_extreme> and <rainflow>
+    signal = signal.astype(np.double)
+
+    # rainflow count
+    ampl_mean = np.array(rainflowcount_astm_new.count_cycles_new(signal))
 
     return np.array(ampl_mean).T

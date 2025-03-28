@@ -20,6 +20,95 @@ from wetb.fatigue_tools.rainflowcounting import rainflowcount
 
 rainflow_windap = rainflowcount.rainflow_windap
 rainflow_astm = rainflowcount.rainflow_astm
+rainflow_astm_new = rainflowcount.rainflow_astm_new
+
+def eq_load_new(signals, m=[3, 4, 6, 8, 10, 12], neq=1, rainflow_func=rainflow_astm_new):
+    """
+    Equivalent load calculation: new approach
+    @author: A.Anand
+
+    Calculate the equivalent loads for a list of Wohler exponent and number of equivalent frequency
+
+    Parameters
+    ----------
+    signals : list of tuples or array_like
+        - if list of tuples: list must have format [(sig1_weight, sig1),(sig2_weight, sig1),...] where\n
+            - sigx_weight is the weight of signal x\n
+            - sigx is signal x\n
+        - if array_like: The signal
+    no_bins : int, optional
+        Number of bins in rainflow count histogram
+    m : int, float or array-like, optional
+        Wohler exponent (default is [3, 4, 6, 8, 10, 12])
+    neq : int, float or array-like, optional
+        The equivalent number of load cycles (default is 1, but normally the time duration in seconds is used)
+    rainflow_func : {rainflow_windap, rainflow_astm}, optional
+        The rainflow counting function to use (default is rainflow_windap)
+
+    Returns
+    -------
+    eq_loads : array-like
+        List of lists of equivalent loads for the corresponding equivalent number(s) and Wohler exponents
+    eq_loads_only_due_to_full_cycles : array-like
+        List of lists of equivalent loads for the corresponding equivalent number(s) and Wohler exponents
+    residue set : array-like
+        List of sample points that contributed to half-cycles and may form a full cycle when concatenated with future signals
+        Required for low-cycle fatigue anaylsis
+        Values do not change over corresponding equivalent number(s) and Wohler exponents
+        
+
+    Examples
+    --------   
+    >>> signal = np.array([-2.0, 0.0, 1.0, 0.0, -3.0, 0.0, 5.0, 0.0, -1.0, 0.0, 3.0, 0.0, -4.0, 0.0, 4.0, 0.0, -2.0])
+    eq_load_new(signal1, m=[4,6,8], neq=[600,1200], rainflow_func=rainflow_astm_new)
+    
+    [[np.float64(1.9371511777263486), np.float64(3.1239808438854455), np.float64(3.9989865412173633)], [np.float64(1.6289434811545977), np.float64(2.783150529312519), np.float64(3.6670868270173855)]],
+    [[np.float64(0.8082062018706494), np.float64(1.3773197749232746), np.float64(1.7980057862761725)], [np.float64(0.6796176979388491), np.float64(1.2270524219484862), np.float64(1.6487785757206441)]],
+    array([-2.,  1.,  1., -3., -3.,  5.,  5., -4., -4.,  4.,  4., -2.])
+    
+    
+    """
+    
+    if rainflow_func == rainflow_astm_new :
+        cyc_mat = rainflow_astm_new(signals)
+        weights = np.asarray(cyc_mat[0]) # cycle weight [0.5 denotes half-cycle, 1.0 denotes full-cycle]
+        ampls = np.asarray(cyc_mat[1]) # peak-to-peak amplitude
+        means = np.asarray(cyc_mat[2]) # cycle mean values
+        idx_full_cycles = np.where(weights==1.0)[0]
+        idx_half_cycles = np.where(weights==0.5)[0]
+        if np.size(idx_full_cycles,0)>0:
+            ampls_full_cycles = []
+            for i in range(len(idx_full_cycles)):
+                ampls_full_cycles.append( abs( signals[int(cyc_mat[3,idx_full_cycles[i]])] - 
+                                     signals[int(cyc_mat[4,idx_full_cycles[i]])] ) )
+            ampls_full_cycles = np.asarray(ampls_full_cycles)
+        else:
+            ampls_full_cycles = np.asarray([0.0])
+        if np.size(idx_half_cycles,0)>0:
+            residues = []
+            for i in range(len(idx_half_cycles)):
+                residues.append( signals[int(cyc_mat[3,idx_half_cycles[i]])] )
+                residues.append( signals[int(cyc_mat[4,idx_half_cycles[i]])] )
+            residues = np.asarray(residues)
+        else:
+            residues = np.asarray([])
+            
+    else :
+        ampls, means = rainflow_func(signals[:])
+        weights = np.ones_like(ampls)
+        residues = np.asarray([])
+        ampls_full_cycles = np.asarray([0.0])
+        
+    with warnings.catch_warnings():
+        weights, ampls = weights.flatten(), ampls.flatten()
+        warnings.simplefilter("ignore")
+        eq_loads = [[((np.nansum(weights * ampls ** _m) / _neq) ** (1. / _m))
+                     for _m in np.atleast_1d(m)] for _neq in np.atleast_1d(neq)]
+        eq_loads_full_cycles = [[((np.nansum(ampls_full_cycles ** _m) / _neq) ** (1. / _m))
+                 for _m in np.atleast_1d(m)] for _neq in np.atleast_1d(neq)]
+
+            
+    return eq_loads, eq_loads_full_cycles, residues
 
 
 def eq_load(signals, no_bins=46, m=[3, 4, 6, 8, 10, 12], neq=1, rainflow_func=rainflow_windap):
@@ -253,3 +342,10 @@ if __name__ == "__main__":
 
     # Cycle matrix where signal1 and signal2 contributes with 50% each
     print(cycle_matrix([(.5, signal1), (.5, signal2)], 4, 8, rainflow_func=rainflow_astm))
+    
+    # Comparison of eq_load and eq_load_new methods
+    print('\n')
+    print('Verification of the new approach')
+    print(eq_load(signal1, m=[4,6,8], neq=[600,1200], rainflow_func=rainflow_astm))
+    print('\n')
+    print(eq_load_new(signal1, m=[4,6,8], neq=[600,1200], rainflow_func=rainflow_astm_new))
