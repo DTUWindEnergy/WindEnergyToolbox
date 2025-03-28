@@ -202,7 +202,7 @@ class TestsLoadResults(unittest.TestCase):
                [200, 'blade2-blade2-node-017-momentvec-z', 'kNm'],
                [296, 'blade1-blade1-node-008-forcevec-z', 'kN'],
                [415, 'Cl-1-55.7', 'deg'],
-               [421, 'qwerty-is-azerty', 'is'],
+               [421, 'qwerty', 'is'],
                [422, 'wind_wake-wake_pos_x_1', 'm'],
                [423, 'wind_wake-wake_pos_y_2', 'm'],
                [424, 'wind_wake-wake_pos_z_5', 'm'],

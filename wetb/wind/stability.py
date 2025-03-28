@@ -5,7 +5,6 @@ Created on 05/10/2015
 '''
 
 import numpy as np
-from scipy.integrate import trapz
 from scipy.signal.signaltools import detrend
 
 
@@ -38,7 +37,7 @@ def MoninObukhov_length(u,v,w, T):
 
 def L2category(L, full_category_name=False):
     """Stability category from Monin-Obukhov length
-    
+
     Categories:
     0>L>-50: Extreme unstable (eu)
     -50>L>-100: Very unstable (vu)
@@ -57,15 +56,15 @@ def L2category(L, full_category_name=False):
     full_category_name : bool, optional
         If False, default, category ids are returned, e.g. "n" for neutral
         If True, full name of category are returned, e.g. "Neutral"
-    
+
     Returns
     -------
     Stability category : str
-    
+
         Examples
     --------
     >>> L2category(1000)
-    n 
+    n
     """
     cat_limits = np.array([-1e-99,-50,-100,-200,-500,500,200,50,10,1e-99])
     index = np.searchsorted( 1/cat_limits, 1/np.array(L))-1
@@ -73,7 +72,7 @@ def L2category(L, full_category_name=False):
         return np.array(['Extreme unstable', 'Very unstable','Unstable','Near unstable','Neutral','Near stable','Stable','Very stable','Extreme stable','Undefined'])[index]
     else:
         return np.array(['eu', 'vu','u','nu','n','ns','s','vs','es','-'])[index]
-    
+
 def MoninObukhov_length2(u_star, w, T, specific_humidity=None):
     """Calculate the Monin Obukhov length
 
