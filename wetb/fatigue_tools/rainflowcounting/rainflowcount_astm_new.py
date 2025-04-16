@@ -17,12 +17,12 @@ This implementation is based on the MATLAB implementation of rainflow counting a
 from collections import deque, defaultdict
 import math
 
-try:
-    from importlib import metadata as _importlib_metadata
-except ImportError:
-    import importlib_metadata as _importlib_metadata
+# try:
+#     from importlib import metadata as _importlib_metadata
+# except ImportError:
+#     import importlib_metadata as _importlib_metadata
 
-__version__ = _importlib_metadata.version("rainflow")
+# __version__ = _importlib_metadata.version("rainflow")
 
 
 def _get_round_function(ndigits=None):
