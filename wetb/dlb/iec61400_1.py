@@ -416,7 +416,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
     def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
                  controller, generator_servo, pitch_servo, best_azimuth,
                  Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
-                 shaft='shaft', shaft_constraint='shaft_rot'):
+                 shaft='shaft', shaft_constraint='shaft_rot', Vref=None, tiref=None):
         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
@@ -687,8 +687,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Time: 600},
         ]
         
-        Vref = {1: 50, 2: 42.5, 3: 37.5}[int(iec_wt_class[0])]
-        tiref = {'a': 0.16, 'b': 0.14, 'c': 0.12}[iec_wt_class[1].lower()]
+        if iec_wt_class[0] in [1, 2, 3] and iec_wt_class[1].lower() in ['a', 'b', 'c']:
+            Vref = {1: 50, 2: 42.5, 3: 37.5}[int(iec_wt_class[0])]
+            tiref = {'a': 0.16, 'b': 0.14, 'c': 0.12}[iec_wt_class[1].lower()]
         V1 = 0.8*Vref
         Ve50 = 1.4*Vref
         Ve1 = 0.8*Ve50
