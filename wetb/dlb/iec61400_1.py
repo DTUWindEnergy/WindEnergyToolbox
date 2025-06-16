@@ -59,12 +59,8 @@ class DLC():
             setattr(self, 'Operation', Operation)
         self.variables = variables
         self.variables.update({k.lower(): v for k, v in variables.items()})
-        turb_class = self.iec_wt_class[1].lower()
-        assert turb_class in 'abc'
-        self.I_ref = {'a': .16, 'b': .14, 'c': .12}[turb_class]  # IEC61400-1(2005) table 1
-        wind_class = int(self.iec_wt_class[0])
-        assert 1 <= wind_class <= 3
-        self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
+        self.V_ref = variables['Vref']
+        self.I_ref = variables['tiref']
         if variables["seed"]:
             self.rng = np.random.default_rng(seed=variables["seed"])
 
