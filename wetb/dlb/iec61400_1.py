@@ -59,12 +59,16 @@ class DLC():
             setattr(self, 'Operation', Operation)
         self.variables = variables
         self.variables.update({k.lower(): v for k, v in variables.items()})
-        turb_class = self.iec_wt_class[1].lower()
-        assert turb_class in 'abc'
-        self.I_ref = {'a': .16, 'b': .14, 'c': .12}[turb_class]  # IEC61400-1(2005) table 1
-        wind_class = int(self.iec_wt_class[0])
-        assert 1 <= wind_class <= 3
-        self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
+        if 'Vref' in variables.keys() and 'tiref' in variables.keys():
+            self.V_ref = variables['vref']
+            self.I_ref = variables['tiref']
+        else:
+            turb_class = self.iec_wt_class[1].lower()
+            assert turb_class in 'abc'
+            self.I_ref = {'a': .16, 'b': .14, 'c': .12}[turb_class]  # IEC61400-1(2005) table 1
+            wind_class = int(self.iec_wt_class[0])
+            assert 1 <= wind_class <= 3
+            self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
         if variables["seed"]:
             self.rng = np.random.default_rng(seed=variables["seed"])
 
@@ -416,7 +420,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
     def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
                  controller, generator_servo, pitch_servo, best_azimuth,
                  Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
-                 shaft='shaft', shaft_constraint='shaft_rot'):
+                 shaft='shaft', shaft_constraint='shaft_rot', Vref=None, tiref=None):
         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
@@ -687,8 +691,9 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Time: 600},
         ]
         
-        Vref = {1: 50, 2: 42.5, 3: 37.5}[int(iec_wt_class[0])]
-        tiref = {'a': 0.16, 'b': 0.14, 'c': 0.12}[iec_wt_class[1].lower()]
+        if Vref is None and tiref is None:
+            Vref = {1: 50, 2: 42.5, 3: 37.5}[int(iec_wt_class[0])]
+            tiref = {'a': 0.16, 'b': 0.14, 'c': 0.12}[iec_wt_class[1].lower()]
         V1 = 0.8*Vref
         Ve50 = 1.4*Vref
         Ve1 = 0.8*Ve50
