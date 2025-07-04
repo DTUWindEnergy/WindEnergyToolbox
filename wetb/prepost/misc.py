@@ -1275,7 +1275,7 @@ class Tests(unittest.TestCase):
                  '$not/$allowed/',
                  ' forget/about/it',
                  'forget/about/it ',
-                 '!are\you\n\\NUTS??',
+                 '!are\\you\n\\NUTS??',
                  'don"t/dothis',
                  'don\'t',
                  'oh_look/a/ space'
