@@ -8,10 +8,209 @@ Created on Mon Mar 10 11:11:48 2025
 
 import re
 import copy
+
+import numpy as np
 import pandas as pd
 
 from wetb.prepost import misc
 
+
+class SensorSearch(object):
+    """Search sensor metadata independently of the data file format."""
+
+    def __init__(self, names=None, units=None, desc=None, htc=None, channel_ids=None):
+        metadata = {}
+        n_sensor = None
+
+        for column, values in [
+            ("Name", names),
+            ("Unit", units),
+            ("Description", desc),
+            ("HTC_input", htc),
+        ]:
+            if values is None:
+                continue
+
+            values = np.atleast_1d(values).tolist()
+            metadata[column] = values
+
+            if n_sensor is None:
+                n_sensor = len(values)
+
+        if n_sensor is None:
+            if channel_ids is None:
+                raise ValueError("No sensor metadata was provided")
+            channel_ids = np.atleast_1d(channel_ids)
+            n_sensor = len(channel_ids)
+
+        elif channel_ids is None:
+            channel_ids = np.arange(n_sensor)
+        else:
+            channel_ids = np.atleast_1d(channel_ids)
+
+        self.df = pd.DataFrame({
+            "Channel_id": channel_ids,
+            **metadata,
+        })
+
+    @classmethod
+    def from_chinfo(cls, chinfo, channel_ids=None):
+        """Build a search object from the ReadHawc2 ChInfo structure."""
+        htc = chinfo[3] if len(chinfo) > 3 else None
+        return cls(chinfo[0], chinfo[1], chinfo[2], htc=htc, channel_ids=channel_ids)
+
+    @classmethod
+    def from_dataframe(cls, df):
+        """Build a search object from a DataFrame with sensor metadata columns."""
+        htc = df["HTC_input"] if "HTC_input" in df else None
+        channel_ids = df["Channel_id"] if "Channel_id" in df else None
+        return cls(
+            names=df.get("Name"),
+            units=df.get("Unit"),
+            desc=df.get("Description"),
+            htc=htc,
+            channel_ids=channel_ids,
+        )
+
+    @classmethod
+    def from_xarray(cls, da):
+        """Build a search object from an xarray object's coordinates."""
+        coords = da.coords
+
+        if not coords:
+            raise ValueError("xarray object does not contain any coordinates")
+
+        def get_coord(*names):
+            for name in names:
+                if name in coords:
+                    return coords[name].values
+            return None
+
+        first_coord = next(iter(coords.values()))
+        sensor_dim = first_coord.dims[0]
+
+        channel_ids = get_coord("sensor", "channel")
+        if channel_ids is None and sensor_dim in coords:
+            channel_ids = coords[sensor_dim].values
+
+        return cls(
+            names=get_coord("sensor_name"),
+            units=get_coord("sensor_unit"),
+            desc=get_coord("sensor_description" ),
+            htc=get_coord("HTC_input"),
+            channel_ids=channel_ids,
+        )
+
+    def __call__(
+        self,
+        name=None,
+        unit=None,
+        desc=None,
+        htc=None,
+        label=None,
+        channel_ids=None,
+    ):
+        """Return a DataFrame with sensors matching all provided filters."""
+        matches = pd.Series(True, index=self.df.index)
+
+        if channel_ids is not None:
+            wanted_ids = np.atleast_1d(channel_ids)
+            matches &= self.df["Channel_id"].isin(wanted_ids)
+
+        if name is not None:
+            if "Name" not in self.df:
+                raise ValueError("Name metadata is not available")
+            matches &= self._contains_any(self.df["Name"], name)
+
+        if unit is not None:
+            if "Unit" not in self.df:
+                raise ValueError("Unit metadata is not available")
+            matches &= self._contains_any(self.df["Unit"], unit)
+
+        if desc is not None:
+            if "Description" not in self.df:
+                raise ValueError("Description metadata is not available")
+            matches &= self._contains_any(self.df["Description"], desc)
+
+        if htc is not None:
+            if "HTC_input" not in self.df:
+                raise ValueError("HTC_input metadata is not available")
+            matches &= self._contains_any(self.df["HTC_input"], htc)
+
+        if label is not None:
+            matches &= self._label_mask(label)
+
+        return self.df.loc[matches].reset_index(drop=True)
+    
+
+    def by_channel_ids(self, channel_ids):
+        """Return metadata rows for channel IDs, preserving requested order."""
+        channel_ids = np.atleast_1d(channel_ids).tolist()
+
+        unique_sensors = self.df.drop_duplicates("Channel_id")
+        sensors_by_id = unique_sensors.set_index("Channel_id", drop=False)
+
+        missing = []
+        for channel_id in channel_ids:
+            if channel_id not in sensors_by_id.index:
+                missing.append(channel_id)
+
+        if missing:
+            raise IndexError("channel id %s is out of range" % missing[0])
+
+        return sensors_by_id.loc[channel_ids].reset_index(drop=True)
+
+    def get_sensor_id(self, **kwargs):
+        """Return matching channel IDs as a one-dimensional integer array."""
+        return self(**kwargs)["Channel_id"].to_numpy(dtype=int)
+
+    @staticmethod
+    def _normalize(value):
+        return str(value).strip().lower().replace(" ", "")
+
+    @classmethod
+    def _contains_any(cls, column, values):
+        #normalize searching for one or multiple values
+        search_values = np.atleast_1d(values)
+        search_texts = [cls._normalize(value) for value in search_values]
+
+        # for each value / search tag  see if theres a 
+        def value_contains_search_text(value):
+            value = cls._normalize(value)
+            for search_text in search_texts:
+                if search_text in value:
+                    return True
+            return False
+
+        return column.map(value_contains_search_text)
+
+    def _label_mask(self, values):
+        values = np.atleast_1d(values)
+        labels = [self._normalize(value) for value in values]
+
+        if "HTC_input" in self.df:
+            def match_htc(value):
+                value = self._normalize(value)
+                if "#" not in value:
+                    return "" in labels
+                label = value.split("#", 1)[1]
+                return label in labels
+
+            return self.df["HTC_input"].map(match_htc)
+
+        if "Description" not in self.df:
+            raise ValueError("Description metadata is not available")
+
+        def description_ends_with_label(value):
+            description = self._normalize(value)
+            for label in labels:
+                if description.endswith(label):
+                    return True
+            return False
+
+        return self.df["Description"].map(
+            description_ends_with_label
+        )
 
 def unified_channel_names(ChInfo):
     """Create consistant and unique channel names for a HAWC2 result file.
@@ -19,7 +218,7 @@ def unified_channel_names(ChInfo):
     Parameters
     ----------
     ChInfo : List of list
-        The list of list as given by wetb.hawc2.ReadHawc2.ChInfo.
+        The list of lists available as ``Hawc2Output.ChInfo``.
 
     Make certain channels independent from their index.
 
