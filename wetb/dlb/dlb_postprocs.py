@@ -228,7 +228,7 @@ def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_lis
     loads_by_group.coords['group'] = list(loads_by_group_dict.keys())
     return loads_by_group
 
-def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_list, contemporaneous_method='averaging'):
+def get_DLB_extreme_loads(extreme_loads, regex_list=None, metric_list=None, safety_factor_list=None, contemporaneous_method='averaging'):
     """
     Calculate the extreme loads for the whole DLB.
 
@@ -241,13 +241,13 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
         Dims: filename, sensor_name, driver, load
     regex_list : dict
         Dictionary containing the regular expression for grouping simulations
-        for each DLC.
+        for each DLC. The default follows the naming convention in this module.
     metric_list : dict
         Dictionary containing the function to be applied to each group of simulations
-        for each DLC.
+        for each DLC. The default follows the IEC61400-1 standard.
     safety_factor_list : dict
         Dictionary containing the safety factor to be applied to each group of simulations
-        for each DLC.
+        for each DLC. The default follows the IEC61400-1 standard.
     contemporaneous_method : str
         Method for assessing the contemporaneous loads.
         'averaging': the mean of the absolute values from each timeseries is used,
@@ -265,7 +265,79 @@ def get_DLB_extreme_loads(extreme_loads, regex_list, metric_list, safety_factor_
         Dims: sensor_name, driver, load
         Coords: sensor_name, driver, load, group
 
-    """
+    """   
+    if regex_list is None:
+        regex_list = {'DLC12': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC13': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC14': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC15': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC21': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22b': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22p': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22y': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC23': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC24': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC31': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC32': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC33': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC41': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC42': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC51': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC61': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC62': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC63': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC64': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC71': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC81': r'DLC(\w+?)_wsp(\d{2})'}
+        
+    if metric_list is None:
+        metric_list = {'DLC12': np.mean,
+                       'DLC13': np.mean,
+                       'DLC14': np.max,
+                       'DLC15': np.max,
+                       'DLC21': mean_upperhalf,
+                       'DLC22b': mean_upperhalf,
+                       'DLC22p': mean_upperhalf,
+                       'DLC22y': mean_upperhalf,
+                       'DLC23': np.max,
+                       'DLC24': np.mean,
+                       'DLC31': np.max,
+                       'DLC32': np.max,
+                       'DLC33': np.max,
+                       'DLC41': np.max,
+                       'DLC42': np.max,
+                       'DLC51': mean_upperhalf,
+                       'DLC61': mean_upperhalf,
+                       'DLC62': mean_upperhalf,
+                       'DLC63': mean_upperhalf,
+                       'DLC64': np.mean,
+                       'DLC71': mean_upperhalf,
+                       'DLC81': mean_upperhalf}
+    
+    if safety_factor_list is None:
+        safety_factor_list = {'DLC12': 1.35,
+                              'DLC13': 1.35,
+                              'DLC14': 1.35,
+                              'DLC15': 1.35,
+                              'DLC21': 1.35,
+                              'DLC22b': 1.1,
+                              'DLC22p': 1.1,
+                              'DLC22y': 1.1,
+                              'DLC23': 1.1,
+                              'DLC24': 1.35,
+                              'DLC31': 1.35,
+                              'DLC32': 1.35,
+                              'DLC33': 1.35,
+                              'DLC41': 1.35,
+                              'DLC42': 1.35,
+                              'DLC51': 1.35,
+                              'DLC61': 1.35,
+                              'DLC62': 1.1,
+                              'DLC63': 1.35,
+                              'DLC64': 1.35,
+                              'DLC71': 1.1,
+                              'DLC81': 1.35}
+            
     loads_by_group = get_loads_by_group(extreme_loads, regex_list, metric_list,
                                         safety_factor_list, contemporaneous_method=contemporaneous_method)
     driving_group_indices = []
