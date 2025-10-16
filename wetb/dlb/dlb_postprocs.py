@@ -2,7 +2,7 @@ import numpy as np
 import os
 import re
 import xarray as xr
-from copy import copy
+from wetb.dlc.high_level import Weibull_IEC
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
 def nc_to_dataarray(nc_file, DLB=True):
@@ -647,8 +647,9 @@ def get_weight_list(file_list,
                     Vin,
                     Vout,
                     Vr,
-                    wsp_list,
-                    probability,
+                    Vref,
+                    Vstep,
+                    probability=None,
                     wsp_weights=None,
                     yaw_weights=xr.concat([xr.DataArray(data=[[0.5, 0.25, 0.25]],
                                                         dims=('dlc', 'wdir'),
@@ -686,8 +687,10 @@ def get_weight_list(file_list,
         Cut-out wind speed
     Vr: int or float
         Rated wind speed
-    wsp_list: array
-        Array containing all simulated wind speeds
+    Vref: int or float
+        Reference wind speed
+    Vstep: int
+        Step between wind speeds
     probability: xarray.DataArray
         DataArray containing the probability of each combination of wind speed, 
         wind direction and/or wave direction
@@ -723,7 +726,13 @@ def get_weight_list(file_list,
         DataArray containing the weight for each simulation.
 
     """
-    
+    if probability is None:
+        wsp_list = np.array(range(Vin, int(0.7*Vref) + Vstep, Vstep))
+        probability = xr.DataArray(data=Weibull_IEC(Vref=Vref, Vhub_lst=wsp_list),
+                                   dims='wsp',
+                                   coords={'wsp': wsp_list})
+    else:
+        wsp_list = probability.wsp.values
     if wsp_weights is None:
         weight_DLC24 = 50/(365.25*24)
         weight_DLC12 = 1 - weight_DLC64_Vin_Vout                
