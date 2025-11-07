@@ -48,6 +48,7 @@ all = ["openpyxl", "tables", "xlwt", "Cython", "paramiko", "sshtunnel", 'pytest'
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
+version_file = "wetb/__init__.py"
 
 [tool.setuptools]
 packages = ["wetb"]
