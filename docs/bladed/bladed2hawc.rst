@@ -32,7 +32,7 @@ and the entire XML object ``lxml.objectify.fromstring(str)`` is exposed to the u
 via the ``wetb.bladed.readprj.ReadBladedProject.xmlroot`` variable.
 
 
-In ``wetb` the
+In ``wetb`` the
 project file can be read using the following::
 
      from wetb.bladed.readprj import ReadBladedProject

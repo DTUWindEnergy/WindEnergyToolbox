@@ -39,9 +39,11 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
   script:  # use sphinx to build docs, move to public page
   - pip install --upgrade pip
-  - pip install sphinx --upgrade
+  - pip install sphinx==7
+  - pip install jupyter
   - pip install sphinx sphinx_rtd_theme
   - pip install nbsphinx
+  - pip install rpds
   - pip install git+https://github.com/vidartf/nbsphinx-link.git
   - pip install -e .
   - cd docs; make html
