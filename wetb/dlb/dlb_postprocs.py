@@ -225,6 +225,24 @@ def get_loads_by_group(extreme_loads, regex_list, metric_list, safety_factor_lis
             thetaM = np.arctan2(group_loads.sel(load='My'), group_loads.sel(load='Mx'))*180/np.pi
             thetaM.coords['load'] = 'Theta_M'
             group_loads = xr.concat([group_loads, Fres, thetaF, Mres, thetaM], dim='load')
+            Fres_Fresmax = xr.apply_ufunc(metric_list[DLC],
+                                      np.sqrt(simulations.sel(driver='Fres_max', load='Fx') ** 2 + simulations.sel(driver='Fres_max', load='Fy') ** 2),
+                                      input_core_dims=[['filename']],
+                                      vectorize=True) * safety_factor_list[DLC]
+            Fx_Fresmax = Fres_Fresmax * np.cos(np.deg2rad(thetaM.sel(driver='Fres_max')))
+            Fy_Fresmax = Fres_Fresmax * np.sin(np.deg2rad(thetaM.sel(driver='Fres_max')))
+            Mres_Mresmax = xr.apply_ufunc(metric_list[DLC],
+                                      np.sqrt(simulations.sel(driver='Mres_max', load='Mx') ** 2 + simulations.sel(driver='Mres_max', load='My') ** 2),
+                                      input_core_dims=[['filename']],
+                                      vectorize=True) * safety_factor_list[DLC]
+            Mx_Mresmax = Mres_Mresmax * np.cos(np.deg2rad(thetaM.sel(driver='Mres_max')))
+            My_Mresmax = Mres_Mresmax * np.sin(np.deg2rad(thetaM.sel(driver='Mres_max')))
+            group_loads.loc[dict(driver='Fres_max', load='Fx')] = Fx_Fresmax
+            group_loads.loc[dict(driver='Fres_max', load='Fy')] = Fy_Fresmax
+            group_loads.loc[dict(driver='Fres_max', load='Fres')] = Fres_Fresmax
+            group_loads.loc[dict(driver='Mres_max', load='Mx')] = Mx_Mresmax
+            group_loads.loc[dict(driver='Mres_max', load='My')] = My_Mresmax
+            group_loads.loc[dict(driver='Mres_max', load='Mres')] = Mres_Mresmax
             loads_by_group_dict[group] = group_loads
     elif contemporaneous_method == 'scaling':
         for group, simulations in grouped_simulations.items():
