@@ -566,7 +566,12 @@ def get_DLB_extreme_values(statistics, regex_list, metric_list, safety_factor_li
         DLB_extreme_values = DLB_extreme_values.transpose(..., 'sensor_name', 'statistic')
     return DLB_extreme_values
 
-def get_DLB_eq_loads(eq_loads, weight_list):
+def get_DLB_eq_loads(eq_loads,
+                     weight_list,
+                     neq=1e7,
+                     neq_individual=xr.DataArray(data=[600, 600, 100, 100, 600],
+                                                 dims=('dlc'),
+                                                 coords={'dlc': ['12', '24', '31', '41', '64']})):
     """
     Calculate the fatigue equivalent loads for the whole DLB
     from equivalent loads of individual simulations.
@@ -580,6 +585,11 @@ def get_DLB_eq_loads(eq_loads, weight_list):
         Coords: filename, *, m
     weight_list : dict or xarray.DataArray
         Dictionary or DataArray containing the weight (real time / simulation time) for each simulation
+    neq : int or float, optional
+        Number of equivalent load cycles. The default is 1e7.
+    neq_individual : xarray.DataArray, optional
+        Number of equivalent load cycles used in the calculation of the individual equivalent loads for each
+        dlc included in the fatigue analysis. The default are the simulation times defined in the IEC 61400-1.
 
     Returns
     -------
@@ -595,12 +605,15 @@ def get_DLB_eq_loads(eq_loads, weight_list):
                                    dims='filename',
                                    coords={'filename': list(weight_list.keys())})
     m_list = eq_loads.m
-    DLB_eq_loads = (weight_list*eq_loads**m_list).sum('filename')**(1/m_list)
+    eq_loads = eq_loads.where(eq_loads.dlc.isin(neq_individual.dlc.data), drop=True)
+    neq_individual = neq_individual.sel(dlc=eq_loads.dlc)
+    
+    DLB_eq_loads = ((weight_list*neq_individual*eq_loads**m_list).sum('filename') / neq)**(1/m_list)
     if 'variable' in DLB_eq_loads.coords:
         DLB_eq_loads = DLB_eq_loads.drop_vars('variable')
     return DLB_eq_loads
 
-def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
+def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list=[3, 4, 6, 8, 10, 12], neq=1e7):
     """
     Calculate the fatigue equivalent loads for the whole DLB
     from Markov matrices of individual simulations.
@@ -614,8 +627,8 @@ def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
         Coords: filename, *
     weight_list : dict or xarray.DataArray
         Dictionary or DataArray containing the weight (real time / simulation time) for each simulation
-    m_list : list (Nwoehlerslopes)
-        List containing the different woehler slopes
+    m_list : list (Nwoehlerslopes), optional
+        List containing the different woehler slopes. The default is [3, 4, 6, 8, 10, 12].
     neq : int or float, optional
         Number of equivalent load cycles. The default is 1e7.
 
@@ -637,7 +650,12 @@ def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list, neq=1e7):
     eq_loads = eq_loads.rename({eq_loads.dims[-1]: 'm'})
     eq_loads = eq_loads.assign_coords(markov_matrices.coords)
     eq_loads.coords['m'] = m_list
-    DLB_eq_loads = get_DLB_eq_loads(eq_loads, weight_list)
+    DLB_eq_loads = get_DLB_eq_loads(eq_loads,
+                                    weight_list,
+                                    neq=neq,
+                                    neq_individual=xr.DataArray(data=[neq, neq, neq, neq, neq],
+                                                                dims=('dlc'),
+                                                                coords={'dlc': ['12', '24', '31', '41', '64']}))
     return DLB_eq_loads
 
 def mean_upperhalf(group):
@@ -660,7 +678,7 @@ def mean_upperhalf(group):
     upperhalf = sorted(group, reverse=True)[0:int(len(group)/2)]
     return np.mean(upperhalf)
 
-def get_weight_list(file_list,
+def get_weight_list(dataarray,
                     n_years,
                     Vin,
                     Vout,
@@ -686,17 +704,15 @@ def get_weight_list(file_list,
                     sim_time=xr.DataArray(data=[600, 600, 100, 100, 600],
                                           dims=('dlc'),
                                           coords={'dlc': ['12', '24', '31', '41', '64']}),
-                    weight_DLC64_Vin_Vout=0.025,
-                    neq=None):
+                    weight_DLC64_Vin_Vout=0.025):
     """
     Calculate the weights for each simulation for the
     calculation of damage equivalent loads of the whole DLB.
 
     Parameters
     ----------
-    file_list : xr.DataArray
-        DataArray containing the paths to all simulations. It must also have
-        coordinates for DLC, wind speed, wind direction and/or wave direction
+    dataarray : xr.DataArray
+        Dataarray containing coordinates for DLC, wind speed, wind direction and/or wave direction
     n_years : int or float
         Turbine's lifetime in years
     Vin: int or float
@@ -726,22 +742,17 @@ def get_weight_list(file_list,
         DataArray containing the number of events per DLC per windspeed.
         The default assumes {Vin: 1000, Vr: 50, Vout: 50} for both DLC31 and DLC41.
     sim_time: xarray.DataArray, optional
-        DataArray containing the simulation time per DLC.
+        DataArray containing the simulation time per DLC included in the fatigue analysis.
         The default assumes 600s for DLC12, DLC24, DLC64 and 100s for DLC31 and DLC41
     weight_DLC64_Vin_Vout: int or float, optional
         Percentage of time that DLC64 takes between Vin and Vout. Only used if
         wsp_weights is not passed.
         The default is 0.025.
-    neq : int or float, optional
-        Number of equivalent load cycles. If not passed, the output weights
-        can ONLY be used when calculating DLB equivalent loads from individual file
-        Markov matrices. If passed, the output weights can ONLY be used when 
-        calculating DLB equivalent loads from individual equivalent loads (recommended)
             
     Returns
     -------
     xarray.DataArray 
-        DataArray containing the weight for each simulation.
+        DataArray containing the weight (real time / simulation time) for each simulation
 
     """
     if probability is None:
@@ -769,20 +780,18 @@ def get_weight_list(file_list,
     
     lifetime = n_years*365.25*24*3600 # convert to seconds
     weight_list = (lifetime*probability*wsp_weights*yaw_weights/n_seeds/sim_time).combine_first(n_years*n_events)
-    if neq is not None: # correct by sim_time/neq so it can be used for individual equivalent loads
-        weight_list = weight_list*sim_time/neq
     
     # rearrange weights from parameters (DLC, wsp, wdir) to actual filenames
     # TO-DO: allow wvdir as well
-    def get_weight_list_per_filename(file_list, dlc, wsp, wdir, weight_list):
+    def get_weight_list_per_filename(dlc, wsp, wdir, weight_list):
         return weight_list.sel(dlc=dlc, wsp=wsp, wdir=wdir)    
     
+    file_list = dataarray.where(dataarray.dlc.isin(sim_time.dlc.data), drop=True).filename # Only FLS DLCs
     weight_list = xr.apply_ufunc(get_weight_list_per_filename,
-                       file_list,
-                       file_list['dlc'],
-                       file_list['wsp'],
-                       file_list['wdir'],
-                       kwargs={'weight_list': weight_list},
-                       vectorize=True)
+                                 file_list['dlc'],
+                                 file_list['wsp'],
+                                 file_list['wdir'],
+                                 kwargs={'weight_list': weight_list},
+                                 vectorize=True)
     
     return weight_list
