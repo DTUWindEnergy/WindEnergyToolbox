@@ -488,11 +488,10 @@ def get_values_by_group(dataarray, regex_list, metric_list, safety_factor_list):
         vectorize=True)*safety_factor_list[DLC]
         group_values_dict[group] = values
     group_values = xr.concat(list(group_values_dict.values()), 'group')
-    group_values = group_values.drop_vars('variable')
     group_values.coords['group'] = list(group_values_dict.keys())
     return group_values            
 
-def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list, metric_list, safety_factor_list):
+def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list=None, metric_list=None, safety_factor_list=None):
     """
     Identic procedure as in get_DLB_extreme_loads, but for maximum loads 
     along each direction.
@@ -503,13 +502,13 @@ def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list, met
         DataArray containing the collected directional extreme loads of all simulations.
     regex_list : dict
         Dictionary containing the regular expression for grouping simulations
-        for each DLC.
+        for each DLC. The default follows the naming convention in this module.
     metric_list : dict
         Dictionary containing the function to be applied to each group of simulations
-        for each DLC.
+        for each DLC. The default follows the IEC61400-1 standard.
     safety_factor_list : dict
         Dictionary containing the safety factor to be applied to each group of simulations
-        for each DLC.
+        for each DLC. The default follows the IEC61400-1 standard.
 
     Returns
     -------
@@ -518,6 +517,78 @@ def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list, met
         the group of simulations driving each load direction
 
     """
+    if regex_list is None:
+        regex_list = {'DLC12': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC13': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC14': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC15': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC21': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22b': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22p': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC22y': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC23': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC24': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC31': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC32': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC33': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC41': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC42': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC51': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC61': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC62': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC63': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC64': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC71': r'DLC(\w+?)_wsp(\d{2})',
+                      'DLC81': r'DLC(\w+?)_wsp(\d{2})'}
+        
+    if metric_list is None:
+        metric_list = {'DLC12': np.mean,
+                       'DLC13': np.mean,
+                       'DLC14': np.max,
+                       'DLC15': np.max,
+                       'DLC21': mean_upperhalf,
+                       'DLC22b': mean_upperhalf,
+                       'DLC22p': mean_upperhalf,
+                       'DLC22y': mean_upperhalf,
+                       'DLC23': np.max,
+                       'DLC24': np.mean,
+                       'DLC31': np.max,
+                       'DLC32': np.max,
+                       'DLC33': np.max,
+                       'DLC41': np.max,
+                       'DLC42': np.max,
+                       'DLC51': mean_upperhalf,
+                       'DLC61': mean_upperhalf,
+                       'DLC62': mean_upperhalf,
+                       'DLC63': mean_upperhalf,
+                       'DLC64': np.mean,
+                       'DLC71': mean_upperhalf,
+                       'DLC81': mean_upperhalf}
+    
+    if safety_factor_list is None:
+        safety_factor_list = {'DLC12': 1.35,
+                              'DLC13': 1.35,
+                              'DLC14': 1.35,
+                              'DLC15': 1.35,
+                              'DLC21': 1.35,
+                              'DLC22b': 1.1,
+                              'DLC22p': 1.1,
+                              'DLC22y': 1.1,
+                              'DLC23': 1.1,
+                              'DLC24': 1.35,
+                              'DLC31': 1.35,
+                              'DLC32': 1.35,
+                              'DLC33': 1.35,
+                              'DLC41': 1.35,
+                              'DLC42': 1.35,
+                              'DLC51': 1.35,
+                              'DLC61': 1.35,
+                              'DLC62': 1.1,
+                              'DLC63': 1.35,
+                              'DLC64': 1.35,
+                              'DLC71': 1.1,
+                              'DLC81': 1.35}
+    
     group_values = get_values_by_group(directional_extreme_loads, regex_list, metric_list, safety_factor_list)
     
     DLB_directional_extreme_loads = group_values.max('group')
