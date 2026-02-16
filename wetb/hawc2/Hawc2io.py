@@ -33,6 +33,10 @@ import os
 from wetb import gtsdf
 from wetb.prepost import misc
 
+import pandas as pd
+from collections.abc import Iterable
+import warnings
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -149,6 +153,7 @@ class ReadHawc2(object):
         self.ReadOnly = ReadOnly
         self.Iknown = []  # to keep track of what has been read all ready
         self.Data = np.zeros(0)
+        self.df = pd.DataFrame()
         if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
             self._ReadSelFile()
         elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
@@ -196,7 +201,7 @@ class ReadHawc2(object):
 ################################################################################
 # Read results in GTSD format
 
-    def ReadGtsdf(self):
+    def ReadGtsdf(self,ChVec = []):
         fn = self.FileName
         if fn[-5:].lower() != '.hdf5':
             fn += '.hdf5'
@@ -205,6 +210,9 @@ class ReadHawc2(object):
         self.ChInfo = [['Time'] + info['attribute_names'],
                        ['s'] + info['attribute_units'],
                        ['Time'] + info['attribute_descriptions']]
+        if 'htc_input' in info:
+            self.ChInfo.append(['Time'] + info['htc_input'])
+            
         self.NrCh = data.shape[1] + 1
         self.NrSc = data.shape[0]
         self.Freq = self.NrSc / self.Time
@@ -212,7 +220,11 @@ class ReadHawc2(object):
         self.gtsdf_description = info['description']
         self.gtsdf_dtype = info['dtype']
         data = np.hstack([self.Time[:, np.newaxis], data])
+        if ChVec:
+            data= data[:,ChVec]
         return data
+
+
 ################################################################################
 # One stop call for reading all data formats
 
@@ -224,15 +236,157 @@ class ReadHawc2(object):
         elif self.FileFormat == 'HAWC2_ASCII':
             return self.ReadAscii(ChVec)
         elif self.FileFormat == 'GTSDF':
-            return self.ReadGtsdf()
+            return self.ReadGtsdf(ChVec)
         else:
             return self.ReadFLEX(ChVec)
 ################################################################################
+# Search function to get sensor id
+
+    def get_sensor_id(
+        self,
+        *,
+        name=None,
+        unit=None,
+        desc=None,
+        htc=None,
+        label = None,
+    ):
+        def concate_str(v):
+            return str(v).strip().lower().replace(" ", "")
+        
+        def parse_dictionary(d):
+            """Helper function to extract names and numbers from a dictionary."""
+            if d is None:
+                return [], []
+            
+            names = d.keys()
+            names = {concate_str(i) for i in names}
+            
+            return names
+
+        def normalize(v):
+            # Takes a vector of strings and removes spaces in each element
+            if v is None:
+                return   {'Not provided'}
+            
+            if isinstance(v, dict):
+                v = parse_dictionary(v)
+                return v
+            
+            if isinstance(v, Iterable) and not isinstance(v, (str, bytes)):
+                # iterable allows for inputs to be defined as lists, sets or arrays.
+                return {concate_str(x) for x in v}
+            return {concate_str(v)}
+        
+        
+        # Remove spaces from input string or list of strings
+        name_inp = normalize(name)
+        unit_inp = normalize(unit)
+        desc_inp = normalize(desc)
+        htc_inp  = normalize(htc)
+        label_inp  = normalize(label)
+
+        matched = []
+
+        for i in range(self.NrCh):
+            # inputs are searched through in their respective channel info. 
+            # search is backwards (ie if not) to filter when using double inputs ie name and desc
+            
+            #removing space
+            sensor_name = concate_str(self.ChInfo[0][i])
+            sensor_unit = concate_str(self.ChInfo[1][i])
+            sensor_desc = concate_str(self.ChInfo[2][i])
+
+            if len(self.ChInfo) == 4 :
+                sensor_htc = concate_str(self.ChInfo[3][i])
+
+            # Checking if inp is included in sensor string
+            if name_inp !=  {'Not provided'} and not any(item in sensor_name for item in name_inp): 
+                continue
+            else:
+                pass
+            if unit_inp !=  {'Not provided'} and not any(item in sensor_unit for item in unit_inp):
+                continue
+            else:
+                pass
+            if  desc_inp !=  {'Not provided'} and not any(item in sensor_desc for item in desc_inp):
+                continue
+            else:
+                pass
+            # label search uses desc to search if there is no htc input
+            if label_inp !=  {'Not provided'} : 
+                if len(self.ChInfo) == 3 and not sensor_desc.endswith(tuple(label_inp)):#label not in desc_inp:
+                    continue
+                elif len(self.ChInfo) == 4 :
+                    after_hash = sensor_htc.split("#", 1)[1] if "#" in sensor_htc else ""
+                    if after_hash not in label_inp:
+                        continue
+
+            if htc_inp !=  {'Not provided'} and not any(item in sensor_htc for item in htc_inp):
+                continue
+            else:
+                pass
+ 
+            matched.append(i)
+
+        # sort for indicees if dicts are used
+        if isinstance(name, dict) or isinstance(desc, dict) or isinstance(htc, dict):
+            
+            def map_indices(self, matched, sorted_dict):
+                index_sorted = [False] * len(matched)   # initialize with None
+                sorted_names = [concate_str(self.ChInfo[3][i]) for i in matched]
+
+                j = 0
+                for i, value in enumerate(sorted_dict):
+                    # count occurrences
+                    conc_val = concate_str(value)
+                    
+                    count = sorted_names.count(conc_val) 
+                    # loop over repeated sensor names and sort based on index
+                    for k in range(count):
+                        if conc_val in sorted_names[j]:
+                         
+                            index = sorted_dict[value]
+                        
+                            if index == 'all':
+                                index_sorted[j] = True
+                            
+                            elif isinstance(index, int):
+                                if k+1 == index:
+                                    index_sorted[j] = True
+
+                            elif isinstance(index,list):
+                                if k+1 in index:
+                                    index_sorted[j] = True
+    
+                        j = j+1
+                
+                return np.array(index_sorted)
+
+            indexed = map_indices(self,matched,htc)
+            matched = np.array(matched)
+            matched = matched[indexed].tolist()
+
+        return matched
+
+#####################################################################################
 # Main read data call, read, save and sort data
 
-    def __call__(self, ChVec=[]):
+    def __call__(self, ChVec=[], htc = None, name = None, desc = None, label = None):
+    
+        if  len(self.ChInfo) == 3 and htc is not None:
+            return print('HTC search is not possible for this dataset. ' \
+            'HTC search is only posible for datasets using the format GTSDF format (.hdf5) that have been generated usign HAWC2 Version XX or later')
+        
+        if htc or name or desc or label:
+            ChVec = self.get_sensor_id(htc=htc,name=name,desc=desc, label=label)
+            if len(ChVec) == 0:
+                print('No channel found, please double check input.')
+                return 
+        # return all vectors is no input is provided    
         if not ChVec:
             ChVec = range(0, self.NrCh)
+
         elif max(ChVec) >= self.NrCh:
             print("to high channel number")
             return
@@ -242,6 +396,8 @@ class ReadHawc2(object):
         # if not ReadOnly, sort in known and new channels, read new channels
         # and return all requested channels
         else:
+
+            # return self.df
             # sort into known channels and channels to be read
             I1 = []
             I2 = []  # I1=Channel mapping, I2=Channels to be read
@@ -261,9 +417,34 @@ class ReadHawc2(object):
                 # if first call, so Daata is empty
                 else:
                     self.Data = temp
-            return self.Data[:, tuple(I1)]
+            
+            arr = np.array(self.ChInfo, dtype=object)
 
+            # make channel index and acounting for time not being in the hdf5 file
+            
+            channel_id = np.array(range(0,self.NrCh))
+            channel_id = channel_id[ChVec]
+    
+            
+            # make data frame
+            if len(self.ChInfo) == 3:
+                cols = pd.MultiIndex.from_tuples(
+                    [(idx, *vals) for idx, vals in zip(channel_id, map(tuple, arr[:, ChVec].T))],
+                    names=["Channel_id", "Name", "Unit", "Description"]
+                )
+            if len(self.ChInfo) == 4:
+                cols = pd.MultiIndex.from_tuples(
+                    [(idx, *vals) for idx, vals in zip(channel_id, map(tuple, arr[:, ChVec].T))],
+                    names=["Channel_id", "Name", "Unit", "Description", "HTC_input"]
+                )
+            df = pd.DataFrame(self.Data[:, tuple(I1)], columns=cols)
+            print("WARNING: Output has been restructured into a dataframe. For array values please use self().values or self[].")
+            return df
+        
 
+    def __getitem__(self, slc):
+        return self().values[slc]
+        
 ################################################################################
 ################################################################################
 ################################################################################
