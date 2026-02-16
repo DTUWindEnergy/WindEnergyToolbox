@@ -6,8 +6,13 @@ Created on 20/01/2014
 See documentation of HTCFile below
 
 '''
+import inspect
+import tempfile
+from pathlib import Path
 import os
-
+import subprocess
+import sys
+import time
 
 class HTCDefaults(object):
 
@@ -124,6 +129,7 @@ class HTCDefaults(object):
         wp.rho = rho
 
 
+    
 class HTCExtensions(object):
     def get_shear(self):
         shear_type, parameter = self.wind.shear_format.values
@@ -136,3 +142,73 @@ class HTCExtensions(object):
             return power_shear(parameter, z0, wsp)
         else:
             raise NotImplementedError
+        
+
+    def take_selfie(self, h2v, out_img_path=None,turbine_orientation = (0,90,0),picture_size = (600, 600)):
+
+        with tempfile.TemporaryDirectory() as folder:
+            f = Path(folder) / 'tmp.py'
+            # self.save('tmp.htc')
+            #self.filename = 'tmp.htc'
+
+            htc_path = self.filename 
+
+            if not out_img_path:
+                out_img_path = Path(htc_path).parent / "model_img.png"
+            temp_file_path = Path(folder) / "run.py"
+            inp_script = f"""  
+            from h2v.utils.htc_visualization_file import HTCVisualizationFile
+            import json
+            from pathlib import Path
+            import time
+            from qtpy.QtWidgets import QApplication
+            import sys
+
+            htc_path = r"{htc_path}"
+            output_image = r"{out_img_path}"
+
+            htcwidget = self.gui.htcLoadWidget
+
+            htcwidget.ui.comboBoxHtcPath.addItems([htc_path])
+            htcwidget.ui.comboBoxHtcPath.setCurrentText(htc_path)
+            self.gui.htcLoadWidget._actionSimulate()
+
+            # rotate turbine
+            QApplication.processEvents()
+            camera = self.gui.camera()
+            camera.openGLWidget.resize({picture_size})
+            camera.rotation = {turbine_orientation}
+            camera.update_widget()
+            camera._actionUpdateCamera()
+            QApplication.processEvents()
+            # self.gui.actionSaveImage()
+            print("Saving image...", flush=True)
+            
+            self.gui.structureVisualizationWidget.save_image(output_image)
+            #QApplication.processEvents()
+            time.sleep(1)
+            #save image
+            print(output_image)
+            out = Path(output_image)
+            # wait up to 10 seconds for file to appear
+            for _ in range(100):
+                if out.exists():
+                    print("Image saved", flush=True)
+                    break
+                time.sleep(0.1)
+            else:
+                print("WARNING: image not detected", flush=True)
+
+            self.gui.close()"""
+
+            # f.write_text(inspect.getsource(visu_selfie) + "\n" +
+            #              f"selfie('{self.filename}',{sel})")
+            temp_file_path.write_text(inp_script, encoding="utf-8") 
+
+            subprocess.run([
+                h2v,
+                temp_file_path],
+                check=True
+            )
+            # time.sleep(10)
+            # os.system('{h2v} {self.filename}')
