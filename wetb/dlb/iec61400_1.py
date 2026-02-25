@@ -261,23 +261,23 @@ class DLC():
 
     def StuckBlade(self, t, pitch, **_):
         if (not isinstance(t, list)) and (not isinstance(pitch, list)):
-            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch}}]
+            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'constant_stuckblade_time': self.constant_stuckblade_time, 'constant_stuckblade_angle': self.constant_stuckblade_angle, 'T': t, 'pitch': pitch}}]
         else:
-            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch},
+            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'constant_stuckblade_time': self.constant_stuckblade_time, 'constant_stuckblade_angle': self.constant_stuckblade_angle, 'T': t, 'pitch': pitch},
                      'T_id': 't' + str(t.index(tp[0])) + 'p' + str(pitch.index(tp[1]))} for tp in itertools.product(t, pitch)]
             
     def PitchRunaway(self, t, **_):
         if not isinstance(t, list):
-            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': t}}]
+            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'constant_pitchrunaway_time': self.constant_pitchrunaway_time, 'T': t}}]
         else:
-            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': T},
+            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'constant_pitchrunaway_time': self.constant_pitchrunaway_time, 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
     
     def GridLoss(self, t, **_):
         if not isinstance(t, list):
-            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': t}}]
+            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'constant_gridloss_time': self.constant_gridloss_time, 'T': t}}]
         else:
-            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': T}, 'T_id': 't' + str(t.index(T))} for T in t]
+            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'constant_gridloss_time': self.constant_gridloss_time, 'T': T}, 'T_id': 't' + str(t.index(T))} for T in t]
     
     # ===============================================================================
     # Operations
@@ -288,35 +288,35 @@ class DLC():
     
     def StartUp(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'constant_cutin': self.constant_cutin, 'T': t}}]
         else:
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'constant_cutin': self.constant_cutin, 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
     
     def ShutDown(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'constant_cutout': self.constant_cutout, 'constant_shutdown_type': self.constant_shutdown_type, 'T': t}}]
         else:
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'constant_cutout': self.constant_cutout, 'constant_shutdown_type': self.constant_shutdown_type, 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
         
     def EmergencyShutDown(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'constant_cutout': self.constant_cutout, 'constant_shutdown_type': self.constant_shutdown_type, 'T': t}}]
         else:
-            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'constant_cutout': self.constant_cutout, 'constant_shutdown_type': self.constant_shutdown_type, 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
         
     def Parked(self, **_):
-        return [{'Operation': {'type': 'Parked', 'controller': self.controller}}]
+        return [{'Operation': {'type': 'Parked', 'controller': self.controller, 'constant_cutin': self.constant_cutin}}]
     
     def RotorLocked(self, azimuth, **_):
         if not isinstance(azimuth, list):
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
-                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azimuth}}]
+            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller, 'constant_cutin': self.constant_cutin,
+                                   'shaft_mbdy': self.shaft_mbdy, 'shaft_constraint': self.shaft_constraint, 'Azi': azimuth}}]
         else:
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
-                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azi},
+            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller, 'constant_cutin': self.constant_cutin,
+                                   'shaft_mbdy': self.shaft_mbdy, 'shaft_constraint': self.shaft_constraint, 'Azi': azi},
                      'Azi_id': 'azi' + f"{azi:03}"} for azi in azimuth]
 
 class DLB():
@@ -342,8 +342,15 @@ class DLB():
                          ('controller', 'Filename of controller DLL'),
                          ('generator_servo', 'Filename of generator servo DLL'),
                          ('pitch_servo', 'Filename of pitch servo DLL'),
+                         ('constant_cutin', 'constant of cut-in time in controller DLL'),
+                         ('constant_cutout', 'constant of cut-out time in controller DLL'),
+                         ('constant_shutdown_type', 'constant of shut-down type in controller DLL'),
+                         ('constant_gridloss_time', 'constant of grid loss time in generator servo DLL'),
+                         ('constant_stuckblade_time', 'constant of blade stuck time in pitch servo DLL'),
+                         ('constant_stuckblade_angle', 'constant of blade stuck angle in pitch servo DLL'),
+                         ('constant_pitchrunaway_time', 'constant of pitch runaway time in pitch servo DLL'),
                          ('best_azimuth', 'Best blade azimuth for maintenance'),
-                         ('shaft', 'Name of shaft body'),
+                         ('shaft_mbdy', 'Name of shaft main body'),
                          ('shaft_constraint', 'Name of constraint between tower and shaft'),
                          ("seed", "Seed to initialize the RNG for turbulence seed generation")
                          ]
@@ -413,10 +420,32 @@ class DLB():
 
 class DTU_IEC61400_1_Ref_DLB(DLB):
     
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
-                 controller, generator_servo, pitch_servo, best_azimuth,
-                 Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
-                 shaft='shaft', shaft_constraint='shaft_rot'):
+    def __init__(self,
+                 iec_wt_class,
+                 Vin,
+                 Vout,
+                 Vr,
+                 D,
+                 z_hub,
+                 controller='dtu_we_controller',
+                 generator_servo='generator_servo',
+                 pitch_servo='servo_with_limits',
+                 constant_cutin=24,
+                 constant_cutout=26,
+                 constant_shutdown_type=28,
+                 constant_gridloss_time=7,
+                 constant_stuckblade_time=9,
+                 constant_stuckblade_angle=10,
+                 constant_pitchrunaway_time=8,
+                 best_azimuth=180,
+                 Vmaint=18,
+                 Vstep=2,
+                 seed=None,
+                 alpha=0.2,
+                 alpha_extreme=0.11,
+                 ti_extreme=0.11,
+                 shaft_mbdy='shaft',
+                 shaft_constraint='shaft_rot'):
         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
@@ -711,8 +740,15 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
                      'controller': controller,
                      'generator_servo': generator_servo,
                      'pitch_servo': pitch_servo,
+                     'constant_cutin': constant_cutin,
+                     'constant_cutout': constant_cutout,
+                     'constant_shutdown_type': constant_shutdown_type,
+                     'constant_gridloss_time': constant_gridloss_time,
+                     'constant_stuckblade_time': constant_stuckblade_time,
+                     'constant_stuckblade_angle': constant_stuckblade_angle,
+                     'constant_pitchrunaway_time': constant_pitchrunaway_time,
                      'best_azimuth': best_azimuth,
-                     'shaft': shaft,
+                     'shaft_mbdy': shaft_mbdy,
                      'shaft_constraint': shaft_constraint}
         if seed:
             variables["seed"] = int(seed)
