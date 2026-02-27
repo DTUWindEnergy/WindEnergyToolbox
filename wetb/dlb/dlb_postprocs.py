@@ -835,7 +835,7 @@ def get_weight_list(dataarray,
         wsp_list = probability.wsp.values
     if wsp_weights is None:
         weight_DLC24 = 50/(365.25*24)
-        weight_DLC12 = 1 - weight_DLC64_Vin_Vout                
+        weight_DLC12 = 1 - weight_DLC64_Vin_Vout - weight_DLC24               
         wsp_weights = xr.DataArray(data=[[weight_DLC12 if Vin <= v <= Vout else 0 for v in wsp_list],
                                          [weight_DLC24 if Vin <= v <= Vout else 0 for v in wsp_list],
                                          [weight_DLC64_Vin_Vout if Vin <= v <= Vout else 1 for v in wsp_list]],
