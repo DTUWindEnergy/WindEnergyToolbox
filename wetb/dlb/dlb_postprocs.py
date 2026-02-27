@@ -2,7 +2,6 @@ import numpy as np
 import os
 import re
 import xarray as xr
-from wetb.dlc.high_level import Weibull_IEC
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
 def nc_to_dataarray(nc_file, DLB=True):
@@ -828,7 +827,17 @@ def get_weight_list(dataarray,
     """
     if probability is None:
         wsp_list = np.array(range(Vin, int(0.7*Vref) + Vstep, Vstep))
-        probability = xr.DataArray(data=Weibull_IEC(Vref=Vref, Vhub_lst=wsp_list),
+        
+        V_ave = 0.2 * Vref
+        def Pr(x): return 1 - np.exp(-np.pi * (x / (2 * V_ave)) ** 2)
+        
+        wsp_bin_edges = (wsp_list[1:] + wsp_list[:-1]) / 2
+        # add distribution tails to Vin and 0.7 * Vref wsp bins
+        probability = np.r_[Pr(wsp_bin_edges[0]),
+                            [Pr(wsp_bin_edges[i + 1]) - Pr(wsp_bin_edges[i]) for i in range(len(wsp_bin_edges) - 1)],
+                            1 - Pr(wsp_bin_edges[-1])]
+        
+        probability = xr.DataArray(data=probability,
                                    dims='wsp',
                                    coords={'wsp': wsp_list})
     else:
