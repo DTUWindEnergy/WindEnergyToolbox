@@ -859,19 +859,8 @@ def get_weight_list(dataarray,
                                         'wsp': [Vin, Vr, Vout]})
     
     lifetime = n_years*365.25*24*3600 # convert to seconds
-    weight_list = (lifetime*probability*wsp_weights*yaw_weights/n_seeds/sim_time).combine_first(n_years*n_events)
-    
-    # rearrange weights from parameters (DLC, wsp, wdir) to actual filenames
-    # TO-DO: allow wvdir as well
-    def get_weight_list_per_filename(dlc, wsp, wdir, weight_list):
-        return weight_list.sel(dlc=dlc, wsp=wsp, wdir=wdir)    
+    weight_list = (lifetime*probability*wsp_weights*yaw_weights/n_seeds/sim_time).combine_first(n_years*n_events)   
     
     file_list = dataarray.where(dataarray.dlc.isin(sim_time.dlc.data), drop=True).filename # Only FLS DLCs
-    weight_list = xr.apply_ufunc(get_weight_list_per_filename,
-                                 file_list['dlc'],
-                                 file_list['wsp'],
-                                 file_list['wdir'],
-                                 kwargs={'weight_list': weight_list},
-                                 vectorize=True)
-    
+    weight_list = weight_list.sel({c: file_list[c] for c in weight_list.coords})    
     return weight_list
