@@ -755,17 +755,17 @@ def get_weight_list(dataarray,
                     Vr,
                     Vref,
                     Vstep,
-                    probability=None,
-                    wsp_weights=None,
-                    yaw_weights=xr.concat([xr.DataArray(data=[[0.5, 0.25, 0.25]],
-                                                        dims=('dlc', 'wdir'),
-                                                        coords={'dlc': ['12'], 'wdir': [0, 10, 350]}),
-                                           xr.DataArray(data=[[0.5, 0.5]],
-                                                        dims=('dlc', 'wdir'),
-                                                        coords={'dlc': ['24'], 'wdir': [20, 340]}),
-                                           xr.DataArray(data=[[0.5, 0.5]],
-                                                        dims=('dlc', 'wdir'),
-                                                        coords={'dlc': ['64'], 'wdir': [8, 352]})],
+                    wsp_dist=None,
+                    dlc_dist=None,
+                    yaw_dist=xr.concat([xr.DataArray(data=[[0.5, 0.25, 0.25]],
+                                                     dims=('dlc', 'wdir'),
+                                                     coords={'dlc': ['12'], 'wdir': [0, 10, 350]}),
+                                        xr.DataArray(data=[[0.5, 0.5]],
+                                                     dims=('dlc', 'wdir'),
+                                                     coords={'dlc': ['24'], 'wdir': [20, 340]}),
+                                        xr.DataArray(data=[[0.5, 0.5]],
+                                                     dims=('dlc', 'wdir'),
+                                                     coords={'dlc': ['64'], 'wdir': [8, 352]})],
                                            dim='dlc'),
                     n_seeds=xr.DataArray(data=[6, 3, 6],
                                          dims=('dlc'),
@@ -795,13 +795,13 @@ def get_weight_list(dataarray,
         Reference wind speed
     Vstep: int
         Step between wind speeds
-    probability: xarray.DataArray
-        DataArray containing the probability of each combination of wind speed, 
-        wind direction and/or wave direction
-    wsp_weights: xarray.DataArray, optional
+    wsp_dist: xarray.DataArray, optional
+        DataArray containing the probability distribution of wind speed.
+        The default assumes a Weibull distribution according to IEC61400-1.
+    dlc_dist: xarray.DataArray, optional
         DataArray containing the percentage of time each DLC takes for each wind speed.
         The default assumes that DLC64 takes 2.5% of time between Vin and Vout
-    yaw_weights: xarray.DataArray, optional
+    yaw_dist: xarray.DataArray, optional
         DataArray containing the percentage of time each yaw misalignment takes for each DLC.
         The default assumes {-10: 0.25, 0: 0.5, 10: 0.25} for DLC12,
         {-20: 0.5, 20: 0.5} for DLC24 and {-8: 0.5, 8: 0.5} for DLC64
@@ -825,7 +825,7 @@ def get_weight_list(dataarray,
         DataArray containing the weight (real time / simulation time) for each simulation
 
     """
-    if probability is None:
+    if wsp_dist is None:
         wsp_list = np.array(range(Vin, int(0.7*Vref) + Vstep, Vstep))
         
         V_ave = 0.2 * Vref
@@ -837,20 +837,20 @@ def get_weight_list(dataarray,
                             [Pr(wsp_bin_edges[i + 1]) - Pr(wsp_bin_edges[i]) for i in range(len(wsp_bin_edges) - 1)],
                             1 - Pr(wsp_bin_edges[-1])]
         
-        probability = xr.DataArray(data=probability,
-                                   dims='wsp',
-                                   coords={'wsp': wsp_list})
+        wsp_dist = xr.DataArray(data=probability,
+                                dims='wsp',
+                                coords={'wsp': wsp_list})
     else:
-        wsp_list = probability.wsp.values
-    if wsp_weights is None:
+        wsp_list = wsp_dist.wsp.values
+    if dlc_dist is None:
         weight_DLC24 = 50/(365.25*24)
         weight_DLC12 = 1 - weight_DLC64_Vin_Vout - weight_DLC24               
-        wsp_weights = xr.DataArray(data=[[weight_DLC12 if Vin <= v <= Vout else 0 for v in wsp_list],
-                                         [weight_DLC24 if Vin <= v <= Vout else 0 for v in wsp_list],
-                                         [weight_DLC64_Vin_Vout if Vin <= v <= Vout else 1 for v in wsp_list]],
-                                   dims=('dlc', 'wsp'),
-                                   coords={'dlc': ['12', '24', '64'],
-                                           'wsp': wsp_list})       
+        dlc_dist = xr.DataArray(data=[[weight_DLC12 if Vin <= v <= Vout else 0 for v in wsp_list],
+                                      [weight_DLC24 if Vin <= v <= Vout else 0 for v in wsp_list],
+                                      [weight_DLC64_Vin_Vout if Vin <= v <= Vout else 1 for v in wsp_list]],
+                                dims=('dlc', 'wsp'),
+                                coords={'dlc': ['12', '24', '64'],
+                                        'wsp': wsp_list})       
     if n_events is None:
         n_events = xr.DataArray(data=[[1000, 50, 50], 
                                       [1000, 50, 50]],
@@ -859,7 +859,7 @@ def get_weight_list(dataarray,
                                         'wsp': [Vin, Vr, Vout]})
     
     lifetime = n_years*365.25*24*3600 # convert to seconds
-    weight_list = (lifetime*probability*wsp_weights*yaw_weights/n_seeds/sim_time).combine_first(n_years*n_events)   
+    weight_list = (lifetime*wsp_dist*dlc_dist*yaw_dist/n_seeds/sim_time).combine_first(n_years*n_events)   
     
     file_list = dataarray.where(dataarray.dlc.isin(sim_time.dlc.data), drop=True).filename # Only FLS DLCs
     weight_list = weight_list.sel({c: file_list[c] for c in weight_list.coords})    
