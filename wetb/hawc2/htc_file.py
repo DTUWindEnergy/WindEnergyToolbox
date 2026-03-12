@@ -339,6 +339,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                     files.append(self.wind.met_mast_wind[0])
                 else:
                     files.append(self.wind.met_mast_wind.get('filename', [None])[0])
+            if 'flex' in self.wind:
+                for uvw in 'uvw':
+                    files.append(self.wind.flex.get('filename_'+uvw, [None])[0].strip("'\""))
         if 'wakes' in self:
             files.append(self.wind.get('use_specific_deficit_file', [None])[0])
             files.append(self.wind.get('write_ct_cq_file', [None])[0])
