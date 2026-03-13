@@ -378,8 +378,9 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                     return f
             else:
                 return f
+        files = [fix_path_case(f) for f in set(files) if f]
         files = [item.strip("'\"") for item in files]
-        return [fix_path_case(f) for f in set(files) if f]
+        return files
 
     def output_files(self):
         self.contents  # load if not loaded
