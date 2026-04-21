@@ -10,7 +10,7 @@ from pandas.core.base import PandasObject
 import numpy as np
 
 from wetb.hawc2.htc_file import HTCFile
-
+from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
 
 class HAWC2InputWriter(object):
     """Load a dlc and write the corresponding HAWC2 input files.
@@ -60,6 +60,9 @@ class HAWC2InputWriter(object):
         self : HAWC2InputWriter
             Instance of self to enable chaining.
         """
+        if isinstance(dataFrame, DTU_IEC61400_1_Ref_DLB):
+            self.diameter = dataFrame.variables.loc['D']['Value']
+            self.lambda_1 = dataFrame.variables.loc['lambda_1']['Value']
         if not isinstance(dataFrame, PandasObject) and hasattr(dataFrame, 'to_pandas'):
             dataFrame = dataFrame.to_pandas()
         self.contents = dataFrame
