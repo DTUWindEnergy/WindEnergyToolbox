@@ -11,7 +11,8 @@ TODO: set default turb_format = 0
 
 
 class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
-    def __init__(self, base_htc_file, diameter,
+    def __init__(self, base_htc_file,
+                 diameter=300, # For turb box size, should be passed unless instantiated from DLB
                  time_start=100,  # Minimum 5s cf. IEC61400-1(2005), section 7.5
                  turbulence_defaults=(33.6, 3.9, 8192, 64)  # L, gamma, n_x, n_yz):
                  ):
@@ -48,7 +49,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             htc.wind.turb_format = 0
         elif isinstance(seed, int):
             L, Gamma, nx, nyz = self.turbulence_defaults
-
+            if hasattr(self, 'lambda_1'):
+                L = 0.8 * self.lambda_1
             htc.add_mann_turbulence(L, 1, Gamma, seed, no_grid_points=(nx, nyz, nyz),
                                     box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'],
                                                    self.diameter, self.diameter))
