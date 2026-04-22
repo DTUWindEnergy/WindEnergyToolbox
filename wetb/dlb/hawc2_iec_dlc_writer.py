@@ -208,12 +208,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                 continue
         for orientation in htc.new_htc_structure.orientation:
             try:
-                if shaft_mbdy in str(orientation.mbdy2):
-                    command = 'mbdy2_eulerang'
-                    for line in orientation:
-                        if 'mbdy2_eulerang' in line.name_:
-                            command = line.name_
-                    orientation[command].values[2] = azimuth                   
+                if shaft_mbdy in str(orientation['mbdy2' if 'mbdy2' in orientation.keys() else 'body2']):
+                    orientation.add_line('mbdy2_eulerang', [0, 0, azimuth], 'azimuth')
+                    if 'mbdy2_ini_rotvec_d1' in orientation.keys():
+                        orientation.contents.move_to_end('mbdy2_ini_rotvec_d1')
+                    if 'body2_ini_rotvec_d1' in orientation.keys():
+                        orientation.contents.move_to_end('body2_ini_rotvec_d1')
                     break
             except:
                 continue
