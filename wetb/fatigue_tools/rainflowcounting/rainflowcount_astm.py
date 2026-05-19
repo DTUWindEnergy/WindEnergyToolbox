@@ -80,21 +80,25 @@ def rainflowcount(sig):
     sig_ptr = 0
     ampl_mean = []
     for _ in range(len(sig)):
-        a.append(sig[sig_ptr])
+        a.append(sig[sig_ptr])  # add next extreme from signal to a
         sig_ptr += 1
         while len(a) > 2 and abs(a[-3] - a[-2]) <= abs(a[-2] - a[-1]):
+            # a contains at least two half cycles and second last is smaller than last half cycle
             ampl = abs(a[-3] - a[-2])
             mean = (a[-3] + a[-2]) / 2
             if len(a) == 3:
+                # register and delete second-last (first) half cycle
                 del a[0]
                 if ampl > 0:
                     ampl_mean.append((ampl, mean))
             elif len(a) > 3:
+                # delete second last half cycle and register as a full cycle
                 del a[-3:-1]
                 if ampl > 0:
                     ampl_mean.append((ampl, mean))
                     ampl_mean.append((ampl, mean))
     for index in range(len(a) - 1):
+        # register remaining cycles in a
         ampl = abs(a[index] - a[index + 1])
         mean = (a[index] + a[index + 1]) / 2
         if ampl > 0:
