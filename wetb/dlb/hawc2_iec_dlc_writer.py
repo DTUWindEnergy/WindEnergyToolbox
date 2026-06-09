@@ -110,7 +110,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             self.set_gridloss_time(htc, self.generator_servo, self.constant_gridloss_time, self.time_start + T)
         elif Fault['type'] == 'StuckBlade':
             T = Fault['T']
-            self.set_stuckblade(htc, self.pitch_servo, self.constant_stuckblade_time, self.constant_stuckblade_angle, T)
+            pitch = Fault['pitch']
+            self.set_stuckblade(htc, self.pitch_servo, self.constant_stuckblade_time, self.constant_stuckblade_angle, T, pitch)
         elif Fault['type'] == 'PitchRunaway':
             T = Fault['T']
             self.set_pitchrunaway(htc, self.pitch_servo, self.constant_pitchrunaway_time, self.time_start + T)
@@ -151,7 +152,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                           + 'placing "time for grid loss" in constant {constant_gridloss_time} comment.')
         setattr(generator_servo.init, f'constant__{constant_gridloss_time}', [constant_gridloss_time, t])
         
-    def set_stuckblade(self, htc, pitch_servo, constant_stuckblade_time, constant_stuckblade_angle, t):
+    def set_stuckblade(self, htc, pitch_servo, constant_stuckblade_time, constant_stuckblade_angle, t, pitch):
         pitch_servo = htc.dll.get_subsection_by_name(pitch_servo, 'name')
         if 'time for stuck blade' not in getattr(pitch_servo.init, f'constant__{constant_stuckblade_time}').comments.lower():
             warnings.warn(f'Assuming constant {constant_stuckblade_time} in pitch_servo DLL is time for stuck blade!'
@@ -162,7 +163,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_stuckblade_angle} in pitch_servo DLL is angle of stuck blade!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "angle of stuck blade" in constant {constant_stuckblade_angle} comment.')
-        setattr(pitch_servo.init, f'constant__{constant_stuckblade_angle}', [constant_stuckblade_angle, 0])
+        setattr(pitch_servo.init, f'constant__{constant_stuckblade_angle}', [constant_stuckblade_angle, pitch])
         
     def set_pitchrunaway(self, htc, pitch_servo, constant_pitchrunaway_time, t):
         pitch_servo = htc.dll.get_subsection_by_name(pitch_servo, 'name')

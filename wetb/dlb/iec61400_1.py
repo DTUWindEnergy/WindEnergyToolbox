@@ -338,6 +338,7 @@ class DLB():
                          ('z_hub', 'Hub height'),
                          ('lambda_1', 'Longitudinal turbulence scale parameter'),
                          ('best_azimuth', 'Best blade azimuth for maintenance'),
+                         ('min_pitch', 'Minimum blade pitch angle'),
                          ("seed", "Seed to initialize the RNG for turbulence seed generation")
                          ]
         self.variables = pd.DataFrame([{'Name': n, 'Value': variables[n], 'Description': d}
@@ -414,6 +415,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
                  D,
                  z_hub,
                  best_azimuth=180,
+                 min_pitch=0,
                  Vmaint=18,
                  Vstep=2,
                  seed=None,
@@ -494,7 +496,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Seeds: 12,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Fault: ('StuckBlade', {'t': 0.1, 'pitch': 0}),
+              Fault: ('StuckBlade', {'t': 0.1, 'pitch': min_pitch}),
               Time: 100},
             
             {Name: 'DLC22p',
@@ -711,7 +713,8 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
                      'D': D,
                      'z_hub': z_hub,
                      'lambda_1': lambda_1,
-                     'best_azimuth': best_azimuth}
+                     'best_azimuth': best_azimuth,
+                     'min_pitch': min_pitch}
         if seed:
             variables["seed"] = int(seed)
         else:
