@@ -14,11 +14,37 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def __init__(self, base_htc_file,
                  diameter=300, # For turb box size, should be passed unless instantiated from DLB
                  time_start=100,  # Minimum 5s cf. IEC61400-1(2005), section 7.5
-                 turbulence_defaults=(33.6, 3.9, 8192, 64)  # L, gamma, n_x, n_yz):
-                 ):
-        HAWC2InputWriter.__init__(self, base_htc_file, diameter=diameter,
+                 turbulence_defaults=(33.6, 3.9, 8192, 64),  # L, gamma, n_x, n_yz)
+                 controller='dtu_we_controller',
+                 generator_servo='generator_servo',
+                 pitch_servo='servo_with_limits',
+                 constant_cutin=24,
+                 constant_cutout=26,
+                 constant_shutdown_type=28,
+                 stop_type={'Normal': 1, 'Emergency': 2},
+                 constant_gridloss_time=7,
+                 constant_stuckblade_time=9,
+                 constant_stuckblade_angle=10,
+                 constant_pitchrunaway_time=8,
+                 shaft_mbdy='shaft',
+                 shaft_constraint='shaft_rot'):
+        HAWC2InputWriter.__init__(self, base_htc_file,
+                                  diameter=diameter,
                                   time_start=time_start,
-                                  turbulence_defaults=turbulence_defaults)
+                                  turbulence_defaults=turbulence_defaults,
+                                  controller=controller,
+                                  generator_servo=generator_servo,
+                                  pitch_servo=pitch_servo,
+                                  constant_cutin=constant_cutin,
+                                  constant_cutout=constant_cutout,
+                                  constant_shutdown_type=constant_shutdown_type,
+                                  stop_type=stop_type,
+                                  constant_gridloss_time=constant_gridloss_time,
+                                  constant_stuckblade_time=constant_stuckblade_time,
+                                  constant_stuckblade_angle=constant_stuckblade_angle,
+                                  constant_pitchrunaway_time=constant_pitchrunaway_time,
+                                  shaft_mbdy=shaft_mbdy,
+                                  shaft_constraint=shaft_constraint)
 
     def set_V_hub(self, htc, V_hub, **_):
         htc.wind.wsp = V_hub
@@ -80,21 +106,14 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if isinstance(Fault, str):
             Fault = eval(Fault)
         if Fault['type'] == 'GridLoss':
-            generator_servo = Fault['generator_servo']
-            constant_gridloss_time = Fault['constant_gridloss_time']
             T = Fault['T']
-            self.set_gridloss_time(htc, generator_servo, constant_gridloss_time, self.time_start + T)
+            self.set_gridloss_time(htc, self.generator_servo, self.constant_gridloss_time, self.time_start + T)
         elif Fault['type'] == 'StuckBlade':
-            pitch_servo = Fault['pitch_servo']
-            constant_stuckblade_time = Fault['constant_stuckblade_time']
-            constant_stuckblade_angle = Fault['constant_stuckblade_angle']
             T = Fault['T']
-            self.set_stuckblade(htc, pitch_servo, constant_stuckblade_time, constant_stuckblade_angle, T)
+            self.set_stuckblade(htc, self.pitch_servo, self.constant_stuckblade_time, self.constant_stuckblade_angle, T)
         elif Fault['type'] == 'PitchRunaway':
-            pitch_servo = Fault['pitch_servo']
-            constant_pitchrunaway_time = Fault['constant_pitchrunaway_time']
             T = Fault['T']
-            self.set_pitchrunaway(htc, pitch_servo, constant_pitchrunaway_time, self.time_start + T)
+            self.set_pitchrunaway(htc, self.pitch_servo, self.constant_pitchrunaway_time, self.time_start + T)
         else:
             raise NotImplementedError(Fault)
             
@@ -104,34 +123,20 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if isinstance(Operation, str):
             Operation = eval(Operation)
         if Operation['type'] == 'StartUp':
-            controller = Operation['controller']
-            constant_cutin = Operation['constant_cutin']
             T = Operation['T']
-            self.set_startup_time(htc, controller, constant_cutin, self.time_start + T)
+            self.set_startup_time(htc, self.controller, self.constant_cutin, self.time_start + T)
         elif Operation['type'] == 'ShutDown':
-            controller = Operation['controller']
-            constant_cutout = Operation['constant_cutout']
-            constant_shutdown_type = Operation['constant_shutdown_type']
             T = Operation['T']
-            self.set_shutdown_time(htc, controller, constant_cutout, constant_shutdown_type, self.time_start + T, 1)
+            self.set_shutdown_time(htc, self.controller, self.constant_cutout, self.constant_shutdown_type, self.time_start + T, self.stop_type['Normal'])
         elif Operation['type'] == 'EmergencyShutDown':
-            controller = Operation['controller']
-            constant_cutout = Operation['constant_cutout']
-            constant_shutdown_type = Operation['constant_shutdown_type']
             T = Operation['T']
-            self.set_shutdown_time(htc, controller, constant_cutout, constant_shutdown_type, self.time_start + T, 2)
+            self.set_shutdown_time(htc, self.controller, self.constant_cutout, self.constant_shutdown_type, self.time_start + T, self.stop_type['Emergency'])
         elif Operation['type'] == 'Parked':
-            controller = Operation['controller']
-            constant_cutin = Operation['constant_cutin']
-            self.set_parked(htc, controller, constant_cutin, self.time_start + kwargs['simulation_time'])
+            self.set_parked(htc, self.controller, self.constant_cutin, self.time_start + kwargs['simulation_time'])
         elif Operation['type'] == 'RotorLocked':
-            controller = Operation['controller']
-            constant_cutin = Operation['constant_cutin']
-            self.set_parked(htc, controller, constant_cutin, self.time_start + kwargs['simulation_time'])
-            shaft_mbdy = Operation['shaft_mbdy']
-            shaft_constraint = Operation['shaft_constraint']
+            self.set_parked(htc, self.controller, self.constant_cutin, self.time_start + kwargs['simulation_time'])
             azimuth = Operation['Azi']
-            self.set_rotor_locked(htc, shaft_mbdy, shaft_constraint, azimuth)
+            self.set_rotor_locked(htc, self.shaft_mbdy, self.shaft_constraint, azimuth)
         else:
             raise NotImplementedError(Operation)
 
