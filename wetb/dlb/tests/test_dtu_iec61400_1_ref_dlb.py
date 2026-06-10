@@ -11,6 +11,15 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
+        cls.dlb = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A',
+                                         D=178.3,
+                                         z_hub=119,
+                                         Vin=4,
+                                         Vr=11,
+                                         Vout=25)
+        
+        h2writer = HAWC2_IEC_DLC_Writer('../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc').from_pandas(cls.dlb)
+        
         if os.path.isdir('./tmp'):
             shutil.rmtree('./tmp')
         # Write only 1 file per each DLC to keep it light
@@ -26,7 +35,7 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
         
     def test_number_of_sims(self):
         # Take example from report "Design Load Basis for onshore turbines - Revision 00"
-        sims = dlb.to_pandas()
+        sims = self.dlb.to_pandas()
         n_sims_dict = {'DLC12': 216,
                        'DLC13': 216,
                        'DLC14': 3,
@@ -147,13 +156,5 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
         self.assertEqual(htc.new_htc_structure.constraint.bearing3.omegas[0], 0)
             
 if __name__ == "__main__":
-    dlb = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A',
-                                 D=178.3,
-                                 z_hub=119,
-                                 Vin=4,
-                                 Vr=11,
-                                 Vout=25)
-    
-    h2writer = HAWC2_IEC_DLC_Writer('../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc').from_pandas(dlb)
     unittest.main()
 
