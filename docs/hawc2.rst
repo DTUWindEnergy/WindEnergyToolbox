@@ -10,5 +10,7 @@ notebook format. You can download the source notebooks from the
     :caption: HAWC2
 
     notebooks/hawc2/InputFileWriting
+    notebooks/hawc2/OutputFilePostProcessing
+    notebooks/hawc2/DLBWorkflow
     notebooks/hawc2/RunningSimulations
     notebooks/hawc2/RunningSimulationsJess

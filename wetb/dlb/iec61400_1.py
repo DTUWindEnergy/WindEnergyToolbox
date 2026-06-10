@@ -261,23 +261,23 @@ class DLC():
 
     def StuckBlade(self, t, pitch, **_):
         if (not isinstance(t, list)) and (not isinstance(pitch, list)):
-            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch}}]
+            return [{'Fault': {'type': 'StuckBlade', 'T': t, 'pitch': pitch}}]
         else:
-            return [{'Fault': {'type': 'StuckBlade', 'pitch_servo': self.pitch_servo, 'T': t, 'pitch': pitch},
+            return [{'Fault': {'type': 'StuckBlade', 'T': t, 'pitch': pitch},
                      'T_id': 't' + str(t.index(tp[0])) + 'p' + str(pitch.index(tp[1]))} for tp in itertools.product(t, pitch)]
             
     def PitchRunaway(self, t, **_):
         if not isinstance(t, list):
-            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': t}}]
+            return [{'Fault': {'type': 'PitchRunaway', 'T': t}}]
         else:
-            return [{'Fault': {'type': 'PitchRunaway', 'pitch_servo': self.pitch_servo, 'T': T},
+            return [{'Fault': {'type': 'PitchRunaway', 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
     
     def GridLoss(self, t, **_):
         if not isinstance(t, list):
-            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': t}}]
+            return [{'Fault': {'type': 'GridLoss', 'T': t}}]
         else:
-            return [{'Fault': {'type': 'GridLoss', 'generator_servo': self.generator_servo, 'T': T}, 'T_id': 't' + str(t.index(T))} for T in t]
+            return [{'Fault': {'type': 'GridLoss', 'T': T}, 'T_id': 't' + str(t.index(T))} for T in t]
     
     # ===============================================================================
     # Operations
@@ -288,35 +288,33 @@ class DLC():
     
     def StartUp(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'StartUp', 'T': t}}]
         else:
-            return [{'Operation': {'type': 'StartUp', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'StartUp', 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
     
     def ShutDown(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'ShutDown', 'T': t}}]
         else:
-            return [{'Operation': {'type': 'ShutDown', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'ShutDown', 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
         
     def EmergencyShutDown(self, t, **_):
         if not isinstance(t, list):
-            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': t}}]
+            return [{'Operation': {'type': 'EmergencyShutDown', 'T': t}}]
         else:
-            return [{'Operation': {'type': 'EmergencyShutDown', 'controller': self.controller, 'T': T},
+            return [{'Operation': {'type': 'EmergencyShutDown', 'T': T},
                      'T_id': 't' + str(t.index(T))} for T in t]
         
     def Parked(self, **_):
-        return [{'Operation': {'type': 'Parked', 'controller': self.controller}}]
+        return [{'Operation': {'type': 'Parked'}}]
     
     def RotorLocked(self, azimuth, **_):
         if not isinstance(azimuth, list):
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
-                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azimuth}}]
+            return [{'Operation': {'type': 'RotorLocked', 'Azi': azimuth}}]
         else:
-            return [{'Operation': {'type': 'RotorLocked', 'controller': self.controller,
-                                   'shaft': self.shaft, 'shaft_constraint': self.shaft_constraint, 'Azi': azi},
+            return [{'Operation': {'type': 'RotorLocked', 'Azi': azi},
                      'Azi_id': 'azi' + f"{azi:03}"} for azi in azimuth]
 
 class DLB():
@@ -339,12 +337,8 @@ class DLB():
                          ('D', 'Rotor diameter'),
                          ('z_hub', 'Hub height'),
                          ('lambda_1', 'Longitudinal turbulence scale parameter'),
-                         ('controller', 'Filename of controller DLL'),
-                         ('generator_servo', 'Filename of generator servo DLL'),
-                         ('pitch_servo', 'Filename of pitch servo DLL'),
                          ('best_azimuth', 'Best blade azimuth for maintenance'),
-                         ('shaft', 'Name of shaft body'),
-                         ('shaft_constraint', 'Name of constraint between tower and shaft'),
+                         ('min_pitch', 'Minimum blade pitch angle'),
                          ("seed", "Seed to initialize the RNG for turbulence seed generation")
                          ]
         self.variables = pd.DataFrame([{'Name': n, 'Value': variables[n], 'Description': d}
@@ -413,10 +407,21 @@ class DLB():
 
 class DTU_IEC61400_1_Ref_DLB(DLB):
     
-    def __init__(self, iec_wt_class, Vin, Vout, Vr, Vmaint, D, z_hub,
-                 controller, generator_servo, pitch_servo, best_azimuth,
-                 Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
-                 shaft='shaft', shaft_constraint='shaft_rot'):
+    def __init__(self,
+                 iec_wt_class,
+                 Vin,
+                 Vout,
+                 Vr,
+                 D,
+                 z_hub,
+                 best_azimuth=180,
+                 min_pitch=0,
+                 Vmaint=18,
+                 Vstep=2,
+                 seed=None,
+                 alpha=0.2,
+                 alpha_extreme=0.11,
+                 ti_extreme=0.11):
         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
@@ -491,7 +496,7 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
               Seeds: 12,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Fault: ('StuckBlade', {'t': 0.1, 'pitch': 0}),
+              Fault: ('StuckBlade', {'t': 0.1, 'pitch': min_pitch}),
               Time: 100},
             
             {Name: 'DLC22p',
@@ -708,12 +713,8 @@ class DTU_IEC61400_1_Ref_DLB(DLB):
                      'D': D,
                      'z_hub': z_hub,
                      'lambda_1': lambda_1,
-                     'controller': controller,
-                     'generator_servo': generator_servo,
-                     'pitch_servo': pitch_servo,
                      'best_azimuth': best_azimuth,
-                     'shaft': shaft,
-                     'shaft_constraint': shaft_constraint}
+                     'min_pitch': min_pitch}
         if seed:
             variables["seed"] = int(seed)
         else:
