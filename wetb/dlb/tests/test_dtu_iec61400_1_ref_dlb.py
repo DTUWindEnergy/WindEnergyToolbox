@@ -6,6 +6,7 @@ import unittest
 from wetb.dlb.hawc2_iec_dlc_writer import HAWC2_IEC_DLC_Writer 
 from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
 from wetb.hawc2.htc_file import HTCFile
+from wetb.hawc2.tests import test_files
 
 class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
     
@@ -18,7 +19,7 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
                                          Vr=11,
                                          Vout=25)
         
-        h2writer = HAWC2_IEC_DLC_Writer('../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc').from_pandas(cls.dlb)
+        h2writer = HAWC2_IEC_DLC_Writer(os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc').from_pandas(cls.dlb)
         
         if os.path.isdir('./tmp'):
             shutil.rmtree('./tmp')
