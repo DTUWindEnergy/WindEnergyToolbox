@@ -44,6 +44,7 @@ documentation = "https://toolbox.pages.windenergy.dtu.dk/WindEnergyToolbox/"
 
 [project.optional-dependencies]
 prepost = ["openpyxl", "tables", "xlwt", "Cython"]
+docs = ["sphinx", "python-docs-theme", "numpydoc", "nbsphinx", "sphinx_copybutton", "sphinx_sitemap", "sphinx_rtd_theme", "ipympl", "ipykernel"]
 all = ["openpyxl", "tables", "xlwt", "Cython", "paramiko", "sshtunnel", 'pytest', 'mock', 'click']
 
 [tool.setuptools_scm]
