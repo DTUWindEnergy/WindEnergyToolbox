@@ -159,9 +159,9 @@ def cycle_matrix(signals, ampl_bins=10, mean_bins=10, rainflow_func=rainflow_win
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ampl_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * ampls)[0]
-        ampl_bin_mean = np.nanmean(ampl_bin_sum / np.where(cycles, cycles, np.nan), 1)
+        ampl_bin_mean = np.nansum(ampl_bin_sum, 1) / np.where(np.nansum(cycles, 1), np.nansum(cycles, 1), 1)
         mean_bin_sum = np.histogram2d(ampls, means, [ampl_bins, mean_bins], weights=weights * means)[0]
-        mean_bin_mean = np.nanmean(mean_bin_sum / np.where(cycles, cycles, np.nan), 1)
+        mean_bin_mean = np.nansum(mean_bin_sum, 1) / np.where(np.nansum(cycles, 1), np.nansum(cycles, 1), 1)
     cycles = cycles / 2  # to get full cycles
     return cycles, ampl_bin_mean, ampl_edges, mean_bin_mean, mean_edges
 
