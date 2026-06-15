@@ -30,15 +30,15 @@ test:
         coverage_format: cobertura
         path: coverage.xml
 
-
-
 # ===== build documentation =====
 pages:  # "pages" is a job specifically for GitLab pages [1]
   stage:  # build, test, deploy defined by default [2]
     deploy
-  image: registry.windenergy.dtu.dk/hawc2/hawc2-binary/dockerimages/ubuntu_conda
+  image: condaforge/miniforge3:latest
   script:  # use sphinx to build docs, move to public page
   - git config --global --add safe.directory /builds/toolbox/WindEnergyToolbox
+  - apt-get update
+  - apt-get -y install pandoc
   - pip install --upgrade pip
   - pip install -e .[docs]
   - cd docs
