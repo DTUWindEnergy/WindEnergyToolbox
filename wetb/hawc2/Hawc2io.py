@@ -32,6 +32,7 @@ import os
 
 from wetb import gtsdf
 from wetb.prepost import misc
+from wetb.hawc2.Hawc2output import view_sensors
 
 import pandas as pd
 from collections.abc import Iterable
@@ -44,406 +45,46 @@ import warnings
 ################################################################################
 
 
-class ReadHawc2(object):
+class ReadHawc2(view_sensors):
     """
     """
 ################################################################################
 # read *.sel file
 
-    def _ReadSelFile(self):
-        """
-        Some title
-        ==========
-
-        Using docstrings formatted according to the reStructuredText specs
-        can be used for automated documentation generation with for instance
-        Sphinx: http://sphinx.pocoo.org/.
-
-        Parameters
-        ----------
-        signal : ndarray
-            some description
-
-        Returns
-        -------
-        output : int
-            describe variable
-        """
-
-        # read *.sel hawc2 output file for result info
-        if self.FileName.lower().endswith('.sel'):
-            self.FileName = self.FileName[:-4]
-        Lines = misc.readlines_try_encodings(self.FileName + '.sel')
-        # findes general result info (number of scans, number of channels,
-        # simulation time and file format)
-        temp = Lines[8].split()
-        self.NrSc = int(temp[0])
-        self.NrCh = int(temp[1])
-        self.Time = float(temp[2])
-        self.Freq = self.NrSc / self.Time
-        self.t = np.linspace(0, self.Time, self.NrSc + 1)[1:]
-        Format = temp[3]
-        # reads channel info (name, unit and description)
-        Name = []
-        Unit = []
-        Description = []
-        for i in range(0, self.NrCh):
-            temp = str(Lines[i + 12][12:43])
-            Name.append(temp.strip())
-            temp = str(Lines[i + 12][43:54])
-            Unit.append(temp.strip())
-            temp = str(Lines[i + 12][54:-1])
-            Description.append(temp.strip())
-        self.ChInfo = [Name, Unit, Description]
-        # if binary file format, scaling factors are read
-        if Format.lower() == 'binary':
-            self.ScaleFactor = np.zeros(self.NrCh)
-            self.FileFormat = 'HAWC2_BINARY'
-            for i in range(0, self.NrCh):
-                self.ScaleFactor[i] = float(Lines[i + 12 + self.NrCh + 2])
-        else:
-            self.FileFormat = 'HAWC2_ASCII'
-################################################################################
-# read sensor file for FLEX format
-
-    def _ReadSensorFile(self):
-        # read sensor file used if results are saved in FLEX format
-        DirName = os.path.dirname(self.FileName + ".int")
-        try:
-            Lines = misc.readlines_try_encodings(os.path.join(DirName, r"sensor"))
-        except IOError:
-            print("can't finde sensor file for FLEX format")
-            return
-        # reads channel info (name, unit and description)
-        self.NrCh = 0
-        Name = []
-        Unit = []
-        Description = []
-        for i in range(2, len(Lines)):
-            temp = Lines[i]
-            if not temp.strip():
-                break
-            self.NrCh += 1
-            temp = str(Lines[i][38:45])
-            Unit.append(temp.strip())
-            temp = str(Lines[i][45:53])
-            Name.append(temp.strip())
-            temp = str(Lines[i][53:])
-            Description.append(temp.strip())
-        self.ChInfo = [Name, Unit, Description]
-        # read general info from *.int file
-        fid = open(self.FileName + ".int", 'rb')
-        fid.seek(4 * 19)
-        if not np.fromfile(fid, 'int32', 1) == self.NrCh:
-            print("number of sensors in sensor file and data file are not consisten")
-        fid.seek(4 * (self.NrCh) + 8, 1)
-        time_start, time_step = np.fromfile(fid, 'f', 2)
-        self.Freq = 1 / time_step
-        self.ScaleFactor = np.fromfile(fid, 'f', self.NrCh)
-        fid.seek(2 * 4 * self.NrCh + 48 * 2)
-        self.NrSc = int(len(np.fromfile(fid, 'int16')) / self.NrCh)
-        self.Time = self.NrSc * time_step
-        self.t = np.arange(0, self.Time, time_step) + time_start
-        fid.close()
-################################################################################
-# init function, load channel and other general result file info
 
     def __init__(self, FileName, ReadOnly=0):
-        self.FileName = FileName
-        self.ReadOnly = ReadOnly
-        self.Iknown = []  # to keep track of what has been read all ready
-        self.Data = np.zeros(0)
-        self.df = pd.DataFrame()
-        if FileName.lower().endswith('.sel') or os.path.isfile(FileName + ".sel"):
-            self._ReadSelFile()
-        elif FileName.lower().endswith('.int') or os.path.isfile(self.FileName + ".int"):
-            self.FileFormat = 'FLEX'
-            self._ReadSensorFile()
-        elif FileName.lower().endswith('.hdf5') or os.path.isfile(self.FileName + ".hdf5"):
-            self.FileFormat = 'GTSDF'
-            self.ReadGtsdf()
-        else:
-            print("unknown file: " + FileName)
+        
+        warnings.warn(
+            "ReadHawc2 is deprecated. Use Hawc2output instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        super().__init__(FileName, ReadOnly=ReadOnly)
 ################################################################################
 # Read results in binary format
-
-    def ReadBinary(self, ChVec=[]):
-        if not ChVec:
-            ChVec = range(0, self.NrCh)
-        with open(self.FileName + '.dat', 'rb') as fid:
-            data = np.zeros((self.NrSc, len(ChVec)))
-            j = 0
-            for i in ChVec:
-                fid.seek(i * self.NrSc * 2, 0)
-                data[:, j] = np.fromfile(fid, 'int16', self.NrSc) * self.ScaleFactor[i]
-                j += 1
-        return data
-################################################################################
-# Read results in ASCII format
-
-    def ReadAscii(self, ChVec=[]):
-        if not ChVec:
-            ChVec = range(0, self.NrCh)
-        temp = np.loadtxt(self.FileName + '.dat', usecols=ChVec)
-        return temp.reshape((temp.shape[0], len(ChVec)))
-################################################################################
-# Read results in FLEX format
-
-    def ReadFLEX(self, ChVec=[]):
-        if not ChVec:
-            ChVec = range(1, self.NrCh)
-        fid = open(self.FileName + ".int", 'rb')
-        fid.seek(2 * 4 * self.NrCh + 48 * 2)
-        temp = np.fromfile(fid, 'int16')
-        temp = temp.reshape(self.NrSc, self.NrCh)
-        fid.close()
-        return np.dot(temp[:, ChVec], np.diag(self.ScaleFactor[ChVec]))
-################################################################################
-# Read results in GTSD format
-
-    def ReadGtsdf(self,ChVec = []):
-        fn = self.FileName
-        if fn[-5:].lower() != '.hdf5':
-            fn += '.hdf5'
-        self.t, data, info = gtsdf.load(fn)
-        self.Time = self.t
-        self.ChInfo = [['Time'] + info['attribute_names'],
-                       ['s'] + info['attribute_units'],
-                       ['Time'] + info['attribute_descriptions']]
-        if 'htc_input' in info:
-            self.ChInfo.append(['Time'] + info['htc_input'])
-            
-        self.NrCh = data.shape[1] + 1
-        self.NrSc = data.shape[0]
-        self.Freq = self.NrSc / self.Time
-        self.FileFormat = 'GTSDF'
-        self.gtsdf_description = info['description']
-        self.gtsdf_dtype = info['dtype']
-        data = np.hstack([self.Time[:, np.newaxis], data])
-        if ChVec:
-            data= data[:,ChVec]
-        return data
-
-
-################################################################################
-# One stop call for reading all data formats
-
-    def ReadAll(self, ChVec=[]):
-        if not ChVec and not self.FileFormat == 'GTSDF':
-            ChVec = range(0, self.NrCh)
-        if self.FileFormat == 'HAWC2_BINARY':
-            return self.ReadBinary(ChVec)
-        elif self.FileFormat == 'HAWC2_ASCII':
-            return self.ReadAscii(ChVec)
-        elif self.FileFormat == 'GTSDF':
-            return self.ReadGtsdf(ChVec)
-        else:
-            return self.ReadFLEX(ChVec)
-################################################################################
-# Search function to get sensor id
-
-    def get_sensor_id(
-        self,
-        *,
-        name=None,
-        unit=None,
-        desc=None,
-        htc=None,
-        label = None,
-    ):
-        def concate_str(v):
-            return str(v).strip().lower().replace(" ", "")
-        
-        def parse_dictionary(d):
-            """Helper function to extract names and numbers from a dictionary."""
-            if d is None:
-                return [], []
-            
-            names = d.keys()
-            names = {concate_str(i) for i in names}
-            
-            return names
-
-        def normalize(v):
-            # Takes a vector of strings and removes spaces in each element
-            if v is None:
-                return   {'Not provided'}
-            
-            if isinstance(v, dict):
-                v = parse_dictionary(v)
-                return v
-            
-            if isinstance(v, Iterable) and not isinstance(v, (str, bytes)):
-                # iterable allows for inputs to be defined as lists, sets or arrays.
-                return {concate_str(x) for x in v}
-            return {concate_str(v)}
-        
-        
-        # Remove spaces from input string or list of strings
-        name_inp = normalize(name)
-        unit_inp = normalize(unit)
-        desc_inp = normalize(desc)
-        htc_inp  = normalize(htc)
-        label_inp  = normalize(label)
-
-        matched = []
-
-        for i in range(self.NrCh):
-            # inputs are searched through in their respective channel info. 
-            # search is backwards (ie if not) to filter when using double inputs ie name and desc
-            
-            #removing space
-            sensor_name = concate_str(self.ChInfo[0][i])
-            sensor_unit = concate_str(self.ChInfo[1][i])
-            sensor_desc = concate_str(self.ChInfo[2][i])
-
-            if len(self.ChInfo) == 4 :
-                sensor_htc = concate_str(self.ChInfo[3][i])
-
-            # Checking if inp is included in sensor string
-            if name_inp !=  {'Not provided'} and not any(item in sensor_name for item in name_inp): 
-                continue
-            else:
-                pass
-            if unit_inp !=  {'Not provided'} and not any(item in sensor_unit for item in unit_inp):
-                continue
-            else:
-                pass
-            if  desc_inp !=  {'Not provided'} and not any(item in sensor_desc for item in desc_inp):
-                continue
-            else:
-                pass
-            # label search uses desc to search if there is no htc input
-            if label_inp !=  {'Not provided'} : 
-                if len(self.ChInfo) == 3 and not sensor_desc.endswith(tuple(label_inp)):#label not in desc_inp:
-                    continue
-                elif len(self.ChInfo) == 4 :
-                    after_hash = sensor_htc.split("#", 1)[1] if "#" in sensor_htc else ""
-                    if after_hash not in label_inp:
-                        continue
-
-            if htc_inp !=  {'Not provided'} and not any(item in sensor_htc for item in htc_inp):
-                continue
-            else:
-                pass
- 
-            matched.append(i)
-
-        # sort for indicees if dicts are used
-        if isinstance(name, dict) or isinstance(desc, dict) or isinstance(htc, dict):
-            
-            def map_indices(self, matched, sorted_dict):
-                index_sorted = [False] * len(matched)   # initialize with None
-                sorted_names = [concate_str(self.ChInfo[3][i]) for i in matched]
-
-                j = 0
-                for i, value in enumerate(sorted_dict):
-                    # count occurrences
-                    conc_val = concate_str(value)
-                    
-                    count = sorted_names.count(conc_val) 
-                    # loop over repeated sensor names and sort based on index
-                    for k in range(count):
-                        if conc_val in sorted_names[j]:
-                         
-                            index = sorted_dict[value]
-                        
-                            if index == 'all':
-                                index_sorted[j] = True
-                            
-                            elif isinstance(index, int):
-                                if k+1 == index:
-                                    index_sorted[j] = True
-
-                            elif isinstance(index,list):
-                                if k+1 in index:
-                                    index_sorted[j] = True
-    
-                        j = j+1
-                
-                return np.array(index_sorted)
-
-            indexed = map_indices(self,matched,htc)
-            matched = np.array(matched)
-            matched = matched[indexed].tolist()
-
-        return matched
-
 #####################################################################################
 # Main read data call, read, save and sort data
 
-    def __call__(self, ChVec=[], htc = None, name = None, desc = None, label = None):
-    
-        if  len(self.ChInfo) == 3 and htc is not None:
-            return print('HTC search is not possible for this dataset. ' \
-            'HTC search is only posible for datasets using the format GTSDF format (.hdf5) that have been generated usign HAWC2 Version XX or later')
-        
-        if htc or name or desc or label:
-            ChVec = self.get_sensor_id(htc=htc,name=name,desc=desc, label=label)
-            if len(ChVec) == 0:
-                print('No channel found, please double check input.')
-                return 
-        # return all vectors is no input is provided    
-        if not ChVec:
-            ChVec = range(0, self.NrCh)
-
-        elif max(ChVec) >= self.NrCh:
-            print("to high channel number")
-            return
-        # if ReadOnly, read data but no storeing in memory
-        if self.ReadOnly:
-            return self.ReadAll(ChVec)
-        # if not ReadOnly, sort in known and new channels, read new channels
-        # and return all requested channels
-        else:
-
-            # return self.df
-            # sort into known channels and channels to be read
-            I1 = []
-            I2 = []  # I1=Channel mapping, I2=Channels to be read
-            for i in ChVec:
-                try:
-                    I1.append(self.Iknown.index(i))
-                except Exception:
-                    self.Iknown.append(i)
-                    I2.append(i)
-                    I1.append(len(I1))
-            # read new channels
-            if I2:
-                temp = self.ReadAll(I2)
-                # add new channels to Data
-                if self.Data.any():
-                    self.Data = np.append(self.Data, temp, axis=1)
-                # if first call, so Daata is empty
-                else:
-                    self.Data = temp
-            
-            arr = np.array(self.ChInfo, dtype=object)
-
-            # make channel index and acounting for time not being in the hdf5 file
-            
-            channel_id = np.array(range(0,self.NrCh))
-            channel_id = channel_id[ChVec]
-    
-            
-            # make data frame
-            if len(self.ChInfo) == 3:
-                cols = pd.MultiIndex.from_tuples(
-                    [(idx, *vals) for idx, vals in zip(channel_id, map(tuple, arr[:, ChVec].T))],
-                    names=["Channel_id", "Name", "Unit", "Description"]
-                )
-            if len(self.ChInfo) == 4:
-                cols = pd.MultiIndex.from_tuples(
-                    [(idx, *vals) for idx, vals in zip(channel_id, map(tuple, arr[:, ChVec].T))],
-                    names=["Channel_id", "Name", "Unit", "Description", "HTC_input"]
-                )
-            df = pd.DataFrame(self.Data[:, tuple(I1)], columns=cols)
-            print("WARNING: Output has been restructured into a dataframe. For array values please use self().values or self[].")
-            return df
+    def __call__(
+        self,
+        ChVec=None,
+        htc=None,
+        name=None,
+        desc=None,
+        label=None,
+    ):
+        result = super().__call__(
+            ChVec=[] if ChVec is None else ChVec,
+            htc=htc,
+            name=name,
+            desc=desc,
+            label=label,
+        )
+        return result.values
         
 
     def __getitem__(self, slc):
-        return self().values[slc]
+        return self()[slc]
         
 ################################################################################
 ################################################################################
@@ -452,6 +93,7 @@ class ReadHawc2(object):
 ################################################################################
 
 if __name__ == '__main__':
-    res_file = ReadHawc2('structure_wind')
-    results = res_file.ReadAscii()
-    channelinfo = res_file.ChInfo
+    filename = r'C:\Users\ibesi\repos\WindEnergyToolbox\wetb\hawc2\tests\test_files\IEA_15MW_RWT_Monopile.hdf5'
+    res_file = ReadHawc2(filename)
+    print(type(res_file))
+    print(res_file[2])
