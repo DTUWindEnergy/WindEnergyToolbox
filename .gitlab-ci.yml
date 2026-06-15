@@ -42,7 +42,7 @@ pages:  # "pages" is a job specifically for GitLab pages [1]
   - pip install --upgrade pip
   - pip install -e .[docs]
   - cd docs
-  - make html
+  - sphinx-build -M html . build
   - cd ../
   - mv docs/build/html public/
   artifacts:  # required for GitLab pages [1]
