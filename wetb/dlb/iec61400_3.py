@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import itertools
+from scipy.stats import weibull_min, lognorm, multivariate_normal, norm
 
 
 class DLC():
@@ -126,9 +127,13 @@ class DLC():
                 *[m(self, **kwargs) for m in [DLC.WspWdirWWmis, self.Turb, self.Shear, self.Gust, self.Fault, self.Operation, self.Waves, self.Current] if m is not None]):
             ids = {k: v for d in dict_lst for k, v in d.items() if '_id' in k}
             d = {k: v for d in dict_lst for k, v in d.items() if '_id' not in k}
-            name = [self.Name, 'wsp%02d' % d['V_hub'], "wdir%03d" % (d['wdir'] % 360), "wwmis%03d" % (d['wwmis'] % 360)]
+            name = [self.Name, 'wsp%02d' % d['V_hub'], "wdir%03d" % (d['wdir'] % 360), "wwmis%03d" % (d['wwmis'] % 360), 'Hs%02d' % d['Waves']['Hs'], 'Tp%02d' % d['Waves']['Tp']]
             if 'seed_id' in ids:
-                name.append("s%04d" % d['seed'])
+                name.append("swi%04d" % d['seed'])
+            if 'seed' in d['Waves']:
+                name.append("swa%04d" % d['Waves']['seed'])
+            if 'Current' in d:
+                name.append("cur%02d" % d['Current']['u0_current'])
             if 'ews_id' in ids:
                 name.append("ews%s" % d['shear']['sign'])
             if 'edc_id' in ids:
@@ -138,7 +143,7 @@ class DLC():
             if 'Azi_id' in ids:
                 name.append(ids['Azi_id'])
             if 'wl_id' in ids:
-                name.append(ids['wl_id'])
+                name.append(ids['wl_id'])                
             d['Name'] = "_".join(name)
             case_arg_lst.append(d)
         return case_arg_lst
@@ -338,25 +343,79 @@ class DLC():
     
     # ===============================================================================
     # Waves
-    # ===============================================================================
+    # ===============================================================================    
     
+    def calculate_Hs_Tp_U_joint_pdf(self, V_hub, seastate, wave_properties):
+        """
+        Function to determine a joint U, Hs and Tp probability distribution.
+        """
+        hs_grid = np.linspace(0.1, 14, 300)
+        tp_grid = np.linspace(1, 20, 300)
+        
+        HS, TP = np.meshgrid(hs_grid, tp_grid, indexing="ij")
+
+        Fu = weibull_min.cdf(V_hub, seastate['shape_u'], scale=seastate['scale_u'])
+        zu = norm.ppf(Fu)
+
+        Fh = weibull_min.cdf(HS, seastate['shape_hs'], scale=seastate['scale_hs'])
+        Ft = lognorm.cdf(TP, s=seastate['sigma_tp'], scale=np.exp(seastate['mu_tp']))
+
+        zh = norm.ppf(Fh)
+        zt = norm.ppf(Ft)
+
+        Z = np.stack([np.full_like(HS, zu), zh, zt], axis=-1)
+
+        R = np.asarray(seastate['R']).squeeze()
+        mvn = multivariate_normal(mean=np.zeros(3), cov=R)
+
+        copula = mvn.pdf(Z) / (norm.pdf(zu) * norm.pdf(zh) * norm.pdf(zt))
+
+        P = copula * weibull_min.pdf(HS, seastate['shape_hs'], scale=seastate['scale_hs']) * lognorm.pdf(TP, s=seastate['sigma_tp'], scale=np.exp(seastate['mu_tp']))
+
+        # Normalize
+        P /= np.sum(P)
+        idx = np.unravel_index(np.argmax(P), P.shape)
+        
+        hs_mode = hs_grid[idx[0]]
+        tp_mode = tp_grid[idx[1]]
+        
+        hs_mean = np.sum(P * hs_grid[:, None])
+        tp_mean = np.sum(P * tp_grid[None, :])
+        
+        if wave_properties == 'joint_pdf':
+            return hs_mode, tp_mode
+        else:
+            return hs_mean, tp_mean
+
     def Stochastic(self, V_hub, wdir, wwmis, seed_var, seastate, spectrum, water_levels, MSL, **_):
-        seed = locals()[seed_var] + 360 
+        seed = locals()[seed_var] + 360      
+        
+        # Determine the Hs and Tp using a joint probability distribution function        
+        if _['wave_properties'] in ('joint_pdf', 'expected'):
+            if _['wave_properties'] == 'joint_pdf':
+                Hs, Tp,  = self.calculate_Hs_Tp_U_joint_pdf(V_hub, seastate, _['wave_properties'])
+            elif _['wave_properties'] == 'expected':
+                Hs, Tp = self.calculate_Hs_Tp_U_joint_pdf(V_hub, seastate, _['wave_properties'])
+        
+        if _['wave_properties'] == 'provided':
+            Hs = seastate['Hs']
+            Tp = seastate['Tp']
+                
         return [{'Waves': {'type': 'Stochastic', 'spectrum': spectrum, 'seed': seed,
-                            'Hs': seastate['Hs'][V_hub], 'Tp': seastate['Tp'][V_hub], 'water_level': wl, 'MSL': MSL},
+                            'Hs': Hs, 'Tp': Tp, 'water_level': wl, 'MSL': MSL},
                   'wl_id': 'wl' + str(wl)} for wl in water_levels]
         
-    def Deterministic(self, V_hub, seastate, water_levels, MSL, **_):
-        return [{'Waves': {'type': 'Deterministic', 'file': seastate['file'][V_hub],
-                           'nsamples': seastate['nsamples'][V_hub], 'nskip': seastate['nskip'][V_hub], 'columns': seastate['columns'][V_hub], 'water_level': wl, 'MSL': MSL},
-                 'wl_id': 'wl' + str(wl)} for wl in water_levels]
+    # def Deterministic(self, V_hub, seastate, water_levels, MSL, **_):
+    #     return [{'Waves': {'type': 'Deterministic', 'file': seastate['file'][V_hub],
+    #                        'nsamples': seastate['nsamples'][V_hub], 'nskip': seastate['nskip'][V_hub], 'columns': seastate['columns'][V_hub], 'water_level': wl, 'MSL': MSL},
+    #              'wl_id': 'wl' + str(wl)} for wl in water_levels]
     
     # ===============================================================================
     # Currents
     # ===============================================================================
        
-    def Exponential(self, alpha, u0, direction, **_):
-        return [{'Current': {'type': 'Exponential', 'alpha': alpha, 'u0': u0, 'direction': direction}}]
+    def Exponential(self, alpha, u0_current, direction, **_):
+        return [{'Current': {'type': 'Exponential', 'alpha': alpha, 'u0_current': u0_current, 'direction': direction}}]
     
         
 class DLB():
@@ -466,6 +525,84 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
                  Vstep=2, seed=None, alpha=0.2, alpha_extreme=0.11, ti_extreme=0.11,
                  shaft='shaft', shaft_constraint='shaft_rot'):
         
+        # Check that the required inputs are present        
+        NSS_required = ['shape_u', 'scale_u', 'shape_hs', 'scale_hs', 'mu_tp', 'sigma_tp', 'R', 'u0_current']
+        SSS_required = ['Hs', 'Tp', 'u0_current']
+        ESS1_required = ['Hs', 'Tp', 'u0_current']
+        ESS50_required = ['Hs', 'Tp', 'u0_current']
+        
+        # Check for missing parameters in the NSS definition
+        NSS_missing = [key for key in NSS_required if key not in NSS]
+        if NSS_missing:
+            print(f"WARNING: Missing parameters: {NSS_missing} in NSS definition. Using default value(s).")
+            if 'shape_u' in NSS_missing:
+                NSS['shape_u'] = 2
+            if 'scale_u' in NSS_missing:
+                NSS['scale_u'] = 10
+            if 'shape_hs' in NSS_missing:
+                NSS['shape_hs'] = 1.8
+            if 'scale_hs' in NSS_missing:
+                NSS['scale_hs'] = 2
+            if 'mu_tp' in NSS_missing:
+                NSS['mu_tp'] = 2.15
+            if 'sigma_tp' in NSS_missing:
+                NSS['sigma_tp'] = 0.2
+            if 'R' in NSS_missing:
+                NSS['R'] = np.array([
+                            [1.00, 0.75, 0.65],   # U
+                            [0.75, 1.00, 0.85],   # Hs
+                            [0.65, 0.85, 1.00]    # Tp 
+                        ])
+            if 'u0_current' in NSS_missing:
+                NSS['u0_current'] = 2
+        NSS_non_floats = [k for k in NSS if k != 'R' and not isinstance(NSS.get(k), (float, int))]
+        if NSS_non_floats:
+            raise TypeError(f"These parameters within NSS definition are not floats: {NSS_non_floats}")
+        if (NSS['R'].shape != (3, 3)):
+            raise TypeError(f"R matrix within NSS definition must be of shape (3,3), but got {NSS['R'].shape}")
+        
+        # Check for missing parameters in the SSS definition
+        SSS_missing = [key for key in SSS_required if key not in SSS]
+        if SSS_missing:
+            print(f"WARNING: Missing parameters: {SSS_missing} in SSS definition. Using default value(s).")
+            if 'Hs' in SSS_missing:
+                SSS['Hs'] = 7
+            if 'Tp' in SSS_missing:
+                SSS['Tp'] = 12
+            if 'u0_current' in SSS_missing:
+                SSS['u0_current'] = 4
+        SSS_non_floats = [k for k in SSS if not isinstance(SSS.get(k), (float, int))]
+        if SSS_non_floats:
+            raise TypeError(f"These parameters within SSS definition are not floats: {SSS_non_floats}")
+        
+        # Check for missing parameters in the ESS1 definition
+        ESS1_missing = [key for key in ESS1_required if key not in ESS1]
+        if ESS1_missing:
+            print(f"WARNING: Missing parameters: {ESS1_missing} in ESS1 definition. Using default value(s).")
+            if 'Hs' in ESS1_missing:
+                ESS1['Hs'] = 7
+            if 'Tp' in ESS1_missing:
+                ESS1['Tp'] = 12
+            if 'u0_current' in ESS1_missing:
+                ESS1['u0_current'] = 4
+        ESS1_non_floats = [k for k in ESS1 if not isinstance(ESS1.get(k), (float, int))]
+        if ESS1_non_floats:
+            raise TypeError(f"These parameters within ESS1 definition are not floats: {ESS1_non_floats}")
+        
+        # Check for missing parameters in the ESS50 definition
+        ESS50_missing = [key for key in ESS50_required if key not in ESS50]
+        if ESS50_missing:
+            print(f"WARNING: Missing parameters: {ESS50_missing} in ESS50 definition. Using default value(s).")
+            if 'Hs' in ESS50_missing:
+                ESS50['Hs'] = 11
+            if 'Tp' in ESS50_missing:
+                ESS50['Tp'] = 14
+            if 'u0_current' in ESS50_missing:
+                ESS50['u0_current'] = 5
+        ESS50_non_floats = [k for k in ESS50 if not isinstance(ESS50.get(k), (float, int))]
+        if ESS50_non_floats:
+            raise TypeError(f"These parameters within ESS50 definition are not floats: {ESS50_non_floats}")
+         
         Name, Description, Operation, WSP, Wdir, Time = 'Name', 'Description', 'Operation', 'WSP', 'Wdir', 'Time'
         Turb, Seeds, Shear, Gust, Fault = 'Turb', 'Seeds', 'Shear', 'Gust', 'Fault'
         Waves, Current, WWmis = 'Waves', 'Current', 'WWmis'
@@ -480,7 +617,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wwmis', 'water_levels': [MSL] if HAT - MSL < 5 else [MSL, HAT], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wwmis', 'water_levels': [MSL] if HAT - MSL < 5 else [MSL, HAT], 'MSL': MSL, 'wave_properties': 'joint_pdf'}),
               Current: None,
               WWmis: '-10/0/10',
               Fault: None,
@@ -495,8 +632,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}), # TO-DO: check current direction
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}), # TO-DO: check current direction
               WWmis: 0,
               Fault: None,
               Time: 1500},
@@ -510,7 +647,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: 'ECD',
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
               Current: None,
               WWmis: 0,
               Fault: None,
@@ -525,8 +662,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('EWS', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 100},
@@ -540,8 +677,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': SSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL}), # TO-DO: check if JONSWAP is correct
-              Current: ('Exponential', {'alpha': 1/7, 'u0': SSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': SSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'provided'}), # TO-DO: check if JONSWAP is correct
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': SSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 600},
@@ -555,8 +692,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 4,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: ('GridLoss', {'t': 10}),
               Time: 100},
@@ -570,8 +707,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 12,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: ('StuckBlade', {'t': 0.1, 'pitch': 0}),
               Time: 100},
@@ -585,8 +722,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 12,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: ('PitchRunaway', {'t': 10}),
               Time: 100},
@@ -600,8 +737,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 1,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 600},
@@ -615,8 +752,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: ('GridLoss', {'t': [2.5, 4, 5.25]}),
               Time: 100},
@@ -630,7 +767,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 3,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
               Current: None,
               WWmis: 0,
               Fault: None,
@@ -645,7 +782,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [LAT, HAT], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [LAT, HAT], 'MSL': MSL, 'wave_properties': 'expected'}),
               Current: None,
               WWmis: 0,
               Fault: None,
@@ -660,8 +797,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 100},
@@ -675,8 +812,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EDC',
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 100},
@@ -690,7 +827,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [LAT, HAT], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [LAT, HAT], 'MSL': MSL, 'wave_properties': 'expected'}),
               Current: None,
               WWmis: 0,
               Fault: None,
@@ -705,8 +842,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: None,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: 'EOG',
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 100},
@@ -720,8 +857,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 12,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Deterministic', {'seastate': NSS, 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wdir', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 100},
@@ -735,8 +872,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': ESS50, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [LAT - storm_surge_neg, MSL, HAT + storm_surge_pos], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': ESS50['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': ESS50, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [LAT - storm_surge_neg, MSL, HAT + storm_surge_pos], 'MSL': MSL, 'wave_properties': 'provided'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': ESS50['u0_current'], 'direction': 0}),
               WWmis: '-30/0/30',
               Fault: None,
               Time: 600},
@@ -750,8 +887,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 1,
               Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': ESS50, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [LAT - storm_surge_neg, MSL, HAT + storm_surge_pos], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': ESS50['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': ESS50, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [LAT - storm_surge_neg, MSL, HAT + storm_surge_pos], 'MSL': MSL, 'wave_properties': 'provided'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': ESS50['u0_current'], 'direction': 0}),
               WWmis: '-30/0/30',
               Fault: None,
               Time: 600},
@@ -765,8 +902,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': ESS1, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': ESS1['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': ESS1, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'provided'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': ESS1['u0_current'], 'direction': 0}),
               WWmis: '-30/0/30',
               Fault: None,
               Time: 600},
@@ -780,8 +917,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wdir', 'water_levels': [LAT, MSL, HAT], 'MSL': MSL}), # TO-DO: use 3 wave seeds that are correlated to 6 wind seeds (1 wave seed per wind seed pair)
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wdir', 'water_levels': [LAT, MSL, HAT], 'MSL': MSL, 'wave_properties': 'joint_pdf'}), # TO-DO: use 3 wave seeds that are correlated to 6 wind seeds (1 wave seed per wind seed pair)
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: '-10/0/10',
               Fault: None,
               Time: 600},
@@ -795,8 +932,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 1,
               Shear: ('NWP', {'alpha': alpha_extreme}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': ESS1, 'spectrum': 'JONSWAP',  'seed_var': 'V_hub', 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': ESS1['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': ESS1, 'spectrum': 'JONSWAP',  'seed_var': 'V_hub', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'provided'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': ESS1['u0_current'], 'direction': 0}),
               WWmis: '-30/0/30',
               Fault: None,
               Time: 600},
@@ -810,7 +947,7 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'PiersonMoskowitz', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'joint_pdf'}),
               Current: None,
               WWmis: '-10/0/10',
               Fault: None,
@@ -825,8 +962,8 @@ class DTU_IEC61400_3_Ref_DLB(DLB):
               Seeds: 6,
               Shear: ('NWP', {'alpha': alpha}),
               Gust: None,
-              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL}),
-              Current: ('Exponential', {'alpha': 1/7, 'u0': NSS['u0'], 'direction': 0}),
+              Waves: ('Stochastic', {'seastate': NSS, 'spectrum': 'JONSWAP', 'seed_var': 'wwmis', 'water_levels': [MSL], 'MSL': MSL, 'wave_properties': 'expected'}),
+              Current: ('Exponential', {'alpha': 1/7, 'u0_current': NSS['u0_current'], 'direction': 0}),
               WWmis: 0,
               Fault: None,
               Time: 600},
