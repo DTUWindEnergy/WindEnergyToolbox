@@ -384,7 +384,7 @@ class DLC():
         
         if wave_properties == 'joint_pdf':
             return hs_mode, tp_mode
-        else:
+        else: # wave_properties == 'expected'
             return hs_mean, tp_mean
 
     def Stochastic(self, V_hub, wdir, wwmis, seed_var, seastate, spectrum, water_levels, MSL, **_):
@@ -392,11 +392,8 @@ class DLC():
         
         # Determine the Hs and Tp using a joint probability distribution function        
         if _['wave_properties'] in ('joint_pdf', 'expected'):
-            if _['wave_properties'] == 'joint_pdf':
-                Hs, Tp,  = self.calculate_Hs_Tp_U_joint_pdf(V_hub, seastate, _['wave_properties'])
-            elif _['wave_properties'] == 'expected':
-                Hs, Tp = self.calculate_Hs_Tp_U_joint_pdf(V_hub, seastate, _['wave_properties'])
-        
+            Hs, Tp  = self.calculate_Hs_Tp_U_joint_pdf(V_hub, seastate, _['wave_properties'])
+            
         if _['wave_properties'] == 'provided':
             Hs = seastate['Hs']
             Tp = seastate['Tp']
