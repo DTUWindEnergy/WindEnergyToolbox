@@ -3,7 +3,7 @@ import warnings
 from wetb.hawc2.hawc2_input_writer import HAWC2InputWriter
 from wetb.hawc2.tests import test_files
 from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
-from iec61400_3 import DTU_IEC61400_3_Ref_DLB
+from wetb.dlb.iec61400_3 import DTU_IEC61400_3_Ref_DLB
 
 """
 TODO: delete wind ramp / replace wind section
