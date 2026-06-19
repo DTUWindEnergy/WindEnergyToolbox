@@ -180,7 +180,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if Current['type'] == 'Exponential':
             typeno = 2
             alpha = Current['alpha']
-            u0 = Current['u0']
+            u0 = Current['u0_current']
             direction = Current['direction']
             self.set_current_exponential(htc, typeno, alpha, u0, direction)
         else:
@@ -283,8 +283,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     #     hydro = hydro_input(wavetype='det_airy', wdepth=wdepth, file=file, nsamples=nsamples, nskip=nskip, columns=columns)
     #     hydro.execute(filename=file.replace('./waves/', '').replace('.dat', '.inp'), folder='./hydro')
         
-    def set_current_exponential(self, htc, typeno, alpha, u0, direction):
-        htc.hydro.water_properties.current = typeno, u0, alpha, direction                
+    def set_current_exponential(self, htc, typeno, alpha, u0_current, direction):
+        htc.hydro.water_properties.current = typeno, u0_current, alpha, direction                
 
 if __name__ == '__main__':
     dlb = DTU_IEC61400_1_Ref_DLB(iec_wt_class='1A', Vin=4, Vout=26, Vr=10, D=180, z_hub=90)
