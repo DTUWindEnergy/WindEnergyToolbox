@@ -276,7 +276,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def set_ireg_airy(self, htc, wdepth, spectrum, Hs, Tp, seed):
         htc.hydro.water_properties.water_kinematics_dll = './hydro/wkin_dll.dll ' + './hydro/%s_hs%.2f_tp%.2f_s%3d.inp'%(spectrum, Hs, Tp, seed)
         hydro = hydro_input(wavetype='ireg_airy', wdepth=wdepth, spectrum={'JONSWAP': 'jonswap', 'PiersonMoskowitz': 'pm'}[spectrum], Hs=Hs, Tp=Tp, seed=seed)
-        hydro.execute(filename='%s_hs%.2f_tp%.2f_s%3d.inp'%(spectrum, Hs, Tp, seed), folder='./hydro')
+        hydro.execute(filename='%s_hs%.2f_tp%.2f_s%3d.inp'%(lower(spectrum), Hs, Tp, seed), folder='./hydro')
         
     # def set_det_airy(self, htc, wdepth, file, nsamples, nskip, columns):
     #     htc.hydro.water_properties.water_kinematics_dll = './hydro/wkin_dll.dll ' + file.replace('./waves', './hydro').replace('.dat', '.inp')
