@@ -7,7 +7,7 @@ Created on Wed Sep 18 11:21:18 2024
 
 import numpy as np
 import xarray as xr
-from wetb.fatigue_tools.fatigue import eq_load, cycle_matrix
+from wetb.fatigue_tools.fatigue import eq_load, cycle_matrix, shifted_Goodman_diagram
 from wetb.utils.envelope import projected_extremes
 from wetb.utils.rotation import projection_2d
                                         
@@ -221,6 +221,93 @@ def equivalent_loads(data, time, info, m_list=[3, 4, 6, 8, 10, 12], neq=None, no
               'sensor_description': ('sensor_name', info['attribute_descriptions']),
               'm': m_list,
                }
+    return xr.DataArray(data=data, dims=dims, coords=coords)
+
+
+def damage_equivalent_bending_moments(time,
+                                      data,
+                                      info,
+                                      sensors_info,
+                                      method='modified_sweep',
+                                      m_list=[3, 4, 6, 8, 10, 12],
+                                      neq=None, 
+                                      angles=np.linspace(-150, 180, 12),
+                                      degrees=True,
+                                      mlc_func=None,
+                                      **kwargs):
+    '''
+    Compute damage equivalent loads of bending moments as in Wind Energ. Sci., 11, 1305–1319, 2026:
+    'Enhanced approach to match damage-equivalent loads in rotor blade fatigue testing'.
+
+    Parameters
+    ----------
+    time : array
+        Array containing the simulation time from start to end of writting output.
+    data : array
+        Array containing the time series of all sensors.
+    info : dict
+        Dictionary that must contain the following entries:
+            - attribute_units: list of sensor units.
+    sensors_info : dict
+        Dictionary containing variables per sensor (section). Its entries must be either lists
+        of same length as the number of sensors or arrays whose first dimension length is also
+        equal to the number of sensors. It must contain the following entries:
+            - 'name': name of each sensor. (n_sensors,)
+            - 'index_Mx': index corresponding to Mx in data for each section. (n_sensors,)
+            - 'index_My': index corresponding to My in data for each section. (n_sensors,)
+            - 'EIx': E * Ix for each section. Needed for 'modified_sweep' and 'strain'. (n_sensors,)
+            - 'EIy': E * Iy for each section. Needed for 'modified_sweep' and 'strain'. (n_sensors,)
+            - 'rp': distance from elastic center to shell for each section in each direction. Needed for 'strain'. (n_sensors, n_angles)         
+    method : str, optional
+        Which method to use ('sweep', 'modified_sweep' or 'strain'). The default is 'modified_sweep'.
+    m_list : list, optional
+        List containing the different woehler slopes. The default is [3, 4, 6, 8, 10, 12].
+    neq : int or float, optional
+        Equivalent number of load cycles. The default is the time duration in seconds.
+    angles : array, optional
+        Array containing the directions in which fatigue loads should be computed.
+        The default is np.linspace(-150, 180, 12).
+    degrees : bool, optional
+        Whether angles are in degrees (True) or radians (False). The default is True.
+    mlc_func : func, optional
+        Mean load correction function to use. The default is None (do not perform mean load correction).
+    **kwargs : 
+        Additional keyword arguments other than ampls and means needed by mlc_func. Currently only shifted_Goodman_diagram
+        is supported, so either epsz_u_t and eps_u_c (n_sensors,) or L_u_t and L_u_c (n_sensors, n_angles) can be passed.
+
+    Returns
+    -------
+    xarray.DataArray
+        DataArray containing equivalent DELs for each section and angle.
+
+    '''
+    if neq is None:
+        neq = time[-1] - time[0] + time[1] - time[0]
+    if degrees:
+        angles = np.deg2rad(angles)
+    damage_equivalent_bending_moments_data = np.zeros((len(sensors_info['name']), len(angles), len(m_list)))
+    for i in range(len(sensors_info['name'])):
+        for j in range(len(angles)):
+            if method == 'sweep':
+                var = np.sin(angles[j]) * data[:, sensors_info['index_Mx'][i]] - np.cos(angles[j]) * data[:, sensors_info['index_My'][i]]
+            if method == 'modified_sweep':
+                var = np.sin(angles[j]) * data[:, sensors_info['index_Mx'][i]] - np.cos(angles[j]) * sensors_info['EIx'][i] / sensors_info['EIy'][i] * data[:, sensors_info['index_My'][i]]
+            if method == 'strain':
+                var = sensors_info['rp'][i][j] * np.sin(angles[j]) / sensors_info['EIx'][i] * data[:, sensors_info['index_Mx'][i]] - sensors_info['rp'][i][j] * np.cos(angles[j]) / sensors_info['EIy'][i] * data[:, sensors_info['index_My'][i]]
+            if mlc_func is None:
+                damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq)[0]
+            if mlc_func == shifted_Goodman_diagram:
+                if 'L_u_c' in kwargs and 'L_u_t' in kwargs:
+                    damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=kwargs['L_u_t'][i][j], L_u_c=kwargs['L_u_c'][i][j])[0]
+                elif 'epsz_u_c' in kwargs and 'epsz_u_t' in kwargs:
+                    damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_t'][i], L_u_c=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_c'][i])[0]
+    data = damage_equivalent_bending_moments_data
+    dims = ['sensor_name', 'angle', 'm']
+    coords = {'sensor_name': sensors_info['name'],
+              'angle': np.rad2deg(angles) if degrees else angles,
+              'm': m_list,
+              'sensor_unit': ('sensor_name', ['-' if method == 'strain' else info['attribute_units'][sensors_info['index_Mx'][i]] for i in range(len(sensors_info['name']))]),
+               'method': method}
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
