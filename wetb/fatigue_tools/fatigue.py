@@ -125,7 +125,6 @@ def eq_load(signals,
 
 def eq_load_from_cycles(ampls,
                         cycles,
-                        rainflow_func=rainflow_windap,
                         mlc_func=None,
                         m=[3, 4, 6, 8, 10, 12],
                         neq=1,
@@ -141,8 +140,6 @@ def eq_load_from_cycles(ampls,
         Array containing load cycle amplitudes.
     cycles: array-like
         Array containing number of load cycles.
-    rainflow_func : {rainflow_windap, rainflow_astm}, optional
-        The rainflow counting function to use (default is rainflow_windap).
     mlc_func : func, optional
         Mean load correction function to use. The default is None (do not perform mean load correction).
     m : int, float or array-like
