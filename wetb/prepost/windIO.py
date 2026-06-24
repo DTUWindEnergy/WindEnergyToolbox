@@ -30,7 +30,8 @@ from wetb.prepost import misc
 # http://vind-redmine.win.dtu.dk/projects/pythontoolbox/repository/show/fatigue_tools
 from wetb.hawc2.sensor_names import unified_channel_names
 from wetb.hawc2.Hawc2io import ReadHawc2
-from wetb.fatigue_tools.fatigue import (eq_load, cycle_matrix2)
+from wetb.fatigue_tools.fatigue import eq_load
+from wetb.fatigue_tools.fatigue import cycle_matrix as cycle_matrix2
 
 
 class LogFile(object):
@@ -803,10 +804,10 @@ class LoadResults(ReadHawc2):
 
         return eq_load(signal, no_bins=no_bins, m=m, neq=neq)[0]
 
-    def cycle_matrix(self, signal, no_bins=46):
+    def cycle_matrix(self, signal, ampl_bins=10, mean_bins=10):
         """Cycle/Markov matrix.
 
-        Convenience function for wetb.fatigue_tools.fatigue.cycle_matrix2
+        Convenience function for wetb.fatigue_tools.fatigue.cycle_matrix
 
         Parameters
         ----------
@@ -814,25 +815,28 @@ class LoadResults(ReadHawc2):
         signal: 1D array
             One dimentional array containing the signal.
 
-        no_bins: int
-            Number of bins for the binning of the amplitudes.
+        ampl_bins : int or array-like, optional
+            - If int, Number of amplitude value bins (default is 10).
+            - If array-like, the bin edges for amplitude.
+        mean_bins : int or array-like, optional
+            - If int, Number of mean value bins (default is 10).
+            - If array-like, the bin edges for mean.
 
         Returns
         -------
-
-        cycles : ndarray, shape(ampl_bins, mean_bins)
-            A bi-dimensional histogram of load cycles(full cycles). Amplitudes
-            are histogrammed along the first dimension and mean values are
-            histogrammed along the second dimension.
-
-        ampl_edges : ndarray, shape(no_bins+1,n)
-            The amplitude bin edges
-
-        mean_edges : ndarray, shape(no_bins+1,n)
-            The mean bin edges
+        cycles : array
+            Array containing the number of cycles of each bin (ampl_bins, mean_bins).
+        ampl_bin_mean : array 
+            Array containing the mean of the cycle amplitudes of each bin (ampl_bins, mean_bins).
+        ampl_edges : array
+            Array containing the amplitude bin edges (ampl_bins + 1,).
+        mean_bin_mean : array
+            Array containing the mean of the cycle means of each bin (ampl_bins, mean_bins).
+        mean_edges : array
+            Array containing the mean bin edges (mean_bins + 1,).
 
         """
-        return cycle_matrix2(signal, no_bins)
+        return cycle_matrix2(signal, ampl_bins, mean_bins)
 
     def blade_deflection(self):
         """

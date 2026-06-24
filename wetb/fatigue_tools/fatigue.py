@@ -17,7 +17,7 @@ eq_load, eq_load_from_cycles and cycle_matrix are wrappers built on top that the
 
 import numpy as np
 import warnings
-from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_windap
+from wetb.fatigue_tools.rainflowcounting.rainflowcount import rainflow_windap, rainflow_astm
 
 def shifted_Goodman_diagram(ampls, means, L_u_t, L_u_c):
     '''
