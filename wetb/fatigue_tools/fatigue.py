@@ -117,7 +117,7 @@ def eq_load(signals,
 
         
     # Damage equivalent load calculation
-    cycles = np.histogram(ampls, bins=np.concat((np.unique(ampls), np.array([np.max(ampls) + 1]))), weights=weights)[0]
+    cycles = np.histogram(ampls, bins=np.concatenate((np.unique(ampls), np.array([np.max(ampls) + 1]))), weights=weights)[0]
     cycles = cycles / 2  # to get full cycles
     ampls = np.unique(ampls)
     dels = palmgren_miner(ampls, cycles, m, neq)    
