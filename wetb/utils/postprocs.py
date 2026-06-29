@@ -294,13 +294,20 @@ def damage_equivalent_bending_moments(time,
                 var = np.sin(angles[j]) * data[:, sensors_info['index_Mx'][i]] - np.cos(angles[j]) * sensors_info['EIx'][i] / sensors_info['EIy'][i] * data[:, sensors_info['index_My'][i]]
             if method == 'strain':
                 var = sensors_info['rp'][i][j] * np.sin(angles[j]) / sensors_info['EIx'][i] * data[:, sensors_info['index_Mx'][i]] - sensors_info['rp'][i][j] * np.cos(angles[j]) / sensors_info['EIy'][i] * data[:, sensors_info['index_My'][i]]
+            
             if mlc_func is None:
                 damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq)[0]
             if mlc_func == shifted_Goodman_diagram:
                 if 'L_u_c' in kwargs and 'L_u_t' in kwargs:
-                    damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=kwargs['L_u_t'][i][j], L_u_c=kwargs['L_u_c'][i][j])[0]
+                    if method == 'strain':
+                        damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=kwargs['L_u_t'][i][j] * sensors_info['rp'][i][j] / sensors_info['EIx'][i], L_u_c=kwargs['L_u_c'][i][j] * sensors_info['rp'][i][j] / sensors_info['EIx'][i])[0]
+                    else:
+                        damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=kwargs['L_u_t'][i][j], L_u_c=kwargs['L_u_c'][i][j])[0]
                 elif 'epsz_u_c' in kwargs and 'epsz_u_t' in kwargs:
-                    damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_t'][i], L_u_c=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_c'][i])[0]
+                    if method == 'strain':
+                        damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=kwargs['epsz_u_t'][i], L_u_c=kwargs['epsz_u_c'][i])[0]
+                    else:
+                        damage_equivalent_bending_moments_data[i, j, :] = eq_load(var, m=m_list, neq=neq, mlc_func=mlc_func, L_u_t=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_t'][i], L_u_c=sensors_info['EIx'][i] / sensors_info['rp'][i][j] * kwargs['epsz_u_c'][i])[0]
     data = damage_equivalent_bending_moments_data
     dims = ['sensor_name', 'angle', 'm']
     coords = {'sensor_name': sensors_info['name'],
