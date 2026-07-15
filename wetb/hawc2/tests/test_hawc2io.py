@@ -7,12 +7,13 @@ import unittest
 import numpy as np
 from wetb.hawc2.Hawc2io import ReadHawc2
 import os
+from wetb.hawc2.Hawc2output import Hawc2Output
 
 
 testfilepath = os.path.join(os.path.dirname(__file__), 'test_files/hawc2io/')  # test file path
 
-class TestHAWC2IO(unittest.TestCase):
 
+class TestHAWC2IO(unittest.TestCase):
 
     def test_doc_example(self):
         # if called with ReadOnly = 1 as
@@ -29,7 +30,6 @@ class TestHAWC2IO(unittest.TestCase):
 #        file.t => time vector
         np.testing.assert_array_almost_equal(file.t, file([0])[:, 0])
 
-
     def test_read_binary_file(self):
         file = ReadHawc2(testfilepath + "Hawc2bin", ReadOnly=1)
         self.assertAlmostEqual(file()[0, 0], 0.025)
@@ -41,6 +41,14 @@ class TestHAWC2IO(unittest.TestCase):
         self.assertAlmostEqual(file()[0, 0], 0.025)
         self.assertEqual(file()[799, 0], 20)
         self.assertAlmostEqual(file()[1, 0], .05)
+
+
+def test_htc_line_in_gtsdf():
+    res = Hawc2Output(testfilepath + "IEA15_htc_input_test.hdf5")
+    print(res(name='bea2'))
+    print(res(5))
+    # assert res.ChInfo[3][0].lower() == 'general time'
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
