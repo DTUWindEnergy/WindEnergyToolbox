@@ -214,7 +214,7 @@ class Hawc2Output(object):
                        ['Time'] + info['attribute_descriptions']]
         if 'htc_input' in info:
             self.ChInfo.append(['Time'] + info['htc_input'])
-            
+
         self.NrCh = data.shape[1] + 1
         self.NrSc = data.shape[0]
         self.Freq = self.NrSc / self.Time
@@ -335,4 +335,7 @@ class Hawc2Output(object):
         ChVec = sensor_df["Channel_id"].to_numpy(dtype=int)
         data = self._get_data(ChVec)
         columns = pd.MultiIndex.from_frame(sensor_df)
-        return pd.DataFrame(data, columns=columns)
+        df = pd.DataFrame(data, columns=columns)
+        for i, n in enumerate(df.columns.names):
+            setattr(df, n, [index[i] for index in df.columns])
+        return df
