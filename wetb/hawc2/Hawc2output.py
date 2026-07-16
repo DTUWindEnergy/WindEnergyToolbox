@@ -32,7 +32,7 @@ import os
 
 from wetb import gtsdf
 from wetb.prepost import misc
-from wetb.hawc2.sensor_names import SensorSearch
+from wetb.hawc2.sensor_search import SensorSearch
 
 import pandas as pd
 
@@ -162,10 +162,9 @@ class Hawc2Output(object):
             self.FileFormat = 'GTSDF'
             self.ReadGtsdf()
         else:
-            print("unknown file: " + FileName)
+            raise ValueError(f"Unknown file: {FileName}")
 
-        if hasattr(self, "ChInfo"):
-            self.sensor_search = SensorSearch.from_chinfo(self.ChInfo)
+        self.sensor_search = SensorSearch(*self.ChInfo)
 ################################################################################
 # Read results in binary format
 
@@ -190,10 +189,7 @@ class Hawc2Output(object):
 # Read results in FLEX format
 
     def ReadFLEX(self, ChVec=None):
-        if ChVec is None:
-            ChVec = np.arange(1, self.NrCh, dtype=int)
-        else:
-            ChVec = self._normalize_chvec(ChVec)
+        ChVec = self._normalize_chvec(ChVec)
         fid = open(self.FileName + ".int", 'rb')
         fid.seek(2 * 4 * self.NrCh + 48 * 2)
         temp = np.fromfile(fid, 'int16')
@@ -222,9 +218,9 @@ class Hawc2Output(object):
         self.gtsdf_description = info['description']
         self.gtsdf_dtype = info['dtype']
         data = np.hstack([self.Time[:, np.newaxis], data])
-        if ChVec is not None:
-            ChVec = self._normalize_chvec(ChVec)
-            data = data[:, ChVec]
+        
+        ChVec = self._normalize_chvec(ChVec)
+        data = data[:, ChVec]
         return data
 
 ################################################################################
@@ -256,31 +252,12 @@ class Hawc2Output(object):
             ChVec = ChVec.reshape(1)
         if ChVec.ndim != 1:
             raise ValueError("ChVec must be one-dimensional")
+        
+        if ChVec.size and (ChVec.min() < 0 or ChVec.max() >= self.NrCh):
+            raise ValueError("Channel number out of range")
+        
         return ChVec
 
-    def _sensor_df_from_inputs(
-        self,
-        ChVec=None,
-        htc=None,
-        name=None,
-        unit=None,
-        desc=None,
-        label=None,
-    ):
-        if htc is not None or name is not None or unit is not None or desc is not None or label is not None:
-            return self.sensor_search(
-                htc=htc,
-                name=name,
-                unit=unit,
-                desc=desc,
-                label=label,
-            )
-
-        ChVec = self._normalize_chvec(ChVec)
-        if ChVec.size and (ChVec.min() < 0 or ChVec.max() >= self.NrCh):
-            print("to high channel number")
-            return None
-        return self.sensor_search.by_channel_ids(ChVec)
 
     def _get_data(self, ChVec):
         if ChVec.size == 0:
@@ -321,18 +298,20 @@ class Hawc2Output(object):
         desc=None,
         label=None,
     ):
-        sensor_df = self._sensor_df_from_inputs(
-            ChVec=ChVec,
-            htc=htc,
-            name=name,
-            unit=unit,
-            desc=desc,
-            label=label,
-        )
-        if sensor_df is None:
-            return None
 
-        ChVec = sensor_df["Channel_id"].to_numpy(dtype=int)
+        if htc is not None or name is not None or unit is not None or desc is not None or label is not None:
+            sensor_df = self.sensor_search(
+                htc=htc,
+                name=name,
+                unit=unit,
+                desc=desc,
+                label=label,
+            )
+            ChVec = sensor_df["id"].to_numpy(dtype=int)
+        else:
+            ChVec = self._normalize_chvec(ChVec)
+            sensor_df = self.sensor_search(id=ChVec)
+
         data = self._get_data(ChVec)
         columns = pd.MultiIndex.from_frame(sensor_df)
         df = pd.DataFrame(data, columns=columns)
