@@ -168,12 +168,12 @@ class Hawc2Output(object):
 ################################################################################
 # Read results in binary format
 
-    def ReadBinary(self, ChVec=None):
-        ChVec = self._normalize_chvec(ChVec)
+    def ReadBinary(self, id=None):
+        id = self._normalize_chvec(id)
         with open(self.FileName + '.dat', 'rb') as fid:
-            data = np.zeros((self.NrSc, len(ChVec)))
+            data = np.zeros((self.NrSc, len(id)))
             j = 0
-            for i in ChVec:
+            for i in id:
                 fid.seek(i * self.NrSc * 2, 0)
                 data[:, j] = np.fromfile(fid, 'int16', self.NrSc) * self.ScaleFactor[i]
                 j += 1
@@ -181,25 +181,25 @@ class Hawc2Output(object):
 ################################################################################
 # Read results in ASCII format
 
-    def ReadAscii(self, ChVec=None):
-        ChVec = self._normalize_chvec(ChVec)
-        temp = np.loadtxt(self.FileName + '.dat', usecols=ChVec)
-        return temp.reshape((temp.shape[0], len(ChVec)))
+    def ReadAscii(self, id=None):
+        id = self._normalize_chvec(id)
+        temp = np.loadtxt(self.FileName + '.dat', usecols=id)
+        return temp.reshape((temp.shape[0], len(id)))
 ################################################################################
 # Read results in FLEX format
 
-    def ReadFLEX(self, ChVec=None):
-        ChVec = self._normalize_chvec(ChVec)
+    def ReadFLEX(self, id=None):
+        id = self._normalize_chvec(id)
         fid = open(self.FileName + ".int", 'rb')
         fid.seek(2 * 4 * self.NrCh + 48 * 2)
         temp = np.fromfile(fid, 'int16')
         temp = temp.reshape(self.NrSc, self.NrCh)
         fid.close()
-        return np.dot(temp[:, ChVec], np.diag(self.ScaleFactor[ChVec]))
+        return np.dot(temp[:, id], np.diag(self.ScaleFactor[id]))
 ################################################################################
 # Read results in GTSD format
 
-    def ReadGtsdf(self, ChVec=None):
+    def ReadGtsdf(self, id=None):
         fn = self.FileName
         if fn[-5:].lower() != '.hdf5':
             fn += '.hdf5'
@@ -219,59 +219,59 @@ class Hawc2Output(object):
         self.gtsdf_dtype = info['dtype']
         data = np.hstack([self.Time[:, np.newaxis], data])
         
-        ChVec = self._normalize_chvec(ChVec)
-        data = data[:, ChVec]
+        id = self._normalize_chvec(id)
+        data = data[:, id]
         return data
 
 ################################################################################
     # One stop call for reading all data formats
 
-    def ReadAll(self, ChVec=None):
-        if ChVec is not None and np.asarray(ChVec).size == 0:
-            ChVec = None
+    def ReadAll(self, id=None):
+        if id is not None and np.asarray(id).size == 0:
+            id = None
 
         if self.FileFormat == 'HAWC2_BINARY':
-            return self.ReadBinary(ChVec)
+            return self.ReadBinary(id)
         elif self.FileFormat == 'HAWC2_ASCII':
-            return self.ReadAscii(ChVec)
+            return self.ReadAscii(id)
         elif self.FileFormat == 'GTSDF':
-            return self.ReadGtsdf(ChVec)
+            return self.ReadGtsdf(id)
         else:
-            return self.ReadFLEX(ChVec)
+            return self.ReadFLEX(id)
 
     def get_sensor_id(self, **kwargs):
         return self.sensor_search.get_sensor_id(**kwargs)
 
-    def _normalize_chvec(self, ChVec):
+    def _normalize_chvec(self, id):
         """Return channel numbers as a one-dimensional integer array."""
-        if ChVec is None:
+        if id is None:
             return np.arange(self.NrCh, dtype=int)
 
-        ChVec = np.asarray(ChVec, dtype=int)
-        if ChVec.ndim == 0:
-            ChVec = ChVec.reshape(1)
-        if ChVec.ndim != 1:
-            raise ValueError("ChVec must be one-dimensional")
+        id = np.asarray(id, dtype=int)
+        if id.ndim == 0:
+            id = id.reshape(1)
+        if id.ndim != 1:
+            raise ValueError("id must be one-dimensional")
         
-        if ChVec.size and (ChVec.min() < 0 or ChVec.max() >= self.NrCh):
+        if id.size and (id.min() < 0 or id.max() >= self.NrCh):
             raise ValueError("Channel number out of range")
         
-        return ChVec
+        return id
 
 
-    def _get_data(self, ChVec):
-        if ChVec.size == 0:
+    def _get_data(self, id):
+        if id.size == 0:
             return np.empty((self.NrSc, 0))
 
         # if ReadOnly, read data but no storeing in memory
         if self.ReadOnly:
-            return self.ReadAll(ChVec)
+            return self.ReadAll(id)
 
         # if not ReadOnly, sort in known and new channels, read new channels
         # and return all requested channels
         I1 = []
         I2 = []  # I1=Channel mapping, I2=Channels to be read
-        for i in ChVec:
+        for i in id:
             try:
                 I1.append(self.Iknown.index(i))
             except Exception:
@@ -291,7 +291,7 @@ class Hawc2Output(object):
 
     def __call__(
         self,
-        ChVec=None,
+        id=None,
         htc=None,
         name=None,
         unit=None,
@@ -307,15 +307,17 @@ class Hawc2Output(object):
                 desc=desc,
                 label=label,
             )
-            ChVec = sensor_df["id"].to_numpy(dtype=int)
+            id = sensor_df["id"].to_numpy(dtype=int)
         else:
-            ChVec = self._normalize_chvec(ChVec)
-            sensor_df = self.sensor_search(id=ChVec)
+            id = self._normalize_chvec(id)
+            sensor_df = self.sensor_search(id=id)
 
-        data = self._get_data(ChVec)
+        data = self._get_data(id)
         columns = pd.MultiIndex.from_frame(sensor_df)
         df = pd.DataFrame(data, columns=columns)
         for i, name in enumerate(df.columns.names):
             values = [column[i] for column in df.columns]
             object.__setattr__(df, name, values)
         return df
+
+

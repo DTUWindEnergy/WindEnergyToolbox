@@ -56,10 +56,10 @@ class SensorSearch(object):
         metadata = {
             column: np.atleast_1d(values).tolist()
             for column, values in [
-                ("Name", names),
-                ("Unit", units),
-                ("Description", desc),
-                ("HTC_input", htc),
+                ("name", names),
+                ("unit", units),
+                ("desc", desc),
+                ("htc", htc),
             ]
             if values is not None
         }
@@ -72,12 +72,12 @@ class SensorSearch(object):
         if not np.all(n_lst[0] == np.array(n_lst)):
             raise ValueError("Inputs must have same length or be None")
 
-        if "HTC_input" in metadata:
-            metadata["Label"] = [
+        if "htc" in metadata:
+            metadata["label"] = [
                 str(value).split("#", 1)[1].strip()
                 if "#" in str(value)
                 else ""
-                for value in metadata["HTC_input"]
+                for value in metadata["htc"]
             ]
 
         n_sensor = n_lst[0]
@@ -99,7 +99,7 @@ class SensorSearch(object):
         """Return matching sensors as a metadata DataFrame.
 
         Arguments correspond to the ``Name``, ``Unit``, ``Description``,
-        ``HTC_input``, ``Label``, and ``id`` columns. Omitted arguments are ignored.
+        ``htc``, ``Label``, and ``id`` columns. Omitted arguments are ignored.
         An empty DataFrame is returned when no sensors match.
         """
         if id is None:
@@ -110,11 +110,11 @@ class SensorSearch(object):
         matches = pd.Series(True, index=sensor_df.index)
 
         for column, value in [
-            ("Name", name),
-            ("Unit", unit),
-            ("Description", desc),
-            ("HTC_input", htc),
-            ("Label", label),
+            ("name", name),
+            ("unit", unit),
+            ("desc", desc),
+            ("htc", htc),
+            ("label", label),
         ]:
             if value is None:
                 continue
@@ -131,7 +131,7 @@ class SensorSearch(object):
 
     @staticmethod
     def _normalize(value):
-        return str(value).strip().lower().replace(" ", "")
+        return str(value).strip().lower().replace(" ", "").lstrip("#")
 
     @classmethod
     def _contains_any(cls, column, values):

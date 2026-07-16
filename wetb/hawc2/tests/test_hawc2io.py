@@ -47,7 +47,19 @@ def test_htc_line_in_gtsdf():
     res = Hawc2Output(testfilepath + "IEA15_htc_input_test.hdf5")
     assert res(name='bea2').id == [3, 4, 5, 6, 7, 8]
     # assert res.ChInfo[3][0].lower() == 'general time'
+    assert res().shape == (res.NrSc,res.NrCh)
+    assert res(name='bea2').id == [3, 4, 5, 6, 7, 8]
 
+    result = res(name="bea2", desc="angle speed", htc="pitch1")
+    assert result.id == [4]
+    assert result.shape == (res.NrSc, 1)
+    assert res(htc=[' aero omega', ' aero torque']).id == [9,10]
+    assert res(htc=[' aero omega']).name == ['Omega']
+    assert res(id=[3, 5]).id == [3, 5]
+    assert res(name="BEA 2").id == res(name="bea2").id
+    assert res(label='# tower base').id == [16,17,18]
+    assert res(name="does-not-exist").shape == (res.NrSc, 0)
+    assert res(label="# tower base").id == res(label="towerbase").id
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
