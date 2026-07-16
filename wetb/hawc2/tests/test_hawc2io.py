@@ -55,7 +55,7 @@ def test_htc_line_in_gtsdf():
     assert result.shape == (res.NrSc, 1)
     assert res(htc=[' aero omega', ' aero torque']).id == [9,10]
     assert res(htc=[' aero omega']).name == ['Omega']
-    assert res(id=[3, 5]).id == [3, 5]
+    assert res(ChVec=[3, 5]).id == [3, 5]
     assert res(name="BEA 2").id == res(name="bea2").id
     assert res(label='# tower base').id == [16,17,18]
     assert res(name="does-not-exist").shape == (res.NrSc, 0)
