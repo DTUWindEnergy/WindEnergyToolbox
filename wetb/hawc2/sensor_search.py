@@ -96,11 +96,18 @@ class SensorSearch(object):
         label=None,
         id=None,
     ):
-        """Return a DataFrame with sensors matching all provided filters."""
-        matches = pd.Series(True, index=self.df.index)
+        """Return matching sensors as a metadata DataFrame.
 
-        if id is not None:
-            matches &= self.df["id"].isin(np.atleast_1d(id))
+        Arguments correspond to the ``Name``, ``Unit``, ``Description``,
+        ``HTC_input``, ``Label``, and ``id`` columns. Omitted arguments are ignored.
+        An empty DataFrame is returned when no sensors match.
+        """
+        if id is None:
+            sensor_df = self.df
+        else:
+            sensor_df = self.df.set_index("id", drop=False).loc[np.atleast_1d(id)]
+
+        matches = pd.Series(True, index=sensor_df.index)
 
         for column, value in [
             ("Name", name),
@@ -111,11 +118,12 @@ class SensorSearch(object):
         ]:
             if value is None:
                 continue
-            if column not in self.df:
+            if column not in sensor_df:
                 raise ValueError(f"{column} metadata is not available")
-            matches &= self._contains_any(self.df[column], value)
+            matches &= self._contains_any(sensor_df[column], value)
 
-        return self.df.loc[matches].reset_index(drop=True)
+        return sensor_df.loc[matches].reset_index(drop=True)
+
 
     def get_sensor_id(self, **kwargs):
         """Return matching channel IDs as a one-dimensional integer array."""

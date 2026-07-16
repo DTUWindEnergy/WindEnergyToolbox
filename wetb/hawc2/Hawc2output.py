@@ -315,6 +315,7 @@ class Hawc2Output(object):
         data = self._get_data(ChVec)
         columns = pd.MultiIndex.from_frame(sensor_df)
         df = pd.DataFrame(data, columns=columns)
-        for i, n in enumerate(df.columns.names):
-            setattr(df, n, [index[i] for index in df.columns])
+        for i, name in enumerate(df.columns.names):
+            values = [column[i] for column in df.columns]
+            object.__setattr__(df, name, values)
         return df
