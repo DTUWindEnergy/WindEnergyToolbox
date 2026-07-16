@@ -18,6 +18,5 @@ class ReadHawc2(Hawc2Output):
 
     def __call__(self, *args, **kwargs):
         result = super().__call__(*args, **kwargs)
-        if result is None:
-            return None
+
         return result.to_numpy()
