@@ -45,7 +45,7 @@ class TestHAWC2IO(unittest.TestCase):
 
 def test_htc_line_in_gtsdf():
     res = Hawc2Output(testfilepath + "IEA15_htc_input_test.hdf5")
-    assert res(name='bea2').Channel_id == [3, 4, 5, 6, 7, 8]
+    assert res(name='bea2').id == [3, 4, 5, 6, 7, 8]
     # assert res.ChInfo[3][0].lower() == 'general time'
 
 
