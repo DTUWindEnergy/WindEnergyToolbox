@@ -403,6 +403,19 @@ class DLB():
         for k in self.keys():
             self[k].to_excel(writer, k, index=False)
         writer.close()
+        
+    def get_Mann_params(self, Nxyz):
+        sims = self.to_pandas()
+        L = 0.8 * self.variables.loc['lambda_1']['Value']
+        dy = self.variables.loc['D']['Value'] / (Nxyz[1] - 1)
+        dz = self.variables.loc['D']['Value'] / (Nxyz[2] - 1)
+        Mann_params = []
+        for i in range(len(sims)):
+            if sims['seed'].iloc[i] is not None and not np.isnan(sims['seed'].iloc[i]):
+                dx = sims['V_hub'].iloc[i] * sims['simulation_time'].iloc[i] / (Nxyz[0] - 1)
+                if (L, Nxyz[0], Nxyz[1], Nxyz[2], dx, dy, dz, sims['seed'].iloc[i]) not in Mann_params:
+                    Mann_params.append((L, Nxyz[0], Nxyz[1], Nxyz[2], dx, dy, dz, sims['seed'].iloc[i]))
+        return pd.DataFrame(Mann_params, columns=['L', 'Nx', 'Ny', 'Nz', 'dx', 'dy', 'dz', 'seed'])
 
 
 class DTU_IEC61400_1_Ref_DLB(DLB):
