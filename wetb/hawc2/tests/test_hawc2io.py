@@ -122,10 +122,10 @@ class TestHAWC2IO(unittest.TestCase):
         sensors = SensorSearch(names=["a"])
 
         for kwargs, message in [
-            ({"unit": "m"}, "Unit metadata is not available"),
-            ({"desc": "load"}, "Description metadata is not available"),
-            ({"htc": "output"}, "HTC_input metadata is not available"),
-            ({"label": "tower"}, "Label metadata is not available"),
+            ({"unit": "m"}, "unit metadata is not available"),
+            ({"desc": "load"}, "desc metadata is not available"),
+            ({"htc": "output"}, "htc metadata is not available"),
+            ({"label": "tower"}, "label metadata is not available"),
         ]:
             with self.subTest(kwargs=kwargs):
                 with self.assertRaisesRegex(ValueError, message):
