@@ -1,4 +1,4 @@
-
+import ast
 import os
 import numpy as np
 import pandas as pd
@@ -371,6 +371,11 @@ class DLB():
 
         dlb_def = pd.read_excel(filename, 'DLC')
         dlb_def.columns = [c.strip() for c in dlb_def.columns]
+        for idx in dlb_def.index:
+            for col in dlb_def.columns:
+                if isinstance(dlb_def.at[idx, col], str):
+                    if dlb_def.at[idx, col].startswith('(') and dlb_def.at[idx, col].endswith(')'):
+                        dlb_def.at[idx, col] = ast.literal_eval(dlb_def.at[idx, col])
         return DLB([row for _, row in dlb_def.iterrows() if row['Name'] is not np.nan], variables)
 
     def __getitem__(self, key):
