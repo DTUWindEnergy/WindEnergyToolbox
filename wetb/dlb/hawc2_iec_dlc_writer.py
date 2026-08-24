@@ -14,7 +14,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def __init__(self, base_htc_file,
                  diameter=300, # For turb box size, should be passed unless instantiated from DLB
                  time_start=100,  # Minimum 5s cf. IEC61400-1(2005), section 7.5
-                 turbulence_defaults=(33.6, 3.9, 8192, 64),  # L, gamma, n_x, n_yz)
+                 L=33.6,
+                 ae=1,
+                 Gamma=3.9,
+                 high_frq_compensation=True,
+                 nxyz=(8192, 64, 64),
+                 std_scaling=None,
                  controller='dtu_we_controller',
                  generator_servo='generator_servo',
                  pitch_servo='servo_with_limits',
@@ -31,7 +36,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         HAWC2InputWriter.__init__(self, base_htc_file,
                                   diameter=diameter,
                                   time_start=time_start,
-                                  turbulence_defaults=turbulence_defaults,
+                                  L=L,
+                                  ae=ae,
+                                  Gamma=Gamma,
+                                  high_frq_compensation=high_frq_compensation,
+                                  nxyz=nxyz,
+                                  std_scaling=std_scaling,
                                   controller=controller,
                                   generator_servo=generator_servo,
                                   pitch_servo=pitch_servo,
@@ -45,6 +55,8 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                                   constant_pitchrunaway_time=constant_pitchrunaway_time,
                                   shaft_mbdy=shaft_mbdy,
                                   shaft_constraint=shaft_constraint)
+        if hasattr(self, 'lambda_1'):
+            self.L = 0.8 * self.lambda_1
 
     def set_V_hub(self, htc, V_hub, **_):
         htc.wind.wsp = V_hub
@@ -74,12 +86,9 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if seed is None or seed == "":
             htc.wind.turb_format = 0
         elif isinstance(seed, int):
-            L, Gamma, nx, nyz = self.turbulence_defaults
-            if hasattr(self, 'lambda_1'):
-                L = 0.8 * self.lambda_1
-            htc.add_mann_turbulence(L, 1, Gamma, seed, no_grid_points=(nx, nyz, nyz),
-                                    box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'],
-                                                   self.diameter, self.diameter))
+            htc.add_mann_turbulence(self.L, self.ae, self.Gamma, seed, no_grid_points=self.nxyz,
+                                    box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'], self.diameter, self.diameter),
+                                    std_scaling=self.std_scaling)
         else:
             raise NotImplementedError(seed)
 
