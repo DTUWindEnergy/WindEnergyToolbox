@@ -57,8 +57,6 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                                   constant_pitchrunaway_time=constant_pitchrunaway_time,
                                   shaft_mbdy=shaft_mbdy,
                                   shaft_constraint=shaft_constraint)
-        if hasattr(self, 'lambda_1'):
-            self.L = 0.8 * self.lambda_1
 
     def set_V_hub(self, htc, V_hub, **_):
         htc.wind.wsp = V_hub

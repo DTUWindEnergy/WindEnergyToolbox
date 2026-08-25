@@ -63,6 +63,7 @@ class HAWC2InputWriter(object):
         if isinstance(dataFrame, (DLB, DTU_IEC61400_1_Ref_DLB)):
             self.diameter = dataFrame.variables.loc['D']['Value']
             self.lambda_1 = dataFrame.variables.loc['lambda_1']['Value']
+            self.L = 0.8 * self.lambda_1
         if not isinstance(dataFrame, PandasObject) and hasattr(dataFrame, 'to_pandas'):
             dataFrame = dataFrame.to_pandas()
         self.contents = dataFrame
