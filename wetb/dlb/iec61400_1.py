@@ -412,12 +412,12 @@ class DLB():
     def get_Mann_params(self, Nxyz):
         sims = self.to_pandas()
         L = 0.8 * self.variables.loc['lambda_1']['Value']
-        dy = self.variables.loc['D']['Value'] / (Nxyz[1] - 1)
-        dz = self.variables.loc['D']['Value'] / (Nxyz[2] - 1)
+        dy = self.variables.loc['D']['Value'] / Nxyz[1]
+        dz = self.variables.loc['D']['Value'] / Nxyz[2]
         Mann_params = []
         for i in range(len(sims)):
             if sims['seed'].iloc[i] is not None and not np.isnan(sims['seed'].iloc[i]):
-                dx = sims['V_hub'].iloc[i] * sims['simulation_time'].iloc[i] / (Nxyz[0] - 1)
+                dx = sims['V_hub'].iloc[i] * sims['simulation_time'].iloc[i] / Nxyz[0]
                 if (L, Nxyz, (dx, dy, dz), sims['seed'].iloc[i]) not in Mann_params:
                     Mann_params.append((L, Nxyz, (dx, dy, dz), sims['seed'].iloc[i]))
         return pd.DataFrame(Mann_params, columns=['L', 'Nxyz', 'dxyz', 'seed'])
