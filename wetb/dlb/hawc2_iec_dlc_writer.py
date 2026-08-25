@@ -19,6 +19,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                  Gamma=3.9,
                  high_frq_compensation=True,
                  nxyz=(8192, 64, 64),
+                 dont_scale=False,
                  std_scaling=None,
                  controller='dtu_we_controller',
                  generator_servo='generator_servo',
@@ -41,6 +42,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
                                   Gamma=Gamma,
                                   high_frq_compensation=high_frq_compensation,
                                   nxyz=nxyz,
+                                  dont_scale=dont_scale,
                                   std_scaling=std_scaling,
                                   controller=controller,
                                   generator_servo=generator_servo,
@@ -86,9 +88,10 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if seed is None or seed == "":
             htc.wind.turb_format = 0
         elif isinstance(seed, int):
-            htc.add_mann_turbulence(self.L, self.ae, self.Gamma, seed, no_grid_points=self.nxyz,
+            htc.add_mann_turbulence(self.L, self.ae, self.Gamma, seed, self.high_frq_compensation,
+                                    no_grid_points=self.nxyz,
                                     box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'], self.diameter, self.diameter),
-                                    std_scaling=self.std_scaling)
+                                    dont_scale=self.dont_scale, std_scaling=self.std_scaling)
         else:
             raise NotImplementedError(seed)
 
