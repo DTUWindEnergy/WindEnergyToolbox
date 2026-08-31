@@ -278,7 +278,8 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
         if step is not None:
             self.simulation.newmark.deltat = step
         if start is not None:
-            self.output.time = start, stop
+            if 'output' in self:
+                self.output.time = start, stop
             if "wind" in self:  # and self.wind.turb_format[0] > 0:
                 self.wind.scale_time_start = start
 
@@ -341,7 +342,7 @@ class HTCFile(HTCContents, HTCDefaults, HTCExtensions):
                     files.append(self.wind.met_mast_wind.get('filename', [None])[0])
             if 'flex' in self.wind:
                 for uvw in 'uvw':
-                    files.append(self.wind.flex.get('filename_'+uvw, [None])[0])
+                    files.append(self.wind.flex.get('filename_' + uvw, [None])[0])
         if 'wakes' in self:
             files.append(self.wind.get('use_specific_deficit_file', [None])[0])
             files.append(self.wind.get('write_ct_cq_file', [None])[0])

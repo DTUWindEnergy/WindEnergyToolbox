@@ -280,7 +280,7 @@ class HTCSection(HTCContents):
         if isinstance(key, int):
             lst = [s for s in self if s.values[key] == value]
         elif isinstance(key, str):
-            lst = [s for s in self if key in s and s[key][0] == name]
+            lst = [s for s in self if key in s and s[key][0] == value]
         else:
             raise ValueError("Key argument must be int or str")
         if len(lst) == 1:
