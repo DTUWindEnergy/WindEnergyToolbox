@@ -60,6 +60,44 @@ class TestHAWC2IO(unittest.TestCase):
         self.assertAlmostEqual(data.iloc[1, 0], 12.04148, places=6)
         np.testing.assert_array_almost_equal(file.t, np.arange(1, 801) * 0.025)
 
+    def test_read_flex_without_sensor_file(self):
+        file = Hawc2Output.__new__(Hawc2Output)
+        file.FileName = os.path.join(testfilepath, "missing", "hawc2flex")
+
+        self.assertIsNone(file._ReadSensorFile())
+
+    def test_read_flex_sensor_count_mismatch(self):
+        file = Hawc2Output.__new__(Hawc2Output)
+        file.FileName = os.path.join(
+            testfilepath,
+            "sensor_count_mismatch",
+            "hawc2flex",
+        )
+
+        self.assertIsNone(file._ReadSensorFile())
+
+    def test_cache_appends_new_channels(self):
+        file = Hawc2Output(testfilepath + "Hawc2bin")
+
+        file([0])
+        file([1])
+
+        self.assertEqual(file.Iknown, [0, 1])
+        self.assertEqual(file.Data.shape, (800, 2))
+
+    def test_read_gtsdf_without_extension(self):
+        file = Hawc2Output(
+            os.path.join(testfilepath, "IEA15_htc_input_test"),
+            ReadOnly=1,
+        )
+
+        self.assertEqual(file.FileFormat, "GTSDF")
+        self.assertGreater(file.NrSc, 0)
+
+    def test_unknown_output_file(self):
+        with self.assertRaisesRegex(ValueError, "Unknown file"):
+            Hawc2Output(os.path.join(testfilepath, "does_not_exist"))
+
 
     def test_htc_line_in_gtsdf(self):
         res = Hawc2Output(
