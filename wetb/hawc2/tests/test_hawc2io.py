@@ -44,6 +44,22 @@ class TestHAWC2IO(unittest.TestCase):
         self.assertEqual(file()[799, 0], 20)
         self.assertAlmostEqual(file()[1, 0], .05)
 
+    def test_read_flex_sensor_file(self):
+        file = Hawc2Output(testfilepath + "hawc2flex", ReadOnly=1)
+        self.assertEqual(file.NrCh, 7)
+        self.assertEqual(file.ChInfo[0][0], "WSP_gl.")
+        self.assertEqual(file.ChInfo[1][0], "m/s")
+        self.assertEqual(
+            file.ChInfo[2][0],
+            "_ Free wind speed Vy, gl. coo, of gl. pos    0.75,   0.00, -40.75",
+        )
+        data = file()
+        self.assertEqual(data.shape, (800, 7))
+        self.assertAlmostEqual(data.iloc[0, 0], 12.020977, places=6)
+        self.assertAlmostEqual(data.iloc[799, 0], 8.217468, places=6)
+        self.assertAlmostEqual(data.iloc[1, 0], 12.04148, places=6)
+        np.testing.assert_array_almost_equal(file.t, np.arange(1, 801) * 0.025)
+
 
     def test_htc_line_in_gtsdf(self):
         res = Hawc2Output(
@@ -142,6 +158,6 @@ class TestHAWC2IO(unittest.TestCase):
         np.testing.assert_array_equal(result, np.array([0, 2]))
 
 
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
+# if __name__ == "__main__":
+#     #import sys;sys.argv = ['', 'Test.testName']
+#     unittest.main()
