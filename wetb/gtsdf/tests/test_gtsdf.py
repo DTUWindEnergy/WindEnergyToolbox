@@ -71,6 +71,32 @@ class Test_gsdf(unittest.TestCase):
         self.assertRaises(AssertionError, gtsdf.save, fn, np.arange(12).reshape(4, 3), attribute_units=['s'])
         self.assertRaises(AssertionError, gtsdf.save, fn, np.arange(12).reshape(4, 3), attribute_descriptions=['desc'])
 
+    def test_htc_input(self):
+        fn = tmp_path + "htc_input.hdf5"
+        gtsdf.save(
+            fn,
+            np.arange(12).reshape(6, 2),
+            htc_input=['aero omega', 'aero torque'],
+        )
+
+        _, _, info = gtsdf.load(fn)
+
+        self.assertEqual(
+            list(info['htc_input']),
+            ['aero omega', 'aero torque'],
+        )
+
+    def test_save_wrong_htc_input_length(self):
+        fn = tmp_path + "wrong_htc_input.hdf5"
+
+        self.assertRaises(
+            AssertionError,
+            gtsdf.save,
+            fn,
+            np.arange(12).reshape(4, 3),
+            htc_input=['aero omega'],
+        )
+
     def test_info(self):
         fn = tmp_path + "info.hdf5"
         gtsdf.save(fn, np.arange(12).reshape(6, 2),
