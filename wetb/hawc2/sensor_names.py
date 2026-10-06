@@ -8,6 +8,8 @@ Created on Mon Mar 10 11:11:48 2025
 
 import re
 import copy
+
+import numpy as np
 import pandas as pd
 
 from wetb.prepost import misc
@@ -19,7 +21,7 @@ def unified_channel_names(ChInfo):
     Parameters
     ----------
     ChInfo : List of list
-        The list of list as given by wetb.hawc2.ReadHawc2.ChInfo.
+        The list of lists available as ``Hawc2Output.ChInfo``.
 
     Make certain channels independent from their index.
 

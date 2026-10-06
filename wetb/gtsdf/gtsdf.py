@@ -132,6 +132,8 @@ def _load_info(f):
         info['attribute_units'] = [v.decode('latin1') for v in f['attribute_units']]
     if 'attribute_descriptions' in f:
         info['attribute_descriptions'] = [v.decode('latin1') for v in f['attribute_descriptions']]
+    if 'htc_input' in f:
+        info['htc_input'] = [v.decode('latin1') for v in f['htc_input']]
     try:
         info['dtype'] = f[block_name_fmt % 0]['data'].dtype
     except BaseException:
@@ -284,6 +286,11 @@ def _save_info(filename, data_shape, **kwargs):
                 assert(len(kwargs['attribute_descriptions']) == no_attributes)
             f.create_dataset("attribute_descriptions", data=np.array(
                 [v.encode('utf-8') for v in kwargs['attribute_descriptions']]))
+        if 'htc_input' in kwargs:
+            if no_attributes:
+                assert(len(kwargs['htc_input']) == no_attributes)
+            f.create_dataset("htc_input", data=np.array(
+                [v.encode('utf-8') for v in kwargs['htc_input']]))
         f.attrs['no_blocks'] = 0
     except Exception:
         raise
