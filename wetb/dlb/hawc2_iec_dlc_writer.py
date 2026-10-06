@@ -14,7 +14,13 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
     def __init__(self, base_htc_file,
                  diameter=300, # For turb box size, should be passed unless instantiated from DLB
                  time_start=100,  # Minimum 5s cf. IEC61400-1(2005), section 7.5
-                 turbulence_defaults=(33.6, 3.9, 8192, 64),  # L, gamma, n_x, n_yz)
+                 L=33.6,
+                 ae=1,
+                 Gamma=3.9,
+                 high_frq_compensation=True,
+                 nxyz=(8192, 64, 64),
+                 dont_scale=False,
+                 std_scaling=None,
                  controller='dtu_we_controller',
                  generator_servo='generator_servo',
                  pitch_servo='servo_with_limits',
@@ -31,7 +37,13 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         HAWC2InputWriter.__init__(self, base_htc_file,
                                   diameter=diameter,
                                   time_start=time_start,
-                                  turbulence_defaults=turbulence_defaults,
+                                  L=L,
+                                  ae=ae,
+                                  Gamma=Gamma,
+                                  high_frq_compensation=high_frq_compensation,
+                                  nxyz=nxyz,
+                                  dont_scale=dont_scale,
+                                  std_scaling=std_scaling,
                                   controller=controller,
                                   generator_servo=generator_servo,
                                   pitch_servo=pitch_servo,
@@ -74,12 +86,11 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
         if seed is None or seed == "":
             htc.wind.turb_format = 0
         elif isinstance(seed, int):
-            L, Gamma, nx, nyz = self.turbulence_defaults
-            if hasattr(self, 'lambda_1'):
-                L = 0.8 * self.lambda_1
-            htc.add_mann_turbulence(L, 1, Gamma, seed, no_grid_points=(nx, nyz, nyz),
-                                    box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'],
-                                                   self.diameter, self.diameter))
+            htc.wind.scale_time_start = self.time_start
+            htc.add_mann_turbulence(self.L, self.ae, self.Gamma, seed, self.high_frq_compensation,
+                                    no_grid_points=self.nxyz,
+                                    box_dimension=(kwargs['simulation_time'] * kwargs['V_hub'], self.diameter, self.diameter),
+                                    dont_scale=self.dont_scale, std_scaling=self.std_scaling)
         else:
             raise NotImplementedError(seed)
 
@@ -150,7 +161,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_gridloss_time} in generator_servo DLL is time for grid loss!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "time for grid loss" in constant {constant_gridloss_time} comment.')
-        setattr(generator_servo.init, f'constant__{constant_gridloss_time}', [constant_gridloss_time, t])
+        setattr(generator_servo.init, f'constant__{constant_gridloss_time}' if constant_gridloss_time > 1 else 'constant', [constant_gridloss_time, t])
         
     def set_stuckblade(self, htc, pitch_servo, constant_stuckblade_time, constant_stuckblade_angle, t, pitch):
         pitch_servo = htc.dll.get_subsection_by_name(pitch_servo, 'name')
@@ -158,12 +169,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_stuckblade_time} in pitch_servo DLL is time for stuck blade!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "time for stuck blade" in constant {constant_stuckblade_time} comment.')
-        setattr(pitch_servo.init, f'constant__{constant_stuckblade_time}', [constant_stuckblade_time, t])
+        setattr(pitch_servo.init, f'constant__{constant_stuckblade_time}' if constant_stuckblade_time > 1 else 'constant', [constant_stuckblade_time, t])
         if 'angle of stuck blade' not in getattr(pitch_servo.init, f'constant__{constant_stuckblade_angle}').comments.lower():
             warnings.warn(f'Assuming constant {constant_stuckblade_angle} in pitch_servo DLL is angle of stuck blade!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "angle of stuck blade" in constant {constant_stuckblade_angle} comment.')
-        setattr(pitch_servo.init, f'constant__{constant_stuckblade_angle}', [constant_stuckblade_angle, pitch])
+        setattr(pitch_servo.init, f'constant__{constant_stuckblade_angle}' if constant_stuckblade_angle > 1 else 'constant', [constant_stuckblade_angle, pitch])
         
     def set_pitchrunaway(self, htc, pitch_servo, constant_pitchrunaway_time, t):
         pitch_servo = htc.dll.get_subsection_by_name(pitch_servo, 'name')
@@ -171,7 +182,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_pitchrunaway_time} in pitch_servo DLL is time for pitch runaway!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "time for stuck blade" in constant {constant_pitchrunaway_time} comment.')
-        setattr(pitch_servo.init, f'constant__{constant_pitchrunaway_time}', [constant_pitchrunaway_time, t])
+        setattr(pitch_servo.init, f'constant__{constant_pitchrunaway_time}' if constant_pitchrunaway_time > 1 else 'constant', [constant_pitchrunaway_time, t])
         
     def set_startup_time(self, htc, controller, constant_cutin, t):
         controller = htc.dll.get_subsection_by_name(controller, 'name')
@@ -179,7 +190,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_cutin} in controller DLL is cut-in time!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "cut-in time" in constant {constant_cutin} comment.')
-        setattr(controller.init, f'constant__{constant_cutin}', [constant_cutin, t])
+        setattr(controller.init, f'constant__{constant_cutin}' if constant_cutin > 1 else 'constant', [constant_cutin, t])
         
     def set_shutdown_time(self, htc, controller, constant_cutout, constant_shutdown_type, t, stop_type):
         controller = htc.dll.get_subsection_by_name(controller, 'name')
@@ -187,12 +198,12 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_cutout} in controller DLL is shut-down time!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "shut-down time" in constant {constant_cutout} comment.')
-        setattr(controller.init, f'constant__{constant_cutout}', [constant_cutout, t])
+        setattr(controller.init, f'constant__{constant_cutout}' if constant_cutout > 1 else 'constant', [constant_cutout, t])
         if 'stop type' not in getattr(controller.init, f'constant__{constant_shutdown_type}').comments.lower():
             warnings.warn(f'Assuming constant {constant_shutdown_type} in controller DLL is stop type!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "stop type" in constant {constant_shutdown_type} comment.')
-        setattr(controller.init, f'constant__{constant_shutdown_type}', [constant_shutdown_type, stop_type])
+        setattr(controller.init, f'constant__{constant_shutdown_type}' if constant_shutdown_type > 1 else 'constant', [constant_shutdown_type, stop_type])
         
     def set_parked(self, htc, controller, constant_cutin, simulation_time):
         controller = htc.dll.get_subsection_by_name(controller, 'name')
@@ -200,7 +211,7 @@ class HAWC2_IEC_DLC_Writer(HAWC2InputWriter):
             warnings.warn(f'Assuming constant {constant_cutin} in controller DLL is cut-in time!'
                           ' Please verify your htc file is correct. Disable warning by '
                           + 'placing "cut-in time" in constant {constant_cutin} comment.')
-        setattr(controller.init, f'constant__{constant_cutin}', [constant_cutin, simulation_time + 1])
+        setattr(controller.init, f'constant__{constant_cutin}' if constant_cutin > 1 else 'constant', [constant_cutin, simulation_time + 1])
         htc.aero.induction_method = 0
         
     def set_rotor_locked(self, htc, shaft_mbdy, shaft_constraint, azimuth):

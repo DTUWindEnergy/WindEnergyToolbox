@@ -1,4 +1,4 @@
-
+import ast
 import os
 import numpy as np
 import pandas as pd
@@ -59,12 +59,8 @@ class DLC():
             setattr(self, 'Operation', Operation)
         self.variables = variables
         self.variables.update({k.lower(): v for k, v in variables.items()})
-        turb_class = self.iec_wt_class[1].lower()
-        assert turb_class in 'abc'
-        self.I_ref = {'a': .16, 'b': .14, 'c': .12}[turb_class]  # IEC61400-1(2005) table 1
-        wind_class = int(self.iec_wt_class[0])
-        assert 1 <= wind_class <= 3
-        self.V_ref = {1: 50, 2: 42.5, 3: 37.5}[wind_class]
+        self.V_ref = variables['Vref']
+        self.I_ref = variables['tiref']
         if variables["seed"]:
             self.rng = np.random.default_rng(seed=variables["seed"])
 
@@ -95,7 +91,7 @@ class DLC():
             x = x.iloc[0]
         if ":" in str(x):
             start, step, stop = [float(eval(v, globals(), self.variables)) for v in x.split(":")]
-            return list(np.arange(start, stop + step, step))
+            return list(np.arange(start, stop, step)) + [stop]
         else:
             return [float(eval(v, globals(), self.variables)) for v in str(x).replace("/", ",").split(",")]
 
@@ -177,6 +173,8 @@ class DLC():
     def NTM(self, V_hub, **_):
         # Normal turbulence model IEC section 6.3.1.3
         s0 = int((V_hub - self.Vin) // self.Vstep * 100 + 1001)
+        if (V_hub == self.Vout and (self.Vout - self.Vin) % self.Vstep != 0) or (V_hub == 0.7 * self.Vref and (0.7 * self.Vref - self.Vin) % self.Vstep != 0):
+            s0 = s0 + 100
         ti = (self.I_ref * (0.75 * V_hub + 5.6)) / V_hub  # IEC (11)
         if self.seed:
             return [{'seed_id': 's%04d' % (s),
@@ -198,6 +196,8 @@ class DLC():
         ti = c * self.I_ref * (0.072 * (V_ave / c + 3) * (V_hub / c - 4) + 10) / V_hub
 
         s0 = int((V_hub - self.Vin) // self.Vstep * 100 + 1001)
+        if (V_hub == self.Vout and (self.Vout - self.Vin) % self.Vstep != 0) or (V_hub == 0.7 * self.Vref and (0.7 * self.Vref - self.Vin) % self.Vstep != 0):
+            s0 = s0 + 100
 
         if self.seed:
             return [{'seed_id': 's%04d' % (s),
@@ -371,6 +371,11 @@ class DLB():
 
         dlb_def = pd.read_excel(filename, 'DLC')
         dlb_def.columns = [c.strip() for c in dlb_def.columns]
+        for idx in dlb_def.index:
+            for col in dlb_def.columns:
+                if isinstance(dlb_def.at[idx, col], str):
+                    if dlb_def.at[idx, col].startswith('(') and dlb_def.at[idx, col].endswith(')'):
+                        dlb_def.at[idx, col] = ast.literal_eval(dlb_def.at[idx, col])
         return DLB([row for _, row in dlb_def.iterrows() if row['Name'] is not np.nan], variables)
 
     def __getitem__(self, key):
@@ -403,6 +408,19 @@ class DLB():
         for k in self.keys():
             self[k].to_excel(writer, k, index=False)
         writer.close()
+        
+    def get_Mann_params(self, Nxyz):
+        sims = self.to_pandas()
+        L = 0.8 * self.variables.loc['lambda_1']['Value']
+        dy = self.variables.loc['D']['Value'] / Nxyz[1]
+        dz = self.variables.loc['D']['Value'] / Nxyz[2]
+        Mann_params = []
+        for i in range(len(sims)):
+            if sims['seed'].iloc[i] is not None and not np.isnan(sims['seed'].iloc[i]):
+                dx = sims['V_hub'].iloc[i] * sims['simulation_time'].iloc[i] / Nxyz[0]
+                if (L, Nxyz, (dx, dy, dz), sims['seed'].iloc[i]) not in Mann_params:
+                    Mann_params.append((L, Nxyz, (dx, dy, dz), sims['seed'].iloc[i]))
+        return pd.DataFrame(Mann_params, columns=['L', 'Nxyz', 'dxyz', 'seed'])
 
 
 class DTU_IEC61400_1_Ref_DLB(DLB):

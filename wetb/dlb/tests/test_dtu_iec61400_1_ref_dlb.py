@@ -4,7 +4,7 @@ import pandas as pd
 import shutil
 import unittest
 from wetb.dlb.hawc2_iec_dlc_writer import HAWC2_IEC_DLC_Writer 
-from wetb.dlb.iec61400_1 import DTU_IEC61400_1_Ref_DLB
+from wetb.dlb.iec61400_1 import DLB, DTU_IEC61400_1_Ref_DLB
 from wetb.hawc2.htc_file import HTCFile
 from wetb.hawc2.tests import test_files
 
@@ -26,7 +26,7 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
         # Write only 1 file per each DLC to keep it light
         h2writer.contents = pd.concat([h2writer.contents[h2writer.contents['DLC'] == dlc].iloc[0:1] for dlc in set(h2writer.contents['DLC'])])
         h2writer.write_all('./tmp')
-    
+            
     def setUp(self):
         unittest.TestCase.setUp(self)
     
@@ -61,6 +61,12 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
                        'DLC81': 12}
         for dlc, n_sims in n_sims_dict.items():
             self.assertEqual(len(sims[sims['DLC'] == dlc]), n_sims, dlc)
+            
+    def test_number_of_boxes(self):
+        Mann_params = self.dlb.get_Mann_params((8192, 64, 64))
+        # For 600s simulations, 20 wsp (4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25, 26, 28, 30, 32, 34, 35, 40, 50) * 6 seeds = 120 boxes
+        # For 100s simulations, 20 wsp (4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25) * 12 seeds = 240 boxes
+        self.assertEqual(len(Mann_params), 360)
                 
     ### Turbulence models ###
     
@@ -120,41 +126,81 @@ class Test_DTU_IEC61400_1_Ref_DLB(unittest.TestCase):
     
     def test_StuckBlade(self):
         htc = HTCFile('./tmp/DLC22b/DLC22b_wsp04_wdir000_s1001.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll__4.init.constant__9[-1], 0.1)
-        self.assertEqual(htc.dll.type2_dll__4.init.constant__10[-1], 0)
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant__9[-1], 0.1)
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant__10[-1], 0)
     
     def test_PitchRunaway(self):
         htc = HTCFile('./tmp/DLC22p/DLC22p_wsp11_wdir000_s1301.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll__4.init.constant__8[-1], 100 + 10)
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant__8[-1], 100 + 10)
     
     def test_GridLoss(self):
         htc = HTCFile('./tmp/DLC21/DLC21_wsp04_wdir350_s1001.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll__2.init.constant__7[-1], 100 + 10)
+        self.assertEqual(htc.dll.get_subsection_by_name('generator_servo').init.constant__7[-1], 100 + 10)
     
     ### Operation ###
     
     def test_StartUp(self):
         htc = HTCFile('./tmp/DLC31/DLC31_wsp04_wdir000.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll.init.constant__24[-1], 100)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__24[-1], 100)
     
     def test_ShutDown(self):
         htc = HTCFile('./tmp/DLC41/DLC41_wsp04_wdir000.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll.init.constant__26[-1], 100)
-        self.assertEqual(htc.dll.type2_dll.init.constant__28[-1], 1)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[-1], 100)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__28[-1], 1)
     
     def test_EmergencyShutDown(self):
         htc = HTCFile('./tmp/DLC51/DLC51_wsp09_wdir000_s1201.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll.init.constant__26[-1], 100)
-        self.assertEqual(htc.dll.type2_dll.init.constant__28[-1], 2)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__26[-1], 100)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__28[-1], 2)
     
     def test_Parked(self):
         htc = HTCFile('./tmp/DLC64/DLC64_wsp04_wdir352_s1001.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
-        self.assertEqual(htc.dll.type2_dll.init.constant__24[-1], 700 + 1)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__24[-1], 700 + 1)
     
     def test_RotorLocked(self):
         htc = HTCFile('./tmp/DLC81/DLC81_wsp18_wdir352_s1701.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
         self.assertEqual(htc.new_htc_structure.orientation.relative__2[htc.new_htc_structure.orientation.relative__2.keys()[-2]].values, [0, 0, 180])
         self.assertEqual(htc.new_htc_structure.constraint.bearing3.omegas[0], 0)
+        
+    ### Custom constants ###
+    
+    def test_custom_constants(self):
+        h2writer = HAWC2_IEC_DLC_Writer(os.path.dirname(test_files.__file__) + '/simulation_setup/DTU10MWRef6.0/htc/DTU_10MW_RWT.htc',
+                                        constant_cutin=1,
+                                        constant_cutout=2,
+                                        constant_gridloss_time=1,
+                                        constant_shutdown_type=3,
+                                        constant_stuckblade_time=1,
+                                        constant_stuckblade_angle=2,
+                                        constant_pitchrunaway_time=3).from_pandas(self.dlb)
+        h2writer.contents = pd.concat([h2writer.contents[h2writer.contents['DLC'] == dlc].iloc[1:2] for dlc in ['DLC21', 'DLC22b', 'DLC22p', 'DLC31', 'DLC41']])
+        h2writer.write_all('./tmp')
+        
+        htc = HTCFile('./tmp/DLC21/DLC21_wsp04_wdir350_s1002.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
+        self.assertEqual(htc.dll.get_subsection_by_name('generator_servo').init.constant[-1], 110)
+        
+        htc = HTCFile('./tmp/DLC22b/DLC22b_wsp04_wdir000_s1002.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant[-1], 0.1)
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant__2[-1], 0)
+        
+        htc = HTCFile('./tmp/DLC22p/DLC22p_wsp11_wdir000_s1302.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
+        self.assertEqual(htc.dll.get_subsection_by_name('servo_with_limits').init.constant__3[-1], 110)
+        
+        htc = HTCFile('./tmp/DLC31/DLC31_wsp11_wdir000.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant[-1], 100)
+        
+        htc = HTCFile('./tmp/DLC41/DLC41_wsp11_wdir000.htc', modelpath='../../hawc2/tests/test_files/simulation_setup/DTU10MWRef6.0')
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__2[-1], 100)
+        self.assertEqual(htc.dll.get_subsection_by_name('dtu_we_controller').init.constant__3[-1], 1)
+    
+    ### Excel reading / writing ###
+    
+    def test_excel(self):
+        self.dlb.to_excel('./tmp/DLB.xlsx')
+        dlb_from_excel = DLB.from_excel('./tmp/DLB.xlsx')
+        dlb_from_excel.variables.loc['seed', 'Value'] = None # it is '' which is equivalent but to make the comparison work
+        pd.testing.assert_frame_equal(self.dlb.dlcs, dlb_from_excel.dlcs)
+        pd.testing.assert_frame_equal(self.dlb.variables, dlb_from_excel.variables)
             
 if __name__ == "__main__":
     unittest.main()
