@@ -1,5 +1,7 @@
 import warnings
 from wetb.gtsdf.unix_time import from_unix
+from wetb.hawc2.Hawc2output import Hawc2Output
+from wetb.hawc2.sensor_names import unified_channel_names
 from wetb.utils.postprocs import statistics
 try:
     import h5py
@@ -444,7 +446,7 @@ def check_type(f):
         raise ValueError("HDF5 file must contain an attribute named 'no_blocks'")
 
     
-def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwargs) -> xr.DataArray:
+def get_postproc(postproc_function, file_h5py, file, channels, time_data_info=None, **kwargs) -> xr.DataArray:
     """
     Call a given postproc function with its postproc-specific and file-specific parameters, and return a DataArray from its output if any.
 
@@ -456,6 +458,8 @@ def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwar
         h5py.File object in append mode from hdf5 file
     file : str
         Absolute path to hdf5 file
+    channels: DataFrame
+        DataFrame containing sensors, second output of wetb.hawc2.sensor_names.unified_channel_names.
     time_data_info : tuple, optional
         Tuple containing the arrays time, data and the dictionary info. If passed, it is not necessary
         to load them from the hdf5 file. The default is None.
@@ -475,7 +479,7 @@ def get_postproc(postproc_function, file_h5py, file, time_data_info=None, **kwar
     time, data, info = time_data_info
     postproc_function_args = inspect.signature(postproc_function).parameters.keys()
     file_args = {}
-    for item in ['file_h5py', 'file', 'time', 'data', 'info']:
+    for item in ['file_h5py', 'file', 'channels', 'time', 'data', 'info']:
         if item in postproc_function_args:
             file_args[item] = locals()[item]
     postproc_output = postproc_function(**file_args, **kwargs)
@@ -548,9 +552,10 @@ def add_postproc(file, config={statistics: {'statistics': ['min', 'mean', 'max',
     """
     time_data_info = load(file)
     f = h5py.File(file, "a")
+    channels = unified_channel_names(Hawc2Output(file).ChInfo)[1]
     postproc_output_list = []
     for postproc, kwargs in config.items():
-        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, channels=channels, time_data_info=time_data_info, **kwargs)
         write_postproc(file=f, postproc_output=postproc_output)
         if postproc_output is not None:
             postproc_output_list.append(postproc_output)
@@ -700,8 +705,9 @@ def compress2postproc(file, config={statistics: {'statistics': ['min', 'mean', '
     time, data, info = time_data_info
     _save_info(file, data.shape, **info)
     f = h5py.File(file, "a")
+    channels = unified_channel_names(Hawc2Output(file).ChInfo)[1]
     for postproc, kwargs in config.items():
-        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, time_data_info=time_data_info, **kwargs)
+        postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, channels=channels, time_data_info=time_data_info, **kwargs)
         write_postproc(file=f, postproc_output=postproc_output)
     f.close()
       
