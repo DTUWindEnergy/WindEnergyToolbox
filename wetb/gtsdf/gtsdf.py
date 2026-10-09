@@ -703,10 +703,10 @@ def compress2postproc(file, config={statistics: {'statistics': ['min', 'mean', '
     """
     time_data_info = load(file)
     time, data, info = time_data_info
-    _save_info(file, data.shape, **info)
-    f = h5py.File(file, "a")
     from wetb.hawc2.Hawc2output import Hawc2Output
     channels = unified_channel_names(Hawc2Output(file).ChInfo)[1]
+    _save_info(file, data.shape, **info)
+    f = h5py.File(file, "a")
     for postproc, kwargs in config.items():
         postproc_output = get_postproc(postproc_function=postproc, file_h5py=f, file=file, channels=channels, time_data_info=time_data_info, **kwargs)
         write_postproc(file=f, postproc_output=postproc_output)
