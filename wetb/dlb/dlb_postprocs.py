@@ -4,6 +4,32 @@ import re
 import xarray as xr
 from wetb.fatigue_tools.fatigue import eq_loads_from_Markov
 
+
+def add_psf_coordinate(dataarray, safety_factor_list):
+    """Add the applied partial safety factors as a ``psf(dlc)`` coordinate.
+
+    A directional extreme result already has a ``dlc`` dimension and remains a
+    :class:`xarray.DataArray`.  A non-directional extreme matrix has no DLC
+    dimension, so it is promoted to a :class:`xarray.Dataset` in order to
+    retain the independent ``psf(dlc)`` coordinate when written to NetCDF.
+    """
+    if 'dlc' in dataarray.dims:
+        dlcs = [str(dlc).removeprefix('DLC') for dlc in dataarray.dlc.values]
+        factors = [
+            safety_factor_list[f'DLC{dlc}']
+            if f'DLC{dlc}' in safety_factor_list else safety_factor_list[dlc]
+            for dlc in dlcs
+        ]
+    else:
+        dlcs = [str(dlc).removeprefix('DLC') for dlc in safety_factor_list]
+        factors = safety_factor_list.values()
+    psf = xr.DataArray(
+        [float(factor) for factor in factors],
+        dims='dlc', coords={'dlc': dlcs}, name='psf')
+    if 'dlc' in dataarray.dims:
+        return dataarray.assign_coords(psf=psf)
+    return dataarray.to_dataset(name=dataarray.name or 'DLB_extreme_loads').assign_coords(psf=psf)
+
 def nc_to_dataarray(nc_file, DLB=True):
     '''
     Load nc file into a DataArray.
@@ -594,6 +620,49 @@ def get_DLB_directional_extreme_loads(directional_extreme_loads, regex_list=None
     DLB_directional_extreme_loads.coords['group'] = group_values['group'].isel(group=group_values.argmax('group'))
     return DLB_directional_extreme_loads
 
+
+def get_DLB_directional_extreme_loads_by_dlc(
+        directional_extreme_loads, regex_list=None, metric_list=None,
+        safety_factor_list=None):
+    """Return one directional extreme envelope per DLC.
+
+    Simulations are first grouped and reduced with the same DLC metric and
+    safety factor used by :func:`get_DLB_directional_extreme_loads`.  The
+    maximum across wind-speed groups is then retained for each DLC.  The
+    resulting ``dlc x sensor_name x angle`` array intentionally does not keep
+    a governing group coordinate: the report only needs the DLC curves and
+    their envelope.
+    """
+    if regex_list is None:
+        regex_list = {f'DLC{dlc}': r'DLC(\w+?)_wsp(\d{2})' for dlc in [
+            '12', '13', '14', '15', '21', '22b', '22p', '22y', '23', '24',
+            '31', '32', '33', '41', '42', '51', '61', '62', '63', '64', '71', '81']}
+    if metric_list is None or safety_factor_list is None:
+        if metric_list is None:
+            metric_list = {
+                'DLC12': np.mean, 'DLC13': np.mean, 'DLC14': np.max, 'DLC15': np.max,
+                'DLC21': mean_upperhalf, 'DLC22b': mean_upperhalf, 'DLC22p': mean_upperhalf,
+                'DLC22y': mean_upperhalf, 'DLC23': np.max, 'DLC24': np.mean,
+                'DLC31': np.max, 'DLC32': np.max, 'DLC33': np.max, 'DLC41': np.max,
+                'DLC42': np.max, 'DLC51': mean_upperhalf, 'DLC61': mean_upperhalf,
+                'DLC62': mean_upperhalf, 'DLC63': mean_upperhalf, 'DLC64': np.mean,
+                'DLC71': mean_upperhalf, 'DLC81': mean_upperhalf}
+        if safety_factor_list is None:
+            safety_factor_list = {
+                'DLC12': 1.35, 'DLC13': 1.35, 'DLC14': 1.35, 'DLC15': 1.35,
+                'DLC21': 1.35, 'DLC22b': 1.1, 'DLC22p': 1.1, 'DLC22y': 1.1,
+                'DLC23': 1.1, 'DLC24': 1.35, 'DLC31': 1.35, 'DLC32': 1.35,
+                'DLC33': 1.35, 'DLC41': 1.35, 'DLC42': 1.35, 'DLC51': 1.35,
+                'DLC61': 1.35, 'DLC62': 1.1, 'DLC63': 1.35, 'DLC64': 1.35,
+                'DLC71': 1.1, 'DLC81': 1.35}
+
+    group_values = get_values_by_group(
+        directional_extreme_loads, regex_list, metric_list, safety_factor_list)
+    dlcs = [get_DLC(group).removeprefix('DLC') for group in group_values.group.values]
+    group_values = group_values.assign_coords(dlc=('group', dlcs))
+    DLB_directional_extreme_loads = group_values.groupby('dlc').max('group')
+    return add_psf_coordinate(DLB_directional_extreme_loads, safety_factor_list)
+
 def get_DLB_extreme_values(statistics, regex_list, metric_list, safety_factor_list):
     """
     Group sensors maxima and minima of each timeseries by regular expression,
@@ -682,6 +751,43 @@ def get_DLB_eq_loads(eq_loads,
     if 'variable' in DLB_eq_loads.coords:
         DLB_eq_loads = DLB_eq_loads.drop_vars('variable')
     return DLB_eq_loads
+
+def get_DLB_damage_by_dlc_wsp(eq_loads, weight_list, neq_individual=None):
+    """Return unnormalized fatigue damage grouped by DLC and wind speed.
+
+    Each simulation contributes ``weight * neq_individual * eq_loads**m``.
+    The input must have filename-indexed ``dlc`` and ``wsp`` coordinates;
+    only DLCs present in ``neq_individual`` are included, as in
+    :func:`get_DLB_eq_loads`. The result has ``dlc`` and ``wsp`` dimensions
+    in addition to the non-filename dimensions of ``eq_loads``. Missing
+    DLC/wind-speed combinations have zero contribution.
+    """
+    if neq_individual is None:
+        neq_individual = xr.DataArray(
+            [600, 600, 100, 100, 600], dims='dlc',
+            coords={'dlc': ['12', '24', '31', '41', '64']})
+    if 'wsp' not in eq_loads.coords or eq_loads.wsp.dims != ('filename',):
+        raise ValueError("eq_loads must have a filename-indexed 'wsp' coordinate")
+    if 'dlc' not in eq_loads.coords or eq_loads.dlc.dims != ('filename',):
+        raise ValueError("eq_loads must have a filename-indexed 'dlc' coordinate")
+    if isinstance(weight_list, dict):
+        weight_list = xr.DataArray(list(weight_list.values()), dims='filename',
+                                   coords={'filename': list(weight_list.keys())})
+    selected = eq_loads.where(eq_loads.dlc.isin(neq_individual.dlc), drop=True)
+    if not selected.sizes['filename']:
+        raise ValueError('No simulations match the fatigue DLCs in neq_individual')
+    weights = weight_list.sel(filename=selected.filename)
+    damage = weights * neq_individual.sel(dlc=selected.dlc) * selected ** selected.m
+    parts = []
+    for dlc in np.unique(selected.dlc.values):
+        part = damage.where(selected.dlc == dlc, drop=True).groupby('wsp').sum('filename')
+        parts.append(part.expand_dims(dlc=[dlc]))
+    result = xr.concat(parts, dim='dlc', join='outer', fill_value=0)
+    if 'variable' in result.coords:
+        result = result.drop_vars('variable')
+    result.name = 'fatigue_damage'
+    return result
+
 
 def get_DLB_eq_loads_from_Markov(markov_matrices, weight_list, m_list=[3, 4, 6, 8, 10, 12], neq=1e7):
     """
