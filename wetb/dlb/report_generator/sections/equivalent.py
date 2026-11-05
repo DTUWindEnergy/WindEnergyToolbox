@@ -412,10 +412,10 @@ def plot_dlb_equivalent(
                 )
                 ax.set_title(
                     f"{title} - (DLC {dlc_group[0]})",
-                    fontsize=10,
+                    fontsize=14,
                 )
                 ax.grid(True)
-                ax.legend(fontsize=8)
+                ax.legend(fontsize=12)
 
             save_path = None
             if save_dir is not None:
@@ -458,11 +458,13 @@ def plot_dlb_equivalent_cases(
                     values = values.sortby("wsp")
                     ax.plot(values.wsp.values, values.values, marker="o", linestyle="",
                             color=colors[case_index % len(colors)], label=str(case_name))
-                ax.set(xlabel="Wind Speed [m/s]",
-                       ylabel=f"Short term Eq Load [{reference_sensor.sensor_unit.values}]",
-                       title=f"{title} - (DLC {dlc})")
+                ax.set(
+                    xlabel="Wind Speed [m/s]",
+                    ylabel=f"Short term Eq Load [{reference_sensor.sensor_unit.values}]",
+                )
+                ax.set_title(f"{title} - (DLC {dlc})", fontsize=14)
                 ax.grid(True)
-                ax.legend(fontsize=8)
+                ax.legend(fontsize=12)
 
             save_path = None
             if save_dir is not None:

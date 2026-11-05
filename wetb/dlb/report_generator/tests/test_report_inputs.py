@@ -2,6 +2,9 @@
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
@@ -208,6 +211,28 @@ class ReportInputTests(unittest.TestCase):
         self.assertIn(r'\label{tab:extreme-loads-Tower-Base}', latex)
         self.assertEqual(dlb_latex.latex_label('tab:partial_safety_factors'),
                          'tab:partial-safety-factors')
+
+    def test_latex_figures_use_the_expanded_page_height(self):
+        latex = dlb_latex.include_png_file(Path('figures') / 'load_plot.png')
+        self.assertIn(r'\Needspace{0.9\textheight}', latex)
+        self.assertIn(
+            r'width=\textwidth,height=0.84\textheight,keepaspectratio',
+            latex,
+        )
+
+    def test_latex_report_uses_compact_page_margins(self):
+        with patch.object(dlb_latex, 'write_text_file') as write:
+            dlb_latex.write_main_latex_report(
+                output_dir=Path('report'), components={}, sections={}
+            )
+        self.assertIn(
+            r'\usepackage[margin=1.5cm]{geometry}', write.call_args.args[1]
+        )
+        self.assertIn(
+            r'\fancyfoot[C]{\raisebox{1cm}{\thepage}}',
+            write.call_args.args[1],
+        )
+        self.assertIn(r'\fancypagestyle{plain}', write.call_args.args[1])
 
     def test_extreme_table_escapes_string_dtype_row_labels(self):
         loads = xr.DataArray(

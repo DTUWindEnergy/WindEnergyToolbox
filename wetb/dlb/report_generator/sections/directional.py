@@ -92,7 +92,8 @@ def plot_load_envl(
         labels,
         loc="lower center",
         bbox_to_anchor=(0.5, 0.),
-        ncol=ncol
+        ncol=ncol,
+        fontsize=12,
     )
     fig.suptitle(plot_title)
     plt.tight_layout()
@@ -183,8 +184,8 @@ def plot_load_envl_cases(
             )
             for index, case_name in enumerate(cases)
         ]
-        axes[0].legend(handles=dlc_handles + case_handles, fontsize=7, loc="best")
-        axes[1].legend(fontsize=7, loc="best")
+        axes[0].legend(handles=dlc_handles + case_handles, fontsize=12, loc="best")
+        axes[1].legend(fontsize=12, loc="best")
 
         if save_dir is not None:
             filename = f"{str(title).replace(' ', '_').replace(':', '').replace('/', '_')}_directional_extreme_comparison.png"

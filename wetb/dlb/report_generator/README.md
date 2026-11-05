@@ -210,7 +210,7 @@ documents both reference them rather than recomputing the analysis.
 | `dlb_utils.py` | Shared utilities, including LaTeX formatting, data normalization, and Matplotlib figure helpers. |
 | `dlb_latex.py` | LaTeX table creation and assembly of the main LaTeX document and component files. |
 | `dlb_markdown.py` | Markdown report assembly, including conversion of simple generated LaTeX tables. |
-| `test_dlb_*.py` | Focused regression tests for configuration, Markdown conversion, and shared utilities. |
+| `tests/test_*.py` | Focused regression tests for configuration, Markdown conversion, and shared utilities. |
 
 ## Output layout
 

@@ -241,7 +241,7 @@ def plot_dlc_extreme(
                             ha="center",
                             va=va,
                             rotation=90,
-                            fontsize=6,
+                            fontsize=10,
                         ))
 
                 labels = [f"DLC {dlc}" for dlc in dlcs]
@@ -249,12 +249,14 @@ def plot_dlc_extreme(
                 ax.set_xlabel("DLC")
                 ax.set_ylabel(base +" ["+str(da_ref_sensor.sensor_unit.values[base_index] + "]"))
                 metric_label = "Max of seed-averaged max" if metric == "max" else "Min of seed-averaged min"
-                ax.set_title(f"{da_ref_sensor.sensor_name.values} - {base} {metric_label}", fontsize=10)
+                ax.set_title(f"{da_ref_sensor.sensor_name.values} - {base} {metric_label}", fontsize=14)
                 ax.set_xticks(x, labels, rotation=45, ha="right")
-                ax.margins(y=0.2)
+                # Leave room for the enlarged wind-case tags above or below
+                # bars without letting them collide with titles or x labels.
+                ax.margins(y=0.4)
                 ax.grid(True, axis="y")
                 if len(case_names) > 1:
-                    ax.legend(fontsize=8)
+                    ax.legend(fontsize=12)
                 annotation_groups.append((ax, annotations))
 
             fig.canvas.draw()
@@ -265,7 +267,7 @@ def plot_dlc_extreme(
                     # their rendered bounding boxes would overlap.
                     for annotation in annotations:
                         annotation.set_text(annotation.get_text().replace("\n", ", "))
-                    ax.margins(y=0.35)
+                    ax.margins(y=0.5)
 
             save_path = None
             if save_dir is not None:

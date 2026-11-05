@@ -43,9 +43,12 @@ def plot_dlc_statistics(da: xr.DataArray, sensor_input, sensor_title=None,
                 for statistic, marker, color in (("mean", "o", "red"), ("min", "v", "blue"), ("max", "^", "black")):
                     ax.plot(values.wsp.values, values.sel(statistic=statistic).values,
                             linestyle="", marker=marker, color=color, label=statistic.title())
-                ax.set(xlabel="Wind Speed [m/s]", ylabel=values.sensor_unit.values,
-                       title=f"{sensor_title[sensor]} {values.sensor_name.values} - DLC {dlc}")
-                ax.legend(fontsize=8); ax.grid(True)
+                ax.set(xlabel="Wind Speed [m/s]", ylabel=values.sensor_unit.values)
+                ax.set_title(
+                    f"{sensor_title[sensor]} {values.sensor_name.values} - DLC {dlc}",
+                    fontsize=14,
+                )
+                ax.legend(fontsize=12); ax.grid(True)
             save_path = None
             if output_dir is not None:
                 first, last = page[0][0], page[-1][0]
@@ -87,9 +90,12 @@ def plot_dlc_statistics_cases(case_data, sensor_input, sensor_title=None,
                     plotted = True
                 if plotted:
                     reference = first_da.isel(sensor_name=sensor_id)
-                    ax.set(xlabel="Wind Speed [m/s]", ylabel=reference.sensor_unit.values,
-                           title=f"{sensor_title[sensor_idx]} {reference.sensor_name.values} - DLC {dlc}")
-                    ax.legend(fontsize=8); ax.grid(True)
+                    ax.set(xlabel="Wind Speed [m/s]", ylabel=reference.sensor_unit.values)
+                    ax.set_title(
+                        f"{sensor_title[sensor_idx]} {reference.sensor_name.values} - DLC {dlc}",
+                        fontsize=14,
+                    )
+                    ax.legend(fontsize=12); ax.grid(True)
                 else:
                     ax.axis("off")
             save_path = None

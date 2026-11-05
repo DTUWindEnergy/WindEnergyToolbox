@@ -62,9 +62,9 @@ def include_png_file(png_file, relative_to=None):
     )
     return "\n".join(
         [
-            "\\Needspace{0.8\\textheight}",
+            "\\Needspace{0.9\\textheight}",
             "\\begin{center}",
-            f"    \\includegraphics[width=\\textwidth,height=0.76\\textheight,keepaspectratio]{{{latex_path(png_file, relative_to)}}}",
+            f"    \\includegraphics[width=\\textwidth,height=0.84\\textheight,keepaspectratio]{{{latex_path(png_file, relative_to)}}}",
             f"    \\captionof{{figure}}{{{caption}}}",
             "\\end{center}",
         ]
@@ -354,7 +354,7 @@ def write_main_latex_report(
     document = "\n".join(
         [
             "\\documentclass[11pt]{article}",
-            "\\usepackage[margin=2.5cm]{geometry}",
+            "\\usepackage[margin=1.5cm]{geometry}",
             "\\usepackage{graphicx}",
             "\\usepackage{float}",
             "\\usepackage{longtable}",
@@ -365,6 +365,12 @@ def write_main_latex_report(
             "\\usepackage[table]{xcolor}",
             "\\usepackage{placeins}",
             "\\usepackage{needspace}",
+            "\\usepackage{fancyhdr}",
+            "\\pagestyle{fancy}",
+            "\\fancyhf{}",
+            "\\fancyfoot[C]{\\raisebox{1cm}{\\thepage}}",
+            "\\renewcommand{\\headrulewidth}{0pt}",
+            "\\fancypagestyle{plain}{\\fancyhf{}\\fancyfoot[C]{\\raisebox{1cm}{\\thepage}}\\renewcommand{\\headrulewidth}{0pt}}",
             "\\title{" + latex_escape(title) + "}",
             "\\date{}",
             "\\begin{document}",
