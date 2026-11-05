@@ -356,9 +356,6 @@ def plot_dlb_equivalent(
     da_sel = da.isel(sensor_name=sensors)
     m_idx = np.searchsorted(da_sel.m.values, m_value)
 
-    if component is None:
-        component = [str(da_sel.sensor_name.values[i]) for i in range(len(sensors))]
-
     for sensor in range(len(sensors)):
         da_sensor = da_sel.isel(sensor_name=sensor, m = m_idx[sensor])
         plot_tasks = []
@@ -398,14 +395,21 @@ def plot_dlb_equivalent(
                         label=f"DLC {dlc}",
                     )
 
-                if component == None:
-                    title =  da_sensor.sensor_description.values
+                sensor_name = str(da_sensor.sensor_name.values)
+                if component is None:
+                    title = (
+                        str(da_sensor.sensor_description.values)
+                        if "sensor_description" in da_sensor.coords
+                        else sensor_name
+                    )
                 else:
-                    title =  component +" " + da_sensor.sensor_name.values
+                    title = f"{component} {sensor_name}"
 
 
                 ax.set_xlabel("Wind Speed [m/s]")
-                ax.set_ylabel("Short term Eq Load" +" ["+str(da_sensor.sensor_unit.values + "]"))
+                ax.set_ylabel(
+                    f"Short term Eq Load [{str(da_sensor.sensor_unit.values)}]"
+                )
                 ax.set_title(
                     f"{title} - (DLC {dlc_group[0]})",
                     fontsize=10,
