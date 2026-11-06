@@ -51,7 +51,7 @@ def statistics(time, data, info,
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def extreme_loads(data, sensors_info) -> xr.DataArray:
+def extreme_loads(data, sensors_info, channels=None) -> xr.DataArray:
     """
     Calculate the extreme load matrix (Fx, Fy, Fz, Mx, My, Mz) for different sensors
     using as criteria driving force or moment along x, y and z directions,
@@ -62,8 +62,26 @@ def extreme_loads(data, sensors_info) -> xr.DataArray:
     data : array (Ntimesteps x Nsensors_all)
         Array containing the time series of all sensors
     sensors_info : list of tuples (Nsensors)
-        List of 7-element tuples containing the name of a load sensor and the indices of the 6 of their components.\n
-        Example: [('Tower base', 0, 1, 2, 3, 4, 5), ('Blade 1 root', 6, 7, 8, 9, 10, 11)]
+        List of 7-element tuples containing the name of a load sensor and either
+        the indices or the unique channel names of their components Fx, Fy, Fz, Mx, My, Mz.
+        Example with indices: [('Tower base', 0, 1, 2, 3, 4, 5), ('Blade 1 root', 6, 7, 8, 9, 10, 11)]
+        Example with names: [('Tower base',
+                              'local-tower-node-001-forcevec-x',
+                              'local-tower-node-001-forcevec-y',
+                              'local-tower-node-001-forcevec-z',
+                              'local-tower-node-001-momentvec-x',
+                              'local-tower-node-001-momentvec-y',
+                              'local-tower-node-001-momentvec-z'),
+                             ('Blade 1 root',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Fx',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Fy',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Fz',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Mx',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-My',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Mz')]
+    channels: DataFrame, optional
+        DataFrame containing sensors, second output of wetb.hawc2.sensor_names.unified_channel_names.
+        Needed if names are used within sensors_info.
 
     Returns
     -------
@@ -74,6 +92,11 @@ def extreme_loads(data, sensors_info) -> xr.DataArray:
         Coords: sensor_name, driver, load, sensor_unit
 
     """
+    sensors_info = sensors_info.copy()
+    for i in range(len(sensors_info)):
+        if isinstance(sensors_info[i][1], str): # names are used
+            sensors_info[i] = (sensors_info[i][0],) + tuple(channels[channels['unique_ch_name'].isin(sensors_info[i][1:])].index - 1)
+    
     extreme_loads_data = []
     for component, i_fx, i_fy, i_fz, i_mx, i_my, i_mz in sensors_info:
         extreme_loads_data.append([])
@@ -104,7 +127,7 @@ def extreme_loads(data, sensors_info) -> xr.DataArray:
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True) -> xr.DataArray:
+def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,180,12), sweep_angle=30, degrees=True, channels=None) -> xr.DataArray:
     """
     Calculate extreme loads from different sensors along different directions.
 
@@ -117,8 +140,15 @@ def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,
             attribute_names: list of sensor names\n
             attribute_units: list of sensor units
     sensors_info : list of tuples (Nsensors)
-        List of 3-element tuples containing the name of a load sensor and the indices of 2 of their components.\n
-        Example: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        List of 3-element tuples containing the name of a load sensor and either
+        the indices or the unique channel names of 2 of their components.
+        Example with indices: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        Example with names: [('Tower base shear force',
+                              'local-tower-node-001-forcevec-x',
+                              'local-tower-node-001-forcevec-y'),
+                             ('Blade 1 root bending moment',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Mx',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-My')]
     angles : array (Ndirections), optional
         Array containing the directions along which extreme loads should be computed.
         The default is np.linspace(-150,180,12).
@@ -127,6 +157,9 @@ def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,
         It should match the angular step in angles. The default is 30.
     degrees : bool, optional
         Whether angles and sweep_angle are in degrees (True) or radians (False). The default is True.
+    channels: DataFrame, optional
+        DataFrame containing sensors, second output of wetb.hawc2.sensor_names.unified_channel_names.
+        Needed if names are used within sensors_info.
 
     Returns
     -------
@@ -136,6 +169,11 @@ def directional_extreme_loads(data, info, sensors_info, angles=np.linspace(-150,
         Coords: sensor_name, angle, sensor_unit
 
     """
+    sensors_info = sensors_info.copy()
+    for i in range(len(sensors_info)):
+        if isinstance(sensors_info[i][1], str): # names are used
+            sensors_info[i] = (sensors_info[i][0],) + tuple(channels[channels['unique_ch_name'].isin(sensors_info[i][1:])].index - 1)
+            
     directional_extreme_loads_data = []
     for sensor, ix, iy in sensors_info:
         directional_extreme_loads_data.append(projected_extremes(np.vstack([data[:,ix],data[:,iy]]).T, angles, sweep_angle, degrees)[:,1])
@@ -224,7 +262,7 @@ def equivalent_loads(data, time, info, m_list=[3, 4, 6, 8, 10, 12], neq=None, no
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def directional_equivalent_loads(data, time, info, sensors_info, m_list=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46, angles=np.linspace(-150,180,12), degrees=True) -> xr.DataArray:
+def directional_equivalent_loads(data, time, info, sensors_info, m_list=[3, 4, 6, 8, 10, 12], neq=None, no_bins=46, angles=np.linspace(-150,180,12), degrees=True, channels=None) -> xr.DataArray:
     """
     Calculate directional fatigue equivalent loads for different load sensors
     for different Woehler slopes for different directions.
@@ -238,8 +276,15 @@ def directional_equivalent_loads(data, time, info, sensors_info, m_list=[3, 4, 6
             attribute_names: list of sensor names\n
             attribute_units: list of sensor units
     sensors_info : list of tuples (Nsensors)
-        List of 3-element tuples containing the name of a load sensor and the indices of 2 of their components.\n
-        Example: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        List of 3-element tuples containing the name of a load sensor and either
+        the indices or the unique channel names of 2 of their components.
+        Example with indices: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        Example with names: [('Tower base shear force',
+                              'local-tower-node-001-forcevec-x',
+                              'local-tower-node-001-forcevec-y'),
+                             ('Blade 1 root bending moment',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Mx',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-My')]
     m_list : list (Nwoehlerslopes), optional
         List containing the different woehler slopes. The default is [3, 4, 6, 8, 10, 12].
     neq : int or float, optional
@@ -251,6 +296,9 @@ def directional_equivalent_loads(data, time, info, sensors_info, m_list=[3, 4, 6
         The default is np.linspace(-150,180,12).
     degrees : bool, optional
         Whether angles are in degrees (True) or radians (False). The default is True.
+    channels: DataFrame, optional
+        DataFrame containing sensors, second output of wetb.hawc2.sensor_names.unified_channel_names.
+        Needed if names are used within sensors_info.
 
     Returns
     -------
@@ -261,6 +309,11 @@ def directional_equivalent_loads(data, time, info, sensors_info, m_list=[3, 4, 6
         Coords: sensor_name, angle, m, sensor_unit
 
     """
+    sensors_info = sensors_info.copy()
+    for i in range(len(sensors_info)):
+        if isinstance(sensors_info[i][1], str): # names are used
+            sensors_info[i] = (sensors_info[i][0],) + tuple(channels[channels['unique_ch_name'].isin(sensors_info[i][1:])].index - 1)
+            
     if neq is None:
         neq = time[-1] - time[0] + time[1] - time[0]
     directional_equivalent_loads_data = []
@@ -327,7 +380,7 @@ def markov_matrices(data, info, no_bins=46) -> xr.DataArray:
     return xr.DataArray(data=data, dims=dims, coords=coords)
 
 
-def directional_markov_matrices(data, info, sensors_info, no_bins=46, angles=np.linspace(-150,180,12), degrees=True) -> xr.DataArray:
+def directional_markov_matrices(data, info, sensors_info, no_bins=46, angles=np.linspace(-150,180,12), degrees=True, channels=None) -> xr.DataArray:
     """
     Calculate the Markov matrices for different load sensors for different directions.
 
@@ -340,8 +393,15 @@ def directional_markov_matrices(data, info, sensors_info, no_bins=46, angles=np.
             attribute_names: list of sensor names\n
             attribute_units: list of sensor units
     sensors_info : list of tuples (Nsensors)
-        List of 3-element tuples containing the name of a load sensor and the indices of 2 of their components.\n
-        Example: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        List of 3-element tuples containing the name of a load sensor and either
+        the indices or the unique channel names of 2 of their components.
+        Example with indices: [('Tower base shear force', 0, 1), ('Blade 1 root bending moment', 9, 10)]
+        Example with names: [('Tower base shear force',
+                              'local-tower-node-001-forcevec-x',
+                              'local-tower-node-001-forcevec-y'),
+                             ('Blade 1 root bending moment',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-Mx',
+                              'forcemomentvec_interp-blade1-c2def-blade1-0.00-My')]
     no_bins : int, optional
         Number of bins in rainflow count histogram. The default is 46.
     angles : array (Ndirections), optional
@@ -349,6 +409,9 @@ def directional_markov_matrices(data, info, sensors_info, no_bins=46, angles=np.
         The default is np.linspace(-150,180,12).
     degrees : bool, optional
         Whether angles are in degrees (True) or radians (False). The default is True.
+    channels: DataFrame, optional
+        DataFrame containing sensors, second output of wetb.hawc2.sensor_names.unified_channel_names.
+        Needed if names are used within sensors_info.
 
     Returns
     -------
@@ -360,6 +423,11 @@ def directional_markov_matrices(data, info, sensors_info, no_bins=46, angles=np.
         Coords: sensor_name, angle, sensor_unit
 
     """
+    sensors_info = sensors_info.copy()
+    for i in range(len(sensors_info)):
+        if isinstance(sensors_info[i][1], str): # names are used
+            sensors_info[i] = (sensors_info[i][0],) + tuple(channels[channels['unique_ch_name'].isin(sensors_info[i][1:])].index - 1)
+            
     cycles_and_amplitudes = []
     for sensor, ix, iy in sensors_info:
         cycles_and_amplitudes.append([])
