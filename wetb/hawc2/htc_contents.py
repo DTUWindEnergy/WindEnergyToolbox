@@ -47,11 +47,11 @@ class HTCContents(object):
             key = key.replace(".", "/")
             if "/" in key:
                 keys = key.split('/')
-                val = self.contents[keys[0]]
+                val = self.get_contents(keys[0])
                 for k in keys[1:]:
                     val = val[k]
                 return val
-            return self.contents[key]
+            return self.get_contents(key)
         else:
             return self.values[key]
 
@@ -66,7 +66,18 @@ class HTCContents(object):
             k = args[0]
             if k.endswith("__1"):
                 k = k[:-3]
-            return self.contents[k]
+            return self.get_contents(k)
+
+    def get_contents(self, key):
+        try:
+            return self.contents[key]
+        except KeyError as e:
+            try:
+                # Fall back to old names: body, body1, body2, body_eulerang, body2_eulerang, body_eulerpar, body2_eulerpar, 
+                # body_axisangle, body2_axisangle, body2_ini_rotvec_d1
+                return self.contents[key.replace('mbdy', 'body')]
+            except KeyError:
+                raise e
 
     def __setattr__(self, *args, **kwargs):
         try:

@@ -478,6 +478,12 @@ def test_jinja_tags():
     assert htc.simulation.logfile[0] == 'test.log'
 
 
+def test_body_mbdy_replacement():
+    htc = HTCFile(testfilepath + "test.htc")
+    assert htc.new_htc_structure.orientation.base.mbdy.values == htc.new_htc_structure.orientation.base.body.values
+    assert htc['new_htc_structure/orientation/base/mbdy'].values == htc['new_htc_structure/orientation/base/body'].values
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
