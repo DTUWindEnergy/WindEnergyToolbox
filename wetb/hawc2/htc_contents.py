@@ -73,7 +73,7 @@ class HTCContents(object):
             return self.contents[key]
         except KeyError as e:
             try:
-                # Fall back to old names: body, body1, body2, body_eulerang, body2_eulerang, body_eulerpar, body2_eulerpar, 
+                # Fall back to old names: body, body1, body2, body_eulerang, body2_eulerang, body_eulerpar, body2_eulerpar,
                 # body_axisangle, body2_axisangle, body2_ini_rotvec_d1
                 return self.contents[key.replace('mbdy', 'body')]
             except KeyError:
@@ -279,6 +279,9 @@ class HTCSection(HTCContents):
 
     def get_section(self, name, field='name'):
         lst = [s for s in self if field in s and s[field][0] == name]
+        if field[:4] == 'mbdy':
+            field_old = 'body' + field[4:]
+            lst += [s for s in self if field_old in s and s[field_old][0] == name]
         if len(lst) == 1:
             return lst[0]
         elif len(lst) == 0:

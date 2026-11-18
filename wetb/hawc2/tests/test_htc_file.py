@@ -11,9 +11,10 @@ from pathlib import Path
 import numpy as np
 
 
-testfilepath = Path(__file__).parent.joinpath('test_files/htcfiles/').as_posix()+"/"
+testfilepath = Path(__file__).parent.joinpath('test_files/htcfiles/').as_posix() + "/"
 
-def check_htc_file( f):
+
+def check_htc_file(f):
 
     with open(f) as fid:
         orglines = fid.read().strip().split("\n")
@@ -31,7 +32,7 @@ def check_htc_file( f):
             print("----------%d-------------" % i)
             print(fmt(org))
             print(fmt(new))
-            assert fmt(org) ==  fmt(new)
+            assert fmt(org) == fmt(new)
             break
             print()
     assert len(orglines) == len(newlines)
@@ -40,7 +41,7 @@ def check_htc_file( f):
 def test_htc_files():
     for f in ['test3.htc']:
         check_htc_file(testfilepath + f)
-    
+
 
 def test_htc_file_get():
     htcfile = HTCFile(testfilepath + "test3.htc", '../')
@@ -52,17 +53,18 @@ def test_htc_file_get():
     np.testing.assert_equal(htcfile.dll.type2_dll__2.name[0], "risoe_controller2")
     s = """begin simulation;\n  time_stop\t200;"""
     np.testing.assert_equal(str(htcfile.simulation)[:len(s)], s)
-    
+
 
 def test_htc_file_get2():
     htcfile = HTCFile(testfilepath + "test.htc")
     np.testing.assert_equal(htcfile['simulation']['logfile'][0],
-                        './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+                            './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
     np.testing.assert_equal(htcfile['simulation/logfile'][0],
-                        './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+                            './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
     np.testing.assert_equal(htcfile['simulation.logfile'][0],
-                        './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
-    np.testing.assert_equal(htcfile.simulation.logfile[0], './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+                            './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
+    np.testing.assert_equal(htcfile.simulation.logfile[0],
+                            './logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log')
     np.testing.assert_equal(htcfile.simulation.newmark.deltat[0], 0.02)
 
 
@@ -80,8 +82,8 @@ def test_htc_file_set():
     np.testing.assert_equal(htcfile.output.time[:2], [11, 21])
     htcfile.output.time = "12 22"
     np.testing.assert_equal(htcfile.output.time[:2], [12, 22])
-        
-        
+
+
 def test_htc_file_set_key():
     htcfile = HTCFile(testfilepath + "test.htc")
     htcfile.simulation.name = "value"
@@ -89,8 +91,8 @@ def test_htc_file_set_key():
     htcfile.simulation.name2 = ("value", 1)
     np.testing.assert_equal(htcfile.simulation.name2[0], "value")
     np.testing.assert_equal(htcfile.simulation.name2[1], 1)
-        
-        
+
+
 def test_htc_file_set_key2():
     htcfile = HTCFile(testfilepath + "test.htc")
     htcfile.simulation['name'] = "value"
@@ -98,8 +100,8 @@ def test_htc_file_set_key2():
     htcfile.simulation['name2'] = ("value", 1)
     np.testing.assert_equal(htcfile.simulation.name2[0], "value")
     np.testing.assert_equal(htcfile.simulation.name2[1], 1)
-        
-        
+
+
 def test_htc_file_del_key():
     htcfile = HTCFile(testfilepath + "test.htc")
     del htcfile.simulation.logfile
@@ -149,13 +151,13 @@ def test_add_section():
     htcfile = HTCFile()
     htcfile.wind.add_section('mann')
     htcfile.wind.mann.add_line("create_turb_parameters", [
-                                29.4, 1.0, 3.9, 1004, 1.0], "L, alfaeps, gamma, seed, highfrq compensation")
+        29.4, 1.0, 3.9, 1004, 1.0], "L, alfaeps, gamma, seed, highfrq compensation")
     np.testing.assert_equal(htcfile.wind.mann.create_turb_parameters[0], 29.4)
     np.testing.assert_equal(htcfile.wind.mann.create_turb_parameters[3], 1004)
     np.testing.assert_equal(htcfile.wind.mann.create_turb_parameters.comments,
-                        "L, alfaeps, gamma, seed, highfrq compensation")
+                            "L, alfaeps, gamma, seed, highfrq compensation")
 
-        
+
 def test_add_section2():
     htcfile = HTCFile()
     htcfile.add_section('hydro')
@@ -226,19 +228,19 @@ def test_output_files():
     output_files = htcfile.output_files()
     #print (htcfile.output)
     for f in ['./logfiles/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.log',
-                './visualization/dlc12_wsp10_wdir000_s1004.hdf5',
-                './animation/structure_aero_control_turb.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_beam.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_body.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_struct.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_body_eigen.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_strc_eigen.dat',
-                './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/mode*.dat',
-                './launcher_test/ssystem_eigenanalysis.dat', './launcher_test/mode*.dat',
-                './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.sel',
-                './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.dat',
-                './res/rotor_check_inipos.dat',
-                './res/rotor_check_inipos2.dat']:
+              './visualization/dlc12_wsp10_wdir000_s1004.hdf5',
+              './animation/structure_aero_control_turb.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_beam.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_body.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_struct.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_body_eigen.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_wsp10_wdir000_s1004_strc_eigen.dat',
+              './res_eigen/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004/mode*.dat',
+              './launcher_test/ssystem_eigenanalysis.dat', './launcher_test/mode*.dat',
+              './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.sel',
+              './res/dlc12_iec61400-1ed3/dlc12_wsp10_wdir000_s1004.dat',
+              './res/rotor_check_inipos.dat',
+              './res/rotor_check_inipos2.dat']:
         try:
             output_files.remove(f)
         except ValueError:
@@ -249,7 +251,7 @@ def test_output_files():
 def test_turbulence_files():
     htcfile = HTCFile(testfilepath + "dlc14_wsp10_wdir000_s0000.htc", '../')
     np.testing.assert_equal(htcfile.turbulence_files(), [
-                        './turb/turb_wsp10_s0000u.bin', './turb/turb_wsp10_s0000v.bin', './turb/turb_wsp10_s0000w.bin'])
+        './turb/turb_wsp10_s0000u.bin', './turb/turb_wsp10_s0000v.bin', './turb/turb_wsp10_s0000w.bin'])
 
 
 def test_input_files():
@@ -257,30 +259,30 @@ def test_input_files():
     input_files = htcfile.input_files()
     #print (htcfile.output)
     for f in ['./data/DTU_10MW_RWT_Tower_st.dat',
-                './data/DTU_10MW_RWT_Towertop_st.dat',
-                './data/DTU_10MW_RWT_Shaft_st.dat',
-                './data/DTU_10MW_RWT_Hub_st.dat',
-                './data/DTU_10MW_RWT_Blade_st.dat',
-                './data/DTU_10MW_RWT_ae.dat',
-                './data/DTU_10MW_RWT_pc.dat',
-                './control/risoe_controller.dll',
-                './control/risoe_controller_64.dll',
-                './control/risoe_controller.so',
-                './control/generator_servo.dll',
-                './control/generator_servo_64.dll',
-                './control/generator_servo.so',
-                './control/mech_brake.dll',
-                './control/mech_brake_64.dll',
-                './control/mech_brake.so',
-                './control/servo_with_limits.dll',
-                './control/servo_with_limits_64.dll',
-                './control/servo_with_limits.so',
-                './control/towclearsens.dll',
-                './control/towclearsens_64.dll',
-                './control/towclearsens.so',
-                './data/user_shear.dat',
-                testfilepath.replace("\\", "/") + 'test.htc'
-                ]:
+              './data/DTU_10MW_RWT_Towertop_st.dat',
+              './data/DTU_10MW_RWT_Shaft_st.dat',
+              './data/DTU_10MW_RWT_Hub_st.dat',
+              './data/DTU_10MW_RWT_Blade_st.dat',
+              './data/DTU_10MW_RWT_ae.dat',
+              './data/DTU_10MW_RWT_pc.dat',
+              './control/risoe_controller.dll',
+              './control/risoe_controller_64.dll',
+              './control/risoe_controller.so',
+              './control/generator_servo.dll',
+              './control/generator_servo_64.dll',
+              './control/generator_servo.so',
+              './control/mech_brake.dll',
+              './control/mech_brake_64.dll',
+              './control/mech_brake.so',
+              './control/servo_with_limits.dll',
+              './control/servo_with_limits_64.dll',
+              './control/servo_with_limits.so',
+              './control/towclearsens.dll',
+              './control/towclearsens_64.dll',
+              './control/towclearsens.so',
+              './data/user_shear.dat',
+              testfilepath.replace("\\", "/") + 'test.htc'
+              ]:
         try:
             input_files.remove(f)
         except ValueError:
@@ -314,7 +316,7 @@ def test_continue_in_files():
     htcfile = HTCFile(testfilepath + "continue_in_file.htc", ".")
     assert('main_body__31' in htcfile.new_htc_structure.keys())
     assert(os.path.abspath(testfilepath + 'orientation.dat') in
-                    [os.path.abspath(f) for f in htcfile.input_files()])
+           [os.path.abspath(f) for f in htcfile.input_files()])
     assert('./data/NREL_5MW_st1.txt' in htcfile.input_files())
     np.testing.assert_equal(str(htcfile).count("exit"), 1)
     assert('filename\t./res/oc4_p2_load_case_eq;' in str(htcfile).lower())
@@ -324,7 +326,7 @@ def test_continue_in_files_autodetect_path():
     htcfile = HTCFile(testfilepath + "sub/continue_in_file.htc")
     assert('main_body__31' in htcfile.new_htc_structure.keys())
     assert(os.path.abspath(testfilepath + 'orientation.dat') in
-                    [os.path.abspath(f) for f in htcfile.input_files()])
+           [os.path.abspath(f) for f in htcfile.input_files()])
     assert('./data/NREL_5MW_st1.txt' in htcfile.input_files())
     np.testing.assert_equal(str(htcfile).count("exit"), 1)
     assert('filename\t./res/oc4_p2_load_case_eq;' in str(htcfile).lower())
@@ -337,6 +339,7 @@ def test_tjul_example():
 
 def test_ansi():
     htcfile = HTCFile(testfilepath + "./ansi.htc", '../')
+
 
 def test_file_with_BOM():
     htcfile = HTCFile(testfilepath + 'DLC15_wsp11_wdir000_s0000_phi000_Free_v2_visual.htc')
@@ -437,7 +440,7 @@ def test_htc_copy():
     assert htc.new_htc_structure.main_body.name[0] == 'tower'
     assert htc.new_htc_structure.main_body__8.name[0] == 'tower2'
     ti2 = tower2.add_section(section_name='timoschenko_input',
-                                section=tower2.timoschenko_input.copy(), allow_duplicate=True)
+                             section=tower2.timoschenko_input.copy(), allow_duplicate=True)
     ti2.set = 3, 3
     assert tower2.timoschenko_input.set.values == [1, 2]
     assert tower2.timoschenko_input__2.set.values == [3, 3]
@@ -468,13 +471,13 @@ def test__call__():
 
 def test_jinja_tags():
     htc = HTCFile(testfilepath + "jinja.htc",
-                    jinja_tags={'wsp': 12, 'logfilename': None, 'begin_step': 100})
+                  jinja_tags={'wsp': 12, 'logfilename': None, 'begin_step': 100})
     assert htc.wind.wsp[0] == 12
     assert 'logfile' not in htc.simulation
     assert htc.wind.wind_ramp_abs.values == [100, 101, 0, 1]
     assert htc.wind.wind_ramp_abs__2.values == [150, 151, 0, 1]
     htc = HTCFile(testfilepath + "jinja.htc",
-                    jinja_tags={'wsp': 12, 'logfilename': 'test.log', 'begin_step': 100})
+                  jinja_tags={'wsp': 12, 'logfilename': 'test.log', 'begin_step': 100})
     assert htc.simulation.logfile[0] == 'test.log'
 
 
@@ -482,6 +485,9 @@ def test_body_mbdy_replacement():
     htc = HTCFile(testfilepath + "test.htc")
     assert htc.new_htc_structure.orientation.base.mbdy.values == htc.new_htc_structure.orientation.base.body.values
     assert htc['new_htc_structure/orientation/base/mbdy'].values == htc['new_htc_structure/orientation/base/body'].values
+    ori = htc.new_htc_structure.orientation
+    assert ori.get_section('tower', 'body1') is ori.get_section('tower', 'mbdy1')
+    print(ori)
 
 
 if __name__ == "__main__":
